@@ -62,12 +62,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .from('profiles')
       .upsert({ user_id: state.user.id, ...updates })
       .eq('user_id', state.user.id);
-    if (!error) {
-      setState(prev => ({
-        ...prev,
-        profile: prev.profile ? { ...prev.profile, ...updates } : { user_id: state.user!.id, ...updates } as Profile,
-      }));
+    if (error) {
+      throw error;
     }
+    setState(prev => ({
+      ...prev,
+      profile: prev.profile ? { ...prev.profile, ...updates } : { user_id: state.user!.id, ...updates } as Profile,
+    }));
   }, [state.user]);
 
   useEffect(() => {

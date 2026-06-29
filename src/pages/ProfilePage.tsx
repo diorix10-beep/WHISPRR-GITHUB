@@ -88,6 +88,7 @@ export default function ProfilePage() {
   const [customInterest, setCustomInterest] = useState('');
 
   // Modal state
+  const [editError, setEditError] = useState<string | null>(null);
   const [followModal, setFollowModal] = useState<{
     isOpen: boolean;
     type: 'followers' | 'following';
@@ -313,6 +314,7 @@ export default function ProfilePage() {
 
   const handleEditSave = async () => {
     if (!profile) return;
+    setEditError(null);
 
     try {
       const social_links = {
@@ -365,8 +367,9 @@ export default function ProfilePage() {
       });
 
       setIsEditMode(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
+      setEditError(error.message || 'Could not save profile changes. Please try again.');
     }
   };
 
@@ -540,12 +543,28 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between mb-2">
               <h1 className="font-serif text-2xl font-bold text-warm-900 dark:text-warm-50">Edit Profile</h1>
               <button
-                onClick={() => setIsEditMode(false)}
+                onClick={() => {
+                  setIsEditMode(false);
+                  setEditError(null);
+                }}
                 className="p-2 hover:bg-warm-100 dark:hover:bg-warm-700 rounded-full"
               >
                 <X size={20} />
               </button>
             </div>
+
+            {/* Error message */}
+            {editError && (
+              <div className="bg-error-50 dark:bg-error-900/30 border border-error-200 dark:border-error-800 text-error-700 dark:text-error-300 p-4 rounded-2xl text-sm">
+                <p className="font-semibold">Failed to save profile changes.</p>
+                <p className="mt-1 text-xs opacity-90">{editError}</p>
+                {editError.includes('column') && (
+                  <p className="mt-2 text-xs font-semibold text-primary-600 dark:text-primary-400">
+                    Pro-tip: Make sure you have run the database migration SQL in your Supabase Dashboard SQL Editor!
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Avatar Emoji Edit */}
             <div>
