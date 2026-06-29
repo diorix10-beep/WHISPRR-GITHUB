@@ -32,6 +32,8 @@ export interface Profile {
   personal_values?: string[];
   looking_for?: string[];
   field_privacy?: Record<string, 'public' | 'followers' | 'private'>;
+  muted_interests?: string[];
+  muted_communities?: string[];
 }
 
 export interface Whisper {
