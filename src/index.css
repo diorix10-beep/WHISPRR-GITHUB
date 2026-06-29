@@ -16,6 +16,11 @@
   *:focus-visible {
     @apply outline-none ring-2 ring-primary-500 ring-offset-2 ring-offset-warm-50 dark:ring-offset-warm-900;
   }
+
+  /* Ensure headings have good contrast */
+  h1, h2, h3, h4 {
+    @apply text-warm-900 dark:text-warm-50;
+  }
 }
 
 @layer components {
@@ -27,31 +32,50 @@
   }
 
   .btn-secondary {
-    @apply bg-warm-100 text-warm-700 font-medium py-2.5 px-6 rounded-2xl
+    @apply bg-warm-100 text-warm-800 font-medium py-2.5 px-6 rounded-2xl
       hover:bg-warm-200 active:bg-warm-300 transition-all duration-200
       dark:bg-warm-800 dark:text-warm-200 dark:hover:bg-warm-700
       focus-visible:ring-2 focus-visible:ring-warm-400 focus-visible:ring-offset-2;
   }
 
   .btn-ghost {
-    @apply text-warm-600 font-medium py-2.5 px-4 rounded-2xl
+    @apply text-warm-700 font-medium py-2.5 px-4 rounded-2xl
       hover:bg-warm-100 active:bg-warm-200 transition-all duration-200
       dark:text-warm-300 dark:hover:bg-warm-800
       focus-visible:ring-2 focus-visible:ring-warm-400 focus-visible:ring-offset-2;
   }
 
+  .btn-danger {
+    @apply bg-error-500 text-white font-medium py-2.5 px-6 rounded-2xl
+      hover:bg-error-600 active:bg-error-700 transition-all duration-200
+      shadow-soft disabled:opacity-50 disabled:cursor-not-allowed
+      focus-visible:ring-2 focus-visible:ring-error-500 focus-visible:ring-offset-2;
+  }
+
   .card {
-    @apply bg-white rounded-3xl shadow-soft p-4 transition-all duration-200
-      dark:bg-warm-800;
+    @apply bg-white rounded-3xl shadow-card p-4 transition-all duration-200
+      dark:bg-warm-800 border border-warm-100 dark:border-warm-700;
   }
 
   .input-field {
-    @apply w-full bg-warm-50 border border-warm-200 rounded-2xl px-4 py-3
+    @apply w-full bg-warm-50 border border-warm-300 rounded-2xl px-4 py-3
       text-warm-900 placeholder:text-warm-400
-      focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-transparent
+      focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent
       transition-all duration-200
-      dark:bg-warm-800 dark:border-warm-700 dark:text-warm-100
-      dark:placeholder:text-warm-500 dark:focus:ring-primary-600;
+      dark:bg-warm-800 dark:border-warm-600 dark:text-warm-100
+      dark:placeholder:text-warm-500 dark:focus:ring-primary-500;
+  }
+
+  .input-field-error {
+    @apply input-field border-error-400 focus:ring-error-400 dark:border-error-500;
+  }
+
+  .input-error-msg {
+    @apply text-xs text-error-600 dark:text-error-400 mt-1 flex items-center gap-1;
+  }
+
+  .input-helper {
+    @apply text-xs text-warm-500 dark:text-warm-500 mt-1;
   }
 
   .page-container {
@@ -65,19 +89,31 @@
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+
+  /* Pill mood/tag style */
+  .mood-pill {
+    @apply inline-flex items-center rounded-full font-medium px-3 py-1 text-sm
+      bg-gradient-to-r from-primary-100 to-accent-100
+      text-primary-800 dark:from-primary-800/40 dark:to-accent-800/40 dark:text-primary-200;
+  }
+
+  /* Trust / info callout */
+  .trust-callout {
+    @apply rounded-2xl border border-primary-200 dark:border-primary-800
+      bg-primary-50 dark:bg-primary-900/20 p-4;
+  }
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Auto-expanding textarea */
+.auto-expand-textarea {
+  field-sizing: content;
+  min-height: 5rem;
+  max-height: 24rem;
+  resize: none;
+  overflow-y: auto;
 }
 
+/* Scrollbar styling — updated to V3 palette */
 ::-webkit-scrollbar {
   width: 4px;
 }
@@ -87,18 +123,39 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(212, 115, 110, 0.2);
+  background: rgba(201, 96, 89, 0.15);
   border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 96, 89, 0.3);
 }
 
 html {
   scroll-behavior: smooth;
 }
 
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.animate-slide-in  { animation: slideIn 0.2s ease-out; }
+.animate-fade-in   { animation: fadeIn 0.15s ease-out; }
+.animate-scale-in  { animation: scaleIn 0.15s ease-out; }
+
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
+  html { scroll-behavior: auto; }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

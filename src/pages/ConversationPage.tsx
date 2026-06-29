@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import {
   ArrowLeft, Send, Phone, Video, Loader2, Trash2,
-  Image as ImageIcon, X, Settings, UserPlus, UserMinus, LogOut, Pencil
+  Image as ImageIcon, X, Settings, UserPlus, UserMinus, LogOut, Pencil, Smile
 } from 'lucide-react';
 import type { Conversation, Message, Profile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +11,7 @@ import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/common/Avatar';
 import { UserBadges } from '../components/common/UserBadges';
+import { EmojiPicker } from '../components/common/EmojiPicker';
 
 interface MessageWithProfile extends Message {
   profiles?: Profile;
@@ -45,8 +46,12 @@ export default function ConversationPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const msgInputRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  const MSG_LIMIT = 5000;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -525,42 +530,80 @@ export default function ConversationPage() {
       )}
 
       {/* Message Input */}
-      <form onSubmit={handleSendMessage} className="sticky bottom-0 bg-white dark:bg-warm-800 border-t border-warm-200 dark:border-warm-700">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-2">
-          <input
-            type="file"
-            ref={fileInputRef}
-            accept="image/*"
-            onChange={handleImageSelect}
-            className="hidden"
-          />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="btn-ghost p-2 flex-shrink-0"
-            disabled={sending}
-          >
-            <ImageIcon size={20} className="text-warm-500" />
-          </button>
-          <input
-            type="text"
-            value={messageInput}
-            onChange={e => handleInputChange(e.target.value)}
-            placeholder="Type a message..."
-            className="input-field flex-1"
-            disabled={sending}
-          />
-          <button
-            type="submit"
-            disabled={sending || (!messageInput.trim() && !imageFile)}
-            className="btn-primary flex items-center justify-center gap-2 py-3 px-4 disabled:opacity-50"
-          >
-            {sending || uploadingImage ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : (
-              <Send size={18} />
-            )}
-          </button>
+      <form onSubmit={handleSendMessage} className="sticky bottom-0 bg-white dark:bg-warm-800 border-t border-warm-100 dark:border-warm-700">
+        <div className="max-w-lg mx-auto px-4 py-3 space-y-2">
+          {showEmojiPicker && (
+            <div className="animate-scale-in">
+              <EmojiPicker
+                onSelect={emoji => {
+                  setMessageInput(prev => prev + emoji);
+                  setShowEmojiPicker(false);
+                  msgInputRef.current?.focus();
+                }}
+                onClose={() => setShowEmojiPicker(false)}
+              />
+            </div>
+          )}
+          <div className="flex items-end gap-2">
+            <input type="file" ref={fileInputRef} accept="image/*" onChange={handleImageSelect} className="hidden" />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="btn-ghost p-2 flex-shrink-0 mb-0.5"
+              disabled={sending}
+              aria-label="Attach image"
+            >
+              <ImageIcon size={20} className="text-warm-500" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowEmojiPicker(p => !p)}
+              className="btn-ghost p-2 flex-shrink-0 mb-0.5"
+              disabled={sending}
+              aria-label="Insert emoji"
+            >
+              <Smile size={20} className="text-warm-500" />
+            </button>
+            <textarea
+              ref={msgInputRef}
+              value={messageInput}
+              onChange={e => { handleInputChange(e.target.value); }}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage(e as any);
+                }
+              }}
+              placeholder="Type a message… (Shift+Enter for new line)"
+              className="input-field flex-1 resize-none overflow-y-auto"
+              style={{ minHeight: '2.75rem', maxHeight: '8rem', height: 'auto' }}
+              maxLength={MSG_LIMIT}
+              disabled={sending}
+              rows={1}
+              onInput={e => {
+                const el = e.currentTarget;
+                el.style.height = 'auto';
+                el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
+              }}
+            />
+            <button
+              type="submit"
+              disabled={sending || (!messageInput.trim() && !imageFile)}
+              className="btn-primary flex items-center justify-center gap-2 py-2.5 px-4 disabled:opacity-50 flex-shrink-0 mb-0.5"
+              aria-label="Send message"
+            >
+              {sending || uploadingImage ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Send size={18} />
+              )}
+            </button>
+          </div>
+          {messageInput.length > MSG_LIMIT * 0.85 && (
+            <p className={`text-xs text-right tabular-nums ${messageInput.length > MSG_LIMIT ? 'text-error-600' : 'text-warm-400'}`}>
+              {messageInput.length}/{MSG_LIMIT}
+            </p>
+          )}
         </div>
       </form>
 

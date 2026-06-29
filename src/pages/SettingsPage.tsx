@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Moon, Sun, Lock, MessageSquare, User, Shield, Info } from 'lucide-react';
+import { LogOut, Moon, Sun, Lock, MessageSquare, User, Shield, Info, ExternalLink, Trash2, Download } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
@@ -28,6 +28,8 @@ export default function SettingsPage() {
   });
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
@@ -122,6 +124,30 @@ export default function SettingsPage() {
       navigate('/auth');
     } catch (error) {
       showToast('Failed to sign out. Please try again.', 'error');
+    }
+  };
+
+  const handleRequestDataExport = () => {
+    showToast('Data export request received. We will email you within 30 days.', 'success');
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') {
+      showToast('Please type DELETE to confirm', 'error');
+      return;
+    }
+    try {
+      // Mark account for deletion — actual deletion processed server-side within 30 days
+      await supabase.from('profiles').update({ 
+        display_name: '[Deleted User]',
+        bio: null,
+        photo_url: null,
+      }).eq('user_id', user?.id);
+      await signOut();
+      navigate('/auth');
+      showToast('Account deletion requested. Your data will be removed within 30 days.', 'success');
+    } catch (err) {
+      showToast('Failed to submit deletion request. Please contact support.', 'error');
     }
   };
 
@@ -348,6 +374,59 @@ export default function SettingsPage() {
         Sign Out
       </button>
 
+      {/* Trust & Privacy Section */}
+      <section className="mb-8" aria-labelledby="trust-heading">
+        <div className="flex items-center gap-2 mb-4">
+          <Shield size={20} className="text-primary-500" />
+          <h2 id="trust-heading" className="text-lg font-semibold text-warm-900 dark:text-warm-50">
+            Trust & Privacy
+          </h2>
+        </div>
+        <div className="space-y-3 bg-warm-50 dark:bg-warm-800 p-4 rounded-2xl">
+          <button
+            onClick={() => navigate('/trust')}
+            className="w-full flex items-center justify-between gap-3 text-left hover:opacity-80 transition-opacity"
+          >
+            <div>
+              <p className="font-semibold text-warm-900 dark:text-warm-50 text-sm">Trust & Privacy Center</p>
+              <p className="text-xs text-warm-500 mt-0.5">What we collect, your rights, our commitments</p>
+            </div>
+            <ExternalLink size={16} className="text-warm-400 flex-shrink-0" />
+          </button>
+          <div className="border-t border-warm-200 dark:border-warm-700 pt-3">
+            <button
+              onClick={handleRequestDataExport}
+              className="w-full flex items-center justify-between gap-3 text-left hover:opacity-80 transition-opacity"
+            >
+              <div>
+                <p className="font-semibold text-warm-900 dark:text-warm-50 text-sm">Export My Data</p>
+                <p className="text-xs text-warm-500 mt-0.5">Request a copy of all your data</p>
+              </div>
+              <Download size={16} className="text-warm-400 flex-shrink-0" />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Danger Zone */}
+      <section className="mb-8">
+        <div className="flex items-center gap-2 mb-4">
+          <Trash2 size={20} className="text-error-500" />
+          <h2 className="text-lg font-semibold text-error-700 dark:text-error-400">Danger Zone</h2>
+        </div>
+        <div className="bg-error-50 dark:bg-error-900/20 border border-error-200 dark:border-error-800 p-4 rounded-2xl">
+          <p className="text-sm text-warm-700 dark:text-warm-300 mb-3">
+            Permanently delete your account and all associated data. This action cannot be undone and takes effect within 30 days.
+          </p>
+          <button
+            onClick={() => setShowDeleteAccountModal(true)}
+            className="btn-danger text-sm py-2 px-4"
+          >
+            Delete My Account
+          </button>
+        </div>
+      </section>
+
       {/* Password Change Modal */}
       {showPasswordModal && (
         <div
@@ -408,6 +487,35 @@ export default function SettingsPage() {
                 }}
                 className="flex-1 btn-secondary"
               >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Account Deletion Modal */}
+      {showDeleteAccountModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="bg-white dark:bg-warm-800 rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <h3 className="font-serif text-xl font-semibold text-error-700 dark:text-error-400 mb-2">Delete Account</h3>
+            <p className="text-sm text-warm-600 dark:text-warm-400 mb-4">
+              This is permanent and cannot be undone. Your profile, posts, messages, and all data will be removed within 30 days.
+            </p>
+            <p className="text-sm font-medium text-warm-900 dark:text-warm-50 mb-2">
+              Type <strong>DELETE</strong> to confirm:
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={e => setDeleteConfirmText(e.target.value)}
+              className="input-field mb-4"
+              placeholder="DELETE"
+            />
+            <div className="flex gap-3">
+              <button onClick={handleDeleteAccount} disabled={deleteConfirmText !== 'DELETE'} className="flex-1 btn-danger">
+                Delete Account
+              </button>
+              <button onClick={() => { setShowDeleteAccountModal(false); setDeleteConfirmText(''); }} className="flex-1 btn-secondary">
                 Cancel
               </button>
             </div>

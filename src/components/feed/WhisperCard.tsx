@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { Heart, Flame, Sparkles, Trash2 } from 'lucide-react';
@@ -20,7 +20,7 @@ interface WhisperCardProps {
   onReactionChange?: () => void;
 }
 
-export function WhisperCard({
+export const WhisperCard = memo(function WhisperCard({
   whisper,
   onWhisperDeleted,
   onReactionChange,
@@ -47,7 +47,7 @@ export function WhisperCard({
     spark: whisper.reactions.some(r => r.user_id === user?.id && r.type === 'spark'),
   };
 
-  const handleReaction = async (type: 'felt' | 'warmth' | 'spark') => {
+  const handleReaction = useCallback(async (type: 'felt' | 'warmth' | 'spark') => {
     if (!user || !profile) return;
 
     setReactionLoading(type);
@@ -96,9 +96,9 @@ export function WhisperCard({
     } finally {
       setReactionLoading(null);
     }
-  };
+  }, [user, profile, whisper, onReactionChange, track]);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (!isOwnWhisper) return;
 
     setIsDeleting(true);
@@ -115,15 +115,15 @@ export function WhisperCard({
     } finally {
       setIsDeleting(false);
     }
-  };
+  }, [isOwnWhisper, whisper, onWhisperDeleted]);
 
-  const handleUserClick = () => {
-    navigate(`/profile/${whisper.profiles.username}`);
-  };
-
-  const handleWhisperClick = () => {
+  const handleWhisperClick = useCallback(() => {
     navigate(`/whisper/${whisper.id}`);
-  };
+  }, [navigate, whisper.id]);
+
+  const handleProfileClick = useCallback(() => {
+    navigate(`/profile/${whisper.profiles.username}`);
+  }, [navigate, whisper.profiles.username]);
 
   return (
     <div className="card mb-4">
@@ -131,7 +131,7 @@ export function WhisperCard({
       <div className="flex items-start justify-between mb-3">
         <div
           className="flex items-start gap-3 flex-1 cursor-pointer"
-          onClick={handleUserClick}
+          onClick={handleProfileClick}
         >
           <Avatar
             emoji={whisper.profiles.avatar_emoji}
@@ -233,4 +233,4 @@ export function WhisperCard({
       </div>
     </div>
   );
-}
+});

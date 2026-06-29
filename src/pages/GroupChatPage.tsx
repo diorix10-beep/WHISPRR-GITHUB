@@ -1,327 +1,270 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, X, Check } from 'lucide-react';
+import { Loader2, X, Check, Users, AlertTriangle, ChevronLeft } from 'lucide-react';
 import type { Profile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/common/Avatar';
+import { validateRequired } from '../lib/validation';
 
 interface FollowedUser extends Profile {
   is_selected?: boolean;
 }
 
+const MAX_GROUP_NAME = 50;
+const MAX_PARTICIPANTS = 50;
+
 export default function GroupChatPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [step, setStep] = useState<'name' | 'participants'>('name');
   const [groupName, setGroupName] = useState('');
+  const [nameError, setNameError] = useState('');
   const [followedUsers, setFollowedUsers] = useState<FollowedUser[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [fetchingUsers, setFetchingUsers] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
 
-  // Fetch followed users
-  useEffect(() => {
-    const fetchFollowedUsers = async () => {
-      if (!user) return;
+  const fetchFollowedUsers = useCallback(async () => {
+    if (!user) return;
+    setFetchingUsers(true);
+    setFetchError(null);
+    try {
+      const { data: follows, error: followsError } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', user.id);
+      if (followsError) throw followsError;
 
-      try {
-        setFetchingUsers(true);
-        // First get the list of following_ids
-        const { data: follows, error: followsError } = await supabase
-          .from('follows')
-          .select('following_id')
-          .eq('follower_id', user.id);
-
-        if (followsError) throw followsError;
-
-        const followingIds = (follows || []).map(f => f.following_id);
-
-        if (followingIds.length === 0) {
-          setFollowedUsers([]);
-          setFetchingUsers(false);
-          return;
-        }
-
-        // Then fetch the profiles of those users
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('*')
-          .in('user_id', followingIds);
-
-        if (profilesError) throw profilesError;
-
-        setFollowedUsers(profiles || []);
-      } catch (err) {
-        console.error('Error fetching followed users:', err);
-        setError('Failed to load followed users');
-      } finally {
-        setFetchingUsers(false);
+      const followingIds = (follows || []).map(f => f.following_id);
+      if (followingIds.length === 0) {
+        setFollowedUsers([]);
+        return;
       }
-    };
 
-    fetchFollowedUsers();
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('user_id', followingIds);
+      if (profilesError) throw profilesError;
+      setFollowedUsers(profiles || []);
+    } catch (err) {
+      console.error('Error fetching followed users:', err);
+      setFetchError('Failed to load followed users. Please try again.');
+    } finally {
+      setFetchingUsers(false);
+    }
   }, [user]);
 
+  useEffect(() => { fetchFollowedUsers(); }, [fetchFollowedUsers]);
+
   const toggleUserSelection = (userId: string) => {
-    const newSelected = new Set(selectedUsers);
-    if (newSelected.has(userId)) {
-      newSelected.delete(userId);
-    } else {
-      newSelected.add(userId);
+    if (selectedUsers.size >= MAX_PARTICIPANTS && !selectedUsers.has(userId)) {
+      showToast(`Max ${MAX_PARTICIPANTS} participants`, 'error');
+      return;
     }
+    const newSelected = new Set(selectedUsers);
+    if (newSelected.has(userId)) newSelected.delete(userId);
+    else newSelected.add(userId);
     setSelectedUsers(newSelected);
   };
 
   const handleNext = () => {
-    if (!groupName.trim()) {
-      setError('Please enter a group chat name');
-      return;
-    }
-    setError(null);
+    const v = validateRequired(groupName, 'Group name');
+    if (!v.valid) { setNameError(v.error!); return; }
+    if (groupName.trim().length > MAX_GROUP_NAME) { setNameError(`Group name cannot exceed ${MAX_GROUP_NAME} characters`); return; }
+    setNameError('');
     setStep('participants');
   };
 
   const handleCreateGroupChat = async () => {
     if (!user || selectedUsers.size === 0) {
-      setError('Please select at least one participant');
+      setCreateError('Please select at least one participant');
       return;
     }
-
     setCreating(true);
-    setError(null);
-
+    setCreateError(null);
     try {
-      // Create conversation
-      const { data: conversation, error: createError } = await supabase
+      const { data: conversation, error: createErr } = await supabase
         .from('conversations')
-        .insert({
-          type: 'group',
-          name: groupName.trim(),
-          created_by: user.id,
-        })
+        .insert({ type: 'group', name: groupName.trim(), created_by: user.id })
         .select()
         .maybeSingle();
 
-      if (createError) throw createError;
+      if (createErr) throw createErr;
+      if (!conversation) throw new Error('Failed to create group chat — please try again.');
 
-      if (!conversation) {
-        throw new Error('Failed to create conversation');
-      }
-
-      // Add all participants to conversation_participants
       const participantIds = [user.id, ...Array.from(selectedUsers)];
-      const { error: participantsError } = await supabase
+      const { error: participantsErr } = await supabase
         .from('conversation_participants')
-        .insert(
-          participantIds.map(userId => ({
-            conversation_id: conversation.id,
-            user_id: userId,
-          }))
-        );
+        .insert(participantIds.map(uid => ({ conversation_id: conversation.id, user_id: uid })));
+      if (participantsErr) throw participantsErr;
 
-      if (participantsError) throw participantsError;
-
-      // Update conversation with group name
-      const { error: updateError } = await supabase
-        .from('conversations')
-        .update({ last_message: groupName.trim() })
-        .eq('id', conversation.id);
-
-      if (updateError) throw updateError;
-
+      showToast(`"${groupName.trim()}" created!`, 'success');
       navigate(`/messages/${conversation.id}`);
     } catch (err) {
       console.error('Error creating group chat:', err);
-      setError('Failed to create group chat. Please try again.');
+      setCreateError(err instanceof Error ? err.message : 'Failed to create group chat. Please try again.');
       setCreating(false);
     }
   };
 
-  // Name Step
+  const Modal = ({ children }: { children: React.ReactNode }) => (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
+      <div className="bg-white dark:bg-warm-800 border border-warm-100 dark:border-warm-700 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md max-h-[85vh] overflow-hidden flex flex-col shadow-float animate-scale-in">
+        {children}
+      </div>
+    </div>
+  );
+
+  const ModalHeader = ({ title }: { title: string }) => (
+    <div className="flex items-center gap-3 px-5 py-4 border-b border-warm-100 dark:border-warm-700 flex-shrink-0">
+      {step === 'participants' && (
+        <button onClick={() => { setCreateError(null); setStep('name'); }} className="p-1.5 hover:bg-warm-100 dark:hover:bg-warm-700 rounded-full" aria-label="Back">
+          <ChevronLeft size={20} className="text-warm-600 dark:text-warm-400" />
+        </button>
+      )}
+      <div className="flex items-center gap-2 flex-1">
+        <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center">
+          <Users size={16} className="text-primary-600 dark:text-primary-400" />
+        </div>
+        <h2 className="font-serif text-lg font-bold text-warm-900 dark:text-warm-100">{title}</h2>
+      </div>
+      <button onClick={() => navigate('/messages')} className="p-1.5 hover:bg-warm-100 dark:hover:bg-warm-700 rounded-full" aria-label="Close">
+        <X size={20} className="text-warm-500" />
+      </button>
+    </div>
+  );
+
   if (step === 'name') {
     return (
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
-        <div className="bg-white dark:bg-warm-800 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md mx-4 max-h-[80vh] overflow-y-auto">
-          <div className="sticky top-0 bg-white dark:bg-warm-800 border-b border-warm-200 dark:border-warm-700 p-4 flex items-center justify-between rounded-t-3xl">
-            <h2 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-100">
-              New Group Chat
-            </h2>
-            <button
-              onClick={() => navigate('/messages')}
-              className="btn-ghost p-2"
-            >
-              <X size={24} />
+      <Modal>
+        <ModalHeader title="New Group Chat" />
+        <form onSubmit={(e) => { e.preventDefault(); handleNext(); }} className="p-5 space-y-4 overflow-y-auto">
+          {nameError && (
+            <div className="bg-error-50 dark:bg-error-900/20 border border-error-200 dark:border-error-800 rounded-2xl p-3 text-sm text-error-700 dark:text-error-400 flex items-center gap-2">
+              <AlertTriangle size={14} className="flex-shrink-0" />
+              {nameError}
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-2" htmlFor="group-name">
+              Group Chat Name
+            </label>
+            <input
+              id="group-name"
+              type="text"
+              value={groupName}
+              onChange={e => { setGroupName(e.target.value); if (nameError) setNameError(''); }}
+              placeholder="e.g., Book Club, Weekend Plans"
+              className={`input-field ${nameError ? 'input-field-error' : ''}`}
+              maxLength={MAX_GROUP_NAME}
+              autoFocus
+            />
+            <div className="flex justify-between mt-1.5">
+              <p className="input-helper">Give your group a memorable name</p>
+              <span className={`text-xs tabular-nums ${groupName.length > MAX_GROUP_NAME * 0.8 ? 'text-warning-600' : 'text-warm-400'}`}>
+                {groupName.length}/{MAX_GROUP_NAME}
+              </span>
+            </div>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={() => navigate('/messages')} className="btn-secondary flex-1">Cancel</button>
+            <button type="submit" className="btn-primary flex-1" disabled={!groupName.trim()}>
+              Next →
             </button>
           </div>
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleNext();
-            }}
-            className="p-4 space-y-4"
-          >
-            {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-3 text-sm text-red-600 dark:text-red-400">
-                {error}
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-2">
-                Group Chat Name
-              </label>
-              <input
-                type="text"
-                value={groupName}
-                onChange={e => setGroupName(e.target.value)}
-                placeholder="e.g., Book Club, Weekend Plans"
-                className="input-field"
-                autoFocus
-              />
-              <p className="text-xs text-warm-500 mt-1">
-                This is the name of your group chat
-              </p>
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <button
-                type="button"
-                onClick={() => navigate('/messages')}
-                className="btn-secondary flex-1"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn-primary flex-1"
-                disabled={!groupName.trim()}
-              >
-                Next
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
+        </form>
+      </Modal>
     );
   }
 
-  // Participants Step
-  if (step === 'participants') {
-    return (
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
-        <div className="bg-white dark:bg-warm-800 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md mx-4 max-h-[80vh] overflow-y-auto">
-          <div className="sticky top-0 bg-white dark:bg-warm-800 border-b border-warm-200 dark:border-warm-700 p-4 flex items-center justify-between rounded-t-3xl">
-            <h2 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-100">
-              {groupName}
-            </h2>
-            <button
-              onClick={() => navigate('/messages')}
-              className="btn-ghost p-2"
-            >
-              <X size={24} />
-            </button>
+  return (
+    <Modal>
+      <ModalHeader title={groupName} />
+      <div className="p-5 space-y-4 overflow-y-auto flex-1">
+        {createError && (
+          <div className="bg-error-50 dark:bg-error-900/20 border border-error-200 dark:border-error-800 rounded-2xl p-3 text-sm text-error-700 dark:text-error-400 flex items-center gap-2">
+            <AlertTriangle size={14} className="flex-shrink-0" />
+            <span>{createError}</span>
+            <button onClick={fetchFollowedUsers} className="ml-auto text-primary-600 dark:text-primary-400 underline text-xs">Retry</button>
+          </div>
+        )}
+
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <label className="text-sm font-medium text-warm-700 dark:text-warm-300">
+              Select Participants
+            </label>
+            <span className="text-xs text-warm-500">{selectedUsers.size} selected</span>
           </div>
 
-          <div className="p-4 space-y-4">
-            {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-3 text-sm text-red-600 dark:text-red-400">
-                {error}
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-3">
-                Select Participants ({selectedUsers.size})
-              </label>
-
-              {fetchingUsers ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 size={20} className="animate-spin text-primary-500" />
-                </div>
-              ) : followedUsers.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-warm-600 dark:text-warm-400">
-                    You haven't followed anyone yet
-                  </p>
+          {fetchError ? (
+            <div className="text-center py-8 space-y-3">
+              <p className="text-sm text-warm-600 dark:text-warm-400">{fetchError}</p>
+              <button onClick={fetchFollowedUsers} className="btn-primary py-2 px-5 text-sm">Try Again</button>
+            </div>
+          ) : fetchingUsers ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 size={22} className="animate-spin text-primary-500" />
+            </div>
+          ) : followedUsers.length === 0 ? (
+            <div className="text-center py-8 space-y-3">
+              <p className="text-warm-600 dark:text-warm-400 text-sm">You haven't followed anyone yet.</p>
+              <button type="button" onClick={() => navigate('/discover')} className="btn-primary py-2 px-5 text-sm">
+                Discover Users
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {followedUsers.map(u => {
+                const isSelected = selectedUsers.has(u.user_id);
+                return (
                   <button
+                    key={u.id}
                     type="button"
-                    onClick={() => navigate('/discover')}
-                    className="btn-primary mt-4 py-2 px-6 inline-block"
+                    onClick={() => toggleUserSelection(u.user_id)}
+                    className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors text-left ${
+                      isSelected
+                        ? 'bg-primary-50 dark:bg-primary-900/25 border border-primary-200 dark:border-primary-700'
+                        : 'hover:bg-warm-100 dark:hover:bg-warm-700 border border-transparent'
+                    }`}
                   >
-                    Discover Users
+                    <Avatar emoji={u.avatar_emoji} photoUrl={u.photo_url} size="md" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-warm-900 dark:text-warm-100 text-sm truncate">{u.display_name}</p>
+                      <p className="text-xs text-warm-500">@{u.username}</p>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                      isSelected ? 'bg-primary-500 border-primary-500' : 'border-warm-300 dark:border-warm-600'
+                    }`}>
+                      {isSelected && <Check size={11} className="text-white" strokeWidth={3} />}
+                    </div>
                   </button>
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {followedUsers.map(user => (
-                    <button
-                      key={user.id}
-                      type="button"
-                      onClick={() => toggleUserSelection(user.user_id)}
-                      className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors ${
-                        selectedUsers.has(user.user_id)
-                          ? 'bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800'
-                          : 'hover:bg-warm-100 dark:hover:bg-warm-700'
-                      }`}
-                    >
-                      <Avatar
-                        emoji={user.avatar_emoji}
-                        photoUrl={user.photo_url}
-                        size="md"
-                      />
-                      <div className="flex-1 text-left">
-                        <p className="font-medium text-warm-900 dark:text-warm-100">
-                          {user.display_name}
-                        </p>
-                        <p className="text-sm text-warm-600 dark:text-warm-400">
-                          @{user.username}
-                        </p>
-                      </div>
-                      {selectedUsers.has(user.user_id) && (
-                        <Check size={20} className="text-primary-600 dark:text-primary-400" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
+                );
+              })}
             </div>
-
-            <div className="flex gap-3 pt-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setError(null);
-                  setStep('name');
-                }}
-                className="btn-secondary flex-1"
-                disabled={creating}
-              >
-                Back
-              </button>
-              <button
-                type="button"
-                onClick={handleCreateGroupChat}
-                className="btn-primary flex-1 flex items-center justify-center gap-2"
-                disabled={creating || selectedUsers.size === 0}
-              >
-                {creating ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  'Create Group'
-                )}
-              </button>
-            </div>
-          </div>
+          )}
         </div>
       </div>
-    );
-  }
 
-  return null;
+      <div className="p-5 border-t border-warm-100 dark:border-warm-700 flex gap-3 flex-shrink-0">
+        <button type="button" onClick={() => { setCreateError(null); setStep('name'); }} className="btn-secondary flex-1" disabled={creating}>
+          Back
+        </button>
+        <button
+          type="button"
+          onClick={handleCreateGroupChat}
+          className="btn-primary flex-1 flex items-center justify-center gap-2"
+          disabled={creating || selectedUsers.size === 0}
+        >
+          {creating ? (<><Loader2 size={16} className="animate-spin" />Creating…</>) : 'Create Group'}
+        </button>
+      </div>
+    </Modal>
+  );
 }

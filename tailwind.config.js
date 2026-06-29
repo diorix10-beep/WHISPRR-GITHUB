@@ -5,44 +5,47 @@ export default {
   theme: {
     extend: {
       colors: {
+        // V3 Primary: Muted Coral / Dusty Rose — softer, better contrast, premium
         primary: {
-          50: '#FDF2F1',
-          100: '#FCE4E2',
-          200: '#F9C9C7',
-          300: '#F3A8A4',
-          400: '#E88883',
-          500: '#D4736E',
-          600: '#BC5C57',
-          700: '#A04A45',
-          800: '#843D3A',
-          900: '#6E3532',
+          50:  '#FDF4F3',
+          100: '#FAE7E5',
+          200: '#F5CFCC',
+          300: '#ECAAA5',
+          400: '#DF817A',
+          500: '#C96059',  // Main brand — muted coral, good contrast
+          600: '#B04B44',
+          700: '#933C37',
+          800: '#7A3330',
+          900: '#662E2B',
         },
-        accent: {
-          50: '#F5F3F8',
-          100: '#EBE7F1',
-          200: '#D7CFE3',
-          300: '#B8A9C9',
-          400: '#9E8BB4',
-          500: '#B8A9C9',
-          600: '#8B74A3',
-          700: '#715D88',
-          800: '#5D4D6F',
-          900: '#4C3F5A',
-        },
+        // V3 Warm: Soft Charcoal / Warm Gray / Off White / Cream
         warm: {
-          50: '#FBF8F5',
-          100: '#F7F1EB',
-          200: '#F0E5DA',
-          300: '#E6D4C4',
-          400: '#D4B8A0',
-          500: '#C09878',
-          600: '#A87D5F',
-          700: '#8D664D',
-          800: '#745440',
-          900: '#5F4636',
+          50:  '#FAFAF8',  // Off White
+          100: '#F5F4F0',  // Cream
+          200: '#ECEAE3',  // Light cream
+          300: '#D9D5CB',  // Warm gray light
+          400: '#B8B3A7',  // Warm gray mid
+          500: '#8F8A80',  // Warm gray
+          600: '#706B62',  // Charcoal gray
+          700: '#565148',  // Soft charcoal
+          800: '#3D3933',  // Deep charcoal
+          900: '#282520',  // Near black charcoal
+        },
+        // Accent: Dusty Rose — more muted than primary, used for highlights
+        accent: {
+          50:  '#FDF2F5',
+          100: '#FAE4EA',
+          200: '#F4C9D6',
+          300: '#ECA5BB',
+          400: '#DE7A9C',
+          500: '#CC5A83',
+          600: '#B0436B',
+          700: '#923558',
+          800: '#782E4A',
+          900: '#64283F',
         },
         success: {
-          50: '#F0FDF4',
+          50:  '#F0FDF4',
           100: '#DCFCE7',
           200: '#BBF7D0',
           300: '#86EFAC',
@@ -54,7 +57,7 @@ export default {
           900: '#14532D',
         },
         warning: {
-          50: '#FFFBEB',
+          50:  '#FFFBEB',
           100: '#FEF3C7',
           200: '#FDE68A',
           300: '#FCD34D',
@@ -66,7 +69,7 @@ export default {
           900: '#78350F',
         },
         error: {
-          50: '#FEF2F2',
+          50:  '#FEF2F2',
           100: '#FEE2E2',
           200: '#FECACA',
           300: '#FCA5A5',
@@ -80,17 +83,18 @@ export default {
       },
       fontFamily: {
         serif: ['Cormorant Garamond', 'Georgia', 'serif'],
-        sans: ['DM Sans', 'system-ui', 'sans-serif'],
+        sans:  ['DM Sans', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
-        'xl': '1rem',
+        'xl':  '1rem',
         '2xl': '1.5rem',
         '3xl': '2rem',
       },
       boxShadow: {
-        'soft': '0 2px 8px rgba(0, 0, 0, 0.04)',
-        'warm': '0 4px 16px rgba(212, 115, 110, 0.08)',
-        'float': '0 8px 32px rgba(0, 0, 0, 0.06)',
+        'soft':  '0 2px 8px rgba(0, 0, 0, 0.06)',
+        'warm':  '0 4px 16px rgba(201, 96, 89, 0.10)',
+        'float': '0 8px 32px rgba(0, 0, 0, 0.08)',
+        'card':  '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04)',
       },
     },
   },

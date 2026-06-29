@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, MessageCircle, Users, Shield, ScrollText,
-  Image as ImageIcon, Loader2, X
+  Image as ImageIcon, Loader2, X, Settings, Trash2,
+  BarChart2, Plus, Check, AlertTriangle
 } from 'lucide-react';
 import type { Community, CommunityMember, Profile, Whisper, Reaction } from '../types';
 import { supabase } from '../lib/supabase';
@@ -24,7 +25,7 @@ interface WhisperWithRelations extends Whisper {
   comment_count: number;
 }
 
-type TabType = 'posts' | 'members' | 'rules' | 'about';
+type TabType = 'posts' | 'members' | 'rules' | 'about' | 'manage';
 
 export default function CommunityDetailPage() {
   const { communityId } = useParams<{ communityId: string }>();
@@ -45,6 +46,11 @@ export default function CommunityDetailPage() {
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingCommunity, setDeletingCommunity] = useState(false);
+  const [editingRules, setEditingRules] = useState(false);
+  const [rulesText, setRulesText] = useState('');
+  const [savingRules, setSavingRules] = useState(false);
 
   const isAdmin = userRole === 'owner' || userRole === 'admin';
   const moderators = members.filter(m => ['owner', 'admin', 'moderator'].includes(m.role));
@@ -131,6 +137,48 @@ export default function CommunityDetailPage() {
     await supabase.from('community_members').update({ role: newRole }).eq('id', memberId);
     setEditingRoleId(null);
     await loadMembers();
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!isAdmin) return;
+    const { error } = await supabase.from('community_members').delete().eq('id', memberId);
+    if (!error) {
+      showToast('Member removed', 'success');
+      await loadMembers();
+    } else {
+      showToast('Failed to remove member', 'error');
+    }
+  };
+
+  const handleDeleteCommunity = async () => {
+    if (!community || userRole !== 'owner') return;
+    setDeletingCommunity(true);
+    try {
+      await supabase.from('community_members').delete().eq('community_id', community.id);
+      await supabase.from('whispers').update({ community_id: null }).eq('community_id', community.id);
+      const { error } = await supabase.from('communities').delete().eq('id', community.id);
+      if (error) throw error;
+      showToast('Community deleted', 'success');
+      navigate('/communities');
+    } catch {
+      showToast('Failed to delete community', 'error');
+      setDeletingCommunity(false);
+    }
+  };
+
+  const handleSaveRules = async () => {
+    if (!community || !isAdmin) return;
+    setSavingRules(true);
+    const rules = rulesText.split('\n').map(r => r.trim()).filter(Boolean);
+    const { error } = await supabase.from('communities').update({ rules }).eq('id', community.id);
+    if (!error) {
+      setCommunity(prev => prev ? { ...prev, rules } : prev);
+      showToast('Rules saved', 'success');
+      setEditingRules(false);
+    } else {
+      showToast('Failed to save rules', 'error');
+    }
+    setSavingRules(false);
   };
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -236,17 +284,27 @@ export default function CommunityDetailPage() {
             <span className="text-xs text-warm-500">{community.post_count || 0} post{(community.post_count || 0) !== 1 ? 's' : ''}</span>
           </div>
         </div>
-        <button
-          onClick={handleJoinLeave}
-          disabled={isJoining}
-          className={`flex-shrink-0 px-5 py-2 rounded-full font-semibold text-sm transition-all ${
-            isUserMember
-              ? 'bg-warm-200 dark:bg-warm-700 text-warm-900 dark:text-warm-50 hover:bg-warm-300'
-              : 'btn-primary'
-          } disabled:opacity-50`}
-        >
-          {isJoining ? '...' : isUserMember ? (userRole === 'owner' ? 'Owner' : 'Joined') : 'Join'}
-        </button>
+        {userRole === 'owner' ? (
+          <button
+            onClick={() => setActiveTab('manage')}
+            className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full font-semibold text-sm bg-warm-800 dark:bg-warm-100 text-warm-50 dark:text-warm-900 hover:opacity-90 transition-all"
+          >
+            <Settings size={14} />
+            Manage
+          </button>
+        ) : (
+          <button
+            onClick={handleJoinLeave}
+            disabled={isJoining}
+            className={`flex-shrink-0 px-5 py-2 rounded-full font-semibold text-sm transition-all ${
+              isUserMember
+                ? 'bg-warm-200 dark:bg-warm-700 text-warm-900 dark:text-warm-50 hover:bg-warm-300'
+                : 'btn-primary'
+            } disabled:opacity-50`}
+          >
+            {isJoining ? '…' : isUserMember ? 'Joined' : 'Join'}
+          </button>
+        )}
       </div>
 
       {/* Moderators strip */}
@@ -275,6 +333,7 @@ export default function CommunityDetailPage() {
           { key: 'members' as TabType, label: 'Members', icon: Users },
           { key: 'rules' as TabType, label: 'Rules', icon: ScrollText },
           { key: 'about' as TabType, label: 'About', icon: Shield },
+          ...(isAdmin ? [{ key: 'manage' as TabType, label: 'Manage', icon: Settings }] : []),
         ]).map(tab => (
           <button
             key={tab.key}
@@ -447,6 +506,167 @@ export default function CommunityDetailPage() {
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Manage Tab — owners & admins only */}
+      {activeTab === 'manage' && isAdmin && (
+        <div className="space-y-6">
+          {/* Community Analytics */}
+          <div className="card">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart2 size={18} className="text-primary-500" />
+              <h3 className="font-semibold text-warm-900 dark:text-warm-50">Analytics</h3>
+            </div>
+            <dl className="grid grid-cols-2 gap-4">
+              {[
+                { label: 'Members', value: members.length },
+                { label: 'Posts', value: community.post_count || 0 },
+                { label: 'Moderators', value: moderators.length },
+                { label: 'Rules', value: community.rules?.length || 0 },
+              ].map(stat => (
+                <div key={stat.label} className="bg-warm-50 dark:bg-warm-700/50 rounded-2xl p-3 text-center">
+                  <dd className="text-2xl font-bold text-primary-600 dark:text-primary-400">{stat.value}</dd>
+                  <dt className="text-xs text-warm-500 mt-0.5">{stat.label}</dt>
+                </div>
+              ))}
+            </dl>
+          </div>
+
+          {/* Rules Editor */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <ScrollText size={18} className="text-primary-500" />
+                <h3 className="font-semibold text-warm-900 dark:text-warm-50">Community Rules</h3>
+              </div>
+              {!editingRules && (
+                <button
+                  onClick={() => { setRulesText((community.rules || []).join('\n')); setEditingRules(true); }}
+                  className="text-xs btn-ghost py-1 px-3"
+                >
+                  Edit
+                </button>
+              )}
+            </div>
+            {editingRules ? (
+              <div className="space-y-3">
+                <p className="text-xs text-warm-500">Enter one rule per line.</p>
+                <textarea
+                  value={rulesText}
+                  onChange={e => setRulesText(e.target.value)}
+                  className="input-field resize-none"
+                  rows={6}
+                  placeholder="Be respectful to everyone\nNo spam or self-promotion"
+                />
+                <div className="flex gap-2">
+                  <button onClick={() => setEditingRules(false)} className="btn-ghost flex-1 py-2">Cancel</button>
+                  <button onClick={handleSaveRules} disabled={savingRules} className="btn-primary flex-1 py-2">
+                    {savingRules ? 'Saving…' : 'Save Rules'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {(!community.rules || community.rules.length === 0) ? (
+                  <p className="text-sm text-warm-500">No rules set. Click Edit to add community rules.</p>
+                ) : community.rules.map((rule, i) => (
+                  <div key={i} className="flex gap-3 items-start text-sm text-warm-700 dark:text-warm-300">
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 flex items-center justify-center text-xs font-bold">{i+1}</span>
+                    {rule}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Member Management */}
+          <div className="card">
+            <div className="flex items-center gap-2 mb-4">
+              <Users size={18} className="text-primary-500" />
+              <h3 className="font-semibold text-warm-900 dark:text-warm-50">Member Management</h3>
+            </div>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {members.map(member => {
+                const isOwnerRecord = member.role === 'owner';
+                const rl = roleLabel(member.role);
+                return (
+                  <div key={member.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-warm-50 dark:bg-warm-700/50">
+                    <button onClick={() => navigate(`/profile/${member.profiles.username}`)} className="flex-shrink-0">
+                      <Avatar emoji={member.profiles.avatar_emoji} photoUrl={member.profiles.photo_url} size="sm" />
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-warm-900 dark:text-warm-50 truncate">{member.profiles.display_name}</p>
+                      <p className="text-xs text-warm-500">@{member.profiles.username}</p>
+                    </div>
+                    {editingRoleId === member.id ? (
+                      <select
+                        onChange={e => handleChangeRole(member.id, e.target.value)}
+                        onBlur={() => setEditingRoleId(null)}
+                        autoFocus
+                        className="text-xs px-2 py-1 rounded-full bg-warm-100 dark:bg-warm-600 border border-warm-300 dark:border-warm-500"
+                        defaultValue={member.role}
+                      >
+                        <option value="member">Member</option>
+                        <option value="moderator">Moderator</option>
+                        {userRole === 'owner' && <option value="admin">Admin</option>}
+                      </select>
+                    ) : (
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${rl.color} cursor-pointer hover:opacity-80`}
+                        onClick={() => !isOwnerRecord && setEditingRoleId(member.id)}>
+                        {rl.emoji} {member.role}
+                      </span>
+                    )}
+                    {!isOwnerRecord && (
+                      <button
+                        onClick={() => handleRemoveMember(member.id)}
+                        className="p-1.5 text-warm-400 hover:text-error-500 transition-colors rounded-lg hover:bg-error-50 dark:hover:bg-error-900/30"
+                        aria-label="Remove member"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Danger Zone — owner only */}
+          {userRole === 'owner' && (
+            <div className="card border border-error-200 dark:border-error-800">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle size={18} className="text-error-500" />
+                <h3 className="font-semibold text-error-700 dark:text-error-400">Danger Zone</h3>
+              </div>
+              <p className="text-sm text-warm-600 dark:text-warm-400 mb-4">
+                Deleting this community is permanent and cannot be undone. All posts will be disassociated from the community.
+              </p>
+              {showDeleteConfirm ? (
+                <div className="space-y-3">
+                  <p className="text-sm font-medium text-error-700 dark:text-error-400">Are you sure? This cannot be undone.</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => setShowDeleteConfirm(false)} className="btn-secondary flex-1 py-2 text-sm">Cancel</button>
+                    <button
+                      onClick={handleDeleteCommunity}
+                      disabled={deletingCommunity}
+                      className="btn-danger flex-1 py-2 text-sm"
+                    >
+                      {deletingCommunity ? 'Deleting…' : 'Delete Community'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="btn-danger py-2 px-4 text-sm"
+                >
+                  <Trash2 size={14} className="inline mr-1.5" />
+                  Delete Community
+                </button>
+              )}
             </div>
           )}
         </div>
