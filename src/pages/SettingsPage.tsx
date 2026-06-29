@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Moon, Sun, Lock, Eye, MessageSquare, User, Shield, Info } from 'lucide-react';
+import { LogOut, Moon, Sun, Lock, MessageSquare, User, Shield, Info } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
@@ -126,7 +126,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="page-container pb-24">
+    <div className="page-container pb-32 sm:pb-24 px-4 sm:px-6">
       <h1 className="section-title mb-8">Settings</h1>
 
       {/* Account Section */}
@@ -317,24 +317,24 @@ export default function SettingsPage() {
             </p>
           </div>
           <div className="pt-4 border-t border-warm-200 dark:border-warm-700 space-y-2">
-            <button
-              onClick={() => navigate('/terms')}
+            <a
+              href="/terms"
               className="block text-sm text-primary-500 hover:underline"
             >
               Terms of Service
-            </button>
-            <button
-              onClick={() => navigate('/privacy')}
+            </a>
+            <a
+              href="/privacy"
               className="block text-sm text-primary-500 hover:underline"
             >
               Privacy Policy
-            </button>
-            <button
-              onClick={() => showToast('For support, contact hello@whisprr.xyz', 'info')}
+            </a>
+            <a
+              href="mailto:help@whisprr.xyz"
               className="block text-sm text-primary-500 hover:underline"
             >
               Contact Support
-            </button>
+            </a>
           </div>
         </div>
       </section>
@@ -356,7 +356,7 @@ export default function SettingsPage() {
           aria-modal="true"
           aria-labelledby="password-modal-title"
         >
-          <div className="bg-white dark:bg-warm-800 rounded-2xl shadow-xl w-full max-sm p-6">
+          <div className="bg-white dark:bg-warm-800 rounded-2xl shadow-xl w-full max-w-sm p-6">
             <h3 id="password-modal-title" className="font-serif text-xl font-semibold text-warm-900 dark:text-warm-50 mb-6">
               Change Password
             </h3>

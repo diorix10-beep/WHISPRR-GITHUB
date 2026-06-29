@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useInterests } from '../contexts/InterestContext';
 import { Avatar } from '../components/common/Avatar';
 import { MoodBadge } from '../components/common/MoodBadge';
-import UserBadges from '../components/common/UserBadges';
+import { UserBadges } from '../components/common/UserBadges';
 import { FollowListModal } from '../components/profile/FollowListModal';
 import { PhotoUpload } from '../components/common/PhotoUpload';
 
@@ -29,6 +29,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [whispers, setWhispers] = useState<WhisperWithProfile[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [followsYou, setFollowsYou] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -131,6 +132,16 @@ export default function ProfilePage() {
             .maybeSingle();
 
           setIsFollowing(!!followData);
+
+          // Check if this profile follows the current user
+          const { data: followsYouData } = await supabase
+            .from('follows')
+            .select('id')
+            .eq('follower_id', profileData.user_id)
+            .eq('following_id', user.id)
+            .maybeSingle();
+
+          setFollowsYou(!!followsYouData);
         }
 
         // Fetch user's whispers
@@ -496,6 +507,11 @@ export default function ProfilePage() {
             >
               @{profile.username}
             </p>
+            {!isOwnProfile && followsYou && (
+              <span className="inline-block mt-1.5 px-2.5 py-0.5 text-xs font-medium rounded-full bg-warm-200 dark:bg-warm-700 text-warm-600 dark:text-warm-300">
+                Follows you
+              </span>
+            )}
             {profile.mood && (
               <div className="mt-3 flex justify-center">
                 <MoodBadge mood={profile.mood} />
@@ -548,7 +564,7 @@ export default function ProfilePage() {
                     key={interest}
                     className="px-3 py-1.5 rounded-full text-sm font-medium
                       bg-primary-100 text-primary-700
-                      dark:bg-primary-900 text-primary-200"
+                      dark:bg-primary-900 dark:text-primary-200"
                   >
                     {interest}
                   </span>

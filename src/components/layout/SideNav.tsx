@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Users, MessageCircle, User, Settings } from 'lucide-react';
-import { useUnreadMessages } from '../../contexts/UnreadMessagesContext';
+import { Home, Compass, Users, MessageCircle, User, Settings, Bell } from 'lucide-react';
+import { useNotifications } from '../../contexts/NotificationsContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Avatar } from '../common/Avatar';
 import { UserBadges } from '../common/UserBadges';
@@ -11,12 +11,13 @@ const navItems = [
   { path: '/discover', icon: Compass, label: 'Discover' },
   { path: '/communities', icon: Users, label: 'Communities' },
   { path: '/messages', icon: MessageCircle, label: 'Messages' },
+  { path: '/notifications', icon: Bell, label: 'Notifications' },
   { path: '/profile', icon: User, label: 'Profile' },
   { path: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export function SideNav() {
-  const { unreadMessagesCount } = useUnreadMessages();
+  const { unreadCount, unreadMessageCount } = useNotifications();
   const { profile } = useAuth();
 
   return (
@@ -42,7 +43,8 @@ export function SideNav() {
       <nav className="flex-1 px-3 py-4 space-y-1" aria-label="Main navigation">
         {navItems.map(({ path, icon: Icon, label }) => {
           const isMessages = label === 'Messages';
-          const isCommunities = label === 'Communities';
+          const isNotifications = label === 'Notifications';
+          const badgeCount = isMessages ? unreadMessageCount : isNotifications ? unreadCount : 0;
 
           return (
             <NavLink
@@ -59,17 +61,22 @@ export function SideNav() {
             >
               <div className="relative">
                 <Icon size={20} strokeWidth={1.8} />
-                {isMessages && unreadMessagesCount > 0 && (
+                {badgeCount > 0 && (
                   <span
                     className="absolute -top-1 -right-1 flex items-center justify-center
                       w-3.5 h-3.5 bg-primary-500 text-white text-[8px] font-bold rounded-full"
                     aria-hidden="true"
                   >
-                    {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
+                    {badgeCount > 9 ? '9+' : badgeCount}
                   </span>
                 )}
               </div>
-              <span className={isCommunities ? 'font-semibold' : ''}>{label}</span>
+              <span>{label}</span>
+              {badgeCount > 0 && (
+                <span className="ml-auto bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400 text-xs font-semibold px-2 py-0.5 rounded-full">
+                  {badgeCount}
+                </span>
+              )}
             </NavLink>
           );
         })}
@@ -87,7 +94,7 @@ export function SideNav() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-warm-900 dark:text-warm-50 truncate flex items-center">
                 {profile.display_name}
-                <UserBadges badges={profile.badges} />
+                <UserBadges badges={profile.badges} size="sm" />
               </p>
               <p className="text-xs text-warm-500 dark:text-warm-400 truncate">
                 @{profile.username}

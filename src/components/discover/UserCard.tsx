@@ -3,7 +3,7 @@ import { Users } from 'lucide-react';
 import type { Profile } from '../../types';
 import { Avatar } from '../common/Avatar';
 import { MoodBadge } from '../common/MoodBadge';
-import UserBadges from '../common/UserBadges';
+import { UserBadges } from '../common/UserBadges';
 
 interface UserCardProps {
   profile: Profile;

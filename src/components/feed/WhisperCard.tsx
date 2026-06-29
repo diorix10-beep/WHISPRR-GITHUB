@@ -5,7 +5,7 @@ import { Heart, Flame, Sparkles, Trash2 } from 'lucide-react';
 import type { Whisper, Profile, Reaction } from '../../types';
 import { Avatar } from '../common/Avatar';
 import { MoodBadge } from '../common/MoodBadge';
-import UserBadges from '../common/UserBadges';
+import { UserBadges } from '../common/UserBadges';
 import { useAuth } from '../../contexts/AuthContext';
 import { useInterests } from '../../contexts/InterestContext';
 import { supabase } from '../../lib/supabase';

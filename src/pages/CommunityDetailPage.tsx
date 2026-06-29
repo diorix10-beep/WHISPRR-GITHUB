@@ -11,7 +11,7 @@ import { useInterests } from '../contexts/InterestContext';
 import { useToast } from '../contexts/ToastContext';
 import { Avatar } from '../components/common/Avatar';
 import { WhisperCard } from '../components/feed/WhisperCard';
-import UserBadges from '../components/common/UserBadges';
+import { UserBadges } from '../components/common/UserBadges';
 import { ComposeWhisper } from '../components/feed/ComposeWhisper';
 
 interface CommunityMemberWithProfile extends CommunityMember {

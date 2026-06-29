@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-warm-50 text-warm-900 font-sans antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .dark body,
+  .dark {
+    @apply bg-warm-900 text-warm-100;
+  }
+
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary-500 ring-offset-2 ring-offset-warm-50 dark:ring-offset-warm-900;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-500 text-white font-medium py-2.5 px-6 rounded-2xl
+      hover:bg-primary-600 active:bg-primary-700 transition-all duration-200
+      shadow-soft hover:shadow-warm disabled:opacity-50 disabled:cursor-not-allowed
+      focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2;
+  }
+
+  .btn-secondary {
+    @apply bg-warm-100 text-warm-700 font-medium py-2.5 px-6 rounded-2xl
+      hover:bg-warm-200 active:bg-warm-300 transition-all duration-200
+      dark:bg-warm-800 dark:text-warm-200 dark:hover:bg-warm-700
+      focus-visible:ring-2 focus-visible:ring-warm-400 focus-visible:ring-offset-2;
+  }
+
+  .btn-ghost {
+    @apply text-warm-600 font-medium py-2.5 px-4 rounded-2xl
+      hover:bg-warm-100 active:bg-warm-200 transition-all duration-200
+      dark:text-warm-300 dark:hover:bg-warm-800
+      focus-visible:ring-2 focus-visible:ring-warm-400 focus-visible:ring-offset-2;
+  }
+
+  .card {
+    @apply bg-white rounded-3xl shadow-soft p-4 transition-all duration-200
+      dark:bg-warm-800;
+  }
+
+  .input-field {
+    @apply w-full bg-warm-50 border border-warm-200 rounded-2xl px-4 py-3
+      text-warm-900 placeholder:text-warm-400
+      focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-transparent
+      transition-all duration-200
+      dark:bg-warm-800 dark:border-warm-700 dark:text-warm-100
+      dark:placeholder:text-warm-500 dark:focus:ring-primary-600;
+  }
+
+  .page-container {
+    @apply max-w-3xl mx-auto px-4 sm:px-6 pb-24 lg:pb-8 pt-4;
+  }
+
+  .section-title {
+    @apply font-serif text-2xl font-semibold text-warm-900 dark:text-warm-50;
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(212, 115, 110, 0.2);
+  border-radius: 4px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

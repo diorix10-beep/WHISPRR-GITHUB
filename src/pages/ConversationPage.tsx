@@ -10,7 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/common/Avatar';
-import UserBadges from '../components/common/UserBadges';
+import { UserBadges } from '../components/common/UserBadges';
 
 interface MessageWithProfile extends Message {
   profiles?: Profile;
@@ -688,7 +688,7 @@ export default function ConversationPage() {
               <button
                 onClick={handleLeaveGroup}
                 className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
-                  >
+              >
                 <LogOut size={18} />
                 Leave Group
               </button>

@@ -6,7 +6,7 @@ import type { Conversation, Profile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/common/Avatar';
-import UserBadges from '../components/common/UserBadges';
+import { UserBadges } from '../components/common/UserBadges';
 
 interface ConversationWithProfiles extends Conversation {
   conversation_participants: { user_id: string }[];
