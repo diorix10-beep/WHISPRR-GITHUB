@@ -146,7 +146,7 @@ export default function OnboardingPage() {
     }
   }, [user, data, updateProfile, navigate]);
 
-  if (!user || !profile) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-warm-50 flex items-center justify-center">
         <p className="text-gray-600">Loading...</p>

@@ -60,12 +60,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!state.user) return;
     const { error } = await supabase
       .from('profiles')
-      .update(updates)
+      .upsert({ user_id: state.user.id, ...updates })
       .eq('user_id', state.user.id);
     if (!error) {
       setState(prev => ({
         ...prev,
-        profile: prev.profile ? { ...prev.profile, ...updates } : null,
+        profile: prev.profile ? { ...prev.profile, ...updates } : { user_id: state.user!.id, ...updates } as Profile,
       }));
     }
   }, [state.user]);
