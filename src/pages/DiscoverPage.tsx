@@ -126,7 +126,7 @@ export default function DiscoverPage() {
       .in('id', ids);
     if (data) {
       const orderMap = new Map(ids.map((id: string, idx: number) => [id, idx]));
-      const sorted = [...data].sort((a, b) => (orderMap.get(a.id) || 0) - (orderMap.get(b.id) || 0));
+      const sorted = [...data].sort((a, b) => (orderMap.get(a.id) as number || 0) - (orderMap.get(b.id) as number || 0));
       setRecommendedCommunities(sorted.map((c: any) => ({
         ...c, member_count: c.community_members?.[0]?.count || 0,
       })));

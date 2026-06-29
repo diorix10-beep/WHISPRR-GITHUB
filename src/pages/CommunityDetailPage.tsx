@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, MessageCircle, Users, Shield, ScrollText,
   Image as ImageIcon, Loader2, X, Settings, Trash2,
-  BarChart2, Plus, Check, AlertTriangle
+  BarChart2, AlertTriangle
 } from 'lucide-react';
 import type { Community, CommunityMember, Profile, Whisper, Reaction } from '../types';
 import { supabase } from '../lib/supabase';

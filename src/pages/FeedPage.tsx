@@ -108,7 +108,7 @@ export default function FeedPage() {
         // Maintain the ranked order from the function
         const orderMap = new Map(whisperIds.map((id: string, idx: number) => [id, idx]));
         const sorted = [...whispersData].sort((a, b) =>
-          (orderMap.get(a.id) || 0) - (orderMap.get(b.id) || 0)
+          (orderMap.get(a.id) as number || 0) - (orderMap.get(b.id) as number || 0)
         );
 
         const result: WhisperWithRelations[] = sorted.map((w: any) => ({

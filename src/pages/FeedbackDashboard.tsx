@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, X, Bug, Lightbulb, MessageSquare, Shield, Users, Filter, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Plus, X, Bug, Lightbulb, MessageSquare, Shield, Users, Filter } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { formatDistanceToNow } from 'date-fns';
