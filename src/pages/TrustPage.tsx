@@ -1,32 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Shield, Lock, Eye, Database, Trash2, Heart, ExternalLink } from 'lucide-react';
 
-const commitments = [
-  { icon: '🚫', title: 'We never sell your data', desc: 'Your personal information is never sold to advertisers, data brokers, or any third party. Period.' },
-  { icon: '🔒', title: 'Private messages stay private', desc: 'Your direct messages and group chats are never read by us, never used to train AI models, and never shared.' },
-  { icon: '✍️', title: 'You own what you create', desc: 'Every whisper, reply, and post you write belongs to you. You can delete your content at any time.' },
-  { icon: '🗑️', title: 'The right to be forgotten', desc: 'You can permanently delete your account and all associated personal data at any time, no questions asked.' },
-  { icon: '📖', title: 'Plain language, always', desc: 'Our privacy policies are written in plain, human-readable English — no legal jargon designed to confuse.' },
-];
-
-const collected = [
-  { label: 'Account info', detail: 'Email and password (encrypted) so you can sign in.' },
-  { label: 'Profile info', detail: 'Display name, username, avatar, bio — what you choose to share.' },
-  { label: 'Your content', detail: 'Whispers, comments, and replies you post publicly.' },
-  { label: 'Usage signals', detail: 'Interactions (reactions, follows) used to personalize your feed.' },
-  { label: 'Device info', detail: 'Browser type and OS for debugging and security purposes only.' },
-];
-
-const neverCollected = [
-  'Your private message content for advertising',
-  'Location data (we never ask for it)',
-  'Contacts or address book',
-  'Biometric data',
-  'Financial information',
-  'Data about children under 13',
-  'Sensitive health or medical data',
-];
-
 export default function TrustPage() {
   const navigate = useNavigate();
 
@@ -51,7 +25,7 @@ export default function TrustPage() {
             Trust & Privacy Center
           </h1>
           <p className="text-warm-600 dark:text-warm-400 text-lg leading-relaxed max-w-lg mx-auto">
-            WHISPRR is built on trust. Here is everything you need to know about how we handle your data — in plain language.
+            WHISPRR is built on an unwavering foundation of trust and transparency. We believe you deserve complete clarity regarding how your personal data is managed and protected.
           </p>
         </div>
 
@@ -59,18 +33,15 @@ export default function TrustPage() {
         <section className="mb-10">
           <div className="flex items-center gap-2 mb-5">
             <Heart size={18} className="text-primary-500" />
-            <h2 className="font-serif text-xl font-semibold text-warm-900 dark:text-warm-50">Our Commitments</h2>
+            <h2 className="font-serif text-xl font-semibold text-warm-900 dark:text-warm-50">Our Unwavering Commitments</h2>
           </div>
-          <div className="space-y-3">
-            {commitments.map(c => (
-              <div key={c.title} className="card flex items-start gap-4">
-                <span className="text-2xl flex-shrink-0 mt-0.5">{c.icon}</span>
-                <div>
-                  <h3 className="font-semibold text-warm-900 dark:text-warm-50 text-sm mb-1">{c.title}</h3>
-                  <p className="text-sm text-warm-600 dark:text-warm-400 leading-relaxed">{c.desc}</p>
-                </div>
-              </div>
-            ))}
+          <div className="card space-y-4">
+            <p className="text-sm text-warm-600 dark:text-warm-400 leading-relaxed">
+              At WHISPRR, our primary commitment is to safeguard your digital autonomy. We unequivocally guarantee that your personal information is never commodified, sold to advertisers, or distributed to data brokers under any circumstances. We recognize that private communication must remain fundamentally private; therefore, your direct messages and group chats are strictly confidential, actively shielded from internal review, and never utilized to train artificial intelligence models.
+            </p>
+            <p className="text-sm text-warm-600 dark:text-warm-400 leading-relaxed">
+              Furthermore, we operate on the principle that you inherently own the intellectual property you generate on our platform. Every whisper, interaction, and post remains your exclusive property, granting you the sovereign right to permanently delete your content and exercise your right to be forgotten at any given moment, without friction or interrogation. Finally, we pledge to communicate our policies in transparent, accessible language, entirely free of predatory legal jargon designed to obfuscate our actual practices.
+            </p>
           </div>
         </section>
 
@@ -78,15 +49,15 @@ export default function TrustPage() {
         <section className="mb-10">
           <div className="flex items-center gap-2 mb-5">
             <Database size={18} className="text-primary-500" />
-            <h2 className="font-serif text-xl font-semibold text-warm-900 dark:text-warm-50">What We Collect & Why</h2>
+            <h2 className="font-serif text-xl font-semibold text-warm-900 dark:text-warm-50">Information We Process</h2>
           </div>
-          <div className="card divide-y divide-warm-100 dark:divide-warm-700">
-            {collected.map(item => (
-              <div key={item.label} className="py-3 first:pt-0 last:pb-0">
-                <p className="text-sm font-medium text-warm-900 dark:text-warm-50 mb-0.5">{item.label}</p>
-                <p className="text-sm text-warm-500 dark:text-warm-400">{item.detail}</p>
-              </div>
-            ))}
+          <div className="card space-y-4">
+            <p className="text-sm text-warm-600 dark:text-warm-400 leading-relaxed">
+              To operate the WHISPRR platform efficiently, we process a strictly limited set of informational signals. When you establish an account, we securely encrypt your email address and password to facilitate secure authentication. Your profile metadata, encompassing your display name, chosen avatar, and biography, is processed explicitly to render your digital identity according to your exact specifications.
+            </p>
+            <p className="text-sm text-warm-600 dark:text-warm-400 leading-relaxed">
+              We also process the public content you actively disseminate, alongside essential usage metrics—such as your reactions and community follows—to construct a highly personalized, algorithmically tailored feed. For critical debugging and network security purposes, our infrastructure briefly parses non-identifying device telemetry, specifically your browser architecture and operating system context.
+            </p>
           </div>
         </section>
 
@@ -94,19 +65,12 @@ export default function TrustPage() {
         <section className="mb-10">
           <div className="flex items-center gap-2 mb-5">
             <Lock size={18} className="text-primary-500" />
-            <h2 className="font-serif text-xl font-semibold text-warm-900 dark:text-warm-50">What We Never Collect</h2>
+            <h2 className="font-serif text-xl font-semibold text-warm-900 dark:text-warm-50">Data We Categorically Reject</h2>
           </div>
           <div className="card">
-            <ul className="space-y-2">
-              {neverCollected.map(item => (
-                <li key={item} className="flex items-center gap-3 text-sm text-warm-700 dark:text-warm-300">
-                  <span className="w-5 h-5 rounded-full bg-success-100 dark:bg-success-900/30 flex items-center justify-center flex-shrink-0">
-                    <span className="text-success-600 dark:text-success-400 text-xs font-bold">✓</span>
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ul>
+            <p className="text-sm text-warm-600 dark:text-warm-400 leading-relaxed">
+              We draw a definitive ethical line regarding data acquisition. We categorically refuse to intercept or parse your private messaging content for advertising telemetry. We deliberately abstain from requesting or tracking your geographic location, nor do we attempt to scrape your personal contacts or address books. Furthermore, WHISPRR strictly prohibits the collection of biometric identifiers, sensitive financial instrumentation, or profound health and medical classifications. We also actively reject the retention of any data concerning individuals under the age of thirteen, maintaining strict compliance with international child protection statutes.
+            </p>
           </div>
         </section>
 
@@ -114,20 +78,15 @@ export default function TrustPage() {
         <section className="mb-10">
           <div className="flex items-center gap-2 mb-5">
             <Eye size={18} className="text-primary-500" />
-            <h2 className="font-serif text-xl font-semibold text-warm-900 dark:text-warm-50">Your Rights</h2>
+            <h2 className="font-serif text-xl font-semibold text-warm-900 dark:text-warm-50">Your Digital Rights</h2>
           </div>
-          <div className="space-y-3">
-            {[
-              { title: 'Access your data', desc: 'You can request a full export of your data at any time from your Settings.' },
-              { title: 'Correct your information', desc: 'Update your profile, bio, and preferences in your Settings at any time.' },
-              { title: 'Delete your account', desc: 'Permanently delete your account and all associated data. This is irreversible and takes effect within 30 days.' },
-              { title: 'Opt out of personalization', desc: 'Turn off interest-based feed personalization in your Settings.' },
-            ].map(r => (
-              <div key={r.title} className="card">
-                <h3 className="font-semibold text-warm-900 dark:text-warm-50 text-sm mb-1">{r.title}</h3>
-                <p className="text-sm text-warm-600 dark:text-warm-400">{r.desc}</p>
-              </div>
-            ))}
+          <div className="card space-y-4">
+            <p className="text-sm text-warm-600 dark:text-warm-400 leading-relaxed">
+              You are entitled to comprehensive oversight of your digital footprint on WHISPRR. You possess the unalienable right to request and receive a full, portable export of your historical platform data directly through your configuration settings. You are equally empowered to instantly correct, modify, or redact your profile information to ensure ultimate accuracy.
+            </p>
+            <p className="text-sm text-warm-600 dark:text-warm-400 leading-relaxed">
+              Should you decide to conclude your tenure on the platform, you hold the definitive right to initiate a total account erasure, which initiates an irreversible deletion sequence across our active databases. Moreover, we actively respect your right to cognitive autonomy by providing explicit toggles to disable all interest-based feed personalization algorithms.
+            </p>
           </div>
         </section>
 
@@ -135,21 +94,14 @@ export default function TrustPage() {
         <section className="mb-10">
           <div className="flex items-center gap-2 mb-5">
             <Trash2 size={18} className="text-primary-500" />
-            <h2 className="font-serif text-xl font-semibold text-warm-900 dark:text-warm-50">Data Deletion</h2>
+            <h2 className="font-serif text-xl font-semibold text-warm-900 dark:text-warm-50">Data Deletion Protocols</h2>
           </div>
-          <div className="card">
-            <p className="text-sm text-warm-700 dark:text-warm-300 leading-relaxed mb-4">
-              When you delete your account, we permanently remove:
+          <div className="card space-y-4">
+            <p className="text-sm text-warm-700 dark:text-warm-300 leading-relaxed">
+              When you execute a request to delete your account, WHISPRR initiates a comprehensive and permanent cryptographic purge of your digital presence. This systemic erasure encompasses your core profile architecture, all associated personal identification variables, your entire archive of private correspondence, and every public whisper, comment, or reaction you have submitted. Furthermore, we systematically dismantle your algorithmic interest scores, activity history, and network connection mapping.
             </p>
-            <ul className="space-y-1.5 mb-4">
-              {['Your profile and personal information', 'Your private messages', 'Your posted content (whispers, comments)', 'Your interest scores and activity history', 'Your follows and connections'].map(item => (
-                <li key={item} className="text-sm text-warm-600 dark:text-warm-400 flex items-center gap-2">
-                  <span className="text-primary-400">→</span> {item}
-                </li>
-              ))}
-            </ul>
-            <p className="text-xs text-warm-400 dark:text-warm-500">
-              Some data may be retained for up to 30 days in backups before permanent removal.
+            <p className="text-xs text-warm-500 dark:text-warm-400">
+              Please note that while your information is immediately severed from active production environments, encrypted fragments may persist within isolated disaster-recovery backups for a maximum rotational period of thirty days prior to ultimate disintegration.
             </p>
           </div>
         </section>
