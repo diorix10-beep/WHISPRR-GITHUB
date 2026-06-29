@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { MessageCircle, Plus, Search, X, Users } from 'lucide-react';
+import { MessageCircle, Plus, Search, X, Users, Loader2 } from 'lucide-react';
 import type { Conversation, Profile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -23,6 +23,29 @@ export default function MessagesPage() {
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [searching, setSearching] = useState(false);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+
+  // Loading, Error and Keyboard navigation states
+  const [isCreatingConversation, setIsCreatingConversation] = useState(false);
+  const [conversationError, setConversationError] = useState<string | null>(null);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus input when modal opens
+  useEffect(() => {
+    if (showNewMessageModal) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+      setFocusedIndex(-1);
+      setConversationError(null);
+    }
+  }, [showNewMessageModal]);
+
+  // Reset focus index when search results change
+  useEffect(() => {
+    setFocusedIndex(-1);
+  }, [searchResults]);
 
   // Fetch conversations
   const fetchConversations = async () => {
@@ -151,27 +174,40 @@ export default function MessagesPage() {
   const handleStartConversation = async (selectedUser: Profile) => {
     if (!user) return;
 
+    setIsCreatingConversation(true);
+    setConversationError(null);
+
     try {
-      // Check if conversation already exists
-      const { data: existingConv, error: checkError } = await supabase
-        .from('conversations')
-        .select('id, conversation_participants(*)')
-        .eq('type', 'dm');
+      // 1. Fetch current user's conversations
+      const { data: myConvs, error: myConvsError } = await supabase
+        .from('conversation_participants')
+        .select('conversation_id')
+        .eq('user_id', user.id);
 
-      if (checkError) throw checkError;
+      if (myConvsError) throw myConvsError;
 
-      const existingConversation = existingConv?.find(conv => {
-        const participants = (conv.conversation_participants || []).map(p => p.user_id);
-        return participants.includes(user.id) && participants.includes(selectedUser.user_id);
-      });
+      const myIds = (myConvs || []).map(c => c.conversation_id);
+      if (myIds.length > 0) {
+        // 2. See if the target user shares any DM with current user
+        const { data: match, error: matchError } = await supabase
+          .from('conversation_participants')
+          .select('conversation_id, conversations(type)')
+          .in('conversation_id', myIds)
+          .eq('user_id', selectedUser.user_id);
 
-      if (existingConversation) {
-        setShowNewMessageModal(false);
-        navigate(`/messages/${existingConversation.id}`);
-        return;
+        if (matchError) throw matchError;
+
+        const existing = match?.find((m: any) => m.conversations?.type === 'dm');
+        if (existing) {
+          setShowNewMessageModal(false);
+          setSearchQuery('');
+          setSearchResults([]);
+          navigate(`/messages/${existing.conversation_id}`);
+          return;
+        }
       }
 
-      // Create new conversation
+      // 3. Create new conversation
       const { data: newConv, error: createError } = await supabase
         .from('conversations')
         .insert({
@@ -183,20 +219,56 @@ export default function MessagesPage() {
 
       if (createError) throw createError;
 
-      if (newConv) {
-        // Add participants
-        await supabase
-          .from('conversation_participants')
-          .insert([
-            { conversation_id: newConv.id, user_id: user.id },
-            { conversation_id: newConv.id, user_id: selectedUser.user_id },
-          ]);
-
-        setShowNewMessageModal(false);
-        navigate(`/messages/${newConv.id}`);
+      if (!newConv) {
+        throw new Error('Failed to create a conversation record.');
       }
-    } catch (error) {
+
+      // 4. Add participants
+      const { error: partError } = await supabase
+        .from('conversation_participants')
+        .insert([
+          { conversation_id: newConv.id, user_id: user.id },
+          { conversation_id: newConv.id, user_id: selectedUser.user_id },
+        ]);
+
+      if (partError) throw partError;
+
+      setShowNewMessageModal(false);
+      setSearchQuery('');
+      setSearchResults([]);
+      navigate(`/messages/${newConv.id}`);
+    } catch (error: any) {
       console.error('Error starting conversation:', error);
+      setConversationError(error.message || 'Could not start conversation. Please try again.');
+    } finally {
+      setIsCreatingConversation(false);
+    }
+  };
+
+  // Keyboard navigation handler
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      setShowNewMessageModal(false);
+      setSearchQuery('');
+      setSearchResults([]);
+      return;
+    }
+
+    if (searchResults.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setFocusedIndex(prev => (prev < searchResults.length - 1 ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setFocusedIndex(prev => (prev > 0 ? prev - 1 : searchResults.length - 1));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (focusedIndex >= 0 && focusedIndex < searchResults.length) {
+        handleStartConversation(searchResults[focusedIndex]);
+      } else if (searchResults.length > 0) {
+        handleStartConversation(searchResults[0]);
+      }
     }
   };
 
@@ -312,7 +384,7 @@ export default function MessagesPage() {
       {/* New Message Modal */}
       {showNewMessageModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
-          <div className="bg-white dark:bg-warm-800 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md mx-4 max-h-[80vh] overflow-y-auto">
+          <div className="bg-white dark:bg-warm-800 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md mx-4 max-h-[80vh] overflow-hidden flex flex-col">
             <div className="sticky top-0 bg-white dark:bg-warm-800 border-b border-warm-200 dark:border-warm-700 p-4 flex items-center justify-between rounded-t-3xl">
               <h2 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-100">
                 New Message
@@ -323,13 +395,31 @@ export default function MessagesPage() {
                   setSearchQuery('');
                   setSearchResults([]);
                 }}
-                className="btn-ghost p-2"
+                disabled={isCreatingConversation}
+                className="btn-ghost p-2 disabled:opacity-50"
               >
                 <X size={24} />
               </button>
             </div>
 
-            <div className="p-4 space-y-4">
+            <div className="p-4 space-y-4 flex-1 overflow-y-auto relative">
+              {/* Error Box */}
+              {conversationError && (
+                <div className="bg-error-50 dark:bg-error-900/30 border border-error-200 dark:border-error-800 text-error-700 dark:text-error-300 p-3 rounded-2xl text-sm flex flex-col gap-2">
+                  <p>{conversationError}</p>
+                  <button 
+                    onClick={() => {
+                      if (focusedIndex >= 0 && searchResults[focusedIndex]) {
+                        handleStartConversation(searchResults[focusedIndex]);
+                      }
+                    }}
+                    className="btn-primary self-start text-xs py-1 px-3"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+
               {/* Search Input */}
               <div className="relative">
                 <Search
@@ -337,11 +427,14 @@ export default function MessagesPage() {
                   className="absolute left-4 top-1/2 transform -translate-y-1/2 text-warm-400"
                 />
                 <input
+                  ref={searchInputRef}
                   type="text"
                   placeholder="Search by username or name..."
                   value={searchQuery}
                   onChange={e => handleSearch(e.target.value)}
-                  className="input-field pl-10"
+                  onKeyDown={handleKeyDown}
+                  disabled={isCreatingConversation}
+                  className="input-field pl-10 disabled:opacity-60"
                 />
               </div>
 
@@ -357,27 +450,35 @@ export default function MessagesPage() {
                       No users found
                     </div>
                   ) : (
-                    searchResults.map(user => (
-                      <button
-                        key={user.id}
-                        onClick={() => handleStartConversation(user)}
-                        className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-warm-100 dark:hover:bg-warm-700 transition-colors"
-                      >
-                        <Avatar
-                          emoji={user.avatar_emoji}
-                          photoUrl={user.photo_url}
-                          size="md"
-                        />
-                        <div className="text-left">
-                          <p className="font-medium text-warm-900 dark:text-warm-100">
-                            {user.display_name}
-                          </p>
-                          <p className="text-sm text-warm-600 dark:text-warm-400">
-                            @{user.username}
-                          </p>
-                        </div>
-                      </button>
-                    ))
+                    searchResults.map((user, index) => {
+                      const isFocused = index === focusedIndex;
+                      return (
+                        <button
+                          key={user.id}
+                          onClick={() => handleStartConversation(user)}
+                          disabled={isCreatingConversation}
+                          className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all duration-150 text-left outline-none ${
+                            isFocused 
+                              ? 'bg-primary-50 dark:bg-primary-950/40 ring-2 ring-primary-500 dark:ring-primary-400 scale-[1.01]' 
+                              : 'hover:bg-warm-100 dark:hover:bg-warm-700 active:scale-[0.99] active:bg-warm-200 dark:active:bg-warm-600'
+                          }`}
+                        >
+                          <Avatar
+                            emoji={user.avatar_emoji}
+                            photoUrl={user.photo_url}
+                            size="md"
+                          />
+                          <div className="text-left">
+                            <p className="font-semibold text-warm-900 dark:text-warm-100">
+                              {user.display_name}
+                            </p>
+                            <p className="text-sm text-warm-600 dark:text-warm-400">
+                              @{user.username}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })
                   )}
                 </div>
               )}
@@ -386,6 +487,14 @@ export default function MessagesPage() {
                 <div className="text-center py-8 text-warm-500">
                   <Search size={32} className="mx-auto mb-2 opacity-50" />
                   <p>Search for a user to start a conversation</p>
+                </div>
+              )}
+
+              {/* Loading State Overlay */}
+              {isCreatingConversation && (
+                <div className="absolute inset-0 bg-white/70 dark:bg-warm-800/70 flex flex-col items-center justify-center z-10">
+                  <Loader2 size={36} className="text-primary-500 animate-spin mb-2" />
+                  <p className="text-sm font-semibold text-warm-700 dark:text-warm-300">Opening chat...</p>
                 </div>
               )}
             </div>
