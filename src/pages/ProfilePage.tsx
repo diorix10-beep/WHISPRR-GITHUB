@@ -450,6 +450,68 @@ export default function ProfilePage() {
     }
   };
 
+  const handleStartConversation = async () => {
+    if (!user || !profile) return;
+
+    try {
+      // 1. Fetch current user's conversations
+      const { data: myConvs, error: myConvsError } = await supabase
+        .from('conversation_participants')
+        .select('conversation_id')
+        .eq('user_id', user.id);
+
+      if (myConvsError) throw myConvsError;
+
+      const myIds = (myConvs || []).map(c => c.conversation_id);
+      if (myIds.length > 0) {
+        // 2. See if the target user shares any DM with current user
+        const { data: match, error: matchError } = await supabase
+          .from('conversation_participants')
+          .select('conversation_id, conversations(type)')
+          .in('conversation_id', myIds)
+          .eq('user_id', profile.user_id);
+
+        if (matchError) throw matchError;
+
+        const existing = match?.find((m: any) => m.conversations?.type === 'dm');
+        if (existing) {
+          navigate(`/messages/${existing.conversation_id}`);
+          return;
+        }
+      }
+
+      // 3. Create new conversation
+      const { data: newConv, error: createError } = await supabase
+        .from('conversations')
+        .insert({
+          type: 'dm',
+          created_by: user.id,
+        })
+        .select()
+        .maybeSingle();
+
+      if (createError) throw createError;
+
+      if (!newConv) {
+        throw new Error('Failed to create conversation.');
+      }
+
+      // 4. Add participants
+      const { error: partError } = await supabase
+        .from('conversation_participants')
+        .insert([
+          { conversation_id: newConv.id, user_id: user.id },
+          { conversation_id: newConv.id, user_id: profile.user_id },
+        ]);
+
+      if (partError) throw partError;
+
+      navigate(`/messages/${newConv.id}`);
+    } catch (error) {
+      console.error('Error starting conversation:', error);
+    }
+  };
+
   const handlePinWhisper = async (whisperId: string) => {
     if (!profile || !isOwnProfile) return;
     
@@ -976,9 +1038,15 @@ export default function ProfilePage() {
                     <Edit2 size={16} /> Edit Profile
                   </button>
                 ) : (
-                  <button onClick={handleFollow} className={`flex-1 sm:flex-none py-2 px-6 text-sm ${isFollowing ? 'btn-secondary' : 'btn-primary'}`}>
-                    {isFollowing ? 'Following' : 'Follow'}
-                  </button>
+                  <div className="flex gap-2">
+                    <button onClick={handleFollow} className={`py-2 px-6 text-sm ${isFollowing ? 'btn-secondary' : 'btn-primary'}`}>
+                      {isFollowing ? 'Following' : 'Follow'}
+                    </button>
+                    <button onClick={handleStartConversation} className="py-2 px-6 text-sm btn-primary flex items-center gap-1.5">
+                      <MessageCircle size={16} />
+                      Message
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

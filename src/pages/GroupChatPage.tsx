@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, X, Check, Users, AlertTriangle, ChevronLeft } from 'lucide-react';
+import { Loader2, X, Check, Users, AlertTriangle, ChevronLeft, Search } from 'lucide-react';
 import type { Profile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -28,39 +28,58 @@ export default function GroupChatPage() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchFollowedUsers = useCallback(async () => {
     if (!user) return;
     setFetchingUsers(true);
     setFetchError(null);
     try {
-      const { data: follows, error: followsError } = await supabase
-        .from('follows')
-        .select('following_id')
-        .eq('follower_id', user.id);
-      if (followsError) throw followsError;
-
-      const followingIds = (follows || []).map(f => f.following_id);
-      if (followingIds.length === 0) {
-        setFollowedUsers([]);
-        return;
-      }
-
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
-        .in('user_id', followingIds);
+        .neq('user_id', user.id)
+        .limit(50);
+      
       if (profilesError) throw profilesError;
       setFollowedUsers(profiles || []);
     } catch (err) {
-      console.error('Error fetching followed users:', err);
-      setFetchError('Failed to load followed users. Please try again.');
+      console.error('Error fetching users:', err);
+      setFetchError('Failed to load users. Please try again.');
     } finally {
       setFetchingUsers(false);
     }
   }, [user]);
 
-  useEffect(() => { fetchFollowedUsers(); }, [fetchFollowedUsers]);
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+    if (!user) return;
+    
+    if (query.trim() === '') {
+      fetchFollowedUsers();
+      return;
+    }
+    
+    setFetchingUsers(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
+        .neq('user_id', user.id)
+        .limit(20);
+      if (error) throw error;
+      setFollowedUsers(data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setFetchingUsers(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFollowedUsers();
+  }, [fetchFollowedUsers]);
 
   const toggleUserSelection = (userId: string) => {
     if (selectedUsers.size >= MAX_PARTICIPANTS && !selectedUsers.has(userId)) {
@@ -186,7 +205,7 @@ export default function GroupChatPage() {
   return (
     <Modal>
       <ModalHeader title={groupName} />
-      <div className="p-5 space-y-4 overflow-y-auto flex-1">
+      <div className="p-5 space-y-4 overflow-y-auto flex-1 flex flex-col min-h-0">
         {createError && (
           <div className="bg-error-50 dark:bg-error-900/20 border border-error-200 dark:border-error-800 rounded-2xl p-3 text-sm text-error-700 dark:text-error-400 flex items-center gap-2">
             <AlertTriangle size={14} className="flex-shrink-0" />
@@ -195,60 +214,71 @@ export default function GroupChatPage() {
           </div>
         )}
 
-        <div>
-          <div className="flex items-center justify-between mb-3">
+        <div className="flex-1 flex flex-col min-h-0 space-y-3">
+          <div className="flex items-center justify-between">
             <label className="text-sm font-medium text-warm-700 dark:text-warm-300">
               Select Participants
             </label>
             <span className="text-xs text-warm-500">{selectedUsers.size} selected</span>
           </div>
 
-          {fetchError ? (
-            <div className="text-center py-8 space-y-3">
-              <p className="text-sm text-warm-600 dark:text-warm-400">{fetchError}</p>
-              <button onClick={fetchFollowedUsers} className="btn-primary py-2 px-5 text-sm">Try Again</button>
-            </div>
-          ) : fetchingUsers ? (
-            <div className="flex items-center justify-center py-10">
-              <Loader2 size={22} className="animate-spin text-primary-500" />
-            </div>
-          ) : followedUsers.length === 0 ? (
-            <div className="text-center py-8 space-y-3">
-              <p className="text-warm-600 dark:text-warm-400 text-sm">You haven't followed anyone yet.</p>
-              <button type="button" onClick={() => navigate('/discover')} className="btn-primary py-2 px-5 text-sm">
-                Discover Users
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-1.5">
-              {followedUsers.map(u => {
-                const isSelected = selectedUsers.has(u.user_id);
-                return (
-                  <button
-                    key={u.id}
-                    type="button"
-                    onClick={() => toggleUserSelection(u.user_id)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors text-left ${
-                      isSelected
-                        ? 'bg-primary-50 dark:bg-primary-900/25 border border-primary-200 dark:border-primary-700'
-                        : 'hover:bg-warm-100 dark:hover:bg-warm-700 border border-transparent'
-                    }`}
-                  >
-                    <Avatar emoji={u.avatar_emoji} photoUrl={u.photo_url} size="md" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-warm-900 dark:text-warm-100 text-sm truncate">{u.display_name}</p>
-                      <p className="text-xs text-warm-500">@{u.username}</p>
-                    </div>
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                      isSelected ? 'bg-primary-500 border-primary-500' : 'border-warm-300 dark:border-warm-600'
-                    }`}>
-                      {isSelected && <Check size={11} className="text-white" strokeWidth={3} />}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          {/* Search bar */}
+          <div className="relative flex-shrink-0">
+            <Search size={18} className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-warm-400" />
+            <input
+              type="text"
+              placeholder="Search by username or display name..."
+              value={searchQuery}
+              onChange={e => handleSearch(e.target.value)}
+              className="input-field pl-10"
+            />
+          </div>
+
+          <div className="flex-1 overflow-y-auto min-h-0 pr-1">
+            {fetchError ? (
+              <div className="text-center py-8 space-y-3">
+                <p className="text-sm text-warm-600 dark:text-warm-400">{fetchError}</p>
+                <button onClick={fetchFollowedUsers} className="btn-primary py-2 px-5 text-sm">Try Again</button>
+              </div>
+            ) : fetchingUsers ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 size={22} className="animate-spin text-primary-500" />
+              </div>
+            ) : followedUsers.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-warm-600 dark:text-warm-400 text-sm">No users found.</p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {followedUsers.map(u => {
+                  const isSelected = selectedUsers.has(u.user_id);
+                  return (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => toggleUserSelection(u.user_id)}
+                      className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-colors text-left ${
+                        isSelected
+                          ? 'bg-primary-50 dark:bg-primary-900/25 border border-primary-200 dark:border-primary-700'
+                          : 'hover:bg-warm-100 dark:hover:bg-warm-700 border border-transparent'
+                      }`}
+                    >
+                      <Avatar emoji={u.avatar_emoji} photoUrl={u.photo_url} size="md" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-warm-900 dark:text-warm-100 text-sm truncate">{u.display_name}</p>
+                        <p className="text-xs text-warm-500">@{u.username}</p>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                        isSelected ? 'bg-primary-500 border-primary-500' : 'border-warm-300 dark:border-warm-600'
+                      }`}>
+                        {isSelected && <Check size={11} className="text-white" strokeWidth={3} />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

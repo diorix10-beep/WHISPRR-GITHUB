@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import {
   ArrowLeft, Send, Phone, Video, Loader2, Trash2,
-  Image as ImageIcon, X, Settings, UserPlus, UserMinus, LogOut, Pencil, Smile
+  Image as ImageIcon, X, Settings, UserPlus, UserMinus, LogOut, Pencil, Smile, Search
 } from 'lucide-react';
 import type { Conversation, Message, Profile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -43,6 +43,7 @@ export default function ConversationPage() {
   const [newGroupName, setNewGroupName] = useState('');
   const [showAddMembers, setShowAddMembers] = useState(false);
   const [followedUsers, setFollowedUsers] = useState<Profile[]>([]);
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -331,21 +332,45 @@ export default function ConversationPage() {
   // Group management: add members
   const fetchFollowedForAdd = async () => {
     if (!user) return;
-    const { data: follows } = await supabase
-      .from('follows')
-      .select('following_id')
-      .eq('follower_id', user.id);
-    if (!follows) return;
-
     const existingIds = participants.map(p => p.user_id);
-    const eligibleIds = follows.map(f => f.following_id).filter(id => !existingIds.includes(id));
-    if (eligibleIds.length === 0) { setFollowedUsers([]); return; }
+    existingIds.push(user.id);
 
-    const { data: profiles } = await supabase
+    const { data: profiles, error } = await supabase
       .from('profiles')
       .select('*')
-      .in('user_id', eligibleIds);
-    setFollowedUsers(profiles || []);
+      .not('user_id', 'in', `(${existingIds.join(',')})`)
+      .limit(50);
+
+    if (!error) {
+      setFollowedUsers(profiles || []);
+    }
+  };
+
+  const handleMemberSearch = async (query: string) => {
+    setMemberSearchQuery(query);
+    if (!user) return;
+    
+    if (query.trim() === '') {
+      fetchFollowedForAdd();
+      return;
+    }
+    
+    const existingIds = participants.map(p => p.user_id);
+    existingIds.push(user.id);
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
+        .not('user_id', 'in', `(${existingIds.join(',')})`)
+        .limit(20);
+      if (!error) {
+        setFollowedUsers(data || []);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleAddMember = async (userId: string) => {
@@ -697,13 +722,23 @@ export default function ConversationPage() {
 
               {/* Add Members Panel */}
               {showAddMembers && (
-                <div>
-                  <label className="text-sm font-medium text-warm-700 dark:text-warm-300 mb-2 block">
-                    Add from your following
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-warm-700 dark:text-warm-300 block">
+                    Add members
                   </label>
+                  <div className="relative">
+                    <Search size={16} className="absolute left-3 top-2.5 text-warm-400" />
+                    <input
+                      type="text"
+                      placeholder="Search users to add..."
+                      value={memberSearchQuery}
+                      onChange={e => handleMemberSearch(e.target.value)}
+                      className="input-field pl-9 py-1.5 text-sm"
+                    />
+                  </div>
                   {followedUsers.length === 0 ? (
                     <p className="text-sm text-warm-500 py-4 text-center">
-                      No eligible users to add
+                      No matching users found
                     </p>
                   ) : (
                     <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -715,7 +750,10 @@ export default function ConversationPage() {
                             <p className="text-xs text-warm-500">@{fu.username}</p>
                           </div>
                           <button
-                            onClick={() => handleAddMember(fu.user_id)}
+                            onClick={() => {
+                              handleAddMember(fu.user_id);
+                              setMemberSearchQuery('');
+                            }}
                             className="text-primary-500 text-sm font-medium"
                           >
                             Add
