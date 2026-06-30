@@ -1,4 +1,21 @@
-export type BadgeType = 'founder' | 'verified';
+export type BadgeType = 
+  | 'founder' 
+  | 'admin'
+  | 'early_supporter'
+  | 'community_creator' 
+  | 'community_moderator'
+  | 'verified'
+  | 'top_contributor' 
+  | 'verified_org' 
+  | 'verified_creator' 
+  | 'ambassador' 
+  | 'beta_tester' 
+  | 'event_host' 
+  | 'community_champion' 
+  | 'mentor' 
+  | 'translator' 
+  | 'volunteer' 
+  | 'featured_creator';
 
 export interface Profile {
   id: string;
