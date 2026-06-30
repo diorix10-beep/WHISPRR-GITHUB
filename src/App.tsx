@@ -33,6 +33,7 @@ const MaintenancePage   = lazy(() => import('./pages/MaintenancePage'));
 const BuildingPage      = lazy(() => import('./pages/BuildingPage'));
 const LandingPage       = lazy(() => import('./pages/LandingPage'));
 const AiFamilyPage      = lazy(() => import('./pages/AiFamilyPage'));
+const CommunityProgramPage = lazy(() => import('./pages/CommunityProgramPage'));
 
 function PageLoader() {
   return (
@@ -149,6 +150,7 @@ function AppLoader() {
           <Route path="/communities"                   element={<CommunitiesPage />} />
           <Route path="/communities/:communityId"      element={<CommunityDetailPage />} />
           <Route path="/ai-family"                     element={<AiFamilyPage />} />
+          <Route path="/community-program"             element={<CommunityProgramPage />} />
           <Route path="/whisper/:id"                   element={<WhisperDetailPage />} />
           <Route path="/voice-rooms"                   element={<VoiceRoomsPage />} />
           <Route path="/voice-rooms/:roomId"           element={<VoiceRoomsPage />} />

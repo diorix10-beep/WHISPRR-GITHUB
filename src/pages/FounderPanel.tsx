@@ -10,7 +10,7 @@ import { supabase } from '../lib/supabase';
 import type { Profile, Community } from '../types';
 import { Avatar } from '../components/common/Avatar';
 
-type PanelTab = 'system' | 'monitoring' | 'users' | 'communities' | 'testing' | 'feedback' | 'badges' | 'updates' | 'ai-team';
+type PanelTab = 'system' | 'monitoring' | 'users' | 'communities' | 'badges' | 'updates' | 'ai-team' | 'testing' | 'feedback' | 'community';
 
 interface SystemSettingsModel {
   enabled: boolean;
@@ -709,7 +709,8 @@ export default function FounderPanel() {
              { key: 'updates' as PanelTab, icon: PenTool, label: 'Publish Updates' },
              { key: 'ai-team' as PanelTab, icon: Bot, label: 'AI Team' },
              { key: 'testing' as PanelTab, icon: ShieldCheck, label: 'Testing' },
-             { key: 'feedback' as PanelTab, icon: Bug, label: 'Bugs' }
+             { key: 'feedback' as PanelTab, icon: Bug, label: 'Bugs' },
+             { key: 'community' as PanelTab, icon: Users, label: 'Community' }
           ]).map(tab => {
              const Icon = tab.icon;
              return (
@@ -2085,6 +2086,86 @@ export default function FounderPanel() {
                 <p className="text-warm-500">[10:50:00] -- System: Connected all AI agent loops.</p>
              </div>
           </div>
+        </div>
+      )}
+
+      {activeTab === 'community' && (
+        <div className="space-y-6">
+           <div className="bg-[#181818] border border-white/[0.06] p-6 rounded-3xl shadow-soft space-y-4">
+              <h3 className="font-serif text-lg font-bold text-white border-b border-white/[0.06] pb-3">
+                 Community Program Manager
+              </h3>
+              <p className="text-xs text-warm-400">
+                 Manage Ambassador applications, Creator badges allocation, and audit global referral network loops.
+              </p>
+           </div>
+
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Ambassador & Creator Applications List */}
+              <div className="bg-[#181818] border border-white/[0.06] p-6 rounded-3xl space-y-4 shadow-soft">
+                 <h4 className="font-serif text-base font-bold text-white">Pending Applications</h4>
+                 <div className="space-y-3">
+                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.04] space-y-2">
+                       <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-amber-400 uppercase tracking-wider text-[9px] px-2 py-0.5 bg-amber-500/10 rounded-full">
+                             Ambassador Application
+                          </span>
+                          <span className="text-warm-500 font-mono">Pending</span>
+                       </div>
+                       <h5 className="font-bold text-sm text-white">@alex_community</h5>
+                       <p className="text-xs text-warm-300">"I want to organize local university tech talks and set up stickers/posters for WHISPRR."</p>
+                       <div className="flex gap-2 pt-2">
+                          <button onClick={() => showToast('Approved @alex_community as Ambassador!', 'success')} className="btn-primary py-1 px-3 text-[10px] rounded-lg">Approve</button>
+                          <button onClick={() => showToast('Application rejected.', 'error')} className="btn-secondary py-1 px-3 text-[10px] rounded-lg">Reject</button>
+                       </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.04] space-y-2">
+                       <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-primary-400 uppercase tracking-wider text-[9px] px-2 py-0.5 bg-primary-500/10 rounded-full">
+                             Creator Application
+                          </span>
+                          <span className="text-warm-500 font-mono">Pending</span>
+                       </div>
+                       <h5 className="font-bold text-sm text-white">@tech_weekly • YouTube</h5>
+                       <p className="text-xs text-warm-300">"I review security-first apps and want to create a full tutorial video on WHISPRR's decentralized feeds."</p>
+                       <div className="flex gap-2 pt-2">
+                          <button onClick={() => showToast('Approved Creator status and granted Verified Creator Badge!', 'success')} className="btn-primary py-1 px-3 text-[10px] rounded-lg">Approve</button>
+                          <button onClick={() => showToast('Application rejected.', 'error')} className="btn-secondary py-1 px-3 text-[10px] rounded-lg">Reject</button>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+
+              {/* Referral Statistics & Campaign Manager */}
+              <div className="bg-[#181818] border border-white/[0.06] p-6 rounded-3xl space-y-4 shadow-soft">
+                 <h4 className="font-serif text-base font-bold text-white">Referral Campaigns</h4>
+                 <div className="space-y-4">
+                    <div className="p-4 bg-white/[0.02] border border-white/[0.04] rounded-2xl space-y-2">
+                       <h5 className="font-bold text-xs text-white">Launch Campaign: WHISPRR Early Adopter</h5>
+                       <p className="text-[11px] text-warm-400">Reward: Early Member Badge to every user inviting 3+ friends.</p>
+                       <div className="flex justify-between items-center text-xs pt-2">
+                          <span className="text-emerald-400 font-semibold">● Active</span>
+                          <span className="text-warm-500">124 users qualified</span>
+                       </div>
+                    </div>
+
+                    <div className="space-y-2">
+                       <h5 className="font-bold text-xs text-white">Leaderboard Audit</h5>
+                       <div className="space-y-2 text-xs text-warm-300">
+                          <div className="flex justify-between border-b border-white/[0.02] pb-1">
+                             <span>1. @nyny59 (Founder)</span>
+                             <span className="font-mono">48 invites</span>
+                          </div>
+                          <div className="flex justify-between border-b border-white/[0.02] pb-1">
+                             <span>2. @zen_garden (Ambassador)</span>
+                             <span className="font-mono">32 invites</span>
+                          </div>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+           </div>
         </div>
       )}
     </div>

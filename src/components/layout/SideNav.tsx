@@ -175,6 +175,14 @@ export function SideNav() {
               </button>
 
               <button
+                onClick={() => { navigate('/community-program'); setShowMenu(false); }}
+                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-left text-warm-700 dark:text-warm-200 hover:bg-warm-50 dark:hover:bg-warm-800 transition-colors"
+              >
+                <Users size={15} className="text-primary-500" />
+                <span>Community Program</span>
+              </button>
+
+              <button
                 onClick={() => { navigate('/settings?tab=about'); setShowMenu(false); }}
                 className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-left text-warm-700 dark:text-warm-200 hover:bg-warm-50 dark:hover:bg-warm-800 transition-colors"
               >
