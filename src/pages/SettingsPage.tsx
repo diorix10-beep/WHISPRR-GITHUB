@@ -344,6 +344,18 @@ export default function SettingsPage() {
           </div>
           <div className="pt-4 border-t border-warm-200 dark:border-warm-700 space-y-2">
             <a
+              href="/building"
+              className="block text-sm text-primary-500 hover:underline"
+            >
+              Ecosystem Roadmap
+            </a>
+            <a
+              href="/"
+              className="block text-sm text-primary-500 hover:underline"
+            >
+              Project Website & About
+            </a>
+            <a
               href="/terms"
               className="block text-sm text-primary-500 hover:underline"
             >
