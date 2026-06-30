@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import { 
   Bot, Sparkles, MessageSquare, Shield, Cpu, BookOpen, Clock, 
-  Terminal, ShieldCheck, Database, GitBranch, Heart, Settings
+  Terminal, ShieldCheck, Database, GitBranch, Heart, Settings, BarChart2
 } from 'lucide-react';
 import { FAMILY_ROSTER, getMemberById } from '../../oracle-verity/src/core/family-roster.ts';
+import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { supabase } from '../lib/supabase';
 
-// Extended client-side metadata for "Living Profiles"
 interface LivingAiMetadata {
   status: 'Available' | 'Busy' | 'Deploying' | 'Researching' | 'Maintenance';
   statusColor: string;
-  metrics: { label: string; value: string | number }[];
   recentWork: string[];
   tasks: string[];
 }
@@ -19,11 +19,6 @@ const LIVING_METADATA: Record<string, LivingAiMetadata> = {
   oracle: {
     status: 'Available',
     statusColor: 'bg-emerald-500 text-emerald-400 border-emerald-500/20',
-    metrics: [
-      { label: 'Conversations Active', value: '42' },
-      { label: 'Users Guided Today', value: '189' },
-      { label: 'Announcements Prepared', value: '3' }
-    ],
     recentWork: [
       'Synchronized central context database',
       'Briefed Atlas on product feedback alignment',
@@ -39,11 +34,6 @@ const LIVING_METADATA: Record<string, LivingAiMetadata> = {
   iris: {
     status: 'Available',
     statusColor: 'bg-emerald-500 text-emerald-400 border-emerald-500/20',
-    metrics: [
-      { label: 'Systems Monitored', value: '24' },
-      { label: 'Infrastructure Health', value: '99.98%' },
-      { label: 'Uptime (Last 30d)', value: '99.99%' }
-    ],
     recentWork: [
       'Scaled Postgres connections count',
       'Cleared database schema cache lock',
@@ -59,11 +49,6 @@ const LIVING_METADATA: Record<string, LivingAiMetadata> = {
   atlas: {
     status: 'Deploying',
     statusColor: 'bg-blue-500 text-blue-400 border-blue-500/20',
-    metrics: [
-      { label: 'Completed Deployments', value: '246' },
-      { label: 'Monitored Repos', value: '5' },
-      { label: 'Technical Health Score', value: '98/100' }
-    ],
     recentWork: [
       'Deployed production release v1.3.0',
       'Optimized Vite bundler build timings',
@@ -79,11 +64,6 @@ const LIVING_METADATA: Record<string, LivingAiMetadata> = {
   athena: {
     status: 'Researching',
     statusColor: 'bg-purple-500 text-purple-400 border-purple-500/20',
-    metrics: [
-      { label: 'Feedback Items Analyzed', value: '381' },
-      { label: 'Roadmap Tasks Indexed', value: '18' },
-      { label: 'Knowledge Base Articles', value: '1,240' }
-    ],
     recentWork: [
       'Indexed new Supabase Postgres triggers docs',
       'Analyzed mobile navigation routing issues',
@@ -99,11 +79,6 @@ const LIVING_METADATA: Record<string, LivingAiMetadata> = {
   aegis: {
     status: 'Available',
     statusColor: 'bg-emerald-500 text-emerald-400 border-emerald-500/20',
-    metrics: [
-      { label: 'Threats Blocked', value: '1,492' },
-      { label: 'Abuse Reports Cleared', value: '12' },
-      { label: 'Security Score', value: 'A+' }
-    ],
     recentWork: [
       'Banned credential stuffing attack IPs',
       'Verified RLS bypass logic constraints',
@@ -119,11 +94,6 @@ const LIVING_METADATA: Record<string, LivingAiMetadata> = {
   whisprr: {
     status: 'Available',
     statusColor: 'bg-emerald-500 text-emerald-400 border-emerald-500/20',
-    metrics: [
-      { label: 'Active Communities', value: '14' },
-      { label: 'Whispers Moderated', value: '3,810' },
-      { label: 'Engagement Rate', value: '+14.2%' }
-    ],
     recentWork: [
       'Welcomed 150 new users to Discord',
       'Organized weekly voice room discussion',
@@ -139,16 +109,48 @@ const LIVING_METADATA: Record<string, LivingAiMetadata> = {
 };
 
 export default function AiFamilyPage() {
+  const { profile } = useAuth();
   const { showToast } = useToast();
   const [selectedAgentId, setSelectedAgentId] = useState<string>('oracle');
-  const [ticker, setTicker] = useState<number>(0);
+  const [dbMetrics, setDbMetrics] = useState<any[]>([]);
+  const [loadingMetrics, setLoadingMetrics] = useState<boolean>(true);
 
-  // Periodic random update to simulate background activity
+  const isFounder = profile?.role === 'founder';
+
+  // Fetch metrics dynamically from backend
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTicker(t => t + 1);
-    }, 15000);
-    return () => clearInterval(timer);
+    let channel: any;
+    
+    const fetchMetrics = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('ai_metrics')
+          .select('*');
+        if (!error && data) {
+          setDbMetrics(data);
+        }
+      } catch (err) {
+        console.warn("Could not load database metrics:", err);
+      } finally {
+        setLoadingMetrics(false);
+      }
+    };
+
+    fetchMetrics();
+
+    // Subscribe to realtime metrics updates
+    try {
+      channel = supabase
+        .channel('ai_metrics_realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ai_metrics' }, (payload) => {
+          fetchMetrics();
+        })
+        .subscribe();
+    } catch {}
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   const aiMembers = FAMILY_ROSTER.filter(m => m.id !== 'anthony');
@@ -161,16 +163,21 @@ export default function AiFamilyPage() {
 
   const getAgentTheme = (id: string) => {
     switch (id) {
-      case 'oracle': return { gradient: 'from-amber-500/10 to-amber-500/0', border: 'border-amber-500/20', text: 'text-amber-400', icon: <Sparkles className="text-amber-400" /> };
-      case 'iris': return { gradient: 'from-purple-500/10 to-purple-500/0', border: 'border-purple-500/20', text: 'text-purple-400', icon: <Cpu className="text-purple-400" /> };
-      case 'aegis': return { gradient: 'from-red-500/10 to-red-500/0', border: 'border-red-500/20', text: 'text-red-400', icon: <Shield className="text-red-400" /> };
-      case 'atlas': return { gradient: 'from-blue-500/10 to-blue-500/0', border: 'border-blue-500/20', text: 'text-blue-400', icon: <GitBranch className="text-blue-400" /> };
-      case 'athena': return { gradient: 'from-cyan-500/10 to-cyan-500/0', border: 'border-cyan-500/20', text: 'text-cyan-400', icon: <BookOpen className="text-cyan-400" /> };
-      default: return { gradient: 'from-primary-500/10 to-primary-500/0', border: 'border-primary-500/20', text: 'text-primary-400', icon: <Bot className="text-primary-400" /> };
+      case 'oracle': return { gradient: 'from-amber-500/10 to-amber-500/0', border: 'border-amber-500/20', text: 'text-amber-400' };
+      case 'iris': return { gradient: 'from-purple-500/10 to-purple-500/0', border: 'border-purple-500/20', text: 'text-purple-400' };
+      case 'aegis': return { gradient: 'from-red-500/10 to-red-500/0', border: 'border-red-500/20', text: 'text-red-400' };
+      case 'atlas': return { gradient: 'from-blue-500/10 to-blue-500/0', border: 'border-blue-500/20', text: 'text-blue-400' };
+      case 'athena': return { gradient: 'from-cyan-500/10 to-cyan-500/0', border: 'border-cyan-500/20', text: 'text-cyan-400' };
+      default: return { gradient: 'from-primary-500/10 to-primary-500/0', border: 'border-primary-500/20', text: 'text-primary-400' };
     }
   };
 
   const currentTheme = getAgentTheme(selectedAgent.id);
+
+  // Filter backend metrics for the selected agent
+  const agentMetrics = dbMetrics.filter(m => m.agent_id === selectedAgent.id);
+  const userMetrics = agentMetrics.filter(m => !m.is_admin_only);
+  const adminMetrics = agentMetrics.filter(m => m.is_admin_only);
 
   return (
     <div className="page-container max-w-5xl space-y-8 animate-fade-in pb-16">
@@ -204,7 +211,6 @@ export default function AiFamilyPage() {
             {aiMembers.map((member) => {
               const isSelected = selectedAgentId === member.id;
               const meta = LIVING_METADATA[member.id] || LIVING_METADATA.oracle;
-              const theme = getAgentTheme(member.id);
               
               return (
                 <button
@@ -245,7 +251,6 @@ export default function AiFamilyPage() {
             {/* Header section with Portrait & Name */}
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-white/[0.06] pb-5 relative">
               <div className="flex items-center gap-4">
-                {/* Visual Avatar Portrait replacement with accente colors */}
                 <div className={`w-16 h-16 rounded-2xl border ${currentTheme.border} bg-white/[0.02] flex items-center justify-center text-3xl shadow-inner`}>
                   {selectedAgent.emoji}
                 </div>
@@ -269,15 +274,50 @@ export default function AiFamilyPage() {
               </button>
             </div>
 
-            {/* Live Metrics Deck */}
-            <div className="grid grid-cols-3 gap-4 relative">
-              {selectedMeta.metrics.map((metric, i) => (
-                <div key={i} className="bg-white/[0.02] border border-white/[0.04] p-3 rounded-xl text-center space-y-1">
-                  <p className="text-[10px] text-warm-500 font-bold uppercase tracking-wider">{metric.label}</p>
-                  <p className="text-lg font-serif font-bold text-white">{metric.value}</p>
+            {/* Live Metrics Deck (Backend sync or empty state) */}
+            <div className="space-y-3 relative">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-warm-500 flex items-center gap-1.5">
+                <BarChart2 size={13} /> Live Stats
+              </h4>
+              
+              {loadingMetrics ? (
+                <div className="text-xs text-warm-500 italic">Syncing with neural telemetry...</div>
+              ) : userMetrics.length > 0 ? (
+                <div className="grid grid-cols-3 gap-4">
+                  {userMetrics.map((metric, i) => (
+                    <div key={i} className="bg-white/[0.02] border border-white/[0.04] p-3 rounded-xl text-center space-y-1">
+                      <p className="text-[10px] text-warm-500 font-bold uppercase tracking-wider">{metric.name}</p>
+                      <p className="text-lg font-serif font-bold text-white">{metric.value}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <div className="bg-white/[0.01] border border-dashed border-white/[0.04] p-4 rounded-xl text-center text-xs text-warm-500 italic">
+                  No activity logs registered today. Waiting for live telemetry...
+                </div>
+              )}
             </div>
+
+            {/* Founder Private Administrative Metrics */}
+            {isFounder && (
+              <div className="space-y-3 bg-primary-950/20 border border-primary-500/10 p-4 rounded-2xl relative">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-primary-400 flex items-center gap-1.5">
+                  <Settings size={13} /> Administrative Telemetry (Founder Only)
+                </h4>
+                {adminMetrics.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {adminMetrics.map((metric, i) => (
+                      <div key={i} className="bg-black/30 border border-white/[0.02] p-2.5 rounded-lg text-center">
+                        <p className="text-[9px] text-warm-500 uppercase font-bold">{metric.name}</p>
+                        <p className="text-sm font-mono font-semibold text-primary-300 mt-0.5">{metric.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-warm-500 italic">No admin telemetry recorded. System runs at optimal bounds.</p>
+                )}
+              </div>
+            )}
 
             {/* Biography */}
             <div className="space-y-2 relative">
