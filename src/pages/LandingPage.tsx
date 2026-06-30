@@ -281,7 +281,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate('/')}
-              className="hidden sm:inline-block text-xs font-bold text-warm-600 dark:text-warm-350 hover:text-warm-900 dark:hover:text-warm-50 transition-colors"
+              className="hidden sm:inline-block text-xs font-bold text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-warm-50 transition-colors"
             >
               Open Platform
             </button>
@@ -355,7 +355,7 @@ export default function LandingPage() {
                          <span className="text-[8px] bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 font-bold px-1.5 py-0.5 rounded">ONLINE</span>
                        </div>
                        
-                       <div className="p-3.5 bg-white dark:bg-warm-800 rounded-2xl border border-warm-200/50 dark:border-warm-750 shadow-sm space-y-2">
+                       <div className="p-3.5 bg-white dark:bg-warm-800 rounded-2xl border border-warm-200/50 dark:border-warm-800/40 shadow-sm space-y-2">
                          <div className="flex items-center gap-1">
                             <span className="text-[10px]">👑</span>
                             <span className="font-bold text-[10px] text-warm-900 dark:text-warm-100">nyny59</span>
@@ -367,7 +367,7 @@ export default function LandingPage() {
                        </div>
                      </div>
 
-                     <div className="space-y-1.5 pt-4 border-t border-warm-200/50 dark:border-warm-750">
+                     <div className="space-y-1.5 pt-4 border-t border-warm-200/50 dark:border-warm-800/40">
                         <p className="text-[9px] text-warm-500 text-center">Ready to explore?</p>
                         <div className="w-full py-1.5 bg-primary-500 text-white text-center rounded-xl text-[9px] font-bold cursor-pointer" onClick={() => navigate('/auth')}>
                            Launch Platform
@@ -380,20 +380,20 @@ export default function LandingPage() {
 
             {/* Mission & Vision cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8">
-               <div className="bg-white dark:bg-warm-800 p-8 rounded-3xl border border-warm-150 dark:border-warm-700 shadow-soft space-y-3">
-                  <span className="text-primary-500 font-bold text-xs uppercase tracking-wider block">Our Mission</span>
-                  <h3 className="font-serif text-2xl font-bold text-warm-900 dark:text-warm-50">Empowering human agency</h3>
-                  <p className="text-sm text-warm-600 dark:text-warm-400 leading-relaxed">
-                     To design and build a communication architecture that serves user dialogue rather than corporate interest. 
+               <div className="public-card p-8 space-y-3">
+                  <span className="text-primary-400 font-bold text-xs uppercase tracking-wider block">Our Mission</span>
+                  <h3 className="font-serif text-2xl font-bold text-warm-50">Empowering human agency</h3>
+                  <p className="text-sm text-warm-400 leading-relaxed">
+                     To design and build a communication architecture that serves user dialogue rather than corporate interest.
                      We construct systems that support mindful interaction, intellectual safety, and decentralized community creation.
                   </p>
                </div>
 
-               <div className="bg-white dark:bg-warm-800 p-8 rounded-3xl border border-warm-150 dark:border-warm-700 shadow-soft space-y-3">
-                  <span className="text-accent-500 font-bold text-xs uppercase tracking-wider block">Our Vision</span>
-                  <h3 className="font-serif text-2xl font-bold text-warm-900 dark:text-warm-50">A healthier social web</h3>
-                  <p className="text-sm text-warm-600 dark:text-warm-400 leading-relaxed">
-                     A digital town square where members collaborate without addictive infinite loops, where trust is built through 
+               <div className="public-card p-8 space-y-3">
+                  <span className="text-accent-400 font-bold text-xs uppercase tracking-wider block">Our Vision</span>
+                  <h3 className="font-serif text-2xl font-bold text-warm-50">A healthier social web</h3>
+                  <p className="text-sm text-warm-400 leading-relaxed">
+                     A digital town square where members collaborate without addictive infinite loops, where trust is built through
                      history and mutual responsibility, and where identity is earned, meaningful, and secure.
                   </p>
                </div>
@@ -409,9 +409,9 @@ export default function LandingPage() {
                      { title: 'Zero Extraction', desc: 'No surveillance business models, ad tracking networks, or infinite feeds.' },
                      { title: 'Responsibility', desc: 'Moderators and creators own and guide their community guidelines.' }
                   ]).map((val, i) => (
-                     <div key={i} className="p-5 bg-warm-100/40 dark:bg-warm-850/20 border border-warm-150 dark:border-warm-800 rounded-2xl">
-                        <h4 className="font-bold text-sm text-warm-900 dark:text-warm-100 mb-1">{val.title}</h4>
-                        <p className="text-xs text-warm-500 leading-relaxed">{val.desc}</p>
+                     <div key={i} className="public-card p-5">
+                        <h4 className="font-bold text-sm text-warm-50 mb-1">{val.title}</h4>
+                        <p className="text-xs text-warm-400 leading-relaxed">{val.desc}</p>
                      </div>
                   ))}
                </div>
@@ -432,7 +432,7 @@ export default function LandingPage() {
              </div>
 
              <div className="space-y-6">
-                <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-50 border-b border-warm-200 dark:border-warm-750 pb-2">
+                <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-50 border-b border-warm-200 dark:border-warm-800/40 pb-2">
                    How WHISPRR is Different
                 </h3>
 
@@ -472,7 +472,7 @@ export default function LandingPage() {
                 <div>
                    <h4 className="font-serif font-bold text-sm text-warm-900 dark:text-warm-100">Project Integrity Statement</h4>
                    <p className="text-xs text-warm-600 dark:text-warm-400 mt-1 leading-relaxed">
-                      WHISPRR’s backend and interface designs are built openly. We believe in providing clear tools 
+                      WHISPRR’ backend and interface designs are built openly. We believe in providing clear tools 
                       so that users feel in control of their digital interactions.
                    </p>
                 </div>
@@ -490,7 +490,7 @@ export default function LandingPage() {
 
              {/* Roadmap section */}
              <div className="space-y-4">
-                <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-750 pb-2">
+                <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-800/40 pb-2">
                    Public Roadmap
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -501,7 +501,7 @@ export default function LandingPage() {
                       </div>
                       <div className="space-y-2">
                          {ROADMAP_ITEMS.filter(r => r.status === 'released').map((item, idx) => (
-                            <div key={idx} className="p-2.5 bg-white dark:bg-warm-800 rounded-xl border border-emerald-500/20 dark:border-emerald-500/30 text-xs shadow-sm leading-tight">
+                            <div key={idx} className="public-card-status border-emerald-800/40 p-2.5 text-xs leading-tight">
                                <p className="font-bold text-warm-900 dark:text-warm-150 flex items-center justify-between gap-1.5">
                                  <span>{item.title}</span>
                                  <span className="text-[8px] bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 font-bold px-1.5 rounded shrink-0">✓</span>
@@ -518,7 +518,7 @@ export default function LandingPage() {
                       </div>
                       <div className="space-y-2">
                          {ROADMAP_ITEMS.filter(r => r.status === 'in_progress').map((item, idx) => (
-                            <div key={idx} className="p-2.5 bg-white dark:bg-warm-800 rounded-xl border border-orange-500/20 dark:border-orange-500/30 text-xs shadow-sm leading-tight">
+                            <div key={idx} className="public-card-status border-amber-800/40 p-2.5 text-xs leading-tight">
                                <p className="font-bold text-warm-900 dark:text-warm-150 flex items-center justify-between gap-1.5">
                                  <span>{item.title}</span>
                                  <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-ping shrink-0" />
@@ -535,7 +535,7 @@ export default function LandingPage() {
                       </div>
                       <div className="space-y-2">
                          {ROADMAP_ITEMS.filter(r => r.status === 'testing').map((item, idx) => (
-                            <div key={idx} className="p-2.5 bg-white dark:bg-warm-800 rounded-xl border border-purple-500/20 dark:border-purple-500/30 text-xs shadow-sm leading-tight">
+                            <div key={idx} className="public-card-status border-purple-800/40 p-2.5 text-xs leading-tight">
                                <p className="font-bold text-warm-900 dark:text-warm-150 flex items-center justify-between gap-1.5">
                                  <span>{item.title}</span>
                                  <span className="text-[8px] bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 font-bold px-1.5 rounded shrink-0">🧪</span>
@@ -552,7 +552,7 @@ export default function LandingPage() {
                       </div>
                       <div className="space-y-2">
                          {ROADMAP_ITEMS.filter(r => r.status === 'planned').map((item, idx) => (
-                            <div key={idx} className="p-2.5 bg-white dark:bg-warm-800 rounded-xl border border-blue-500/20 dark:border-blue-500/30 text-xs shadow-sm leading-tight">
+                            <div key={idx} className="public-card-status border-blue-800/40 p-2.5 text-xs leading-tight">
                                <p className="font-bold text-warm-900 dark:text-warm-150 flex items-center justify-between gap-1.5">
                                  <span>{item.title}</span>
                                  <span className="text-[8px] bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 font-bold px-1.5 rounded shrink-0">Planned</span>
@@ -569,7 +569,7 @@ export default function LandingPage() {
                       </div>
                       <div className="space-y-2">
                          {ROADMAP_ITEMS.filter(r => r.status === 'future_vision').map((item, idx) => (
-                            <div key={idx} className="p-2.5 bg-white dark:bg-warm-800 rounded-xl border border-pink-500/20 dark:border-pink-500/30 text-xs shadow-sm leading-tight">
+                            <div key={idx} className="public-card-status border-pink-800/40 p-2.5 text-xs leading-tight">
                                <p className="font-bold text-warm-900 dark:text-warm-150 flex items-center justify-between gap-1.5">
                                  <span>{item.title}</span>
                                  <span className="text-[8px] bg-pink-50 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300 font-bold px-1.5 rounded shrink-0">✨</span>
@@ -583,7 +583,7 @@ export default function LandingPage() {
 
              {/* Journey Timeline */}
              <div className="space-y-6">
-                <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-750 pb-2">
+                <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-800/40 pb-2">
                    Product Journey
                 </h3>
                 <div className="relative pl-6 md:pl-0 border-l md:border-l-0 md:flex md:flex-row md:justify-between md:items-start border-warm-250 dark:border-warm-800 space-y-6 md:space-y-0 py-6">
@@ -607,7 +607,7 @@ export default function LandingPage() {
                             <div className={`p-4 bg-white dark:bg-warm-800 rounded-2xl border text-left shadow-soft inline-block md:w-full md:mt-8 relative transition-all ${
                                isCompleted 
                                   ? 'border-emerald-500/20 dark:border-emerald-500/30' 
-                                  : 'border-warm-150 dark:border-warm-750 opacity-75'
+                                  : 'border-warm-150 dark:border-warm-800/40 opacity-75'
                             }`}>
                                <span className={`text-[8px] font-bold uppercase tracking-wider block mb-0.5 ${
                                   isCompleted ? 'text-emerald-600 dark:text-emerald-400' : 'text-warm-450'
@@ -625,13 +625,13 @@ export default function LandingPage() {
 
              {/* Public Changelog */}
              <div className="space-y-6">
-                <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-750 pb-2">
+                <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-800/40 pb-2">
                    Public Changelog
                 </h3>
                 <div className="space-y-6">
                    {CHANGELOGS.map((ch, idx) => (
-                      <div key={idx} className="bg-white dark:bg-warm-800 p-6 rounded-2xl border border-warm-150 dark:border-warm-700 shadow-sm space-y-4">
-                         <div className="flex items-center justify-between pb-2 border-b border-warm-100 dark:border-warm-750">
+                      <div key={idx} className="public-card p-6 rounded-2xl space-y-4">
+                         <div className="flex items-center justify-between p-3.5 public-card-secondary rounded-2xl border border-warm-100 dark:border-warm-800/40">
                             <div>
                                <span className="font-bold text-lg text-warm-900 dark:text-warm-50">{ch.version}</span>
                                <span className="text-xs text-warm-500 ml-2">({ch.date})</span>
@@ -642,25 +642,25 @@ export default function LandingPage() {
                          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-xs leading-relaxed">
                             <div className="space-y-1">
                                <p className="font-bold text-emerald-600 dark:text-emerald-450 uppercase tracking-wide">New Features</p>
-                               <ul className="list-disc list-inside space-y-0.5 text-warm-600 dark:text-warm-350">
+                               <ul className="list-disc list-inside space-y-0.5 text-warm-600 dark:text-warm-400">
                                   {ch.newFeatures.map((f, i) => <li key={i}>{f}</li>)}
                                </ul>
                             </div>
                             <div className="space-y-1">
                                <p className="font-bold text-primary-500 uppercase tracking-wide">Improvements</p>
-                               <ul className="list-disc list-inside space-y-0.5 text-warm-600 dark:text-warm-350">
+                               <ul className="list-disc list-inside space-y-0.5 text-warm-600 dark:text-warm-400">
                                   {ch.improvements.map((f, i) => <li key={i}>{f}</li>)}
                                </ul>
                             </div>
                             <div className="space-y-1">
                                <p className="font-bold text-red-500 uppercase tracking-wide">Bug Fixes</p>
-                               <ul className="list-disc list-inside space-y-0.5 text-warm-600 dark:text-warm-350">
+                               <ul className="list-disc list-inside space-y-0.5 text-warm-600 dark:text-warm-400">
                                   {ch.bugFixes.map((f, i) => <li key={i}>{f}</li>)}
                                </ul>
                             </div>
                             <div className="space-y-1">
                                <p className="font-bold text-purple-500 uppercase tracking-wide">Performance</p>
-                               <ul className="list-disc list-inside space-y-0.5 text-warm-600 dark:text-warm-350">
+                               <ul className="list-disc list-inside space-y-0.5 text-warm-600 dark:text-warm-400">
                                   {ch.performance.map((f, i) => <li key={i}>{f}</li>)}
                                </ul>
                             </div>
@@ -672,17 +672,17 @@ export default function LandingPage() {
 
              {/* Community Feedback Impact logs */}
              <div className="space-y-6">
-                <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-750 pb-2">
+                <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-800/40 pb-2">
                    Community Feedback Impact
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                    {FEEDBACK_IMPACTS.map((f, idx) => (
-                      <div key={idx} className="p-4 bg-warm-100/50 dark:bg-warm-850/30 border border-warm-150 dark:border-warm-800 rounded-xl flex items-center justify-between text-xs">
+                      <article key={idx} className="public-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
                          <div>
                             <p className="font-bold text-warm-900 dark:text-warm-100">{f.title}</p>
                             <p className="text-[10px] text-warm-500 mt-0.5">👍 {f.votes} community interest flags</p>
                          </div>
-                         <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                         <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full self-start ${
                             f.status === 'implemented' || f.status === 'recently_completed'
                                ? 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300'
                                : f.status === 'reviewing'
@@ -691,7 +691,7 @@ export default function LandingPage() {
                          }`}>
                             {f.status.replace('_', ' ')}
                          </span>
-                      </div>
+                      </article>
                    ))}
                 </div>
              </div>
@@ -726,7 +726,7 @@ export default function LandingPage() {
              {/* Articles list */}
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {filteredArticles.map((art, idx) => (
-                   <article key={idx} className="bg-white dark:bg-warm-800 p-6 rounded-2xl border border-warm-150 dark:border-warm-700 shadow-sm flex flex-col justify-between space-y-4">
+                   <article key={idx} className="public-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
                       <div className="space-y-2">
                          <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wider">
                             <span className="text-primary-500">{art.category}</span>
@@ -741,12 +741,12 @@ export default function LandingPage() {
                       </div>
                       
                       {art.content && (
-                         <div className="p-3 bg-warm-50 dark:bg-warm-900 border border-warm-100 dark:border-warm-850 rounded-xl text-xs italic text-warm-600 dark:text-warm-400">
+                         <div className="public-card-secondary p-3 text-xs italic text-warm-400">
                             {art.content}
                          </div>
                       )}
 
-                      <div className="flex items-center justify-between pt-3 border-t border-warm-100 dark:border-warm-750 text-[10px] text-warm-500">
+                      <div className="flex items-center justify-between pt-3 border-t border-warm-100 dark:border-warm-800/40 text-[10px] text-warm-500">
                          <span className="font-semibold">By {art.author}</span>
                          <span>{art.readTime}</span>
                       </div>
@@ -768,7 +768,7 @@ export default function LandingPage() {
              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 
                 {/* Guidelines */}
-                <div className="bg-white dark:bg-warm-800 p-6 rounded-2xl border border-warm-150 dark:border-warm-700 shadow-sm space-y-3">
+                <div className="public-card p-6 rounded-2xl space-y-3">
                    <div className="w-8 h-8 rounded-xl bg-primary-50 dark:bg-primary-950/20 text-primary-500 flex items-center justify-center">
                       <Shield size={16} />
                    </div>
@@ -782,7 +782,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Rewards */}
-                <div className="bg-white dark:bg-warm-800 p-6 rounded-2xl border border-warm-150 dark:border-warm-700 shadow-sm space-y-3">
+                <div className="public-card p-6 rounded-2xl space-y-3">
                    <div className="w-8 h-8 rounded-xl bg-primary-50 dark:bg-primary-950/20 text-primary-500 flex items-center justify-center">
                       <Award size={16} />
                    </div>
@@ -796,7 +796,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Contributors */}
-                <div className="bg-white dark:bg-warm-800 p-6 rounded-2xl border border-warm-150 dark:border-warm-700 shadow-sm space-y-3">
+                <div className="public-card p-6 rounded-2xl space-y-3">
                    <div className="w-8 h-8 rounded-xl bg-primary-50 dark:bg-primary-950/20 text-primary-500 flex items-center justify-center">
                       <Users size={16} />
                    </div>
@@ -813,8 +813,8 @@ export default function LandingPage() {
 
              {/* Feedback Form & Applications block */}
              <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-start pt-4">
-                <div className="md:col-span-3 bg-white dark:bg-warm-800 p-6 rounded-2xl border border-warm-150 dark:border-warm-700 shadow-sm space-y-4">
-                   <h4 className="font-serif text-base font-bold text-warm-900 dark:text-warm-100 border-b border-warm-100 dark:border-warm-750 pb-2">
+                <div className="md:col-span-3 public-card p-6 rounded-2xl space-y-4">
+                   <h4 className="font-serif text-base font-bold text-warm-900 dark:text-warm-100 border-b border-warm-100 dark:border-warm-800/40 pb-2">
                       Submit Feedback / Apply
                    </h4>
                    <form onSubmit={handleFeedbackSubmit} className="space-y-4">
@@ -823,7 +823,7 @@ export default function LandingPage() {
                          <select
                            value={feedbackType}
                            onChange={e => setFeedbackType(e.target.value as any)}
-                           className="bg-warm-50 dark:bg-warm-900 border border-warm-250 dark:border-warm-700 text-xs px-2.5 py-2 rounded-xl text-warm-700 dark:text-warm-200 outline-none w-full"
+                           className="bg-warm-925 border border-white/[0.06] text-xs px-2.5 py-2 rounded-xl text-warm-700 dark:text-warm-200 outline-none w-full"
                          >
                             <option value="ux">UX / Design Suggestion</option>
                             <option value="feature">Feature Request</option>
@@ -865,9 +865,9 @@ export default function LandingPage() {
                    </form>
                 </div>
 
-                <div className="md:col-span-2 p-6 bg-warm-100 dark:bg-warm-850 rounded-2xl border border-warm-200/50 dark:border-warm-750/30 space-y-3">
+                <div className="md:col-span-2 public-card-secondary p-6 space-y-3">
                    <h4 className="font-serif text-sm font-bold text-warm-900 dark:text-warm-100">Beta Rewards & Badges</h4>
-                   <p className="text-xs text-warm-600 dark:text-warm-405 leading-relaxed">
+                   <p className="text-xs text-warm-600 dark:text-warm-400 leading-relaxed">
                       Accepted beta applicants will have the <strong>🌱 Early Supporter</strong> badge assigned to their profiles. 
                       You can trace your badge status in the main platform and watch your historical timeline grow!
                    </p>

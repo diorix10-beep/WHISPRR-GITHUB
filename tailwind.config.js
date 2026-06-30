@@ -28,8 +28,12 @@ export default {
           500: '#8F8A80',  // Warm gray
           600: '#706B62',  // Charcoal gray
           700: '#565148',  // Soft charcoal
+          750: '#47433C',  // Mid-deep charcoal
           800: '#3D3933',  // Deep charcoal
+          850: '#302D28',  // Darker charcoal
           900: '#282520',  // Near black charcoal
+          925: '#1E1B17',  // Dark card background
+          950: '#151412',  // Near-black card background
         },
         // Accent: Dusty Rose — more muted than primary, used for highlights
         accent: {

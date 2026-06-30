@@ -338,7 +338,7 @@ export default function BuildingPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-warm-200 dark:border-warm-750 mb-8 overflow-x-auto select-none gap-0">
+      <div className="flex border-b border-warm-200 dark:border-warm-800/40 mb-8 overflow-x-auto select-none gap-0">
         {([
           { key: 'roadmap' as RoadmapTab, label: '🚀 Ecosystem Roadmap', icon: Rocket },
           { key: 'feedback' as RoadmapTab, label: '🤝 Community Impact', icon: Heart },
@@ -396,7 +396,7 @@ export default function BuildingPage() {
                   {items.map((item, idx) => (
                     <div
                       key={idx}
-                      className={`p-4 bg-white dark:bg-warm-800 rounded-2xl border shadow-soft relative overflow-hidden group hover:shadow-md transition-shadow ${cfg.cardBorder}`}
+                      className={`public-card-status p-4 group hover:opacity-90 transition-opacity ${cfg.cardBorder}`}
                     >
                       {/* Status accent bar */}
                       <div className={`absolute top-0 left-0 right-0 h-0.5 ${cfg.barColor}`} />
@@ -416,7 +416,7 @@ export default function BuildingPage() {
                       }`}>
                         {item.category}
                       </span>
-                      <h4 className="font-semibold text-sm text-warm-900 dark:text-warm-100 leading-tight mb-1">
+                      <h4 className="font-semibold text-sm text-warm-50 leading-tight mb-1">
                         {item.title}
                       </h4>
                       {status !== 'released' && (
@@ -579,15 +579,15 @@ export default function BuildingPage() {
             <Heart className="text-primary-500 shrink-0 mt-0.5" size={24} />
             <div>
               <h3 className="font-serif text-lg font-bold text-warm-900 dark:text-warm-50">✨ Built from Community Feedback</h3>
-              <p className="text-sm text-warm-600 dark:text-warm-450 mt-1 leading-relaxed">
+              <p className="text-sm text-warm-600 dark:text-warm-400 mt-1 leading-relaxed">
                 Features aren't selected in a boardroom. We track request popularity, beta tester suggestions, and community signals. 
                 If you suggested it — it genuinely changes WHISPRR.
               </p>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-warm-800 p-6 rounded-3xl border border-warm-150 dark:border-warm-700 shadow-soft space-y-4">
-            <h4 className="font-serif text-base font-bold text-warm-900 dark:text-warm-100 pb-2 border-b border-warm-100 dark:border-warm-750">
+          <div className="public-card p-6 space-y-4">
+            <h4 className="font-serif text-base font-bold text-warm-50 pb-2 border-b border-white/[0.06]">
               Community Requested Features
             </h4>
             <div className="space-y-3">
@@ -597,13 +597,13 @@ export default function BuildingPage() {
                   f.status === 'recently_completed' ? 'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-300' :
                   f.status === 'in_progress' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300' :
                   f.status === 'reviewing' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300' :
-                  'bg-warm-100 text-warm-600 dark:bg-warm-700 dark:text-warm-350';
+                  'bg-warm-100 text-warm-600 dark:bg-warm-700 dark:text-warm-400';
                 const statusLabel =
                   f.status === 'recently_completed' ? 'Just Released' :
                   f.status === 'in_progress' ? 'In Progress' :
                   f.status;
                 return (
-                  <div key={idx} className="flex items-center justify-between p-3.5 bg-warm-50 dark:bg-warm-900 border border-warm-100 dark:border-warm-850 rounded-2xl">
+                  <div key={idx} className="flex items-center justify-between p-3.5 public-card-secondary p-0 rounded-2xl">
                     <div>
                       <p className="text-sm font-semibold text-warm-850 dark:text-warm-100">{f.title}</p>
                       <p className="text-[10px] text-warm-500 mt-0.5">👍 {f.votes.toLocaleString()} community interest flags</p>
@@ -623,8 +623,8 @@ export default function BuildingPage() {
       {activeTab === 'changelog' && (
         <div className="space-y-6 animate-fade-in">
           {CHANGELOGS.map((ch, idx) => (
-            <div key={idx} className="bg-white dark:bg-warm-800 p-6 rounded-3xl border border-warm-150 dark:border-warm-700 shadow-soft space-y-4">
-              <div className="flex items-center justify-between border-b border-warm-100 dark:border-warm-750 pb-3">
+            <div key={idx} className="public-card p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
                 <div>
                   <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-50">{ch.version}</h3>
                 </div>
@@ -636,19 +636,19 @@ export default function BuildingPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                 <div className="space-y-2">
                   <h4 className="font-semibold text-emerald-600 dark:text-emerald-450 uppercase text-xs tracking-wider">New Features</h4>
-                  <ul className="space-y-1 text-xs text-warm-600 dark:text-warm-350 list-disc list-inside">
+                  <ul className="space-y-1 text-xs text-warm-400 list-disc list-inside">
                     {ch.newFeatures.map((f, i) => <li key={i}>{f}</li>)}
                   </ul>
                 </div>
                 <div className="space-y-2">
                   <h4 className="font-semibold text-primary-500 uppercase text-xs tracking-wider">Improvements</h4>
-                  <ul className="space-y-1 text-xs text-warm-600 dark:text-warm-350 list-disc list-inside">
+                  <ul className="space-y-1 text-xs text-warm-400 list-disc list-inside">
                     {ch.improvements.map((f, i) => <li key={i}>{f}</li>)}
                   </ul>
                 </div>
                 <div className="space-y-2">
                   <h4 className="font-semibold text-red-500 uppercase text-xs tracking-wider">Bug Fixes</h4>
-                  <ul className="space-y-1 text-xs text-warm-600 dark:text-warm-350 list-disc list-inside">
+                  <ul className="space-y-1 text-xs text-warm-400 list-disc list-inside">
                     {ch.bugFixes.map((f, i) => <li key={i}>{f}</li>)}
                   </ul>
                 </div>
@@ -680,7 +680,7 @@ export default function BuildingPage() {
                     <div className={`absolute left-3.5 md:left-1/2 md:-translate-x-1/2 w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs z-10 shadow-sm ${
                       item.done
                         ? 'bg-emerald-500 border-emerald-500 text-white'
-                        : 'bg-white dark:bg-warm-850 border-primary-400 dark:border-primary-600'
+                        : 'bg-warm-950 border-primary-600'
                     }`}>
                       {item.done ? '✓' : item.icon}
                     </div>
@@ -689,7 +689,7 @@ export default function BuildingPage() {
                     <div className={`w-full md:w-1/2 pl-14 md:pl-0 ${
                       isEven ? 'md:pr-12 md:text-right' : 'md:pl-12 md:ml-auto'
                     }`}>
-                      <div className={`p-5 bg-white dark:bg-warm-800 rounded-3xl border shadow-soft inline-block max-w-sm text-left ${
+                      <div className={`public-card p-5 inline-block max-w-sm text-left ${
                         item.done ? 'border-emerald-200 dark:border-emerald-900/40' : 'border-warm-150 dark:border-warm-700'
                       }`}>
                         <span className={`text-[10px] font-bold uppercase tracking-wide block mb-1 ${

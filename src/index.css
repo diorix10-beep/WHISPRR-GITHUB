@@ -57,6 +57,48 @@
       dark:bg-warm-800 border border-warm-100 dark:border-warm-700;
   }
 
+  /* ─────────────────────────────────────────────────────────────────
+   * PUBLIC WEBSITE CARD DESIGN SYSTEM
+   * Three reusable card variants for consistent dark-mode aesthetics
+   * ───────────────────────────────────────────────────────────────── */
+
+  /* Primary Card — main content blocks, roadmap items, articles */
+  .public-card {
+    @apply bg-warm-950 border border-white/[0.06] rounded-3xl
+      shadow-[0_2px_12px_rgba(0,0,0,0.4)]
+      transition-all duration-200;
+  }
+
+  /* Secondary Card — subtler inset panels, nested info blocks */
+  .public-card-secondary {
+    @apply bg-warm-925 border border-white/[0.04] rounded-2xl
+      transition-all duration-200;
+  }
+
+  /* Status / Badge Card — colored accent strips for roadmap items */
+  .public-card-status {
+    @apply bg-warm-950 border rounded-2xl relative overflow-hidden
+      shadow-[0_1px_6px_rgba(0,0,0,0.35)]
+      transition-all duration-200;
+  }
+
+  /* Glass Card — used on hero banners and dark overlaid sections */
+  .public-card-glass {
+    @apply bg-white/[0.04] backdrop-blur-sm border border-white/[0.08] rounded-2xl
+      transition-all duration-200;
+  }
+
+  /* Public text utilities */
+  .public-title {
+    @apply text-warm-50 font-semibold;
+  }
+  .public-body {
+    @apply text-warm-400;
+  }
+  .public-label {
+    @apply text-[9px] uppercase font-bold tracking-wider;
+  }
+
   .input-field {
     @apply w-full bg-warm-50 border border-warm-300 rounded-2xl px-4 py-3
       text-warm-900 placeholder:text-warm-400
