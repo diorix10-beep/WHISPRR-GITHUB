@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
   ShieldAlert, Settings, Activity, Users, MessageSquare, AlertTriangle, 
   Check, RefreshCw, Send, ShieldCheck, Heart, UserMinus, UserCheck, Search, HelpCircle, Bug, Loader2, Plus, Award,
-  PenTool, FileText, BookOpen, Flag, Rocket, GitCommit
+  PenTool, FileText, BookOpen, Flag, Rocket, GitCommit, Bot, Terminal
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -10,7 +10,7 @@ import { supabase } from '../lib/supabase';
 import type { Profile, Community } from '../types';
 import { Avatar } from '../components/common/Avatar';
 
-type PanelTab = 'system' | 'monitoring' | 'users' | 'communities' | 'testing' | 'feedback' | 'badges' | 'updates';
+type PanelTab = 'system' | 'monitoring' | 'users' | 'communities' | 'testing' | 'feedback' | 'badges' | 'updates' | 'ai-team';
 
 interface SystemSettingsModel {
   enabled: boolean;
@@ -72,6 +72,12 @@ export default function FounderPanel() {
 
   // Publish Updates states
   const [updatesSubTab, setUpdatesSubTab] = useState<'roadmap' | 'changelog' | 'journal' | 'flags'>('roadmap');
+
+  // AI Engineering states
+  const [aiApprovalMode, setAiApprovalMode] = useState<number>(() => {
+    const saved = localStorage.getItem('whisprr_ai_approval_mode');
+    return saved ? parseInt(saved, 10) : 1; // Default to Level 1 (Manual Approval)
+  });
 
   // Roadmap States
   const [roadmapList, setRoadmapList] = useState<any[]>([]);
@@ -689,6 +695,7 @@ export default function FounderPanel() {
              { key: 'communities' as PanelTab, icon: MessageSquare, label: 'Comms' },
              { key: 'badges' as PanelTab, icon: Award, label: 'Badges' },
              { key: 'updates' as PanelTab, icon: PenTool, label: 'Publish Updates' },
+             { key: 'ai-team' as PanelTab, icon: Bot, label: 'AI Team' },
              { key: 'testing' as PanelTab, icon: ShieldCheck, label: 'Testing' },
              { key: 'feedback' as PanelTab, icon: Bug, label: 'Bugs' }
           ]).map(tab => {
@@ -1881,6 +1888,155 @@ export default function FounderPanel() {
                  </div>
               </div>
            )}
+        </div>
+      )}
+
+      {activeTab === 'ai-team' && (
+        <div className="space-y-6 animate-fade-in">
+          {/* Section Header */}
+          <div className="bg-white dark:bg-warm-800 p-6 rounded-3xl border border-warm-100 dark:border-warm-700 shadow-soft space-y-3">
+             <div className="flex items-center gap-3">
+                <Bot className="text-primary-500 shrink-0" size={24} />
+                <div>
+                   <h3 className="font-serif text-lg font-bold text-warm-900 dark:text-warm-50">
+                      AI Operations Center
+                   </h3>
+                   <p className="text-xs text-warm-500">Coordinate, monitor, and guide the official WHISPRR AI development team.</p>
+                </div>
+             </div>
+          </div>
+
+          {/* Founder Approval Mode Selector */}
+          <div className="bg-white dark:bg-warm-800 p-6 rounded-3xl border border-warm-100 dark:border-warm-700 shadow-soft space-y-4">
+             <h4 className="font-serif text-base font-bold text-warm-900 dark:text-warm-50 flex items-center gap-2 pb-2 border-b border-warm-100 dark:border-warm-700">
+                🛡️ Founder Approval Mode
+             </h4>
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  {
+                    level: 1,
+                    title: 'Level 1: Manual Approval',
+                    desc: 'Every single code modification and Vercel deployment requires explicit manual Founder confirmation.',
+                    color: 'border-red-500/20 hover:border-red-500/40 text-red-500',
+                    activeColor: 'border-red-500 bg-red-50/50 dark:bg-red-950/20 text-red-600 dark:text-red-400',
+                  },
+                  {
+                    level: 2,
+                    title: 'Level 2: Trusted Automation',
+                    desc: 'Low-risk updates (documentation, styles, changelogs) deploy automatically. Structural code requires approval.',
+                    color: 'border-amber-500/20 hover:border-amber-500/40 text-amber-500',
+                    activeColor: 'border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400',
+                  },
+                  {
+                    level: 3,
+                    title: 'Level 3: Autonomous Mode',
+                    desc: 'AI agents can commit, test, build, and deploy to production independently based on community feedback.',
+                    color: 'border-emerald-500/20 hover:border-emerald-500/40 text-emerald-500',
+                    activeColor: 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400',
+                  }
+                ].map((mode) => {
+                  const isActive = aiApprovalMode === mode.level;
+                  return (
+                    <button
+                      key={mode.level}
+                      onClick={() => {
+                        setAiApprovalMode(mode.level);
+                        localStorage.setItem('whisprr_ai_approval_mode', mode.level.toString());
+                        showToast(`Approval mode switched to Level ${mode.level}`, 'success');
+                      }}
+                      className={`p-4 rounded-2xl border text-left flex flex-col justify-between h-36 transition-all ${
+                        isActive ? mode.activeColor : 'bg-transparent border-warm-100 dark:border-warm-700 hover:bg-warm-50 dark:hover:bg-warm-850'
+                      }`}
+                    >
+                      <div>
+                         <p className="font-bold text-xs mb-1 text-warm-900 dark:text-warm-100">{mode.title}</p>
+                         <p className="text-[10px] text-warm-500 leading-relaxed">{mode.desc}</p>
+                      </div>
+                      <span className="text-[9px] font-bold uppercase tracking-wider mt-2">
+                         {isActive ? '● Active' : 'Select'}
+                      </span>
+                    </button>
+                  );
+                })}
+             </div>
+          </div>
+
+          {/* AI Family Status Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+             {[
+               {
+                 avatar: '💜',
+                 name: 'Oracle',
+                 role: 'Chief Coordinator',
+                 status: 'Monitoring logs, assigning tasks',
+                 color: 'text-purple-500',
+                 bg: 'border-purple-500/20 bg-purple-500/5'
+               },
+               {
+                 avatar: '🌸',
+                 name: 'Iris',
+                 role: 'Ops & Communication',
+                 status: 'Changelog queue: stable',
+                 color: 'text-pink-500',
+                 bg: 'border-pink-500/20 bg-pink-500/5'
+               },
+               {
+                 avatar: '🛡️',
+                 name: 'Aegis',
+                 role: 'Security & Trust',
+                 status: 'Threat level: minimal',
+                 color: 'text-emerald-500',
+                 bg: 'border-emerald-500/20 bg-emerald-500/5'
+               },
+               {
+                 avatar: '🏗️',
+                 name: 'Atlas',
+                 role: 'DevOps & Build',
+                 status: 'Vercel build: successful',
+                 color: 'text-blue-500',
+                 bg: 'border-blue-500/20 bg-blue-500/5'
+               },
+               {
+                 avatar: '🧠',
+                 name: 'Athena',
+                 role: 'Product Intelligence',
+                 status: 'Analyzing feature backlog',
+                 color: 'text-amber-500',
+                 bg: 'border-amber-500/20 bg-amber-500/5'
+               }
+             ].map((agent, i) => (
+               <div key={i} className={`p-4 rounded-2xl border ${agent.bg} flex flex-col justify-between h-36`}>
+                  <div>
+                     <div className="flex items-center justify-between mb-2">
+                        <span className="text-xl">{agent.avatar}</span>
+                        <span className="text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-warm-200 dark:bg-warm-850 text-warm-650 dark:text-warm-400">
+                           ONLINE
+                        </span>
+                     </div>
+                     <h5 className="font-bold text-xs text-warm-900 dark:text-warm-100">{agent.name}</h5>
+                     <p className="text-[9px] text-warm-500 mb-2">{agent.role}</p>
+                  </div>
+                  <p className="text-[9.5px] italic text-warm-600 dark:text-warm-400 leading-tight border-t border-warm-100 dark:border-warm-800 pt-2 mt-auto">
+                     "{agent.status}"
+                  </p>
+               </div>
+             ))}
+          </div>
+
+          {/* Operations Log */}
+          <div className="bg-white dark:bg-warm-800 p-6 rounded-3xl border border-warm-100 dark:border-warm-700 shadow-soft space-y-4">
+             <h4 className="font-serif text-base font-bold text-warm-900 dark:text-warm-50 flex items-center gap-2 pb-2 border-b border-warm-100 dark:border-warm-700">
+                <Terminal size={16} className="text-primary-500" /> Operations Audit Feed
+             </h4>
+             <div className="space-y-3 font-mono text-[10px] text-warm-600 dark:text-warm-400 bg-warm-950 p-4 rounded-2xl max-h-[14rem] overflow-y-auto">
+                <p className="text-purple-400">[11:00:20] 💜 Oracle: Scanned community forum; flagged 1 new request.</p>
+                <p className="text-amber-400">[11:00:15] 🧠 Athena: Priority score computed for feature request #89.</p>
+                <p className="text-blue-400">[11:00:10] 🏗️ Atlas: Completed production build checks locally.</p>
+                <p className="text-emerald-400">[10:58:30] 🛡️ Aegis: Verified no suspicious auth attempts during deployment.</p>
+                <p className="text-pink-400">[10:55:05] 🌸 Iris: Published changelog update: v4 cache-busting updates.</p>
+                <p className="text-warm-500">[10:50:00] -- System: Connected all AI agent loops.</p>
+             </div>
+          </div>
         </div>
       )}
     </div>
