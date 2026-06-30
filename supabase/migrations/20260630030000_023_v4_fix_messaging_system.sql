@@ -1,5 +1,5 @@
 -- Migration: 023_v4_fix_messaging_system.sql
--- Description: Revises messaging RLS policies to allow conversation & participant insertion and enables Supabase Realtime.
+-- Description: Revises messaging RLS policies to allow conversation & participant insertion and enables Supabase Realtime safely.
 
 -- 1. conversations table policies
 DROP POLICY IF EXISTS "select_conversations" ON public.conversations;
@@ -103,12 +103,33 @@ BEGIN
   END IF;
 END $$;
 
--- Add tables to the supabase_realtime publication
-ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS public.conversations;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;
+-- Add tables to supabase_realtime only if not already members (prevents batch errors)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+    AND schemaname = 'public' 
+    AND tablename = 'conversations'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;
+  END IF;
 
-ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS public.conversation_participants;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.conversation_participants;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+    AND schemaname = 'public' 
+    AND tablename = 'conversation_participants'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.conversation_participants;
+  END IF;
 
-ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS public.messages;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+    AND schemaname = 'public' 
+    AND tablename = 'messages'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
+  END IF;
+END $$;
