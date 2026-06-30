@@ -34,16 +34,28 @@ export default function CommunityProgramPage() {
     if (profile) {
       setReferralCode(profile.username || 'user');
     }
-    // Simulate real referrals count
     setReferralsCount(profile?.referrals_count || 0);
 
-    // Mock high-quality leaderboard
-    setLeaderboard([
-      { username: 'nyny59', referrals: 48, role: 'founder' },
-      { username: 'zen_garden', referrals: 32, role: 'ambassador' },
-      { username: 'aurora_glow', referrals: 24, role: 'creator' },
-      { username: 'echo_whisper', referrals: 19, role: 'supporter' }
-    ]);
+    const fetchLeaderboard = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('username, referrals_count, role')
+          .gt('referrals_count', 0)
+          .order('referrals_count', { ascending: false })
+          .limit(10);
+        if (!error && data) {
+          setLeaderboard(data.map(d => ({
+            username: d.username,
+            referrals: d.referrals_count,
+            role: d.role
+          })));
+        }
+      } catch (err) {
+        console.warn("Could not load real leaderboard:", err);
+      }
+    };
+    fetchLeaderboard();
   }, [profile]);
 
   const handleCopyLink = () => {
@@ -302,18 +314,33 @@ export default function CommunityProgramPage() {
               <Users size={14} /> Referral Leaderboard
             </h3>
             <div className="space-y-3">
-              {leaderboard.map((item, i) => (
-                <div key={i} className="flex items-center justify-between text-xs border-b border-white/[0.02] pb-2 last:border-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-warm-500 w-4">{i + 1}.</span>
-                    <div>
-                      <span className="font-bold text-warm-200">@{item.username}</span>
-                      <span className="text-[9px] uppercase font-bold text-primary-400 block">{item.role}</span>
+              {leaderboard.length > 0 ? (
+                leaderboard.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between text-xs border-b border-white/[0.02] pb-2 last:border-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-warm-500 w-4">{i + 1}.</span>
+                      <div>
+                        <span className="font-bold text-warm-200">@{item.username}</span>
+                        <span className="text-[9px] uppercase font-bold text-primary-400 block">{item.role}</span>
+                      </div>
                     </div>
+                    <span className="font-bold text-white">{item.referrals} invites</span>
                   </div>
-                  <span className="font-bold text-white">{item.referrals} invites</span>
+                ))
+              ) : (
+                <div className="text-center py-4 space-y-3">
+                  <p className="text-xs text-warm-500 italic">No community referrals yet.</p>
+                  <p className="text-[10px] text-warm-400 leading-normal">
+                    Be the first person to invite a friend and claim the #1 spot.
+                  </p>
+                  <button 
+                    onClick={handleCopyLink}
+                    className="btn-secondary w-full py-1.5 text-[10px] font-bold"
+                  >
+                    Invite Friends
+                  </button>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
