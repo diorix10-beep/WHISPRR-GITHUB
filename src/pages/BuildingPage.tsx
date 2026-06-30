@@ -460,6 +460,78 @@ export default function BuildingPage() {
             </div>
           </section>
 
+          {/* ── BEYOND WHISPRR ────────────────────────────────────────────── */}
+          <section className="space-y-8">
+            <div className="text-center max-w-2xl mx-auto">
+              <div className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 text-xs font-bold px-3 py-1.5 rounded-full mb-4">
+                <Globe size={12} />
+                <span>Long-term Aspirations</span>
+              </div>
+              <h2 className="font-serif text-3xl font-bold text-warm-900 dark:text-warm-50 mb-3">🌍 Beyond WHISPRR</h2>
+              <p className="text-warm-500 dark:text-warm-400 text-sm leading-relaxed">
+                This is not a promise. This is the world we are working toward — together.
+                Where WHISPRR hopes to be, not just as a product, but as a presence in people's lives.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {[
+                {
+                  icon: '📱', title: 'Everywhere You Are',
+                  desc: 'Native iOS and Android applications. Desktop and tablet experiences. WHISPRR in your pocket, at your desk, and across every device.',
+                  gradient: 'from-violet-500/15 to-indigo-500/10', border: 'border-violet-200/50 dark:border-violet-900/40', accent: 'text-violet-600 dark:text-violet-400',
+                },
+                {
+                  icon: '🌍', title: 'A Truly Global Home',
+                  desc: 'Country Spaces for every nation. Dozens of languages. Real-time translation. A home for every culture, community, and conversation.',
+                  gradient: 'from-cyan-500/15 to-blue-500/10', border: 'border-cyan-200/50 dark:border-cyan-900/40', accent: 'text-cyan-600 dark:text-cyan-400',
+                },
+                {
+                  icon: '🤝', title: 'Millions of Connections',
+                  desc: 'Millions of meaningful conversations. Healthy communities. Community partnerships. Global events that bring people together.',
+                  gradient: 'from-green-500/15 to-emerald-500/10', border: 'border-green-200/50 dark:border-green-900/40', accent: 'text-green-600 dark:text-green-400',
+                },
+                {
+                  icon: '🎨', title: 'Creators at the Center',
+                  desc: 'Creator profiles, analytics, and recognition. A platform where creators are celebrated, not algorithmically suppressed.',
+                  gradient: 'from-orange-500/15 to-amber-500/10', border: 'border-orange-200/50 dark:border-orange-900/40', accent: 'text-orange-600 dark:text-orange-400',
+                },
+                {
+                  icon: '🤖', title: 'A New Kind of Intelligence',
+                  desc: 'AI Characters, AI Companions, AI Worlds, and AI Voice. Technology that augments human connection — never replaces it.',
+                  gradient: 'from-rose-500/15 to-pink-500/10', border: 'border-rose-200/50 dark:border-rose-900/40', accent: 'text-rose-600 dark:text-rose-400',
+                },
+                {
+                  icon: '🏛️', title: 'Institutions & Organizations',
+                  desc: 'Universities, schools, non-profits, and businesses. A platform for organizations that want to build genuine community.',
+                  gradient: 'from-teal-500/15 to-cyan-500/10', border: 'border-teal-200/50 dark:border-teal-900/40', accent: 'text-teal-600 dark:text-teal-400',
+                },
+                {
+                  icon: '🛠️', title: 'Open to Builders',
+                  desc: 'Public API, Developer SDK, integrations, and plugins. An ecosystem built not just for users — but for the developers who want to extend it.',
+                  gradient: 'from-slate-500/15 to-zinc-500/10', border: 'border-slate-200/50 dark:border-slate-900/40', accent: 'text-slate-600 dark:text-slate-400',
+                },
+                {
+                  icon: '♿', title: 'Inclusive by Design',
+                  desc: 'Screen reader support, localization, real-time translation, and accessibility improvements. WHISPRR should work for everyone.',
+                  gradient: 'from-indigo-500/15 to-blue-500/10', border: 'border-indigo-200/50 dark:border-indigo-900/40', accent: 'text-indigo-600 dark:text-indigo-400',
+                },
+              ].map((card, idx) => (
+                <div key={idx} className={`p-5 rounded-3xl border bg-gradient-to-br ${card.gradient} ${card.border} group hover:scale-[1.02] transition-transform`}>
+                  <div className="text-2xl mb-3">{card.icon}</div>
+                  <h3 className={`font-serif font-bold text-sm mb-2 ${card.accent}`}>{card.title}</h3>
+                  <p className="text-xs text-warm-600 dark:text-warm-400 leading-relaxed">{card.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="text-center py-4">
+              <p className="text-xs text-warm-400 dark:text-warm-600 italic">
+                These are aspirations, not promises. Features move to the roadmap only when actively planned or in development.
+              </p>
+            </div>
+          </section>
+
           {/* ── THE DREAM ──────────────────────────────────────────────────── */}
           <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-950/90 via-warm-950 to-violet-950 p-10 border border-primary-800/30">
             {/* Background elements */}
@@ -486,9 +558,13 @@ export default function BuildingPage() {
                 ))}
               </div>
 
-              <div className="mt-8 pt-6 border-t border-white/10 text-center">
-                <p className="text-white/40 text-xs italic">
-                  WHISPRR is being built in public. Every update, every feature, and every improvement is shared with our community.
+              <div className="mt-10 pt-8 border-t border-white/10 text-center space-y-4">
+                <p className="text-white/80 text-lg font-serif font-bold leading-relaxed">
+                  "The future of WHISPRR will be written together —<br />
+                  with every conversation, every community, and every person who chooses to belong."
+                </p>
+                <p className="text-white/35 text-xs italic">
+                  This is only the beginning.
                 </p>
               </div>
             </div>
