@@ -205,4 +205,13 @@ client.on('shardError', (error) => {
   console.error('🤖 WHISPRR Bot Shard Error:', error);
 });
 
+// Global process exception guards to catch raw WebSocket or network errors leaking from discord.js / ws
+process.on('uncaughtException', (err) => {
+  console.error('💥 Uncaught Exception caught by guard:', err.message || err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('💥 Unhandled Rejection caught by guard at:', promise, 'reason:', reason);
+});
+
 client.login(DISCORD_BOT_TOKEN);
