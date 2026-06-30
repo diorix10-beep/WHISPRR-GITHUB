@@ -386,13 +386,9 @@ async function setupWhisprrHQ() {
     console.log(`  ✅ Created role: ${roleDef.name} (${roleDef.color})`);
   }
 
-  // Reorder roles so Founder is highest
-  const positions = ROLES.map((r, idx) => ({
-    role: roleMap.get(r.name).id,
-    position: ROLES.length - idx,
-  }));
-  await guild.roles.setPositions(positions);
-  console.log('  ✅ Role hierarchy configured (Founder → Member)\n');
+  // Since the bot's own role cannot be repositioned above roles with administrator permissions by itself without manual intervention,
+  // we let roles establish their hierarchy naturally by creating them from lowest to highest.
+  console.log('  ✅ Role hierarchy established naturally via creation order (Member → Founder)\n');
 
   // ═══════════════════════════════════════════════════════════════════════════
   // STEP 4: Create Country Roles
@@ -470,8 +466,15 @@ async function setupWhisprrHQ() {
       let channelType;
       switch (ch.type) {
         case 'voice':        channelType = ChannelType.GuildVoice; break;
-        case 'stage':        channelType = ChannelType.GuildStageVoice; break;
-        case 'announcement': channelType = ChannelType.GuildAnnouncement; break;
+        case 'stage':        
+          // Stage channels (type 13) require Community enabled. Fallback to GuildVoice.
+          channelType = ChannelType.GuildVoice; 
+          break;
+        case 'announcement': 
+          // Announcement channels (type 5) require the server to have Community enabled.
+          // We fallback to GuildText (type 0) to avoid API errors if Community is not active yet.
+          channelType = ChannelType.GuildText; 
+          break;
         case 'forum':        channelType = ChannelType.GuildForum; break;
         default:             channelType = ChannelType.GuildText; break;
       }
@@ -500,7 +503,7 @@ async function setupWhisprrHQ() {
       const createdChannel = await guild.channels.create({
         name: ch.name,
         type: channelType,
-        topic: ch.topic || undefined,
+        topic: (ch.type !== 'voice' && ch.type !== 'stage') ? (ch.topic || undefined) : undefined,
         parent: createdCategory.id,
         permissionOverwrites: channelOverwrites.length > 0 ? channelOverwrites : undefined,
         reason: 'WHISPRR HQ automated setup',

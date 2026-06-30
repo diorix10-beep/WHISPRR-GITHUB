@@ -18,6 +18,9 @@ interface SystemSettingsModel {
   reopen_at: string | null;
   bypass_founder: boolean;
   bypass_admin: boolean;
+  bypass_beta: boolean;
+  allow_public: boolean;
+  allow_auth: boolean;
 }
 
 interface BugReport {
@@ -45,7 +48,10 @@ export default function FounderPanel() {
     message: '',
     reopen_at: '',
     bypass_founder: true,
-    bypass_admin: true
+    bypass_admin: true,
+    bypass_beta: false,
+    allow_public: true,
+    allow_auth: true
   });
 
   // Users management state
@@ -141,7 +147,10 @@ export default function FounderPanel() {
         message: systemSettings.message || '',
         reopen_at: systemSettings.reopen_at || '',
         bypass_founder: systemSettings.bypass_founder !== false,
-        bypass_admin: systemSettings.bypass_admin !== false
+        bypass_admin: systemSettings.bypass_admin !== false,
+        bypass_beta: systemSettings.bypass_beta === true,
+        allow_public: systemSettings.allow_public !== false,
+        allow_auth: systemSettings.allow_auth !== false
       });
     }
   }, [systemSettings]);
@@ -597,7 +606,10 @@ export default function FounderPanel() {
         message: settingsForm.message,
         reopen_at: settingsForm.reopen_at || null,
         bypass_founder: settingsForm.bypass_founder,
-        bypass_admin: settingsForm.bypass_admin
+        bypass_admin: settingsForm.bypass_admin,
+        bypass_beta: settingsForm.bypass_beta,
+        allow_public: settingsForm.allow_public,
+        allow_auth: settingsForm.allow_auth
       });
       showToast('System settings updated successfully!', 'success');
     } catch (err) {
@@ -792,6 +804,42 @@ export default function FounderPanel() {
                       />
                       <label htmlFor="bypass-admin" className="text-xs font-semibold text-warm-700 dark:text-warm-300">
                          Allow Admins to bypass maintenance mode
+                      </label>
+                   </div>
+                   <div className="flex items-center gap-2">
+                      <input 
+                        id="bypass-beta"
+                        type="checkbox"
+                        checked={settingsForm.bypass_beta}
+                        onChange={e => setSettingsForm({ ...settingsForm, bypass_beta: e.target.checked })}
+                        className="w-4 h-4 accent-primary-500"
+                      />
+                      <label htmlFor="bypass-beta" className="text-xs font-semibold text-warm-700 dark:text-warm-300">
+                         Allow Beta Testers to bypass maintenance mode
+                      </label>
+                   </div>
+                   <div className="flex items-center gap-2">
+                      <input 
+                        id="allow-public"
+                        type="checkbox"
+                        checked={settingsForm.allow_public}
+                        onChange={e => setSettingsForm({ ...settingsForm, allow_public: e.target.checked })}
+                        className="w-4 h-4 accent-primary-500"
+                      />
+                      <label htmlFor="allow-public" className="text-xs font-semibold text-warm-700 dark:text-warm-300">
+                         Allow access to public website
+                      </label>
+                   </div>
+                   <div className="flex items-center gap-2">
+                      <input 
+                        id="allow-auth"
+                        type="checkbox"
+                        checked={settingsForm.allow_auth}
+                        onChange={e => setSettingsForm({ ...settingsForm, allow_auth: e.target.checked })}
+                        className="w-4 h-4 accent-primary-500"
+                      />
+                      <label htmlFor="allow-auth" className="text-xs font-semibold text-warm-700 dark:text-warm-300">
+                         Allow access to authentication page
                       </label>
                    </div>
                 </div>

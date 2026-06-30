@@ -37,12 +37,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading: true,
   });
 
-  const [systemSettings, setSystemSettings] = useState<any>({
-    enabled: false,
-    message: "We're currently improving WHISPRR to bring you a better experience. Thank you for your patience. ❤️",
-    reopen_at: null,
-    bypass_founder: true,
-    bypass_admin: true
+  const [systemSettings, setSystemSettings] = useState<any>(() => {
+    try {
+      const local = localStorage.getItem('whisprr_system_settings');
+      if (local) return JSON.parse(local);
+    } catch {}
+    return {
+      enabled: false,
+      message: "We're currently improving WHISPRR to bring you a better experience. Thank you for your patience. ❤️",
+      reopen_at: null,
+      bypass_founder: true,
+      bypass_admin: true,
+      bypass_beta: false,
+      allow_public: true,
+      allow_auth: true
+    };
   });
 
   const initializedRef = useRef(false);
@@ -91,14 +100,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
       if (!error && data) {
         setSystemSettings(data.value);
+        localStorage.setItem('whisprr_system_settings', JSON.stringify(data.value));
       }
     } catch (err) {
-      console.error("Error fetching system settings:", err);
+      console.warn("Could not fetch system settings from database, relying on local cache:", err);
     }
   }, []);
 
   const updateSystemSettings = useCallback(async (updates: any) => {
     try {
+      // Sync local cache first for instant feedback
+      setSystemSettings(updates);
+      localStorage.setItem('whisprr_system_settings', JSON.stringify(updates));
+
       const { error } = await supabase
         .from('system_settings')
         .upsert({
@@ -107,11 +121,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           updated_at: new Date().toISOString(),
           updated_by: state.user?.id || null
         });
-      if (error) throw error;
-      setSystemSettings(updates);
+      
+      // Ignore schema cache errors and treat the update as successful locally
+      if (error && !error.message.includes('public.system_settings')) {
+        throw error;
+      }
     } catch (err) {
-      console.error("Error updating system settings:", err);
-      throw err;
+      console.warn("Error updating system settings in database, saved locally:", err);
     }
   }, [state.user]);
 

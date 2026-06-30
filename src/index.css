@@ -64,7 +64,7 @@
 
   /* Primary Card — main content blocks, roadmap items, articles */
   .public-card {
-    @apply bg-warm-950 border border-white/[0.06] rounded-3xl
+    @apply bg-[#181818] border border-white/[0.06] rounded-3xl
       shadow-[0_2px_12px_rgba(0,0,0,0.4)]
       transition-all duration-200;
   }

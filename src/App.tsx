@@ -62,26 +62,47 @@ function AppLoader() {
   }
 
   // Maintenance Bypass check
-  if (isMaintenanceActive && !isBypassUser) {
-    const isAuthRoute = window.location.pathname === '/auth';
-    if (!user && isAuthRoute) {
-      return (
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/auth"    element={<AuthPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="/terms"   element={<TermsPage />} />
-            <Route path="/trust"   element={<TrustPage />} />
-            <Route path="*"        element={<Navigate to="/auth" replace />} />
-          </Routes>
-        </Suspense>
-      );
+  if (isMaintenanceActive) {
+    const role = profile?.role || 'user';
+    const isFounderBypass = role === 'founder' && systemSettings?.bypass_founder !== false;
+    const isAdminBypass = role === 'admin' && systemSettings?.bypass_admin !== false;
+    const isBetaBypass = role === 'moderator' && systemSettings?.bypass_beta === true; // moderators as beta testers
+    const isBypass = isFounderBypass || isAdminBypass || isBetaBypass;
+
+    if (!isBypass) {
+      const path = window.location.pathname;
+      const isAuthRoute = path === '/auth';
+      const isPublicRoute = ['/', '/about', '/building', '/privacy', '/terms', '/trust'].includes(path);
+
+      const allowAuth = systemSettings?.allow_auth !== false;
+      const allowPublic = systemSettings?.allow_public !== false;
+
+      // Allow auth route if permitted
+      if (isAuthRoute && allowAuth) {
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/auth"    element={<AuthPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms"   element={<TermsPage />} />
+              <Route path="/trust"   element={<TrustPage />} />
+              <Route path="*"        element={<Navigate to="/auth" replace />} />
+            </Routes>
+          </Suspense>
+        );
+      }
+
+      // Allow public pages if permitted
+      if (isPublicRoute && allowPublic) {
+        // Continue to normal rendering flow (will render LandingPage or BuildingPage below)
+      } else {
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <MaintenancePage settings={systemSettings} />
+          </Suspense>
+        );
+      }
     }
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <MaintenancePage settings={systemSettings} />
-      </Suspense>
-    );
   }
 
   if (!user) {

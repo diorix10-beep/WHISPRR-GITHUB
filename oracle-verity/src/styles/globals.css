@@ -1,0 +1,359 @@
+/* ============================================================
+   ORACLE VERITY — GLOBAL DESIGN SYSTEM
+   ============================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* ── Typography ── */
+  --font-primary: 'Outfit', -apple-system, sans-serif;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+  /* ── Base palette ── */
+  --black: #050508;
+  --white: #fdfcfa;
+  --gold: #c9a84c;
+  --gold-light: #e8c97e;
+  --gold-dim: rgba(201, 168, 76, 0.15);
+
+  /* ── Mode: Executive / Co-Founder ── */
+  --exec-bg: #0e0c0a;
+  --exec-surface: #171410;
+  --exec-card: #1f1b16;
+  --exec-border: rgba(201, 168, 76, 0.2);
+  --exec-accent: #c9a84c;
+  --exec-accent-glow: rgba(201, 168, 76, 0.35);
+  --exec-text: #f5ede0;
+  --exec-muted: #8a7a65;
+
+  /* ── Mode: Night / Developer ── */
+  --night-bg: #060810;
+  --night-surface: #0d1020;
+  --night-card: #131828;
+  --night-border: rgba(99, 102, 241, 0.2);
+  --night-accent: #6366f1;
+  --night-accent-glow: rgba(99, 102, 241, 0.35);
+  --night-text: #e2e8f0;
+  --night-muted: #64748b;
+  --night-cyan: #22d3ee;
+
+  /* ── Mode: Casual / Sister ── */
+  --casual-bg: #1a0f14;
+  --casual-surface: #231219;
+  --casual-card: #2d1820;
+  --casual-border: rgba(244, 114, 182, 0.2);
+  --casual-accent: #f472b6;
+  --casual-accent-glow: rgba(244, 114, 182, 0.3);
+  --casual-text: #fdf2f8;
+  --casual-muted: #a78fa0;
+  --casual-warm: #fb923c;
+
+  /* ── Mode: Portrait / Default ── */
+  --default-bg: #0a0a0f;
+  --default-surface: #12121a;
+  --default-card: #1a1a25;
+  --default-border: rgba(139, 92, 246, 0.2);
+  --default-accent: #8b5cf6;
+  --default-accent-glow: rgba(139, 92, 246, 0.3);
+  --default-text: #f1f0ff;
+  --default-muted: #6b6880;
+
+  /* ── Active mode vars (defaults to executive) ── */
+  --bg: var(--exec-bg);
+  --surface: var(--exec-surface);
+  --card: var(--exec-card);
+  --border: var(--exec-border);
+  --accent: var(--exec-accent);
+  --accent-glow: var(--exec-accent-glow);
+  --text: var(--exec-text);
+  --muted: var(--exec-muted);
+
+  /* ── Spacing ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ── Radius ── */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+
+  /* ── Shadows ── */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.5);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
+  --shadow-xl: 0 16px 64px rgba(0,0,0,0.7);
+  --glow-accent: 0 0 24px var(--accent-glow);
+
+  /* ── Transitions ── */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-mode: 800ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Mode class overrides ── */
+.mode-executive, .mode-cofounder {
+  --bg: var(--exec-bg);
+  --surface: var(--exec-surface);
+  --card: var(--exec-card);
+  --border: var(--exec-border);
+  --accent: var(--exec-accent);
+  --accent-glow: var(--exec-accent-glow);
+  --text: var(--exec-text);
+  --muted: var(--exec-muted);
+}
+
+.mode-night, .mode-developer {
+  --bg: var(--night-bg);
+  --surface: var(--night-surface);
+  --card: var(--night-card);
+  --border: var(--night-border);
+  --accent: var(--night-accent);
+  --accent-glow: var(--night-accent-glow);
+  --text: var(--night-text);
+  --muted: var(--night-muted);
+}
+
+.mode-casual, .mode-sister {
+  --bg: var(--casual-bg);
+  --surface: var(--casual-surface);
+  --card: var(--casual-card);
+  --border: var(--casual-border);
+  --accent: var(--casual-accent);
+  --accent-glow: var(--casual-accent-glow);
+  --text: var(--casual-text);
+  --muted: var(--casual-muted);
+}
+
+.mode-default {
+  --bg: var(--default-bg);
+  --surface: var(--default-surface);
+  --card: var(--default-card);
+  --border: var(--default-border);
+  --accent: var(--default-accent);
+  --accent-glow: var(--default-accent-glow);
+  --text: var(--default-text);
+  --muted: var(--default-muted);
+}
+
+/* ── Base reset ── */
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-primary);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background var(--transition-mode), color var(--transition-mode);
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* ── Selection ── */
+::selection {
+  background: var(--accent-glow);
+  color: var(--text);
+}
+
+/* ── Typography scale ── */
+.text-display {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 3vw, 48px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.text-heading {
+  font-family: var(--font-primary);
+  font-size: clamp(18px, 1.8vw, 24px);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.text-subheading {
+  font-family: var(--font-primary);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.text-body {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.text-small {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.text-mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.text-accent { color: var(--accent); }
+.text-muted { color: var(--muted); }
+
+/* ── Utility classes ── */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--glow-accent);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border: none;
+  border-radius: var(--radius-full);
+  font-family: var(--font-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  letter-spacing: 0.01em;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--black);
+}
+.btn-primary:hover {
+  filter: brightness(1.15);
+  box-shadow: var(--glow-accent);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.badge-accent {
+  background: var(--accent-glow);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+.badge-success {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.badge-warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-info {
+  background: rgba(99, 102, 241, 0.1);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+/* ── Divider ── */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: var(--space-4) 0;
+}
+
+/* ── Flex utilities ── */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.gap-1 { gap: var(--space-1); }
+.gap-2 { gap: var(--space-2); }
+.gap-3 { gap: var(--space-3); }
+.gap-4 { gap: var(--space-4); }
+.flex-1 { flex: 1; }
+.overflow-hidden { overflow: hidden; }
+.overflow-y-auto { overflow-y: auto; }
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+.relative { position: relative; }
+.absolute { position: absolute; }
+.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
