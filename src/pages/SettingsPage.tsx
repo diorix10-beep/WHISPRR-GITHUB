@@ -356,6 +356,12 @@ export default function SettingsPage() {
               Project Website & About
             </a>
             <a
+              href="/careers"
+              className="block text-sm text-primary-500 hover:underline"
+            >
+              Careers at WHISPRR
+            </a>
+            <a
               href="/terms"
               className="block text-sm text-primary-500 hover:underline"
             >
