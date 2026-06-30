@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Users, MessageCircle, User, Settings, Bell } from 'lucide-react';
+import { Home, Compass, Users, MessageCircle, User, Settings, Bell, ShieldAlert } from 'lucide-react';
 import { useNotifications } from '../../contexts/NotificationsContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Avatar } from '../common/Avatar';
@@ -19,6 +19,11 @@ const navItems = [
 export function SideNav() {
   const { unreadCount, unreadMessageCount } = useNotifications();
   const { profile } = useAuth();
+
+  const visibleNavItems = [...navItems];
+  if (profile?.role === 'founder') {
+    visibleNavItems.push({ path: '/founder', icon: ShieldAlert, label: 'Founder Panel' });
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -41,7 +46,7 @@ export function SideNav() {
 
       {/* Nav links */}
       <nav className="flex-1 px-3 py-4 space-y-1" aria-label="Main navigation">
-        {navItems.map(({ path, icon: Icon, label }) => {
+        {visibleNavItems.map(({ path, icon: Icon, label }) => {
           const isMessages = label === 'Messages';
           const isNotifications = label === 'Notifications';
           const badgeCount = isMessages ? unreadMessageCount : isNotifications ? unreadCount : 0;

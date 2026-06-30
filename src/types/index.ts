@@ -19,6 +19,7 @@ export interface Profile {
   online_status_visible: boolean;
   read_receipts_enabled: boolean;
   who_can_message: 'everyone' | 'followers' | 'no_one';
+  role: 'founder' | 'admin' | 'moderator' | 'user';
   created_at: string;
   updated_at: string;
   banner_url?: string | null;

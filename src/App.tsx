@@ -28,6 +28,8 @@ const PrivacyPage        = lazy(() => import('./pages/PrivacyPage'));
 const TermsPage          = lazy(() => import('./pages/TermsPage'));
 const TrustPage          = lazy(() => import('./pages/TrustPage'));
 const FeedbackDashboard  = lazy(() => import('./pages/FeedbackDashboard'));
+const FounderPanel       = lazy(() => import('./pages/FounderPanel'));
+const MaintenancePage   = lazy(() => import('./pages/MaintenancePage'));
 
 function PageLoader() {
   return (
@@ -41,7 +43,10 @@ function PageLoader() {
 }
 
 function AppLoader() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, systemSettings } = useAuth();
+
+  const isBypassUser = profile?.role === 'founder' || profile?.role === 'admin';
+  const isMaintenanceActive = systemSettings?.enabled === true;
 
   if (loading) {
     return (
@@ -51,6 +56,29 @@ function AppLoader() {
           <p className="text-warm-600 dark:text-warm-400 font-serif text-lg">WHISPRR</p>
         </div>
       </div>
+    );
+  }
+
+  // Maintenance Bypass check
+  if (isMaintenanceActive && !isBypassUser) {
+    const isAuthRoute = window.location.pathname === '/auth';
+    if (!user && isAuthRoute) {
+      return (
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/auth"    element={<AuthPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms"   element={<TermsPage />} />
+            <Route path="/trust"   element={<TrustPage />} />
+            <Route path="*"        element={<Navigate to="/auth" replace />} />
+          </Routes>
+        </Suspense>
+      );
+    }
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <MaintenancePage settings={systemSettings} />
+      </Suspense>
     );
   }
 
@@ -101,6 +129,9 @@ function AppLoader() {
           <Route path="/terms"                         element={<TermsPage />} />
           <Route path="/trust"                         element={<TrustPage />} />
           <Route path="/feedback"                      element={<FeedbackDashboard />} />
+          {profile?.role === 'founder' && (
+            <Route path="/founder"                     element={<FounderPanel />} />
+          )}
           <Route path="*"                              element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

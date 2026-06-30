@@ -20,6 +20,9 @@ interface AuthContextType extends AuthState {
   resetPassword: (email: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
+  systemSettings: any;
+  fetchSystemSettings: () => Promise<void>;
+  updateSystemSettings: (updates: any) => Promise<void>;
 }
 
 const AUTH_TIMEOUT_MS = 10000;
@@ -32,6 +35,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session: null,
     profile: null,
     loading: true,
+  });
+
+  const [systemSettings, setSystemSettings] = useState<any>({
+    enabled: false,
+    message: "We're currently improving WHISPRR to bring you a better experience. Thank you for your patience. ❤️",
+    reopen_at: null,
+    bypass_founder: true,
+    bypass_admin: true
   });
 
   const initializedRef = useRef(false);
@@ -69,6 +80,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ...prev,
       profile: prev.profile ? { ...prev.profile, ...updates } : { user_id: state.user!.id, ...updates } as Profile,
     }));
+  }, [state.user]);
+
+  const fetchSystemSettings = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('*')
+        .eq('key', 'maintenance_mode')
+        .maybeSingle();
+      if (!error && data) {
+        setSystemSettings(data.value);
+      }
+    } catch (err) {
+      console.error("Error fetching system settings:", err);
+    }
+  }, []);
+
+  const updateSystemSettings = useCallback(async (updates: any) => {
+    try {
+      const { error } = await supabase
+        .from('system_settings')
+        .upsert({
+          key: 'maintenance_mode',
+          value: updates,
+          updated_at: new Date().toISOString(),
+          updated_by: state.user?.id || null
+        });
+      if (error) throw error;
+      setSystemSettings(updates);
+    } catch (err) {
+      console.error("Error updating system settings:", err);
+      throw err;
+    }
   }, [state.user]);
 
   useEffect(() => {
@@ -111,6 +155,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       initializedRef.current = true;
     });
+
+    fetchSystemSettings();
 
     return () => {
       mounted = false;
@@ -169,6 +215,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       resetPassword,
       refreshProfile,
       updateProfile,
+      systemSettings,
+      fetchSystemSettings,
+      updateSystemSettings,
     }}>
       {children}
     </AuthContext.Provider>
