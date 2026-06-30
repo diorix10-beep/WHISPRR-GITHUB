@@ -215,6 +215,10 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-warm-50 dark:bg-warm-900 text-warm-900 dark:text-warm-100 flex flex-col font-sans transition-colors duration-300 selection:bg-primary-500/20">
+      {/* Build in Public Alert Banner */}
+      <div className="bg-primary-50 dark:bg-primary-950/40 border-b border-primary-100 dark:border-primary-900/30 text-center py-2 px-4 text-xs font-semibold text-primary-850 dark:text-primary-300">
+        🚧 WHISPRR is being built in public. Every update, every feature, and every improvement is shared with our community because we believe great platforms are built together.
+      </div>
       
       {/* Premium Glassmorphism Navbar */}
       <header className="sticky top-0 z-50 bg-white/80 dark:bg-warm-900/80 backdrop-blur-md border-b border-warm-200/50 dark:border-warm-800/40">
