@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Users, MessageCircle, User, Settings, Bell, ShieldAlert, Rocket } from 'lucide-react';
+import { Home, Compass, Users, MessageCircle, User, Settings, Bell, ShieldAlert, Rocket, Globe } from 'lucide-react';
 import { useNotifications } from '../../contexts/NotificationsContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Avatar } from '../common/Avatar';
@@ -13,6 +13,7 @@ const navItems = [
   { path: '/messages', icon: MessageCircle, label: 'Messages' },
   { path: '/notifications', icon: Bell, label: 'Notifications' },
   { path: '/building', icon: Rocket, label: 'Roadmap' },
+  { path: '/about', icon: Globe, label: 'About Project' },
   { path: '/profile', icon: User, label: 'Profile' },
   { path: '/settings', icon: Settings, label: 'Settings' },
 ];
