@@ -351,7 +351,7 @@ export default function MessagesPage() {
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <h3 className="font-medium text-warm-900 dark:text-warm-100 truncate flex items-center">
                       {isGroup ? ((conv as any).name || 'Group Chat') : (otherUser?.display_name || 'Unknown User')}
-                      {!isGroup && otherUser && <UserBadges badges={otherUser.badges} size="sm" />}
+                      {!isGroup && otherUser && <UserBadges badges={otherUser.badges} role={otherUser.role} size="sm" />}
                     </h3>
                     {conv.last_message_at && (
                       <span className="text-xs text-warm-500 whitespace-nowrap">

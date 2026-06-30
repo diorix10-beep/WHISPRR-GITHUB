@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { 
   ShieldAlert, Settings, Activity, Users, MessageSquare, AlertTriangle, 
-  Check, RefreshCw, Send, ShieldCheck, Heart, UserMinus, UserCheck, Search, HelpCircle, Bug, Loader2, Plus
+  Check, RefreshCw, Send, ShieldCheck, Heart, UserMinus, UserCheck, Search, HelpCircle, Bug, Loader2, Plus, Award
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -9,7 +9,7 @@ import { supabase } from '../lib/supabase';
 import type { Profile, Community } from '../types';
 import { Avatar } from '../components/common/Avatar';
 
-type PanelTab = 'system' | 'monitoring' | 'users' | 'communities' | 'testing' | 'feedback';
+type PanelTab = 'system' | 'monitoring' | 'users' | 'communities' | 'testing' | 'feedback' | 'badges';
 
 interface SystemSettingsModel {
   enabled: boolean;
@@ -59,6 +59,15 @@ export default function FounderPanel() {
   // Feedback state
   const [bugReports, setBugReports] = useState<BugReport[]>([]);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
+
+  // Badges state
+  const [selectedBadgeType, setSelectedBadgeType] = useState<string>('early_supporter');
+  const [badgeHolders, setBadgeHolders] = useState<any[]>([]);
+  const [loadingBadgeHolders, setLoadingBadgeHolders] = useState(false);
+  const [badgeSearchQuery, setBadgeSearchQuery] = useState('');
+  const [badgeSearchResults, setBadgeSearchResults] = useState<Profile[]>([]);
+  const [loadingBadgeSearch, setLoadingBadgeSearch] = useState(false);
+  const [cutoffDate, setCutoffDate] = useState<string>('2026-06-30T00:00');
 
   // Load current settings into form
   useEffect(() => {
@@ -131,11 +140,111 @@ export default function FounderPanel() {
     }
   };
 
+  // Load badge holders
+  const fetchBadgeHolders = async (badgeType: string) => {
+    setLoadingBadgeHolders(true);
+    try {
+      const { data, error } = await supabase
+        .from('user_badges')
+        .select(`
+          id,
+          earned_at,
+          profiles:user_id(user_id, username, display_name, avatar_emoji, photo_url)
+        `)
+        .eq('badge_type', badgeType);
+      if (!error && data) {
+        setBadgeHolders(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingBadgeHolders(false);
+    }
+  };
+
+  // Search users for badges
+  const handleSearchUsersForBadge = async () => {
+    if (badgeSearchQuery.trim() === '') return;
+    setLoadingBadgeSearch(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .or(`username.ilike.%${badgeSearchQuery}%,display_name.ilike.%${badgeSearchQuery}%`)
+        .limit(10);
+      if (!error && data) {
+        setBadgeSearchResults(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingBadgeSearch(false);
+    }
+  };
+
+  // Grant badge
+  const handleGrantBadge = async (targetUserId: string, badgeType: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_badges')
+        .insert({
+          user_id: targetUserId,
+          badge_type: badgeType,
+          granted_by: user?.id
+        });
+      if (error) throw error;
+      showToast('Badge granted successfully!', 'success');
+      fetchBadgeHolders(badgeType);
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to grant badge (already exists or unauthorized)', 'error');
+    }
+  };
+
+  // Revoke badge
+  const handleRemoveBadge = async (badgeId: string, badgeType: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_badges')
+        .delete()
+        .eq('id', badgeId);
+      if (error) throw error;
+      showToast('Badge revoked successfully!', 'success');
+      fetchBadgeHolders(badgeType);
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to revoke badge', 'error');
+    }
+  };
+
+  // Run Early Supporter
+  const handleRunEarlySupporter = async () => {
+    if (!cutoffDate) {
+      showToast('Please specify a cutoff date', 'error');
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data, error } = await supabase.rpc('run_early_supporter_assignment', {
+        p_cutoff_date: new Date(cutoffDate).toISOString()
+      });
+      if (error) throw error;
+      showToast(`Early Supporter Program executed! Assigned badges to ${data} users.`, 'success');
+      fetchBadgeHolders('early_supporter');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to execute assignment script', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'users') fetchUsers();
     else if (activeTab === 'communities') fetchCommunities();
     else if (activeTab === 'feedback') fetchBugReports();
-  }, [activeTab]);
+    else if (activeTab === 'badges') fetchBadgeHolders(selectedBadgeType);
+  }, [activeTab, selectedBadgeType]);
 
   // Save system settings
   const handleSaveSettings = async (e: React.FormEvent) => {
@@ -243,6 +352,7 @@ export default function FounderPanel() {
              { key: 'monitoring' as PanelTab, icon: Activity, label: 'Monitor' },
              { key: 'users' as PanelTab, icon: Users, label: 'Users' },
              { key: 'communities' as PanelTab, icon: MessageSquare, label: 'Comms' },
+             { key: 'badges' as PanelTab, icon: Award, label: 'Badges' },
              { key: 'testing' as PanelTab, icon: ShieldCheck, label: 'Testing' },
              { key: 'feedback' as PanelTab, icon: Bug, label: 'Bugs' }
           ]).map(tab => {
@@ -574,6 +684,174 @@ export default function FounderPanel() {
                 ))}
              </div>
            )}
+        </div>
+      )}
+
+      {activeTab === 'badges' && (
+        <div className="space-y-6">
+          {/* Top segment: Programmatic early supporter activation */}
+          <div className="bg-white dark:bg-warm-800 p-6 rounded-3xl border border-warm-100 dark:border-warm-700 shadow-soft space-y-4">
+             <h3 className="font-serif text-lg font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-700 pb-3 flex items-center gap-2">
+                🌱 Early Supporter Program Auto-Assignment
+             </h3>
+             <p className="text-sm text-warm-650 dark:text-warm-400">
+                Identify and award the <strong>Early Supporter</strong> badge to all beta testers whose accounts were created before the official launch date.
+             </p>
+             <div className="flex flex-col sm:flex-row items-end gap-4 max-w-xl">
+                <div className="flex-1 space-y-2">
+                   <label className="text-xs font-semibold text-warm-700 dark:text-warm-300 block">
+                      Launch Cutoff Date
+                   </label>
+                   <input 
+                     type="datetime-local"
+                     value={cutoffDate}
+                     onChange={e => setCutoffDate(e.target.value)}
+                     className="input-field py-2 text-sm"
+                   />
+                </div>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={handleRunEarlySupporter}
+                  className="btn-primary py-2.5 px-6 font-bold shrink-0"
+                >
+                   {saving ? 'Processing...' : 'Run Auto-Assignment'}
+                </button>
+             </div>
+          </div>
+
+          {/* Badge management grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+             {/* Left Column: Badge Type selection */}
+             <div className="bg-white dark:bg-warm-800 p-6 rounded-3xl border border-warm-100 dark:border-warm-700 shadow-soft space-y-4">
+                <h3 className="font-serif text-base font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-700 pb-2">
+                   Select Badge Type
+                </h3>
+                <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
+                   {([
+                      { type: 'early_supporter', icon: '🌱', label: 'Early Supporter', desc: 'Beta tester contributor' },
+                      { type: 'top_contributor', icon: '🏆', label: 'Top Contributor', desc: 'High quality engagement' },
+                      { type: 'verified_org', icon: '💜', label: 'Verified Org', desc: 'Official organizations' },
+                      { type: 'verified_creator', icon: '🎨', label: 'Verified Creator', desc: 'Artists & designers' },
+                      { type: 'ambassador', icon: '🤝', label: 'Ambassador', desc: 'Community helpers' },
+                      { type: 'beta_tester', icon: '🧪', label: 'Beta Tester', desc: 'Feature testers' },
+                      { type: 'event_host', icon: '🎉', label: 'Event Host', desc: 'Host active events' },
+                      { type: 'community_champion', icon: '🎖', label: 'Champion', desc: 'Outstanding community help' },
+                      { type: 'mentor', icon: '📚', label: 'Mentor', desc: 'User guides & helpers' },
+                      { type: 'translator', icon: '🌍', label: 'Translator', desc: 'Localization contributor' },
+                      { type: 'volunteer', icon: '❤️', label: 'Volunteer', desc: 'Help maintain platform' },
+                      { type: 'featured_creator', icon: '✨', label: 'Featured Creator', desc: 'Community highlights' }
+                   ]).map(b => (
+                      <button
+                        key={b.type}
+                        type="button"
+                        onClick={() => { setSelectedBadgeType(b.type); fetchBadgeHolders(b.type); }}
+                        className={`w-full text-left p-2.5 rounded-xl text-xs transition-all border flex items-center justify-between ${
+                          selectedBadgeType === b.type
+                            ? 'bg-primary-50 dark:bg-primary-950/20 border-primary-300 dark:border-primary-800 text-primary-900 dark:text-primary-300 font-bold'
+                            : 'border-transparent text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-700'
+                        }`}
+                      >
+                         <div className="flex items-center gap-2">
+                            <span className="text-base">{b.icon}</span>
+                            <div>
+                               <p className="font-semibold">{b.label}</p>
+                               <p className="text-[10px] opacity-75 font-normal">{b.desc}</p>
+                            </div>
+                         </div>
+                         <span className="text-[10px] bg-warm-200 dark:bg-warm-850 px-2 py-0.5 rounded-full text-warm-650 dark:text-warm-400">
+                            {selectedBadgeType === b.type ? badgeHolders.length : ''}
+                         </span>
+                      </button>
+                   ))}
+                </div>
+             </div>
+
+             {/* Middle Column: Search and grant badge */}
+             <div className="bg-white dark:bg-warm-800 p-6 rounded-3xl border border-warm-100 dark:border-warm-700 shadow-soft space-y-4">
+                <h3 className="font-serif text-base font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-700 pb-2">
+                   Grant to User
+                </h3>
+                <div className="relative">
+                   <Search size={14} className="absolute left-3 top-3 text-warm-400" />
+                   <input 
+                     type="text"
+                     placeholder="Find profile by username..."
+                     value={badgeSearchQuery}
+                     onChange={e => setBadgeSearchQuery(e.target.value)}
+                     onKeyDown={e => { if (e.key === 'Enter') handleSearchUsersForBadge(); }}
+                     className="input-field pl-9 py-2 text-xs"
+                   />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSearchUsersForBadge}
+                  className="btn-primary py-1.5 px-4 text-xs font-semibold w-full"
+                >
+                   {loadingBadgeSearch ? 'Searching...' : 'Search Users'}
+                </button>
+
+                <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                   {badgeSearchResults.map(res => (
+                      <div key={res.id} className="flex items-center justify-between p-2 rounded-xl bg-warm-50 dark:bg-warm-900 border border-warm-100 dark:border-warm-800 text-xs">
+                         <div className="flex items-center gap-2 min-w-0">
+                            <Avatar emoji={res.avatar_emoji} photoUrl={res.photo_url} size="xs" />
+                            <div className="min-w-0">
+                               <p className="font-semibold text-xs text-warm-900 dark:text-warm-100 truncate">{res.display_name}</p>
+                               <p className="text-[10px] text-warm-500 truncate">@{res.username}</p>
+                            </div>
+                         </div>
+                         <button
+                           type="button"
+                           onClick={() => handleGrantBadge(res.user_id, selectedBadgeType)}
+                           className="bg-primary-50 hover:bg-primary-100 dark:bg-primary-950/20 dark:hover:bg-primary-950/40 text-primary-600 dark:text-primary-400 font-bold text-[10px] px-2.5 py-1 rounded-xl transition-colors shrink-0"
+                         >
+                            Grant
+                         </button>
+                      </div>
+                   ))}
+                </div>
+             </div>
+
+             {/* Right Column: Badge holders list */}
+             <div className="bg-white dark:bg-warm-800 p-6 rounded-3xl border border-warm-100 dark:border-warm-700 shadow-soft space-y-4">
+                <h3 className="font-serif text-base font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-700 pb-2">
+                   Active Holders
+                </h3>
+                {loadingBadgeHolders ? (
+                  <div className="flex justify-center py-6">
+                     <Loader2 size={18} className="animate-spin text-primary-500" />
+                  </div>
+                ) : badgeHolders.length === 0 ? (
+                  <p className="text-xs text-warm-500 italic text-center py-6">No users hold this badge.</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
+                     {badgeHolders.map(holder => {
+                        const prof = holder.profiles;
+                        if (!prof) return null;
+                        return (
+                          <div key={holder.id} className="flex items-center justify-between p-2 rounded-xl bg-warm-50 dark:bg-warm-900 border border-warm-100 dark:border-warm-850 text-xs">
+                             <div className="flex items-center gap-2 min-w-0">
+                                <Avatar emoji={prof.avatar_emoji} photoUrl={prof.photo_url} size="xs" />
+                                <div className="min-w-0">
+                                   <p className="font-semibold text-xs text-warm-900 dark:text-warm-100 truncate">{prof.display_name}</p>
+                                   <p className="text-[9px] text-warm-500 truncate">@{prof.username}</p>
+                                </div>
+                             </div>
+                             <button
+                               type="button"
+                               onClick={() => handleRemoveBadge(holder.id, selectedBadgeType)}
+                               className="text-red-550 hover:text-red-700 font-bold text-[10px] px-2 py-1 rounded-xl transition-colors shrink-0"
+                             >
+                                Revoke
+                             </button>
+                          </div>
+                        );
+                     })}
+                  </div>
+                )}
+             </div>
+          </div>
         </div>
       )}
     </div>

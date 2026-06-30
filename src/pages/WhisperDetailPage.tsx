@@ -252,7 +252,7 @@ export default function WhisperDetailPage() {
                 <span className="font-semibold text-warm-900 dark:text-warm-50">
                   {comment.profiles?.display_name || 'Anonymous'}
                 </span>
-                <UserBadges badges={comment.profiles?.badges} size="sm" />
+                <UserBadges badges={comment.profiles?.badges} role={comment.profiles?.role} size="sm" />
                 <span className="text-sm text-warm-500 dark:text-warm-400">
                   @{comment.profiles?.username || 'unknown'}
                 </span>

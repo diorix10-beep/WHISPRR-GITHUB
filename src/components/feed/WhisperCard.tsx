@@ -18,12 +18,16 @@ interface WhisperCardProps {
   };
   onWhisperDeleted?: () => void;
   onReactionChange?: () => void;
+  communityOwnerId?: string;
+  communityModerators?: string[];
 }
 
 export const WhisperCard = memo(function WhisperCard({
   whisper,
   onWhisperDeleted,
   onReactionChange,
+  communityOwnerId,
+  communityModerators,
 }: WhisperCardProps) {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
@@ -125,6 +129,17 @@ export const WhisperCard = memo(function WhisperCard({
     navigate(`/profile/${whisper.profiles.username}`);
   }, [navigate, whisper.profiles.username]);
 
+  const getWhisperBadges = () => {
+    const list = [...(whisper.profiles?.badges || [])];
+    if (communityOwnerId && whisper.user_id === communityOwnerId) {
+      list.push('community_creator');
+    }
+    if (communityModerators && communityModerators.includes(whisper.user_id)) {
+      list.push('community_moderator');
+    }
+    return list;
+  };
+
   return (
     <div className="card mb-4">
       {/* Header */}
@@ -143,7 +158,11 @@ export const WhisperCard = memo(function WhisperCard({
               <span className="font-semibold text-warm-900 dark:text-warm-50 truncate">
                 {whisper.profiles.display_name}
               </span>
-              <UserBadges badges={whisper.profiles.badges} size="sm" />
+              <UserBadges 
+                badges={getWhisperBadges()} 
+                role={whisper.profiles.role}
+                size="sm" 
+              />
               <span className="text-sm text-warm-500 dark:text-warm-400 truncate">
                 @{whisper.profiles.username}
               </span>

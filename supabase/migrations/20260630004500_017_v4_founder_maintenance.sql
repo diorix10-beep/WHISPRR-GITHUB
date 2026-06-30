@@ -67,6 +67,11 @@ WITH CHECK (
 INSERT INTO public.system_settings (key, value)
 VALUES (
   'maintenance_mode',
-  '{"enabled": false, "message": "We''re currently improving WHISPRR to bring you a better experience. Thank you for your patience. ❤️", "reopen_at": null, "bypass_founder": true, "bypass_admin": true}'::jsonb
+  '{"enabled": true, "message": "We''re currently improving WHISPRR to bring you a better experience. Thank you for your patience. ❤️", "reopen_at": null, "bypass_founder": true, "bypass_admin": true}'::jsonb
 )
 ON CONFLICT (key) DO NOTHING;
+
+-- 8. Force enable maintenance mode in case settings already exist
+UPDATE public.system_settings
+SET value = jsonb_set(value, '{enabled}', 'true')
+WHERE key = 'maintenance_mode';

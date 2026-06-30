@@ -1021,13 +1021,18 @@ export default function ProfilePage() {
                 <div className="pb-2">
                   <h1 className="font-serif text-3xl font-bold text-warm-900 dark:text-warm-50 flex items-center gap-2">
                     {profile.display_name}
-                    <UserBadges badges={profile.badges} size="lg" />
+                    <UserBadges badges={profile.badges} role={profile.role} size="lg" />
                   </h1>
-                  <div className="flex items-center gap-3 text-warm-600 dark:text-warm-400 mt-1">
+                  <div className="flex flex-wrap items-center gap-3 text-warm-600 dark:text-warm-400 mt-1">
                     <span className="font-medium text-lg">@{profile.username}</span>
                     {profile.pronouns && (
                       <span className="text-sm bg-warm-100 dark:bg-warm-700 px-2 py-0.5 rounded text-warm-700 dark:text-warm-300 font-medium">
                         {profile.pronouns}
+                      </span>
+                    )}
+                    {profile.role === 'founder' && (
+                      <span className="text-xs bg-primary-100 dark:bg-primary-950/50 text-primary-700 dark:text-primary-300 font-bold px-3 py-0.5 rounded-full">
+                        👑 Building WHISPRR since Day One
                       </span>
                     )}
                     {!isOwnProfile && followsYou && (

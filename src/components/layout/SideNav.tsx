@@ -99,7 +99,7 @@ export function SideNav() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-warm-900 dark:text-warm-50 truncate flex items-center">
                 {profile.display_name}
-                <UserBadges badges={profile.badges} size="sm" />
+                <UserBadges badges={profile.badges} role={profile.role} size="sm" />
               </p>
               <p className="text-xs text-warm-500 dark:text-warm-400 truncate">
                 @{profile.username}

@@ -424,7 +424,7 @@ export default function ConversationPage() {
                 <div className="min-w-0">
                   <h1 className="font-medium text-warm-900 dark:text-warm-100 truncate flex items-center">
                     {otherUser.display_name}
-                    <UserBadges badges={otherUser.badges} size="sm" />
+                    <UserBadges badges={otherUser.badges} role={otherUser.role} size="sm" />
                   </h1>
                   <p className="text-xs text-warm-500">@{otherUser.username}</p>
                 </div>
@@ -487,7 +487,7 @@ export default function ConversationPage() {
                     {!isOwn && conversation?.type === 'group' && sender && (
                       <p className="text-xs font-semibold opacity-75 mb-1 flex items-center gap-0.5">
                         {sender.display_name}
-                        <UserBadges badges={sender.badges} size="sm" />
+                        <UserBadges badges={sender.badges} role={sender.role} size="sm" />
                       </p>
                     )}
 

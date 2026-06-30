@@ -55,7 +55,7 @@ export function UserCard({
         <div className="flex-1">
           <h3 className="font-serif text-lg font-semibold text-warm-900 dark:text-warm-50 flex items-center">
             {profile.display_name}
-            <UserBadges badges={profile.badges} size="sm" />
+            <UserBadges badges={profile.badges} role={profile.role} size="sm" />
           </h3>
           <p className="text-sm text-warm-600 dark:text-warm-400">
             @{profile.username}

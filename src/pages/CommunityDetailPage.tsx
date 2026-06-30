@@ -25,6 +25,16 @@ interface WhisperWithRelations extends Whisper {
   comment_count: number;
 }
 
+const getContextualBadges = (baseBadges: string[] = [], memberRole?: string) => {
+  const list = [...baseBadges];
+  if (memberRole === 'owner') {
+    list.push('community_creator');
+  } else if (memberRole === 'moderator' || memberRole === 'admin') {
+    list.push('community_moderator');
+  }
+  return list;
+};
+
 type TabType = 'posts' | 'members' | 'rules' | 'about' | 'manage';
 
 export default function CommunityDetailPage() {
@@ -320,7 +330,11 @@ export default function CommunityDetailPage() {
             >
               <Avatar emoji={m.profiles.avatar_emoji} photoUrl={m.profiles.photo_url} size="xs" />
               <span className="text-xs font-medium text-warm-700 dark:text-warm-300">{m.profiles.display_name}</span>
-              <UserBadges badges={(m.profiles as any).badges} size="sm" />
+              <UserBadges 
+                badges={getContextualBadges((m.profiles as any).badges, m.role)} 
+                role={(m.profiles as any).role} 
+                size="sm" 
+              />
             </button>
           ))}
         </div>
@@ -369,7 +383,14 @@ export default function CommunityDetailPage() {
           ) : (
             <div className="space-y-4">
               {whispers.map(w => (
-                <WhisperCard key={w.id} whisper={w} onWhisperDeleted={loadWhispers} onReactionChange={loadWhispers} />
+                <WhisperCard 
+                  key={w.id} 
+                  whisper={w} 
+                  onWhisperDeleted={loadWhispers} 
+                  onReactionChange={loadWhispers} 
+                  communityOwnerId={community?.owner_id}
+                  communityModerators={moderators.map(m => m.user_id)}
+                />
               ))}
             </div>
           )}
@@ -392,7 +413,11 @@ export default function CommunityDetailPage() {
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-warm-900 dark:text-warm-50 text-sm truncate flex items-center">
                       {member.profiles.display_name}
-                      <UserBadges badges={(member.profiles as any).badges} size="sm" />
+                      <UserBadges 
+                        badges={getContextualBadges((member.profiles as any).badges, member.role)} 
+                        role={(member.profiles as any).role} 
+                        size="sm" 
+                      />
                     </p>
                     <p className="text-xs text-warm-500 truncate">@{member.profiles.username}</p>
                   </div>
@@ -497,7 +522,11 @@ export default function CommunityDetailPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-warm-900 dark:text-warm-50 truncate flex items-center">
                         {m.profiles.display_name}
-                        <UserBadges badges={(m.profiles as any).badges} size="sm" />
+                        <UserBadges 
+                          badges={getContextualBadges((m.profiles as any).badges, m.role)} 
+                          role={(m.profiles as any).role} 
+                          size="sm" 
+                        />
                       </p>
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${roleLabel(m.role).color}`}>
