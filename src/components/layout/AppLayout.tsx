@@ -160,6 +160,12 @@ export function AppLayout({ children }: AppLayoutProps) {
                         Feedback
                       </button>
                       <button
+                        onClick={() => { setIsMenuOpen(false); navigate('/building'); }}
+                        className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-700 transition-colors"
+                      >
+                        Building WHISPRR
+                      </button>
+                      <button
                         onClick={() => { setIsMenuOpen(false); navigate('/settings#trust-heading'); }}
                         className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-700 transition-colors"
                       >

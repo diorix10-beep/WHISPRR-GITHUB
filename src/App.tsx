@@ -30,6 +30,7 @@ const TrustPage          = lazy(() => import('./pages/TrustPage'));
 const FeedbackDashboard  = lazy(() => import('./pages/FeedbackDashboard'));
 const FounderPanel       = lazy(() => import('./pages/FounderPanel'));
 const MaintenancePage   = lazy(() => import('./pages/MaintenancePage'));
+const BuildingPage      = lazy(() => import('./pages/BuildingPage'));
 
 function PageLoader() {
   return (
@@ -90,6 +91,7 @@ function AppLoader() {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms"   element={<TermsPage />} />
           <Route path="/trust"   element={<TrustPage />} />
+          <Route path="/building" element={<BuildingPage />} />
           <Route path="*"        element={<Navigate to="/auth" replace />} />
         </Routes>
       </Suspense>
@@ -129,6 +131,7 @@ function AppLoader() {
           <Route path="/terms"                         element={<TermsPage />} />
           <Route path="/trust"                         element={<TrustPage />} />
           <Route path="/feedback"                      element={<FeedbackDashboard />} />
+          <Route path="/building"                      element={<BuildingPage />} />
           {profile?.role === 'founder' && (
             <Route path="/founder"                     element={<FounderPanel />} />
           )}
