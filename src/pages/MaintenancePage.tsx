@@ -50,7 +50,7 @@ export default function MaintenancePage({ settings }: MaintenancePageProps) {
         </div>
 
         <div className="text-warm-500 text-xs mt-12 space-y-1">
-          <p>Need support? Contact us at support@whisprr.xyz</p>
+          <p>Need support? Contact us at help@whisprr.xyz</p>
           <p>© 2026 WHISPRR. All rights reserved.</p>
         </div>
       </div>
