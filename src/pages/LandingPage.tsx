@@ -328,7 +328,7 @@ export default function LandingPage() {
                     Join WHISPRR
                   </button>
                   <a
-                    href={import.meta.env.VITE_DISCORD_INVITE_URL || "https://discord.gg/whisprr"}
+                    href={import.meta.env.VITE_DISCORD_INVITE_URL || "https://discord.gg/WHISPRRHQ"}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="bg-warm-100 dark:bg-warm-850 hover:bg-warm-200 dark:hover:bg-warm-800 text-warm-900 dark:text-warm-100 border border-warm-250 dark:border-warm-750 font-bold py-3 px-8 rounded-2xl text-base flex items-center gap-2 transition-all shadow-sm"
@@ -920,7 +920,7 @@ export default function LandingPage() {
                       </div>
                    </div>
                    <a
-                     href={import.meta.env.VITE_DISCORD_INVITE_URL || "https://discord.gg/whisprr"}
+                     href={import.meta.env.VITE_DISCORD_INVITE_URL || "https://discord.gg/WHISPRRHQ"}
                      target="_blank"
                      rel="noopener noreferrer"
                      className="bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-3 px-8 rounded-2xl text-sm flex items-center gap-2 transition-all shadow-md shrink-0"
