@@ -1,8 +1,6 @@
-const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 const path = require('path');
 
-// Manually parse .env file
 const envPath = path.join(__dirname, '../.env');
 const envContent = fs.readFileSync(envPath, 'utf-8');
 const env = {};
@@ -18,25 +16,4 @@ envContent.split('\n').forEach(line => {
   }
 });
 
-const supabaseUrl = env.VITE_SUPABASE_URL;
-const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY;
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-async function testInsert() {
-  console.log("Testing insert on conversations with mock UUID...");
-  // Using a valid-looking UUID that doesn't exist in auth.users
-  const mockUuid = '00000000-0000-0000-0000-000000000000';
-  
-  const { data, error } = await supabase
-    .from('conversations')
-    .insert({
-      type: 'dm',
-      created_by: mockUuid
-    })
-    .select();
-
-  console.log("Insert result:", { data, error });
-}
-
-testInsert();
+console.log("Env keys:", Object.keys(env));

@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { MOODS, INTERESTS } from '../types';
 import type { Mood, Interest } from '../types';
 
-type Step = 1 | 2 | 3 | 4 | 5 | 6;
+type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 const AVATAR_EMOJIS = ['💫', '🌙', '🦋', '🌸', '🎨', '🎵', '🌊', '✨', '🌿', '🔥', '💜', '🌻', '🌈', '🎭', '📖', '🌍', '🎪', '🍀', '🦊', '🐝', '🌺', '💭', '🪐', '⭐'];
 
@@ -16,6 +16,7 @@ interface OnboardingData {
   mood: Mood | null;
   interests: Interest[];
   bio: string;
+  country: string;
 }
 
 export default function OnboardingPage() {
@@ -26,6 +27,22 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
+  const [detectingCountry, setDetectingCountry] = useState(false);
+
+  const handleDetectCountry = useCallback(async () => {
+    setDetectingCountry(true);
+    try {
+      const res = await fetch('https://ipapi.co/json/');
+      const json = await res.json();
+      if (json && json.country_name) {
+        setData(d => ({ ...d, country: json.country_name }));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDetectingCountry(false);
+    }
+  }, []);
 
   const [data, setData] = useState<OnboardingData>({
     displayName: profile?.display_name || '',
@@ -34,6 +51,7 @@ export default function OnboardingPage() {
     mood: (profile?.mood as Mood) || null,
     interests: (profile?.interests as Interest[]) || [],
     bio: profile?.bio || '',
+    country: (profile as any)?.home_country || 'Senegal',
   });
 
   // Check username uniqueness
@@ -114,6 +132,12 @@ export default function OnboardingPage() {
         return;
       }
       setCurrentStep(6);
+    } else if (currentStep === 6) {
+      if (!data.country.trim()) {
+        setError('Country is required');
+        return;
+      }
+      setCurrentStep(7);
     }
   }, [currentStep, data, checkUsernameUniqueness]);
 
@@ -136,6 +160,7 @@ export default function OnboardingPage() {
         mood: data.mood,
         interests: data.interests,
         bio: data.bio || null,
+        home_country: data.country,
         onboarding_complete: true,
       });
 
@@ -160,7 +185,7 @@ export default function OnboardingPage() {
         {/* Progress Indicator */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
-            {[1, 2, 3, 4, 5, 6].map((step) => (
+            {[1, 2, 3, 4, 5, 6, 7].map((step) => (
               <div
                 key={step}
                 className={`h-2 flex-1 rounded-full mx-1 transition-colors ${
@@ -170,7 +195,7 @@ export default function OnboardingPage() {
             ))}
           </div>
           <p className="text-center text-sm text-gray-600 font-sans">
-            Step {currentStep} of 6
+            Step {currentStep} of 7
           </p>
         </div>
 
@@ -358,8 +383,55 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Step 6: Review */}
+          {/* Step 6: Country Selection */}
           {currentStep === 6 && (
+            <div>
+              <h1 className="text-4xl font-serif text-primary-500 mb-2">
+                🌍 Where Are You From?
+              </h1>
+              <p className="text-gray-600 mb-8 font-sans">
+                Your home country personalizes your feed and local communities. You can always explore other countries later.
+              </p>
+
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={handleDetectCountry}
+                  disabled={detectingCountry}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 border-2 border-primary-300 rounded-xl font-sans font-semibold text-primary-700 hover:bg-primary-50 transition-colors disabled:opacity-50"
+                >
+                  {detectingCountry ? '🔍 Detecting...' : '📍 Detect My Country Automatically'}
+                </button>
+
+                <p className="text-center text-xs text-gray-400 font-sans">— or type your country —</p>
+
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl font-sans focus:outline-none focus:border-primary-500 transition-colors"
+                  placeholder="e.g. Senegal, Canada, Japan..."
+                  value={data.country}
+                  onChange={(e) => setData({ ...data, country: e.target.value })}
+                />
+
+                {data.country && (
+                  <div className="p-4 bg-primary-50 border border-primary-200 rounded-xl flex items-center gap-3">
+                    <span className="text-2xl">🏠</span>
+                    <div>
+                      <p className="text-xs text-primary-600 font-semibold font-sans uppercase tracking-wide">Your Home Country</p>
+                      <p className="text-lg font-serif font-bold text-primary-700">{data.country}</p>
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-xs text-gray-400 text-center font-sans">
+                  This helps surface local creators, communities, and trends. You can always explore any country's WHISPRR space freely.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Step 7: Review */}
+          {currentStep === 7 && (
             <div>
               <h1 className="text-4xl font-serif text-primary-500 mb-2">
                 Review Your Profile
@@ -403,6 +475,14 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
+                {/* Home Country */}
+                <div>
+                  <h3 className="text-sm font-sans font-semibold text-gray-700 mb-2">
+                    Home Country
+                  </h3>
+                  <p className="text-gray-600 font-sans">🌍 {data.country}</p>
+                </div>
+
                 {/* Bio */}
                 {data.bio && (
                   <div>
@@ -435,7 +515,7 @@ export default function OnboardingPage() {
             </button>
           )}
 
-          {currentStep < 6 ? (
+          {currentStep < 7 ? (
             <button
               onClick={handleNext}
               disabled={checkingUsername && currentStep === 1}

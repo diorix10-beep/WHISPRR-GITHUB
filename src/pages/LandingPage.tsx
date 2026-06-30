@@ -468,66 +468,78 @@ export default function LandingPage() {
              </div>
 
              {/* Roadmap section */}
-             <div className="space-y-6">
+             <div className="space-y-4">
                 <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-750 pb-2">
                    Public Roadmap
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                    {/* Released */}
-                   <div className="space-y-3">
-                      <div className="flex items-center gap-1.5 text-xs text-green-500 font-bold uppercase pb-1 border-b border-green-200 dark:border-green-900/40">
-                         <CheckCircle size={14} /> <span>Released</span>
+                   <div className="space-y-2">
+                      <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-bold uppercase pb-1 border-b border-emerald-500/20">
+                         <CheckCircle size={13} /> <span>Released</span>
                       </div>
                       <div className="space-y-2">
                          {ROADMAP_ITEMS.filter(r => r.status === 'released').map((item, idx) => (
-                            <div key={idx} className="p-3 bg-white dark:bg-warm-800 rounded-xl border border-warm-150 dark:border-warm-700 text-xs shadow-sm">
-                               <p className="font-bold text-warm-900 dark:text-warm-150">{item.title}</p>
-                               <p className="text-warm-500 mt-0.5 leading-relaxed">{item.description}</p>
+                            <div key={idx} className="p-2.5 bg-white dark:bg-warm-800 rounded-xl border border-emerald-500/20 dark:border-emerald-500/30 text-xs shadow-sm leading-tight">
+                               <p className="font-bold text-warm-900 dark:text-warm-150 flex items-center justify-between gap-1.5">
+                                 <span>{item.title}</span>
+                                 <span className="text-[8px] bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 font-bold px-1.5 rounded shrink-0">Released</span>
+                               </p>
+                               <p className="text-warm-500 mt-1 text-[11px] leading-snug">{item.description}</p>
                             </div>
                          ))}
                       </div>
                    </div>
 
                    {/* In Progress */}
-                   <div className="space-y-3">
-                      <div className="flex items-center gap-1.5 text-xs text-amber-500 font-bold uppercase pb-1 border-b border-amber-200 dark:border-amber-900/40">
-                         <Clock size={14} className="animate-pulse" /> <span>In Progress</span>
+                   <div className="space-y-2">
+                      <div className="flex items-center gap-1.5 text-xs text-orange-500 font-bold uppercase pb-1 border-b border-orange-500/20">
+                         <Clock size={13} className="animate-pulse" /> <span>In Progress</span>
                       </div>
                       <div className="space-y-2">
                          {ROADMAP_ITEMS.filter(r => r.status === 'in_progress').map((item, idx) => (
-                            <div key={idx} className="p-3 bg-white dark:bg-warm-800 rounded-xl border border-amber-100 dark:border-amber-950/20 text-xs shadow-sm">
-                               <p className="font-bold text-warm-900 dark:text-warm-150">{item.title}</p>
-                               <p className="text-warm-500 mt-0.5 leading-relaxed">{item.description}</p>
+                            <div key={idx} className="p-2.5 bg-white dark:bg-warm-800 rounded-xl border border-orange-500/20 dark:border-orange-500/30 text-xs shadow-sm leading-tight">
+                               <p className="font-bold text-warm-900 dark:text-warm-150 flex items-center justify-between gap-1.5">
+                                 <span>{item.title}</span>
+                                 <span className="text-[8px] bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-350 font-bold px-1.5 rounded shrink-0 animate-pulse">Running</span>
+                               </p>
+                               <p className="text-warm-500 mt-1 text-[11px] leading-snug">{item.description}</p>
                             </div>
                          ))}
                       </div>
                    </div>
 
                    {/* Planned */}
-                   <div className="space-y-3">
-                      <div className="flex items-center gap-1.5 text-xs text-blue-500 font-bold uppercase pb-1 border-b border-blue-200 dark:border-blue-900/40">
-                         <Eye size={14} /> <span>Planned</span>
+                   <div className="space-y-2">
+                      <div className="flex items-center gap-1.5 text-xs text-blue-500 font-bold uppercase pb-1 border-b border-blue-500/20">
+                         <Eye size={13} /> <span>Planned</span>
                       </div>
                       <div className="space-y-2">
                          {ROADMAP_ITEMS.filter(r => r.status === 'planned').map((item, idx) => (
-                            <div key={idx} className="p-3 bg-white dark:bg-warm-800 rounded-xl border border-warm-150 dark:border-warm-700 text-xs shadow-sm">
-                               <p className="font-bold text-warm-900 dark:text-warm-150">{item.title}</p>
-                               <p className="text-warm-500 mt-0.5 leading-relaxed">{item.description}</p>
+                            <div key={idx} className="p-2.5 bg-white dark:bg-warm-800 rounded-xl border border-blue-500/20 dark:border-blue-500/30 text-xs shadow-sm leading-tight">
+                               <p className="font-bold text-warm-900 dark:text-warm-150 flex items-center justify-between gap-1.5">
+                                 <span>{item.title}</span>
+                                 <span className="text-[8px] bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 font-bold px-1.5 rounded shrink-0">Planned</span>
+                               </p>
+                               <p className="text-warm-500 mt-1 text-[11px] leading-snug">{item.description}</p>
                             </div>
                          ))}
                       </div>
                    </div>
 
                    {/* Future Vision */}
-                   <div className="space-y-3">
-                      <div className="flex items-center gap-1.5 text-xs text-purple-500 font-bold uppercase pb-1 border-b border-purple-200 dark:border-purple-900/40">
-                         <Sparkles size={14} /> <span>Future Vision</span>
+                   <div className="space-y-2">
+                      <div className="flex items-center gap-1.5 text-xs text-purple-500 font-bold uppercase pb-1 border-b border-purple-500/20">
+                         <Sparkles size={13} /> <span>Future Vision</span>
                       </div>
                       <div className="space-y-2">
                          {ROADMAP_ITEMS.filter(r => r.status === 'future_vision').map((item, idx) => (
-                            <div key={idx} className="p-3 bg-white dark:bg-warm-800 rounded-xl border border-warm-150 dark:border-warm-700 text-xs shadow-sm">
-                               <p className="font-bold text-warm-900 dark:text-warm-150">{item.title}</p>
-                               <p className="text-warm-500 mt-0.5 leading-relaxed">{item.description}</p>
+                            <div key={idx} className="p-2.5 bg-white dark:bg-warm-800 rounded-xl border border-purple-500/20 dark:border-purple-500/30 text-xs shadow-sm leading-tight">
+                               <p className="font-bold text-warm-900 dark:text-warm-150 flex items-center justify-between gap-1.5">
+                                 <span>{item.title}</span>
+                                 <span className="text-[8px] bg-purple-50 text-purple-750 dark:bg-purple-950/40 dark:text-purple-300 font-bold px-1.5 rounded shrink-0">Vision</span>
+                               </p>
+                               <p className="text-warm-500 mt-1 text-[11px] leading-snug">{item.description}</p>
                             </div>
                          ))}
                       </div>
@@ -540,20 +552,40 @@ export default function LandingPage() {
                 <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-750 pb-2">
                    Product Journey
                 </h3>
-                <div className="relative pl-6 md:pl-0 border-l md:border-l-0 md:flex md:flex-row md:justify-between md:items-start border-warm-200 dark:border-warm-750 space-y-6 md:space-y-0 py-4">
-                   <div className="absolute top-0 bottom-0 left-0 md:left-1/2 md:right-1/2 md:-translate-x-1/2 w-0.5 bg-warm-250 dark:bg-warm-750 hidden md:block" />
-                   {TIMELINE.map((item, idx) => (
-                      <div key={idx} className="relative md:flex-1 md:text-center px-4">
-                         <div className="absolute left-[-29px] md:left-1/2 md:top-[-8px] md:-translate-x-1/2 w-6 h-6 rounded-full bg-white dark:bg-warm-800 border-2 border-primary-500 flex items-center justify-center text-xs shadow-sm z-10">
-                            {item.icon}
+                <div className="relative pl-6 md:pl-0 border-l md:border-l-0 md:flex md:flex-row md:justify-between md:items-start border-warm-250 dark:border-warm-800 space-y-6 md:space-y-0 py-6">
+                   {/* Horizontal track line for desktop */}
+                   <div className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-primary-500 to-warm-300 dark:to-warm-700 -translate-y-1/2 hidden md:block" />
+                   
+                   {TIMELINE.map((item, idx) => {
+                      const isCompleted = idx < 5; // First 5 items (Beta through Badge System) are active/completed
+                      return (
+                         <div key={idx} className="relative md:flex-1 md:text-center px-4 group">
+                            {/* Marker dot */}
+                            <div className={`absolute left-[-29px] md:left-1/2 md:top-1/2 md:-translate-y-1/2 md:-translate-x-1/2 w-7 h-7 rounded-full flex items-center justify-center text-xs shadow-soft z-10 transition-transform group-hover:scale-110 ${
+                               isCompleted 
+                                  ? 'bg-emerald-500 text-white ring-4 ring-emerald-100 dark:ring-emerald-950/40' 
+                                  : 'bg-warm-200 dark:bg-warm-800 text-warm-500 border-2 border-warm-350 dark:border-warm-700'
+                            }`}>
+                               {item.icon}
+                            </div>
+                            
+                            {/* Content box */}
+                            <div className={`p-4 bg-white dark:bg-warm-800 rounded-2xl border text-left shadow-soft inline-block md:w-full md:mt-8 relative transition-all ${
+                               isCompleted 
+                                  ? 'border-emerald-500/20 dark:border-emerald-500/30' 
+                                  : 'border-warm-150 dark:border-warm-750 opacity-75'
+                            }`}>
+                               <span className={`text-[8px] font-bold uppercase tracking-wider block mb-0.5 ${
+                                  isCompleted ? 'text-emerald-600 dark:text-emerald-400' : 'text-warm-450'
+                               }`}>
+                                  {isCompleted ? 'Active Epoch' : 'Upcoming Stage'}
+                               </span>
+                               <p className="font-serif font-bold text-xs text-warm-900 dark:text-warm-100">{item.title}</p>
+                               <p className="text-[10px] text-warm-500 mt-1 leading-relaxed">{item.description}</p>
+                            </div>
                          </div>
-                         <div className="bg-white dark:bg-warm-800 p-4 rounded-xl border border-warm-150 dark:border-warm-700 shadow-sm inline-block text-left md:w-full md:mt-6">
-                            <span className="text-[8px] font-bold text-primary-500 block mb-0.5">{item.date}</span>
-                            <p className="font-bold text-xs text-warm-900 dark:text-warm-100">{item.title}</p>
-                            <p className="text-[10px] text-warm-500 mt-0.5 leading-relaxed">{item.description}</p>
-                         </div>
-                      </div>
-                   ))}
+                      );
+                   })}
                 </div>
              </div>
 

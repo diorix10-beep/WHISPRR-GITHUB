@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { 
   ShieldAlert, Settings, Activity, Users, MessageSquare, AlertTriangle, 
-  Check, RefreshCw, Send, ShieldCheck, Heart, UserMinus, UserCheck, Search, HelpCircle, Bug, Loader2, Plus, Award
+  Check, RefreshCw, Send, ShieldCheck, Heart, UserMinus, UserCheck, Search, HelpCircle, Bug, Loader2, Plus, Award,
+  PenTool, FileText, BookOpen, Flag, Rocket, GitCommit
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -9,7 +10,7 @@ import { supabase } from '../lib/supabase';
 import type { Profile, Community } from '../types';
 import { Avatar } from '../components/common/Avatar';
 
-type PanelTab = 'system' | 'monitoring' | 'users' | 'communities' | 'testing' | 'feedback' | 'badges';
+type PanelTab = 'system' | 'monitoring' | 'users' | 'communities' | 'testing' | 'feedback' | 'badges' | 'updates';
 
 interface SystemSettingsModel {
   enabled: boolean;
@@ -68,6 +69,63 @@ export default function FounderPanel() {
   const [badgeSearchResults, setBadgeSearchResults] = useState<Profile[]>([]);
   const [loadingBadgeSearch, setLoadingBadgeSearch] = useState(false);
   const [cutoffDate, setCutoffDate] = useState<string>('2026-06-30T00:00');
+
+  // Publish Updates states
+  const [updatesSubTab, setUpdatesSubTab] = useState<'roadmap' | 'changelog' | 'journal' | 'flags'>('roadmap');
+
+  // Roadmap States
+  const [roadmapList, setRoadmapList] = useState<any[]>([]);
+  const [loadingRoadmap, setLoadingRoadmap] = useState(false);
+  const [editingRoadmapId, setEditingRoadmapId] = useState<string | null>(null);
+  const [roadmapForm, setRoadmapForm] = useState({
+    title: '',
+    description: '',
+    status: 'planned',
+    category: 'Core',
+    is_community_requested: false,
+    requested_by_count: 0,
+    pinned_milestone: false,
+    milestone_icon: ''
+  });
+
+  // Changelog States
+  const [changelogList, setChangelogList] = useState<any[]>([]);
+  const [loadingChangelog, setLoadingChangelog] = useState(false);
+  const [editingChangelogId, setEditingChangelogId] = useState<string | null>(null);
+  const [changelogForm, setChangelogForm] = useState({
+    version: '',
+    title: '',
+    summary: '',
+    status: 'draft',
+    new_features: '',
+    improvements: '',
+    bug_fixes: '',
+    performance: ''
+  });
+
+  // Journal States
+  const [journalList, setJournalList] = useState<any[]>([]);
+  const [loadingJournal, setLoadingJournal] = useState(false);
+  const [editingJournalId, setEditingJournalId] = useState<string | null>(null);
+  const [journalForm, setJournalForm] = useState({
+    title: '',
+    excerpt: '',
+    content: '',
+    category: 'Founder Journal',
+    read_time: '5 min read',
+    status: 'draft'
+  });
+
+  // Feature Flags States
+  const [flagsList, setFlagsList] = useState<any[]>([]);
+  const [loadingFlags, setLoadingFlags] = useState(false);
+  const [editingFlagId, setEditingFlagId] = useState<string | null>(null);
+  const [flagForm, setFlagForm] = useState({
+    name: '',
+    description: '',
+    status: 'disabled',
+    target_countries: ''
+  });
 
   // Load current settings into form
   useEffect(() => {
@@ -239,11 +297,288 @@ export default function FounderPanel() {
     }
   };
 
+  const fetchRoadmapItems = async () => {
+    setLoadingRoadmap(true);
+    try {
+      const { data, error } = await supabase.from('public_roadmap').select('*').order('created_at', { ascending: false });
+      if (!error && data) setRoadmapList(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingRoadmap(false);
+    }
+  };
+
+  const handleSaveRoadmapItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      if (editingRoadmapId) {
+        const { error } = await supabase
+          .from('public_roadmap')
+          .update({ ...roadmapForm, updated_at: new Date().toISOString() })
+          .eq('id', editingRoadmapId);
+        if (error) throw error;
+        showToast('Roadmap item updated!', 'success');
+      } else {
+        const { error } = await supabase
+          .from('public_roadmap')
+          .insert(roadmapForm);
+        if (error) throw error;
+        showToast('Roadmap item created!', 'success');
+      }
+      
+      // Auto-trigger changelog pre-fill workflow if marked Released
+      if (roadmapForm.status === 'released') {
+        setChangelogForm({
+          version: `v${changelogList.length + 4}.0.0-draft`,
+          title: `${roadmapForm.title} Released`,
+          summary: `The community-driven feature "${roadmapForm.title}" is now officially live! ${roadmapForm.description}`,
+          status: 'draft',
+          new_features: roadmapForm.title,
+          improvements: '',
+          bug_fixes: '',
+          performance: ''
+        });
+        setUpdatesSubTab('changelog');
+        showToast('✨ Feature is Released! Pre-filled a draft Changelog for you below.', 'info');
+      }
+      
+      setEditingRoadmapId(null);
+      setRoadmapForm({
+        title: '',
+        description: '',
+        status: 'planned',
+        category: 'Core',
+        is_community_requested: false,
+        requested_by_count: 0,
+        pinned_milestone: false,
+        milestone_icon: ''
+      });
+      fetchRoadmapItems();
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to save roadmap item', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteRoadmapItem = async (id: string) => {
+    if (!window.confirm('Delete this roadmap item?')) return;
+    try {
+      const { error } = await supabase.from('public_roadmap').delete().eq('id', id);
+      if (error) throw error;
+      showToast('Roadmap item deleted!', 'success');
+      fetchRoadmapItems();
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to delete roadmap item', 'error');
+    }
+  };
+
+  const fetchChangelogs = async () => {
+    setLoadingChangelog(true);
+    try {
+      const { data, error } = await supabase.from('public_changelog').select('*').order('version', { ascending: false });
+      if (!error && data) setChangelogList(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingChangelog(false);
+    }
+  };
+
+  const handleSaveChangelog = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const payload = {
+        version: changelogForm.version,
+        title: changelogForm.title,
+        summary: changelogForm.summary,
+        status: changelogForm.status,
+        new_features: changelogForm.new_features ? changelogForm.new_features.split(',').map(s => s.trim()) : [],
+        improvements: changelogForm.improvements ? changelogForm.improvements.split(',').map(s => s.trim()) : [],
+        bug_fixes: changelogForm.bug_fixes ? changelogForm.bug_fixes.split(',').map(s => s.trim()) : [],
+        performance: changelogForm.performance ? changelogForm.performance.split(',').map(s => s.trim()) : []
+      };
+
+      if (editingChangelogId) {
+        const { error } = await supabase.from('public_changelog').update(payload).eq('id', editingChangelogId);
+        if (error) throw error;
+        showToast('Changelog updated!', 'success');
+      } else {
+        const { error } = await supabase.from('public_changelog').insert(payload);
+        if (error) throw error;
+        showToast('Changelog created!', 'success');
+      }
+      setEditingChangelogId(null);
+      setChangelogForm({
+        version: '',
+        title: '',
+        summary: '',
+        status: 'draft',
+        new_features: '',
+        improvements: '',
+        bug_fixes: '',
+        performance: ''
+      });
+      fetchChangelogs();
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to save changelog', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteChangelog = async (id: string) => {
+    if (!window.confirm('Delete this changelog?')) return;
+    try {
+      const { error } = await supabase.from('public_changelog').delete().eq('id', id);
+      if (error) throw error;
+      showToast('Changelog deleted!', 'success');
+      fetchChangelogs();
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to delete changelog', 'error');
+    }
+  };
+
+  const fetchJournals = async () => {
+    setLoadingJournal(true);
+    try {
+      const { data, error } = await supabase.from('founder_journal').select('*').order('published_at', { ascending: false });
+      if (!error && data) setJournalList(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingJournal(false);
+    }
+  };
+
+  const handleSaveJournal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      if (editingJournalId) {
+        const { error } = await supabase.from('founder_journal').update(journalForm).eq('id', editingJournalId);
+        if (error) throw error;
+        showToast('Journal post updated!', 'success');
+      } else {
+        const { error } = await supabase.from('founder_journal').insert(journalForm);
+        if (error) throw error;
+        showToast('Journal post created!', 'success');
+      }
+      setEditingJournalId(null);
+      setJournalForm({
+        title: '',
+        excerpt: '',
+        content: '',
+        category: 'Founder Journal',
+        read_time: '5 min read',
+        status: 'draft'
+      });
+      fetchJournals();
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to save journal post', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteJournal = async (id: string) => {
+    if (!window.confirm('Delete this journal post?')) return;
+    try {
+      const { error } = await supabase.from('founder_journal').delete().eq('id', id);
+      if (error) throw error;
+      showToast('Journal post deleted!', 'success');
+      fetchJournals();
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to delete journal post', 'error');
+    }
+  };
+
+  const fetchFeatureFlags = async () => {
+    setLoadingFlags(true);
+    try {
+      const { data, error } = await supabase.from('feature_flags').select('*').order('name', { ascending: true });
+      if (!error && data) setFlagsList(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingFlags(false);
+    }
+  };
+
+  const handleSaveFeatureFlag = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const countriesArray = flagForm.target_countries 
+        ? flagForm.target_countries.split(',').map(c => c.trim()).filter(Boolean) 
+        : [];
+      
+      const payload = {
+        name: flagForm.name.trim().toLowerCase().replace(/\s+/g, '_'),
+        description: flagForm.description,
+        status: flagForm.status,
+        target_countries: countriesArray,
+        updated_at: new Date().toISOString()
+      };
+
+      if (editingFlagId) {
+        const { error } = await supabase.from('feature_flags').update(payload).eq('id', editingFlagId);
+        if (error) throw error;
+        showToast('Feature Flag updated!', 'success');
+      } else {
+        const { error } = await supabase.from('feature_flags').insert({ ...payload, created_at: new Date().toISOString() });
+        if (error) throw error;
+        showToast('Feature Flag created!', 'success');
+      }
+      setEditingFlagId(null);
+      setFlagForm({
+        name: '',
+        description: '',
+        status: 'disabled',
+        target_countries: ''
+      });
+      fetchFeatureFlags();
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to save feature flag', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteFeatureFlag = async (id: string) => {
+    if (!window.confirm('Delete this feature flag?')) return;
+    try {
+      const { error } = await supabase.from('feature_flags').delete().eq('id', id);
+      if (error) throw error;
+      showToast('Feature Flag deleted!', 'success');
+      fetchFeatureFlags();
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to delete feature flag', 'error');
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'users') fetchUsers();
     else if (activeTab === 'communities') fetchCommunities();
     else if (activeTab === 'feedback') fetchBugReports();
     else if (activeTab === 'badges') fetchBadgeHolders(selectedBadgeType);
+    else if (activeTab === 'updates') {
+      fetchRoadmapItems();
+      fetchChangelogs();
+      fetchJournals();
+      fetchFeatureFlags();
+    }
   }, [activeTab, selectedBadgeType]);
 
   // Save system settings
@@ -353,6 +688,7 @@ export default function FounderPanel() {
              { key: 'users' as PanelTab, icon: Users, label: 'Users' },
              { key: 'communities' as PanelTab, icon: MessageSquare, label: 'Comms' },
              { key: 'badges' as PanelTab, icon: Award, label: 'Badges' },
+             { key: 'updates' as PanelTab, icon: PenTool, label: 'Publish Updates' },
              { key: 'testing' as PanelTab, icon: ShieldCheck, label: 'Testing' },
              { key: 'feedback' as PanelTab, icon: Bug, label: 'Bugs' }
           ]).map(tab => {
@@ -852,6 +1188,699 @@ export default function FounderPanel() {
                 )}
              </div>
           </div>
+        </div>
+      )}
+
+      {activeTab === 'updates' && (
+        <div className="space-y-6">
+           {/* Sub tabs selectors */}
+           <div className="flex gap-2 pb-2 border-b border-warm-200 dark:border-warm-800">
+              {([
+                 { key: 'roadmap' as const, label: 'Roadmap Manager', icon: Rocket },
+                 { key: 'changelog' as const, label: 'Changelog Editor', icon: GitCommit },
+                 { key: 'journal' as const, label: 'Founder Journal', icon: BookOpen },
+                 { key: 'flags' as const, label: 'Feature Flags', icon: Flag }
+              ]).map(sub => {
+                 const SubIcon = sub.icon;
+                 return (
+                    <button
+                      key={sub.key}
+                      onClick={() => setUpdatesSubTab(sub.key)}
+                      className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                         updatesSubTab === sub.key
+                            ? 'bg-primary-500 text-white shadow-soft'
+                            : 'bg-warm-100 dark:bg-warm-850 text-warm-600 dark:text-warm-400'
+                      }`}
+                    >
+                       <SubIcon size={12} />
+                       <span>{sub.label}</span>
+                    </button>
+                 );
+              })}
+           </div>
+
+           {/* ROADMAP SUB-TAB */}
+           {updatesSubTab === 'roadmap' && (
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                 {/* Roadmap Form */}
+                 <div className="lg:col-span-2 bg-white dark:bg-warm-800 p-6 rounded-3xl border border-warm-100 dark:border-warm-700 shadow-soft space-y-4">
+                    <h4 className="font-serif text-base font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-750 pb-2">
+                       {editingRoadmapId ? 'Edit Feature' : 'Create Feature'}
+                    </h4>
+                    <form onSubmit={handleSaveRoadmapItem} className="space-y-3 text-xs">
+                       <div className="space-y-1">
+                          <label className="font-semibold text-warm-700 dark:text-warm-300">Feature Title</label>
+                          <input
+                            type="text"
+                            value={roadmapForm.title}
+                            onChange={e => setRoadmapForm({ ...roadmapForm, title: e.target.value })}
+                            className="input-field py-1.5 px-3"
+                            required
+                          />
+                       </div>
+
+                       <div className="space-y-1">
+                          <label className="font-semibold text-warm-700 dark:text-warm-300">Description</label>
+                          <textarea
+                            value={roadmapForm.description}
+                            onChange={e => setRoadmapForm({ ...roadmapForm, description: e.target.value })}
+                            className="input-field py-1.5 px-3 min-h-16"
+                            required
+                          />
+                       </div>
+
+                       <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                             <label className="font-semibold text-warm-700 dark:text-warm-300">Status</label>
+                             <select
+                               value={roadmapForm.status}
+                               onChange={e => setRoadmapForm({ ...roadmapForm, status: e.target.value as any })}
+                               className="input-field py-1.5 px-2"
+                             >
+                                <option value="planned">Planned</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="released">Released</option>
+                                <option value="future_vision">Future Vision</option>
+                                <option value="recently_completed">Recently Completed</option>
+                                <option value="under_development">Under Development</option>
+                                <option value="testing">Testing</option>
+                                <option value="under_consideration">Under Consideration</option>
+                             </select>
+                          </div>
+                          <div className="space-y-1">
+                             <label className="font-semibold text-warm-700 dark:text-warm-300">Category</label>
+                             <input
+                               type="text"
+                               value={roadmapForm.category}
+                               onChange={e => setRoadmapForm({ ...roadmapForm, category: e.target.value })}
+                               className="input-field py-1.5 px-3"
+                               required
+                             />
+                          </div>
+                       </div>
+
+                       <div className="flex items-center gap-6 py-1">
+                          <label className="flex items-center gap-1.5 cursor-pointer font-semibold text-warm-700 dark:text-warm-300">
+                             <input
+                               type="checkbox"
+                               checked={roadmapForm.is_community_requested}
+                               onChange={e => setRoadmapForm({ ...roadmapForm, is_community_requested: e.target.checked })}
+                               className="rounded border-warm-300 text-primary-500"
+                             />
+                             <span>Community Requested</span>
+                          </label>
+
+                          <label className="flex items-center gap-1.5 cursor-pointer font-semibold text-warm-700 dark:text-warm-300">
+                             <input
+                               type="checkbox"
+                               checked={roadmapForm.pinned_milestone}
+                               onChange={e => setRoadmapForm({ ...roadmapForm, pinned_milestone: e.target.checked })}
+                               className="rounded border-warm-300 text-primary-500"
+                             />
+                             <span>Timeline Milestone</span>
+                          </label>
+                       </div>
+
+                       {roadmapForm.is_community_requested && (
+                          <div className="space-y-1">
+                             <label className="font-semibold text-warm-700 dark:text-warm-300">Requested By Users Count</label>
+                             <input
+                               type="number"
+                               value={roadmapForm.requested_by_count}
+                               onChange={e => setRoadmapForm({ ...roadmapForm, requested_by_count: parseInt(e.target.value) || 0 })}
+                               className="input-field py-1.5 px-3"
+                             />
+                          </div>
+                       )}
+
+                       {roadmapForm.pinned_milestone && (
+                          <div className="space-y-1">
+                             <label className="font-semibold text-warm-700 dark:text-warm-300">Milestone Icon (Emoji)</label>
+                             <input
+                               type="text"
+                               value={roadmapForm.milestone_icon}
+                               onChange={e => setRoadmapForm({ ...roadmapForm, milestone_icon: e.target.value })}
+                               placeholder="e.g. 🎨"
+                               className="input-field py-1.5 px-3"
+                             />
+                          </div>
+                       )}
+
+                       <div className="flex gap-2 pt-2">
+                          <button type="submit" disabled={saving} className="btn-primary py-2 px-4 font-bold flex-1">
+                             {saving ? 'Saving...' : 'Save Item'}
+                          </button>
+                          {editingRoadmapId && (
+                             <button
+                               type="button"
+                               onClick={() => {
+                                  setEditingRoadmapId(null);
+                                  setRoadmapForm({
+                                     title: '',
+                                     description: '',
+                                     status: 'planned',
+                                     category: 'Core',
+                                     is_community_requested: false,
+                                     requested_by_count: 0,
+                                     pinned_milestone: false,
+                                     milestone_icon: ''
+                                  });
+                               }}
+                               className="btn-secondary py-2 px-3 text-xs"
+                             >
+                                Cancel
+                             </button>
+                          )}
+                       </div>
+                    </form>
+                 </div>
+
+                 {/* Roadmap List */}
+                 <div className="lg:col-span-3 bg-white dark:bg-warm-800 p-6 rounded-3xl border border-warm-100 dark:border-warm-700 shadow-soft space-y-4">
+                    <h4 className="font-serif text-base font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-750 pb-2">
+                       Active Roadmap Items
+                    </h4>
+                    {loadingRoadmap ? (
+                       <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary-500" /></div>
+                    ) : roadmapList.length === 0 ? (
+                       <p className="text-xs text-warm-500 italic text-center py-10">No items found.</p>
+                    ) : (
+                       <div className="space-y-2 max-h-[32rem] overflow-y-auto pr-1">
+                          {roadmapList.map(item => (
+                             <div key={item.id} className="p-3 rounded-2xl bg-warm-50 dark:bg-warm-900 border border-warm-100 dark:border-warm-850 flex items-start justify-between gap-4 text-xs">
+                                <div className="space-y-1 min-w-0">
+                                   <div className="flex items-center flex-wrap gap-1.5">
+                                      <span className="font-bold text-warm-900 dark:text-warm-100">{item.title}</span>
+                                      <span className="text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-warm-200 dark:bg-warm-800 text-warm-650 dark:text-warm-400">
+                                         {item.status.replace('_', ' ')}
+                                      </span>
+                                      {item.is_community_requested && <span className="text-[9px] bg-primary-50 dark:bg-primary-950/20 text-primary-600 dark:text-primary-400 font-bold px-2 py-0.5 rounded-full">Community ({item.requested_by_count})</span>}
+                                      {item.pinned_milestone && <span className="text-[9px] bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 font-bold px-2 py-0.5 rounded-full">Milestone {item.milestone_icon}</span>}
+                                   </div>
+                                   <p className="text-warm-500 leading-relaxed text-[11px]">{item.description}</p>
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                   <button
+                                     onClick={() => {
+                                        setEditingRoadmapId(item.id);
+                                        setRoadmapForm({
+                                           title: item.title,
+                                           description: item.description,
+                                           status: item.status,
+                                           category: item.category,
+                                           is_community_requested: item.is_community_requested,
+                                           requested_by_count: item.requested_by_count,
+                                           pinned_milestone: item.pinned_milestone,
+                                           milestone_icon: item.milestone_icon || ''
+                                        });
+                                     }}
+                                     className="text-primary-600 hover:text-primary-750 font-bold"
+                                   >
+                                      Edit
+                                   </button>
+                                   <button onClick={() => handleDeleteRoadmapItem(item.id)} className="text-red-500 hover:text-red-750 font-bold">
+                                      Delete
+                                   </button>
+                                </div>
+                             </div>
+                          ))}
+                       </div>
+                    )}
+                 </div>
+              </div>
+           )}
+
+           {/* CHANGELOG SUB-TAB */}
+           {updatesSubTab === 'changelog' && (
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                 {/* Changelog Form */}
+                 <div className="lg:col-span-2 bg-white dark:bg-warm-800 p-6 rounded-3xl border border-warm-100 dark:border-warm-700 shadow-soft space-y-4">
+                    <h4 className="font-serif text-base font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-750 pb-2">
+                       {editingChangelogId ? 'Edit Release Notes' : 'Create Release Notes'}
+                    </h4>
+                    <form onSubmit={handleSaveChangelog} className="space-y-3 text-xs">
+                       <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                             <label className="font-semibold text-warm-700 dark:text-warm-300">Version</label>
+                             <input
+                               type="text"
+                               value={changelogForm.version}
+                               onChange={e => setChangelogForm({ ...changelogForm, version: e.target.value })}
+                               placeholder="e.g. v4.1.0"
+                               className="input-field py-1.5 px-3"
+                               required
+                             />
+                          </div>
+                          <div className="space-y-1">
+                             <label className="font-semibold text-warm-700 dark:text-warm-300">Status</label>
+                             <select
+                               value={changelogForm.status}
+                               onChange={e => setChangelogForm({ ...changelogForm, status: e.target.value as any })}
+                               className="input-field py-1.5 px-2"
+                             >
+                                <option value="draft">Draft</option>
+                                <option value="published">Published</option>
+                             </select>
+                          </div>
+                       </div>
+
+                       <div className="space-y-1">
+                          <label className="font-semibold text-warm-700 dark:text-warm-300">Release Title</label>
+                          <input
+                            type="text"
+                            value={changelogForm.title}
+                            onChange={e => setChangelogForm({ ...changelogForm, title: e.target.value })}
+                            className="input-field py-1.5 px-3"
+                            required
+                          />
+                       </div>
+
+                       <div className="space-y-1">
+                          <label className="font-semibold text-warm-700 dark:text-warm-300">Summary</label>
+                          <textarea
+                            value={changelogForm.summary}
+                            onChange={e => setChangelogForm({ ...changelogForm, summary: e.target.value })}
+                            className="input-field py-1.5 px-3 min-h-16"
+                            required
+                          />
+                       </div>
+
+                       <div className="space-y-1">
+                          <label className="font-semibold text-warm-705 dark:text-warm-300 block">New Features (Comma separated)</label>
+                          <input
+                            type="text"
+                            value={changelogForm.new_features}
+                            onChange={e => setChangelogForm({ ...changelogForm, new_features: e.target.value })}
+                            placeholder="Dynamic Badges, Founder Panel"
+                            className="input-field py-1.5 px-3"
+                          />
+                       </div>
+
+                       <div className="space-y-1">
+                          <label className="font-semibold text-warm-705 dark:text-warm-300 block">Improvements (Comma separated)</label>
+                          <input
+                            type="text"
+                            value={changelogForm.improvements}
+                            onChange={e => setChangelogForm({ ...changelogForm, improvements: e.target.value })}
+                            className="input-field py-1.5 px-3"
+                          />
+                       </div>
+
+                       <div className="space-y-1">
+                          <label className="font-semibold text-warm-750 dark:text-warm-300 block">Bug Fixes (Comma separated)</label>
+                          <input
+                            type="text"
+                            value={changelogForm.bug_fixes}
+                            onChange={e => setChangelogForm({ ...changelogForm, bug_fixes: e.target.value })}
+                            className="input-field py-1.5 px-3"
+                          />
+                       </div>
+
+                       <div className="space-y-1">
+                          <label className="font-semibold text-warm-750 dark:text-warm-300 block">Performance updates (Comma separated)</label>
+                          <input
+                            type="text"
+                            value={changelogForm.performance}
+                            onChange={e => setChangelogForm({ ...changelogForm, performance: e.target.value })}
+                            className="input-field py-1.5 px-3"
+                          />
+                       </div>
+
+                       <div className="flex gap-2 pt-2">
+                          <button type="submit" disabled={saving} className="btn-primary py-2 px-4 font-bold flex-1">
+                             {saving ? 'Publishing...' : 'Save Release'}
+                          </button>
+                          {editingChangelogId && (
+                             <button
+                               type="button"
+                               onClick={() => {
+                                  setEditingChangelogId(null);
+                                  setChangelogForm({
+                                     version: '',
+                                     title: '',
+                                     summary: '',
+                                     status: 'draft',
+                                     new_features: '',
+                                     improvements: '',
+                                     bug_fixes: '',
+                                     performance: ''
+                                  });
+                               }}
+                               className="btn-secondary py-2 px-3 text-xs"
+                             >
+                                Cancel
+                             </button>
+                          )}
+                       </div>
+                    </form>
+                 </div>
+
+                 {/* Changelog List */}
+                 <div className="lg:col-span-3 bg-white dark:bg-warm-800 p-6 rounded-3xl border border-warm-100 dark:border-warm-700 shadow-soft space-y-4">
+                    <h4 className="font-serif text-base font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-750 pb-2">
+                       Release Logs List
+                    </h4>
+                    {loadingChangelog ? (
+                       <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary-500" /></div>
+                    ) : changelogList.length === 0 ? (
+                       <p className="text-xs text-warm-500 italic text-center py-10">No releases found.</p>
+                    ) : (
+                       <div className="space-y-2 max-h-[32rem] overflow-y-auto pr-1">
+                          {changelogList.map(ch => (
+                             <div key={ch.id} className="p-3 rounded-2xl bg-warm-50 dark:bg-warm-900 border border-warm-100 dark:border-warm-850 flex items-start justify-between gap-4 text-xs">
+                                <div className="space-y-1 min-w-0">
+                                   <div className="flex items-center gap-2">
+                                      <span className="font-bold text-warm-900 dark:text-warm-100">{ch.version} - {ch.title}</span>
+                                      <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full ${
+                                         ch.status === 'published' ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300' : 'bg-warm-200 text-warm-650'
+                                      }`}>
+                                         {ch.status.toUpperCase()}
+                                      </span>
+                                   </div>
+                                   <p className="text-warm-500 leading-relaxed text-[11px] truncate">{ch.summary}</p>
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                   <button
+                                     onClick={() => {
+                                        setEditingChangelogId(ch.id);
+                                        setChangelogForm({
+                                           version: ch.version,
+                                           title: ch.title,
+                                           summary: ch.summary,
+                                           status: ch.status,
+                                           new_features: ch.new_features ? ch.new_features.join(', ') : '',
+                                           improvements: ch.improvements ? ch.improvements.join(', ') : '',
+                                           bug_fixes: ch.bug_fixes ? ch.bug_fixes.join(', ') : '',
+                                           performance: ch.performance ? ch.performance.join(', ') : ''
+                                        });
+                                     }}
+                                     className="text-primary-600 hover:text-primary-750 font-bold"
+                                   >
+                                      Edit
+                                   </button>
+                                   <button onClick={() => handleDeleteChangelog(ch.id)} className="text-red-500 hover:text-red-750 font-bold">
+                                      Delete
+                                   </button>
+                                </div>
+                             </div>
+                          ))}
+                       </div>
+                    )}
+                 </div>
+              </div>
+           )}
+
+           {/* JOURNAL SUB-TAB */}
+           {updatesSubTab === 'journal' && (
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                 {/* Journal Form */}
+                 <div className="lg:col-span-2 bg-white dark:bg-warm-800 p-6 rounded-3xl border border-warm-100 dark:border-warm-700 shadow-soft space-y-4">
+                    <h4 className="font-serif text-base font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-750 pb-2">
+                       {editingJournalId ? 'Edit Article' : 'Create Article'}
+                    </h4>
+                    <form onSubmit={handleSaveJournal} className="space-y-3 text-xs">
+                       <div className="space-y-1">
+                          <label className="font-semibold text-warm-700 dark:text-warm-300">Post Title</label>
+                          <input
+                            type="text"
+                            value={journalForm.title}
+                            onChange={e => setJournalForm({ ...journalForm, title: e.target.value })}
+                            className="input-field py-1.5 px-3"
+                            required
+                          />
+                       </div>
+
+                       <div className="space-y-1">
+                          <label className="font-semibold text-warm-700 dark:text-warm-300">Excerpt / Subtitle</label>
+                          <input
+                            type="text"
+                            value={journalForm.excerpt}
+                            onChange={e => setJournalForm({ ...journalForm, excerpt: e.target.value })}
+                            className="input-field py-1.5 px-3"
+                            required
+                          />
+                       </div>
+
+                       <div className="space-y-1">
+                          <label className="font-semibold text-warm-700 dark:text-warm-300">Body Content</label>
+                          <textarea
+                            value={journalForm.content}
+                            onChange={e => setJournalForm({ ...journalForm, content: e.target.value })}
+                            className="input-field py-1.5 px-3 min-h-32 font-mono"
+                            required
+                          />
+                       </div>
+
+                       <div className="grid grid-cols-3 gap-2">
+                          <div className="space-y-1">
+                             <label className="font-semibold text-warm-700 dark:text-warm-300">Category</label>
+                             <select
+                               value={journalForm.category}
+                               onChange={e => setJournalForm({ ...journalForm, category: e.target.value as any })}
+                               className="input-field py-1.5 px-1.5"
+                             >
+                                <option value="Founder Journal">Founder Journal</option>
+                                <option value="Product Update">Product Update</option>
+                                <option value="Technical Article">Technical Article</option>
+                                <option value="Privacy Update">Privacy Update</option>
+                             </select>
+                          </div>
+                          <div className="space-y-1">
+                             <label className="font-semibold text-warm-700 dark:text-warm-300">Read Time</label>
+                             <input
+                               type="text"
+                               value={journalForm.read_time}
+                               onChange={e => setJournalForm({ ...journalForm, read_time: e.target.value })}
+                               className="input-field py-1.5 px-3"
+                               required
+                             />
+                          </div>
+                          <div className="space-y-1">
+                             <label className="font-semibold text-warm-700 dark:text-warm-300">Status</label>
+                             <select
+                               value={journalForm.status}
+                               onChange={e => setJournalForm({ ...journalForm, status: e.target.value as any })}
+                               className="input-field py-1.5 px-1.5"
+                             >
+                                <option value="draft">Draft</option>
+                                <option value="published">Published</option>
+                             </select>
+                          </div>
+                       </div>
+
+                       <div className="flex gap-2 pt-2">
+                          <button type="submit" disabled={saving} className="btn-primary py-2 px-4 font-bold flex-1">
+                             {saving ? 'Saving...' : 'Save Post'}
+                          </button>
+                          {editingJournalId && (
+                             <button
+                               type="button"
+                               onClick={() => {
+                                  setEditingJournalId(null);
+                                  setJournalForm({
+                                     title: '',
+                                     excerpt: '',
+                                     content: '',
+                                     category: 'Founder Journal',
+                                     read_time: '5 min read',
+                                     status: 'draft'
+                                  });
+                               }}
+                               className="btn-secondary py-2 px-3 text-xs"
+                             >
+                                Cancel
+                             </button>
+                          )}
+                       </div>
+                    </form>
+                 </div>
+
+                 {/* Journal List */}
+                 <div className="lg:col-span-3 bg-white dark:bg-warm-800 p-6 rounded-3xl border border-warm-100 dark:border-warm-700 shadow-soft space-y-4">
+                    <h4 className="font-serif text-base font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-750 pb-2">
+                       Active Postings
+                    </h4>
+                    {loadingJournal ? (
+                       <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary-500" /></div>
+                    ) : journalList.length === 0 ? (
+                       <p className="text-xs text-warm-500 italic text-center py-10">No updates found.</p>
+                    ) : (
+                       <div className="space-y-2 max-h-[32rem] overflow-y-auto pr-1">
+                          {journalList.map(post => (
+                             <div key={post.id} className="p-3 rounded-2xl bg-warm-50 dark:bg-warm-900 border border-warm-100 dark:border-warm-850 flex items-start justify-between gap-4 text-xs">
+                                <div className="space-y-1 min-w-0">
+                                   <div className="flex items-center gap-2">
+                                      <span className="font-bold text-warm-900 dark:text-warm-100">{post.title}</span>
+                                      <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full ${
+                                         post.status === 'published' ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300' : 'bg-warm-200 text-warm-650'
+                                      }`}>
+                                         {post.status.toUpperCase()}
+                                      </span>
+                                   </div>
+                                   <p className="text-warm-550 text-[9px] uppercase font-bold tracking-wider">{post.category} - {post.read_time}</p>
+                                   <p className="text-warm-500 leading-relaxed text-[11px] truncate">{post.excerpt}</p>
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                   <button
+                                     onClick={() => {
+                                        setEditingJournalId(post.id);
+                                        setJournalForm({
+                                           title: post.title,
+                                           excerpt: post.excerpt,
+                                           content: post.content,
+                                           category: post.category,
+                                           read_time: post.read_time,
+                                           status: post.status
+                                        });
+                                     }}
+                                     className="text-primary-600 hover:text-primary-750 font-bold"
+                                   >
+                                      Edit
+                                   </button>
+                                   <button onClick={() => handleDeleteJournal(post.id)} className="text-red-500 hover:text-red-750 font-bold">
+                                      Delete
+                                   </button>
+                                </div>
+                             </div>
+                          ))}
+                       </div>
+                    )}
+                 </div>
+              </div>
+           )}
+
+           {/* FEATURE FLAGS SUB-TAB */}
+           {updatesSubTab === 'flags' && (
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                 {/* Flags Form */}
+                 <div className="lg:col-span-2 bg-white dark:bg-warm-800 p-6 rounded-3xl border border-warm-100 dark:border-warm-700 shadow-soft space-y-4">
+                    <h4 className="font-serif text-base font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-750 pb-2">
+                       {editingFlagId ? 'Edit Flag' : 'Create Feature Flag'}
+                    </h4>
+                    <form onSubmit={handleSaveFeatureFlag} className="space-y-3 text-xs">
+                       <div className="space-y-1">
+                          <label className="font-semibold text-warm-700 dark:text-warm-300">Flag Name (snake_case)</label>
+                          <input
+                            type="text"
+                            value={flagForm.name}
+                            onChange={e => setFlagForm({ ...flagForm, name: e.target.value })}
+                            className="input-field py-1.5 px-3"
+                            placeholder="e.g. global_discovery"
+                            required
+                          />
+                       </div>
+                       <div className="space-y-1">
+                          <label className="font-semibold text-warm-700 dark:text-warm-300">Description</label>
+                          <textarea
+                            value={flagForm.description}
+                            onChange={e => setFlagForm({ ...flagForm, description: e.target.value })}
+                            className="input-field py-1.5 px-3 min-h-16"
+                            placeholder="What does this flag control?"
+                            required
+                          />
+                       </div>
+                       <div className="space-y-1">
+                          <label className="font-semibold text-warm-700 dark:text-warm-300">Visibility Status</label>
+                          <select
+                            value={flagForm.status}
+                            onChange={e => setFlagForm({ ...flagForm, status: e.target.value })}
+                            className="input-field py-1.5 px-2"
+                          >
+                             <option value="disabled">🔴 Disabled (Off for everyone)</option>
+                             <option value="founder_only">👑 Founder Only</option>
+                             <option value="admin_only">🛡️ Admin Only</option>
+                             <option value="beta_only">🌱 Beta Testers Only</option>
+                             <option value="country_specific">🌍 Country Specific</option>
+                             <option value="enabled_all">✅ Enabled for Everyone</option>
+                          </select>
+                       </div>
+                       {flagForm.status === 'country_specific' && (
+                          <div className="space-y-1">
+                             <label className="font-semibold text-warm-700 dark:text-warm-300">Target Countries (comma-separated)</label>
+                             <input
+                               type="text"
+                               value={flagForm.target_countries}
+                               onChange={e => setFlagForm({ ...flagForm, target_countries: e.target.value })}
+                               className="input-field py-1.5 px-3"
+                               placeholder="e.g. Senegal, France, United States"
+                             />
+                          </div>
+                       )}
+                       <div className="flex gap-2 pt-2">
+                          <button type="submit" disabled={saving} className="btn-primary px-5 py-1.5 text-xs font-semibold rounded-full">
+                             {saving ? 'Saving...' : editingFlagId ? 'Update Flag' : 'Create Flag'}
+                          </button>
+                          {editingFlagId && (
+                             <button type="button" onClick={() => { setEditingFlagId(null); setFlagForm({ name: '', description: '', status: 'disabled', target_countries: '' }); }}
+                               className="px-5 py-1.5 text-xs font-semibold rounded-full border border-warm-300 text-warm-700 hover:bg-warm-100 transition-colors">
+                                Cancel
+                             </button>
+                          )}
+                       </div>
+                    </form>
+                 </div>
+
+                 {/* Flags List */}
+                 <div className="lg:col-span-3 bg-white dark:bg-warm-800 p-6 rounded-3xl border border-warm-100 dark:border-warm-700 shadow-soft space-y-3">
+                    <h4 className="font-serif text-base font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-750 pb-2">
+                       All Feature Flags
+                    </h4>
+                    {loadingFlags ? (
+                       <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary-500" /></div>
+                    ) : flagsList.length === 0 ? (
+                       <p className="text-xs text-warm-500 italic text-center py-10">No feature flags found. Run the SQL migration first.</p>
+                    ) : (
+                       <div className="space-y-2 max-h-[32rem] overflow-y-auto pr-1">
+                          {flagsList.map(flag => {
+                             const statusColors: Record<string, string> = {
+                                disabled: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
+                                founder_only: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300',
+                                admin_only: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
+                                beta_only: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300',
+                                country_specific: 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300',
+                                enabled_all: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
+                             };
+                             return (
+                                <div key={flag.id} className="p-3 rounded-2xl bg-warm-50 dark:bg-warm-900 border border-warm-100 dark:border-warm-850 flex items-start justify-between gap-4 text-xs">
+                                   <div className="space-y-1 min-w-0">
+                                      <div className="flex items-center gap-2">
+                                         <span className="font-mono font-bold text-warm-900 dark:text-warm-100 text-[11px]">{flag.name}</span>
+                                         <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full ${statusColors[flag.status] || 'bg-warm-200 text-warm-650'}`}>
+                                            {flag.status.toUpperCase().replace(/_/g, ' ')}
+                                         </span>
+                                      </div>
+                                      <p className="text-warm-500 text-[11px]">{flag.description}</p>
+                                      {flag.target_countries?.length > 0 && (
+                                         <p className="text-warm-400 text-[10px]">🌍 {flag.target_countries.join(', ')}</p>
+                                      )}
+                                   </div>
+                                   <div className="flex items-center gap-1.5 shrink-0">
+                                      <button
+                                        onClick={() => {
+                                           setEditingFlagId(flag.id);
+                                           setFlagForm({
+                                              name: flag.name,
+                                              description: flag.description,
+                                              status: flag.status,
+                                              target_countries: (flag.target_countries || []).join(', ')
+                                           });
+                                        }}
+                                        className="text-primary-600 hover:text-primary-750 font-bold"
+                                      >
+                                         Edit
+                                      </button>
+                                      <button onClick={() => handleDeleteFeatureFlag(flag.id)} className="text-red-500 hover:text-red-750 font-bold">
+                                         Delete
+                                      </button>
+                                   </div>
+                                </div>
+                             );
+                          })}
+                       </div>
+                    )}
+                 </div>
+              </div>
+           )}
         </div>
       )}
     </div>
