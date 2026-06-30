@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Bot, Sparkles, MessageSquare, Shield, Cpu, BookOpen, Clock, 
   Terminal, ShieldCheck, Database, GitBranch, Heart, Settings, BarChart2
@@ -157,8 +158,86 @@ export default function AiFamilyPage() {
   const selectedAgent = getMemberById(selectedAgentId) || aiMembers[0];
   const selectedMeta = LIVING_METADATA[selectedAgent.id] || LIVING_METADATA.oracle;
 
-  const handleStartChat = (name: string) => {
+  const navigate = useNavigate();
+
+  const BOT_UUIDS: Record<string, string> = {
+    oracle: 'da01a00a-60d7-41ec-b827-8178cd3bf084',
+    iris: 'da01a00b-60d7-41ec-b827-8178cd3bf084',
+    atlas: 'da01a00c-60d7-41ec-b827-8178cd3bf084',
+    athena: 'da01a00d-60d7-41ec-b827-8178cd3bf084',
+    aegis: 'da01a00e-60d7-41ec-b827-8178cd3bf084',
+    whisprr: 'da01a00f-60d7-41ec-b827-8178cd3bf084',
+  };
+
+  const handleStartChat = async (agentId: string, name: string) => {
+    if (!profile) {
+      showToast('Please log in to chat with the AI Family.', 'error');
+      return;
+    }
+
+    const botUuid = BOT_UUIDS[agentId];
+    if (!botUuid) {
+      showToast(`Direct link to ${name} is under construction.`, 'warning');
+      return;
+    }
+
     showToast(`Initializing direct secure channel with ${name}...`, 'success');
+
+    try {
+      // 1. Fetch current user's conversations
+      const { data: myConvs, error: myConvsError } = await supabase
+        .from('conversation_participants')
+        .select('conversation_id')
+        .eq('user_id', profile.user_id);
+
+      if (myConvsError) throw myConvsError;
+
+      const myIds = (myConvs || []).map(c => c.conversation_id);
+      if (myIds.length > 0) {
+        // 2. See if the target bot shares any DM with current user
+        const { data: match, error: matchError } = await supabase
+          .from('conversation_participants')
+          .select('conversation_id, conversations(type)')
+          .in('conversation_id', myIds)
+          .eq('user_id', botUuid);
+
+        if (matchError) throw matchError;
+
+        const existing = match?.find((m: any) => m.conversations?.type === 'dm');
+        if (existing) {
+          navigate(`/messages/${existing.conversation_id}`);
+          return;
+        }
+      }
+
+      // 3. Create new conversation
+      const { data: newConv, error: createError } = await supabase
+        .from('conversations')
+        .insert({
+          type: 'dm',
+          created_by: profile.user_id,
+        })
+        .select()
+        .maybeSingle();
+
+      if (createError) throw createError;
+      if (!newConv) throw new Error('Failed to create conversation record.');
+
+      // 4. Add participants
+      const { error: partError } = await supabase
+        .from('conversation_participants')
+        .insert([
+          { conversation_id: newConv.id, user_id: profile.user_id },
+          { conversation_id: newConv.id, user_id: botUuid },
+        ]);
+
+      if (partError) throw partError;
+
+      navigate(`/messages/${newConv.id}`);
+    } catch (err: any) {
+      console.error('Error starting conversation with agent:', err);
+      showToast(err.message || 'Could not start conversation.', 'error');
+    }
   };
 
   const getAgentTheme = (id: string) => {
@@ -266,7 +345,7 @@ export default function AiFamilyPage() {
               </div>
 
               <button
-                onClick={() => handleStartChat(selectedAgent.name)}
+                onClick={() => handleStartChat(selectedAgent.id, selectedAgent.name)}
                 className="btn-primary flex items-center gap-2 py-2 px-4 rounded-xl text-xs font-bold shadow-soft self-start sm:self-auto"
               >
                 <MessageSquare size={14} />

@@ -153,6 +153,20 @@ export default function OnboardingPage() {
 
     setLoading(true);
     try {
+      let referredBy: string | null = null;
+      const cachedReferrer = localStorage.getItem('whisprr_referrer');
+      if (cachedReferrer && cachedReferrer.trim() && cachedReferrer !== data.username) {
+        // Resolve username to user_id
+        const { data: referrerProfile } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('username', cachedReferrer.trim())
+          .maybeSingle();
+        if (referrerProfile) {
+          referredBy = referrerProfile.user_id;
+        }
+      }
+
       await updateProfile({
         display_name: data.displayName,
         username: data.username,
@@ -162,7 +176,11 @@ export default function OnboardingPage() {
         bio: data.bio || null,
         home_country: data.country,
         onboarding_complete: true,
-      });
+        referred_by: referredBy,
+      } as any);
+
+      // Clear cached referrer after successful consumption
+      localStorage.removeItem('whisprr_referrer');
 
       navigate('/feed');
     } catch (err) {

@@ -52,6 +52,9 @@ export interface Profile {
   field_privacy?: Record<string, 'public' | 'followers' | 'private'>;
   muted_interests?: string[];
   muted_communities?: string[];
+  referrals_count?: number;
+  referred_by?: string | null;
+  home_country?: string;
 }
 
 export interface Whisper {

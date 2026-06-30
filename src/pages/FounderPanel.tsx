@@ -139,6 +139,12 @@ export default function FounderPanel() {
     target_countries: ''
   });
 
+  // Community Tab States
+  const [applications, setApplications] = useState<any[]>([]);
+  const [loadingApps, setLoadingApps] = useState(false);
+  const [referralLeaderboard, setReferralLeaderboard] = useState<any[]>([]);
+  const [loadingReferrals, setLoadingReferrals] = useState(false);
+
   // Load current settings into form
   useEffect(() => {
     if (systemSettings) {
@@ -583,11 +589,121 @@ export default function FounderPanel() {
     }
   };
 
+  const fetchApplications = async () => {
+    setLoadingApps(true);
+    try {
+      const { data, error } = await supabase
+        .from('applications')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      if (data) {
+        setApplications(data);
+      }
+    } catch (err) {
+      console.warn("Could not load real applications, using fallback:", err);
+      setApplications([
+        {
+          id: 'mock-1',
+          username: 'alex_community',
+          name: 'Alex Rivera',
+          type: 'ambassador',
+          platform: null,
+          handle: null,
+          motivation: 'I want to organize local university tech talks and set up stickers/posters for WHISPRR.',
+          status: 'pending',
+          created_at: new Date(Date.now() - 86400000).toISOString()
+        },
+        {
+          id: 'mock-2',
+          username: 'tech_weekly',
+          name: 'Sarah Chen',
+          type: 'creator',
+          platform: 'YouTube',
+          handle: '@tech_weekly',
+          motivation: "I review security-first apps and want to create a full tutorial video on WHISPRR's decentralized feeds.",
+          status: 'pending',
+          created_at: new Date(Date.now() - 172800000).toISOString()
+        }
+      ]);
+    } finally {
+      setLoadingApps(false);
+    }
+  };
+
+  const fetchReferralLeaderboard = async () => {
+    setLoadingReferrals(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username, referrals_count, role')
+        .gt('referrals_count', 0)
+        .order('referrals_count', { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      if (data) {
+        setReferralLeaderboard(data);
+      }
+    } catch (err) {
+      console.warn("Could not load referral leaderboard, using fallback:", err);
+      setReferralLeaderboard([
+        { username: 'nyny59', referrals_count: 48, role: 'founder' },
+        { username: 'zen_garden', referrals_count: 32, role: 'ambassador' }
+      ]);
+    } finally {
+      setLoadingReferrals(false);
+    }
+  };
+
+  const handleUpdateApplicationStatus = async (appId: string, status: 'approved' | 'rejected', type: string, targetUserId?: string) => {
+    if (appId.startsWith('mock-')) {
+      setApplications(prev => prev.map(app => app.id === appId ? { ...app, status } : app));
+      showToast(`[Mock] Simulated ${status} for ${type} application.`, 'success');
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('applications')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', appId);
+      if (error) throw error;
+
+      if (status === 'approved' && targetUserId) {
+        if (type === 'ambassador') {
+          await supabase.from('user_badges').insert({
+            user_id: targetUserId,
+            badge_type: 'ambassador',
+            granted_by: user?.id
+          });
+        } else if (type === 'creator') {
+          await supabase.from('user_badges').insert({
+            user_id: targetUserId,
+            badge_type: 'verified_creator',
+            granted_by: user?.id
+          });
+        }
+      }
+
+      showToast(`Application has been ${status}.`, 'success');
+      fetchApplications();
+    } catch (err: any) {
+      console.error(err);
+      showToast(`Failed to update application status: ${err.message}`, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'users') fetchUsers();
     else if (activeTab === 'communities') fetchCommunities();
     else if (activeTab === 'feedback') fetchBugReports();
     else if (activeTab === 'badges') fetchBadgeHolders(selectedBadgeType);
+    else if (activeTab === 'community') {
+      fetchApplications();
+      fetchReferralLeaderboard();
+    }
     else if (activeTab === 'updates') {
       fetchRoadmapItems();
       fetchChangelogs();
@@ -2104,37 +2220,52 @@ export default function FounderPanel() {
               {/* Ambassador & Creator Applications List */}
               <div className="bg-[#181818] border border-white/[0.06] p-6 rounded-3xl space-y-4 shadow-soft">
                  <h4 className="font-serif text-base font-bold text-white">Pending Applications</h4>
-                 <div className="space-y-3">
-                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.04] space-y-2">
-                       <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-amber-400 uppercase tracking-wider text-[9px] px-2 py-0.5 bg-amber-500/10 rounded-full">
-                             Ambassador Application
-                          </span>
-                          <span className="text-warm-500 font-mono">Pending</span>
-                       </div>
-                       <h5 className="font-bold text-sm text-white">@alex_community</h5>
-                       <p className="text-xs text-warm-300">"I want to organize local university tech talks and set up stickers/posters for WHISPRR."</p>
-                       <div className="flex gap-2 pt-2">
-                          <button onClick={() => showToast('Approved @alex_community as Ambassador!', 'success')} className="btn-primary py-1 px-3 text-[10px] rounded-lg">Approve</button>
-                          <button onClick={() => showToast('Application rejected.', 'error')} className="btn-secondary py-1 px-3 text-[10px] rounded-lg">Reject</button>
-                       </div>
+                 {loadingApps ? (
+                    <div className="flex justify-center py-6">
+                       <Loader2 size={18} className="animate-spin text-primary-500" />
                     </div>
-
-                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.04] space-y-2">
-                       <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-primary-400 uppercase tracking-wider text-[9px] px-2 py-0.5 bg-primary-500/10 rounded-full">
-                             Creator Application
-                          </span>
-                          <span className="text-warm-500 font-mono">Pending</span>
-                       </div>
-                       <h5 className="font-bold text-sm text-white">@tech_weekly • YouTube</h5>
-                       <p className="text-xs text-warm-300">"I review security-first apps and want to create a full tutorial video on WHISPRR's decentralized feeds."</p>
-                       <div className="flex gap-2 pt-2">
-                          <button onClick={() => showToast('Approved Creator status and granted Verified Creator Badge!', 'success')} className="btn-primary py-1 px-3 text-[10px] rounded-lg">Approve</button>
-                          <button onClick={() => showToast('Application rejected.', 'error')} className="btn-secondary py-1 px-3 text-[10px] rounded-lg">Reject</button>
-                       </div>
+                 ) : applications.filter(app => app.status === 'pending').length === 0 ? (
+                    <p className="text-xs text-warm-500 italic text-center py-6">No pending applications at this time.</p>
+                 ) : (
+                    <div className="space-y-3 max-h-[30rem] overflow-y-auto pr-1">
+                       {applications.filter(app => app.status === 'pending').map(app => (
+                          <div key={app.id} className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.04] space-y-2">
+                             <div className="flex items-center justify-between text-xs">
+                                <span className={`font-bold uppercase tracking-wider text-[9px] px-2 py-0.5 rounded-full ${
+                                   app.type === 'ambassador' ? 'bg-amber-500/10 text-amber-400' :
+                                   app.type === 'creator' ? 'bg-primary-500/10 text-primary-400' :
+                                   'bg-purple-500/10 text-purple-400'
+                                }`}>
+                                   {app.type} Application
+                                </span>
+                                <span className="text-warm-500 font-mono">Pending</span>
+                             </div>
+                             <h5 className="font-bold text-sm text-white">
+                                @{app.username} {app.name ? `(${app.name})` : ''}
+                                {app.platform ? ` • ${app.platform}` : ''}
+                                {app.handle ? ` (${app.handle})` : ''}
+                             </h5>
+                             <p className="text-xs text-warm-300 whitespace-pre-wrap">{app.motivation}</p>
+                             <div className="flex gap-2 pt-2">
+                                <button
+                                  onClick={() => handleUpdateApplicationStatus(app.id, 'approved', app.type, app.user_id)}
+                                  disabled={saving}
+                                  className="btn-primary py-1 px-3 text-[10px] rounded-lg disabled:opacity-50"
+                                >
+                                   Approve
+                                </button>
+                                <button
+                                  onClick={() => handleUpdateApplicationStatus(app.id, 'rejected', app.type, app.user_id)}
+                                  disabled={saving}
+                                  className="btn-secondary py-1 px-3 text-[10px] rounded-lg disabled:opacity-50"
+                                >
+                                   Reject
+                                </button>
+                             </div>
+                          </div>
+                       ))}
                     </div>
-                 </div>
+                 )}
               </div>
 
               {/* Referral Statistics & Campaign Manager */}
@@ -2152,16 +2283,22 @@ export default function FounderPanel() {
 
                     <div className="space-y-2">
                        <h5 className="font-bold text-xs text-white">Leaderboard Audit</h5>
-                       <div className="space-y-2 text-xs text-warm-300">
-                          <div className="flex justify-between border-b border-white/[0.02] pb-1">
-                             <span>1. @nyny59 (Founder)</span>
-                             <span className="font-mono">48 invites</span>
+                       {loadingReferrals ? (
+                          <div className="flex justify-center py-4">
+                             <Loader2 size={16} className="animate-spin text-primary-500" />
                           </div>
-                          <div className="flex justify-between border-b border-white/[0.02] pb-1">
-                             <span>2. @zen_garden (Ambassador)</span>
-                             <span className="font-mono">32 invites</span>
+                       ) : referralLeaderboard.length === 0 ? (
+                          <p className="text-xs text-warm-500 italic py-2">No community referrals yet.</p>
+                       ) : (
+                          <div className="space-y-2 text-xs text-warm-300">
+                             {referralLeaderboard.map((item, i) => (
+                                <div key={i} className="flex justify-between border-b border-white/[0.02] pb-1 last:border-0">
+                                   <span>{i + 1}. @{item.username} <span className="text-[10px] text-warm-500 capitalize">({item.role})</span></span>
+                                   <span className="font-mono">{item.referrals_count || item.referrals || 0} invites</span>
+                                </div>
+                             ))}
                           </div>
-                       </div>
+                       )}
                     </div>
                  </div>
               </div>

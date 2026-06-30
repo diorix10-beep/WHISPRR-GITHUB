@@ -51,7 +51,7 @@ function AppLoader() {
   const { user, profile, loading, systemSettings } = useAuth();
 
   const isBypassUser = profile?.role === 'founder' || profile?.role === 'admin';
-  const isMaintenanceActive = systemSettings?.enabled === true;
+  const isMaintenanceActive = false; // Maintenance mode deactivated
 
   if (loading) {
     return (

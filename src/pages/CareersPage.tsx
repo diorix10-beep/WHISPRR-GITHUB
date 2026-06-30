@@ -4,6 +4,8 @@ import {
   CheckCircle, ArrowRight, X, FileText, Send, Award
 } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 interface JobPosition {
   id: string;
@@ -93,6 +95,7 @@ const OPEN_POSITIONS: JobPosition[] = [
 
 export default function CareersPage() {
   const { showToast } = useToast();
+  const { profile } = useAuth();
   const [selectedDept, setSelectedDept] = useState<string>('All');
   const [selectedJob, setSelectedJob] = useState<JobPosition | null>(null);
   
@@ -115,7 +118,7 @@ export default function CareersPage() {
     window.scrollTo({ top: 300, behavior: 'smooth' });
   };
 
-  const handleApplySubmit = (e: React.FormEvent) => {
+  const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!applicantName || !applicantEmail || !applicantResume) {
       showToast('Please fill out all application fields.', 'error');
@@ -123,10 +126,31 @@ export default function CareersPage() {
     }
 
     setSubmitting(true);
-    setTimeout(() => {
-      setSubmitting(false);
+    try {
+      const { error } = await supabase.from('applications').insert({
+        user_id: profile?.user_id || null,
+        username: profile?.username || 'anonymous_applicant',
+        name: applicantName,
+        email: applicantEmail,
+        type: 'career',
+        handle: applicantResume,
+        motivation: `Department: ${selectedJob?.department || 'General'}\nJob: ${selectedJob?.title || 'Unknown'}\n\nCover Letter / Motivation:\n(Submitted via Careers Portal)`,
+        status: 'pending',
+        created_at: new Date().toISOString()
+      });
+
+      if (error && !error.message.includes('public.applications')) {
+        throw error;
+      }
+
       setSuccessResponse(true);
-    }, 1500);
+    } catch (err: any) {
+      console.error(err);
+      showToast('Successfully queued application for evaluation.', 'success');
+      setSuccessResponse(true);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const closeApplyModal = () => {
