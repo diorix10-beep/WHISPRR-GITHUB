@@ -327,7 +327,14 @@ export default function LandingPage() {
                   >
                     Join WHISPRR
                   </button>
-
+                  <a
+                    href={import.meta.env.VITE_DISCORD_INVITE_URL || "https://discord.gg/whisprr"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-warm-100 dark:bg-warm-850 hover:bg-warm-200 dark:hover:bg-warm-800 text-warm-900 dark:text-warm-100 border border-warm-250 dark:border-warm-750 font-bold py-3 px-8 rounded-2xl text-base flex items-center gap-2 transition-all shadow-sm"
+                  >
+                    Join Discord <ExternalLink size={16} />
+                  </a>
                 </div>
               </div>
 
@@ -894,7 +901,10 @@ export default function LandingPage() {
                    <div className="flex-1 text-center md:text-left space-y-2">
                       <div className="flex items-center justify-center md:justify-start gap-2">
                          <h3 className="font-serif text-2xl font-bold text-warm-50">Official Discord Community</h3>
-                         <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-900/40 text-amber-300">Coming Soon</span>
+                         <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-emerald-950/60 text-emerald-450 border border-emerald-500/25 flex items-center gap-1.5 animate-pulse-slow">
+                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                           Live & Active
+                         </span>
                       </div>
                       <p className="text-sm text-warm-400 leading-relaxed max-w-lg">
                          Meet other members, receive development updates, join beta testing, report bugs,
@@ -909,12 +919,14 @@ export default function LandingPage() {
                          <span>🎉 Events</span>
                       </div>
                    </div>
-                   <button
-                     disabled
-                     className="bg-[#5865F2]/20 text-[#5865F2] border border-[#5865F2]/30 font-bold py-3 px-8 rounded-2xl text-sm flex items-center gap-2 opacity-60 cursor-not-allowed shrink-0"
+                   <a
+                     href={import.meta.env.VITE_DISCORD_INVITE_URL || "https://discord.gg/whisprr"}
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     className="bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-3 px-8 rounded-2xl text-sm flex items-center gap-2 transition-all shadow-md shrink-0"
                    >
                      Join Discord <ExternalLink size={14} />
-                   </button>
+                   </a>
                 </div>
              </div>
 
