@@ -93,6 +93,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchSystemSettings = useCallback(async () => {
     try {
+      // Fetch static JSON first as it propagates instantly
+      const res = await fetch('/maintenance_mode.json').catch(() => null);
+      if (res && res.ok) {
+        const value = await res.json();
+        setSystemSettings(value);
+        localStorage.setItem('whisprr_system_settings', JSON.stringify(value));
+        return;
+      }
+
       const { data, error } = await supabase
         .from('system_settings')
         .select('*')
@@ -103,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('whisprr_system_settings', JSON.stringify(data.value));
       }
     } catch (err) {
-      console.warn("Could not fetch system settings from database, relying on local cache:", err);
+      console.warn("Could not fetch system settings, relying on local cache:", err);
     }
   }, []);
 
