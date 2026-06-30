@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Rocket, Calendar, GitCommit, Heart, Sparkles, MessageSquare, 
   CheckCircle, Clock, Eye, AlertCircle, ArrowRight, Shield, Globe, 
-  Smile, Send, ChevronRight, PenTool, BookOpen, Bug, Award, Users, Info
+  Smile, Send, ChevronRight, PenTool, BookOpen, Bug, Award, Users, Info,
+  ExternalLink, Megaphone, FlaskConical, Lightbulb, HelpCircle, Lock, Map, FileText
 } from 'lucide-react';
 import { Logo } from '../components/common/Logo';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../contexts/ToastContext';
 
-type LandingSection = 'home' | 'about' | 'building' | 'updates' | 'beta';
+type LandingSection = 'home' | 'about' | 'building' | 'updates' | 'beta' | 'connect';
 
 interface BlogArticle {
   title: string;
@@ -262,7 +263,8 @@ export default function LandingPage() {
               { key: 'about' as LandingSection, label: 'Philosophy' },
               { key: 'building' as LandingSection, label: 'Building WHISPRR' },
               { key: 'updates' as LandingSection, label: 'Founder Journal & Blog' },
-              { key: 'beta' as LandingSection, label: 'Beta Program' }
+              { key: 'beta' as LandingSection, label: 'Beta Program' },
+              { key: 'connect' as LandingSection, label: 'Connect' }
             ]).map(tab => (
               <button
                 key={tab.key}
@@ -860,6 +862,201 @@ export default function LandingPage() {
                       Accepted beta applicants will have the <strong>🌱 Early Supporter</strong> badge assigned to their profiles. 
                       You can trace your badge status in the main platform and watch your historical timeline grow!
                    </p>
+                </div>
+             </div>
+           </div>
+        )}
+
+        {/* CONNECT — Community Hub */}
+        {activeSection === 'connect' && (
+          <div className="space-y-12 animate-fade-in">
+             <div className="text-center max-w-2xl mx-auto space-y-3">
+                <div className="inline-flex items-center gap-2 bg-primary-50 dark:bg-primary-950/30 text-primary-600 dark:text-primary-400 text-xs font-bold px-3 py-1.5 rounded-full">
+                   <Globe size={12} />
+                   <span>Community Hub</span>
+                </div>
+                <h2 className="text-3xl md:text-4xl font-serif font-bold text-warm-900 dark:text-warm-50">Connect</h2>
+                <p className="text-base text-warm-500 dark:text-warm-400 leading-relaxed">
+                   Discover every way to become part of WHISPRR.
+                   Join the community, follow development, share ideas, and help shape the future.
+                </p>
+             </div>
+
+             {/* Primary: Discord */}
+             <div className="public-card p-8 rounded-3xl relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#5865F2]/10 to-transparent pointer-events-none" />
+                <div className="relative flex flex-col md:flex-row items-center gap-8">
+                   <div className="w-20 h-20 bg-[#5865F2] rounded-2xl flex items-center justify-center shrink-0 shadow-lg">
+                      <svg viewBox="0 0 24 24" className="w-10 h-10 text-white" fill="currentColor">
+                         <path d="M20.317 4.369a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.369a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.227-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03z" />
+                      </svg>
+                   </div>
+                   <div className="flex-1 text-center md:text-left space-y-2">
+                      <div className="flex items-center justify-center md:justify-start gap-2">
+                         <h3 className="font-serif text-2xl font-bold text-warm-50">Official Discord Community</h3>
+                         <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-900/40 text-amber-300">Coming Soon</span>
+                      </div>
+                      <p className="text-sm text-warm-400 leading-relaxed max-w-lg">
+                         Meet other members, receive development updates, join beta testing, report bugs,
+                         suggest features, participate in events, and talk directly with the team.
+                      </p>
+                      <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2 text-[10px] text-warm-500">
+                         <span>📢 Announcements</span>
+                         <span>🧪 Beta Testing</span>
+                         <span>🐛 Bug Reports</span>
+                         <span>💡 Feature Requests</span>
+                         <span>🌍 Country Spaces</span>
+                         <span>🎉 Events</span>
+                      </div>
+                   </div>
+                   <button
+                     disabled
+                     className="bg-[#5865F2]/20 text-[#5865F2] border border-[#5865F2]/30 font-bold py-3 px-8 rounded-2xl text-sm flex items-center gap-2 opacity-60 cursor-not-allowed shrink-0"
+                   >
+                     Join Discord <ExternalLink size={14} />
+                   </button>
+                </div>
+             </div>
+
+             {/* Grid of Community Hub cards */}
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {[
+                  {
+                    icon: <Map size={20} />,
+                    title: 'Public Roadmap',
+                    desc: 'See what has been released, what is being built, and what is planned for the future.',
+                    status: 'available',
+                    action: () => setActiveSection('building'),
+                    actionLabel: 'View Roadmap',
+                    accent: 'text-blue-400',
+                    accentBg: 'bg-blue-500/10 border-blue-800/30',
+                  },
+                  {
+                    icon: <PenTool size={20} />,
+                    title: 'Founder Journal',
+                    desc: 'Follow the development journey. Read behind-the-scenes updates and important milestones.',
+                    status: 'available',
+                    action: () => setActiveSection('updates'),
+                    actionLabel: 'Read Journal',
+                    accent: 'text-purple-400',
+                    accentBg: 'bg-purple-500/10 border-purple-800/30',
+                  },
+                  {
+                    icon: <Megaphone size={20} />,
+                    title: 'Public Changelog',
+                    desc: 'Discover every new release, feature improvement, and bug fix.',
+                    status: 'available',
+                    action: () => setActiveSection('building'),
+                    actionLabel: 'View Changelog',
+                    accent: 'text-green-400',
+                    accentBg: 'bg-green-500/10 border-green-800/30',
+                  },
+                  {
+                    icon: <FlaskConical size={20} />,
+                    title: 'Beta Program',
+                    desc: 'Apply for beta testing. Download preview versions. Help shape the future of WHISPRR.',
+                    status: 'available',
+                    action: () => setActiveSection('beta'),
+                    actionLabel: 'Join Beta',
+                    accent: 'text-amber-400',
+                    accentBg: 'bg-amber-500/10 border-amber-800/30',
+                  },
+                  {
+                    icon: <Lightbulb size={20} />,
+                    title: 'Feature Requests',
+                    desc: 'Suggest new ideas. Vote on community suggestions. See which requests are being reviewed.',
+                    status: 'available',
+                    action: () => setActiveSection('building'),
+                    actionLabel: 'Suggest Ideas',
+                    accent: 'text-pink-400',
+                    accentBg: 'bg-pink-500/10 border-pink-800/30',
+                  },
+                  {
+                    icon: <Bug size={20} />,
+                    title: 'Report a Bug',
+                    desc: 'Report problems. Track bug status. Receive updates when bugs are fixed.',
+                    status: 'available',
+                    action: () => setActiveSection('beta'),
+                    actionLabel: 'Report Bug',
+                    accent: 'text-red-400',
+                    accentBg: 'bg-red-500/10 border-red-800/30',
+                  },
+                  {
+                    icon: <FileText size={20} />,
+                    title: 'Product Journey',
+                    desc: 'Explore the complete evolution of WHISPRR from idea to ecosystem.',
+                    status: 'available',
+                    action: () => navigate('/building'),
+                    actionLabel: 'Explore Journey',
+                    accent: 'text-cyan-400',
+                    accentBg: 'bg-cyan-500/10 border-cyan-800/30',
+                  },
+                  {
+                    icon: <HelpCircle size={20} />,
+                    title: 'Help Center',
+                    desc: 'Frequently asked questions. Support articles. Account and privacy help.',
+                    status: 'coming_soon',
+                    action: undefined,
+                    actionLabel: 'Coming Soon',
+                    accent: 'text-indigo-400',
+                    accentBg: 'bg-indigo-500/10 border-indigo-800/30',
+                  },
+                  {
+                    icon: <Lock size={20} />,
+                    title: 'Trust & Privacy',
+                    desc: 'Privacy Policy. Terms of Service. Community Guidelines. Safety Center.',
+                    status: 'available',
+                    action: () => navigate('/trust'),
+                    actionLabel: 'View Policies',
+                    accent: 'text-emerald-400',
+                    accentBg: 'bg-emerald-500/10 border-emerald-800/30',
+                  },
+                ].map((card, idx) => (
+                  <div key={idx} className={`public-card p-6 space-y-4 ${card.accentBg} hover:scale-[1.01] transition-transform`}>
+                     <div className="flex items-center justify-between">
+                        <div className={`${card.accent}`}>{card.icon}</div>
+                        <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                           card.status === 'available'
+                             ? 'bg-emerald-900/40 text-emerald-300'
+                             : card.status === 'coming_soon'
+                             ? 'bg-amber-900/40 text-amber-300'
+                             : 'bg-blue-900/40 text-blue-300'
+                        }`}>
+                           {card.status === 'available' ? 'Available' : card.status === 'coming_soon' ? 'Coming Soon' : 'Beta'}
+                        </span>
+                     </div>
+                     <div>
+                        <h4 className="font-serif font-bold text-base text-warm-50 mb-1">{card.title}</h4>
+                        <p className="text-xs text-warm-400 leading-relaxed">{card.desc}</p>
+                     </div>
+                     <button
+                       onClick={card.action}
+                       disabled={!card.action}
+                       className={`text-xs font-bold flex items-center gap-1.5 transition-colors ${
+                         card.action
+                           ? `${card.accent} hover:opacity-80`
+                           : 'text-warm-600 cursor-not-allowed'
+                       }`}
+                     >
+                       {card.actionLabel} <ChevronRight size={12} />
+                     </button>
+                  </div>
+                ))}
+             </div>
+
+             {/* Ecosystem Vision */}
+             <div className="public-card-secondary p-8 rounded-3xl text-center space-y-4">
+                <h3 className="font-serif text-xl font-bold text-warm-100">The WHISPRR Ecosystem</h3>
+                <p className="text-sm text-warm-400 leading-relaxed max-w-2xl mx-auto">
+                   As WHISPRR grows, this hub will connect every part of the ecosystem — 
+                   iOS & Android apps, Developer API, Creator Center, Partner Program, 
+                   Ambassador Program, and global communities. 
+                   Everything connected through one unified experience.
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                   {['📱 Mobile Apps', '🛠 Developer API', '🎨 Creator Center', '🤝 Partners', '🌍 Global Communities', '📚 Documentation'].map((item, i) => (
+                     <span key={i} className="text-[10px] text-warm-500 bg-warm-950 border border-white/[0.06] px-3 py-1 rounded-full">{item}</span>
+                   ))}
                 </div>
              </div>
           </div>
