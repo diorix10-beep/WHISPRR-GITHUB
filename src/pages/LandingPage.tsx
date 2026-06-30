@@ -280,12 +280,6 @@ export default function LandingPage() {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate('/')}
-              className="hidden sm:inline-block text-xs font-bold text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-warm-50 transition-colors"
-            >
-              Open Platform
-            </button>
-            <button
               onClick={() => navigate('/auth')}
               className="btn-primary py-2 px-5 text-sm font-bold flex items-center gap-1.5"
             >
@@ -331,12 +325,7 @@ export default function LandingPage() {
                   >
                     Join WHISPRR
                   </button>
-                  <button
-                    onClick={() => navigate('/')}
-                    className="btn-secondary py-3 px-8 text-base font-bold"
-                  >
-                    Open Platform
-                  </button>
+
                 </div>
               </div>
 
