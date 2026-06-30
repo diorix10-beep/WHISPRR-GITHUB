@@ -272,10 +272,10 @@ export default function ConversationPage() {
           last_message_at: new Date().toISOString(),
         })
         .eq('id', conversationId);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending message:', error);
       setMessageInput(content);
-      showToast('Failed to send message', 'error');
+      showToast(`Failed to send message: ${error.message || 'Please try again.'}`, 'error');
     } finally {
       setSending(false);
       setUploadingImage(false);
