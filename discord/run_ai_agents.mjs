@@ -197,4 +197,12 @@ client.on('messageCreate', async (message) => {
   }
 });
 
+client.on('error', (error) => {
+  console.error('🤖 WHISPRR Bot Error:', error);
+});
+
+client.on('shardError', (error) => {
+  console.error('🤖 WHISPRR Bot Shard Error:', error);
+});
+
 client.login(DISCORD_BOT_TOKEN);
