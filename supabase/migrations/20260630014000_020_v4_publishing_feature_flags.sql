@@ -1,7 +1,7 @@
 -- 1. Modify public_roadmap to support new status lifecycle
 ALTER TABLE public.public_roadmap DROP CONSTRAINT IF EXISTS public_roadmap_status_check;
 ALTER TABLE public.public_roadmap ADD CONSTRAINT public_roadmap_status_check CHECK (status IN (
-  'idea', 'draft', 'in_development', 'internal_testing', 'beta_testing', 'under_review', 'released', 'archived'
+  'idea', 'draft', 'in_development', 'internal_testing', 'beta_testing', 'under_review', 'released', 'archived', 'in_progress', 'planned', 'future_vision'
 ));
 
 -- 1.5. Add home_country column to profiles
