@@ -60,29 +60,50 @@ const ARTICLES: BlogArticle[] = [
 interface RoadmapItem {
   title: string;
   description: string;
-  status: 'released' | 'in_progress' | 'planned' | 'future_vision';
+  status: 'released' | 'in_progress' | 'testing' | 'planned' | 'future_vision';
   category: string;
 }
 
 const ROADMAP_ITEMS: RoadmapItem[] = [
-  { title: 'User Profiles', description: 'Rich profiles with custom interests, bios, and location metrics.', status: 'released', category: 'Core' },
-  { title: 'Cozy Communities', description: 'Interest groups owned by creators with private custom settings.', status: 'released', category: 'Social' },
-  { title: 'Direct Messages & Groups', description: 'Real-time messaging for close friends and groups.', status: 'released', category: 'Social' },
-  { title: 'Search & Explore', description: 'Personalized filters for topics, tags, and profiles.', status: 'released', category: 'Discovery' },
-  
-  { title: 'Badge & Identity System', description: 'Verification tracks showing user responsibility timeline.', status: 'in_progress', category: 'Trust' },
-  { title: 'Founder Dashboard', description: 'Controls for system maintenance bypass and feedback logs.', status: 'in_progress', category: 'Security' },
-  { title: 'Discovery Algorithms', description: 'Interest-graph indexing prioritizing conversation quality.', status: 'in_progress', category: 'Discovery' },
-  { title: 'Mobile Navigation Menu', description: 'Discord/Slack style slide-down quick actions.', status: 'in_progress', category: 'UX' },
-  
-  { title: 'AI Companion Characters', description: 'Customizable virtual friends with specific personality keys.', status: 'planned', category: 'AI' },
-  { title: 'Roleplay Worlds', description: 'Collaborative rooms for creative writing and setup.', status: 'planned', category: 'Social' },
-  { title: 'Character Memory Models', description: 'Allowing AI companions to build interaction history.', status: 'planned', category: 'AI' },
-  { title: 'Audio & Voice Rooms', description: 'Drop-in channels for active voice conversations.', status: 'planned', category: 'Audio' },
+  // Released
+  { title: 'Authentication', description: 'Email, Google, and secure session management.', status: 'released', category: 'Core' },
+  { title: 'User Profiles', description: 'Rich profiles with interests, bios, moods, and avatars.', status: 'released', category: 'Core' },
+  { title: 'Whisper Posts', description: 'Publishing posts with custom emotions and media.', status: 'released', category: 'Core' },
+  { title: 'Communities', description: 'Interest-based group spaces with moderator controls.', status: 'released', category: 'Social' },
+  { title: 'Direct Messages', description: 'Real-time one-on-one messaging.', status: 'released', category: 'Social' },
+  { title: 'Group Chats', description: 'Collaborative messaging for multiple users.', status: 'released', category: 'Social' },
+  { title: 'Notifications', description: 'Real-time alerts for mentions, likes, and messages.', status: 'released', category: 'Core' },
+  { title: 'Discovery Engine', description: 'Finding active users, posts, and trending topics.', status: 'released', category: 'Discovery' },
 
-  { title: 'Creator Monetization', description: 'Tips, premium community subscriptions, and lock boxes.', status: 'future_vision', category: 'Economy' },
-  { title: 'Decentralized Server Sync', description: 'Self-hosted backend options syncing to the main cloud.', status: 'future_vision', category: 'Infrastructure' },
-  { title: 'Collaborative Storytelling', description: 'Integrated markdown story trees for roleplayers.', status: 'future_vision', category: 'Social' },
+  // In Progress
+  { title: 'Badge & Identity System', description: 'Chronological badges reflecting contribution, history, and trust.', status: 'in_progress', category: 'Trust' },
+  { title: 'WHISPRR HQ', description: 'Central command center for system control and publishing.', status: 'in_progress', category: 'Infrastructure' },
+  { title: 'Country Spaces', description: 'Home country priority feeds and global exploration.', status: 'in_progress', category: 'Global' },
+  { title: 'Discovery Algorithm', description: 'Interest-graph personalization without addictive patterns.', status: 'in_progress', category: 'Discovery' },
+  { title: 'Public Product Website', description: 'The official home of the WHISPRR project.', status: 'in_progress', category: 'Platform' },
+  { title: 'Community Management 2.0', description: 'Advanced tools for moderators and community owners.', status: 'in_progress', category: 'Community' },
+  { title: 'Trust & Privacy Centers', description: 'Transparency reports and comprehensive privacy controls.', status: 'in_progress', category: 'Trust' },
+  { title: 'Performance Improvements', description: 'Faster loads, reduced bundles, and query optimization.', status: 'in_progress', category: 'Infrastructure' },
+
+  // Testing
+  { title: 'Founder Mode', description: 'Bypass system and elevated controls for the platform founder.', status: 'testing', category: 'Infrastructure' },
+  { title: 'Country Recommendation System', description: 'Level 1 local and Level 2 global recommendation engine.', status: 'testing', category: 'Discovery' },
+  { title: 'AI Character Prototype', description: 'First internal build of AI companion character interactions.', status: 'testing', category: 'AI' },
+
+  // Planned
+  { title: 'AI Characters', description: 'Customizable AI companion avatars with distinct personalities.', status: 'planned', category: 'AI' },
+  { title: 'Character Memory', description: 'AI characters that remember your past conversations.', status: 'planned', category: 'AI' },
+  { title: 'Voice Spaces', description: 'Drop-in audio rooms for real-time community conversations.', status: 'planned', category: 'Social' },
+  { title: 'Creator Profiles', description: 'Dedicated creator pages with analytics and verification.', status: 'planned', category: 'Creators' },
+  { title: 'Community Events', description: 'Scheduled events and themed community moments.', status: 'planned', category: 'Community' },
+  { title: 'Translation System', description: 'Real-time translation for posts and messages.', status: 'planned', category: 'Global' },
+
+  // Future Vision
+  { title: 'Native iOS & Android', description: 'Full native WHISPRR mobile applications.', status: 'future_vision', category: 'Mobile' },
+  { title: 'Creator Monetization', description: 'Tips, premium subscriptions, and creator revenue tools.', status: 'future_vision', category: 'Creators' },
+  { title: 'Public API & SDK', description: 'Developer tools to build WHISPRR-connected applications.', status: 'future_vision', category: 'Developer' },
+  { title: 'AI Worlds', description: 'Shared virtual spaces powered by AI narrative engines.', status: 'future_vision', category: 'AI' },
+  { title: 'Organization Accounts', description: 'Accounts for universities, businesses, and NGOs.', status: 'future_vision', category: 'Business' },
 ];
 
 interface TimelineEvent {
@@ -472,7 +493,7 @@ export default function LandingPage() {
                 <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-750 pb-2">
                    Public Roadmap
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                    {/* Released */}
                    <div className="space-y-2">
                       <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-bold uppercase pb-1 border-b border-emerald-500/20">
@@ -483,9 +504,8 @@ export default function LandingPage() {
                             <div key={idx} className="p-2.5 bg-white dark:bg-warm-800 rounded-xl border border-emerald-500/20 dark:border-emerald-500/30 text-xs shadow-sm leading-tight">
                                <p className="font-bold text-warm-900 dark:text-warm-150 flex items-center justify-between gap-1.5">
                                  <span>{item.title}</span>
-                                 <span className="text-[8px] bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 font-bold px-1.5 rounded shrink-0">Released</span>
+                                 <span className="text-[8px] bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 font-bold px-1.5 rounded shrink-0">✓</span>
                                </p>
-                               <p className="text-warm-500 mt-1 text-[11px] leading-snug">{item.description}</p>
                             </div>
                          ))}
                       </div>
@@ -501,9 +521,25 @@ export default function LandingPage() {
                             <div key={idx} className="p-2.5 bg-white dark:bg-warm-800 rounded-xl border border-orange-500/20 dark:border-orange-500/30 text-xs shadow-sm leading-tight">
                                <p className="font-bold text-warm-900 dark:text-warm-150 flex items-center justify-between gap-1.5">
                                  <span>{item.title}</span>
-                                 <span className="text-[8px] bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-350 font-bold px-1.5 rounded shrink-0 animate-pulse">Running</span>
+                                 <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-ping shrink-0" />
                                </p>
-                               <p className="text-warm-500 mt-1 text-[11px] leading-snug">{item.description}</p>
+                            </div>
+                         ))}
+                      </div>
+                   </div>
+
+                   {/* Testing */}
+                   <div className="space-y-2">
+                      <div className="flex items-center gap-1.5 text-xs text-purple-500 font-bold uppercase pb-1 border-b border-purple-500/20">
+                         <AlertCircle size={13} /> <span>Testing</span>
+                      </div>
+                      <div className="space-y-2">
+                         {ROADMAP_ITEMS.filter(r => r.status === 'testing').map((item, idx) => (
+                            <div key={idx} className="p-2.5 bg-white dark:bg-warm-800 rounded-xl border border-purple-500/20 dark:border-purple-500/30 text-xs shadow-sm leading-tight">
+                               <p className="font-bold text-warm-900 dark:text-warm-150 flex items-center justify-between gap-1.5">
+                                 <span>{item.title}</span>
+                                 <span className="text-[8px] bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 font-bold px-1.5 rounded shrink-0">🧪</span>
+                               </p>
                             </div>
                          ))}
                       </div>
@@ -521,7 +557,6 @@ export default function LandingPage() {
                                  <span>{item.title}</span>
                                  <span className="text-[8px] bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 font-bold px-1.5 rounded shrink-0">Planned</span>
                                </p>
-                               <p className="text-warm-500 mt-1 text-[11px] leading-snug">{item.description}</p>
                             </div>
                          ))}
                       </div>
@@ -529,17 +564,16 @@ export default function LandingPage() {
 
                    {/* Future Vision */}
                    <div className="space-y-2">
-                      <div className="flex items-center gap-1.5 text-xs text-purple-500 font-bold uppercase pb-1 border-b border-purple-500/20">
-                         <Sparkles size={13} /> <span>Future Vision</span>
+                      <div className="flex items-center gap-1.5 text-xs text-pink-500 font-bold uppercase pb-1 border-b border-pink-500/20">
+                         <Sparkles size={13} /> <span>Vision</span>
                       </div>
                       <div className="space-y-2">
                          {ROADMAP_ITEMS.filter(r => r.status === 'future_vision').map((item, idx) => (
-                            <div key={idx} className="p-2.5 bg-white dark:bg-warm-800 rounded-xl border border-purple-500/20 dark:border-purple-500/30 text-xs shadow-sm leading-tight">
+                            <div key={idx} className="p-2.5 bg-white dark:bg-warm-800 rounded-xl border border-pink-500/20 dark:border-pink-500/30 text-xs shadow-sm leading-tight">
                                <p className="font-bold text-warm-900 dark:text-warm-150 flex items-center justify-between gap-1.5">
                                  <span>{item.title}</span>
-                                 <span className="text-[8px] bg-purple-50 text-purple-750 dark:bg-purple-950/40 dark:text-purple-300 font-bold px-1.5 rounded shrink-0">Vision</span>
+                                 <span className="text-[8px] bg-pink-50 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300 font-bold px-1.5 rounded shrink-0">✨</span>
                                </p>
-                               <p className="text-warm-500 mt-1 text-[11px] leading-snug">{item.description}</p>
                             </div>
                          ))}
                       </div>
