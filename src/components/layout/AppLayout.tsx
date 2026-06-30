@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Bell } from 'lucide-react';
+import { Bell, X } from 'lucide-react';
 import { BottomNav } from './BottomNav';
 import { SideNav } from './SideNav';
 import { useNotifications } from '../../contexts/NotificationsContext';
@@ -15,19 +15,48 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const { unreadCount } = useNotifications();
-  const { profile, logout } = useAuth();
+  const { profile, logout, systemSettings } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isBannerVisible, setIsBannerVisible] = useState(true);
 
   return (
-    <div className="min-h-screen bg-warm-50 dark:bg-warm-900 transition-colors duration-300">
-      {/* Desktop sidebar (hidden on mobile) */}
-      <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-warm-200 lg:dark:border-warm-700 lg:bg-white lg:dark:bg-warm-800 z-30">
+    <div className="min-h-screen bg-warm-50 dark:bg-warm-900 transition-colors duration-300 flex flex-col">
+      {/* Founder Mode Indicator Banner */}
+      {systemSettings?.enabled && isBannerVisible && (
+        <div className="bg-primary-600 dark:bg-primary-950 text-white px-4 py-2.5 text-xs font-semibold flex items-center justify-between z-50 relative animate-slide-down border-b border-primary-500/25 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="animate-pulse">🧪</span>
+            <span>Founder Testing Mode — Maintenance Bypass Enabled (Regular users are blocked)</span>
+          </div>
+          <div className="flex items-center gap-3">
+            {profile?.role === 'founder' && (
+              <button 
+                onClick={() => navigate('/founder')}
+                className="underline hover:text-warm-200 transition-colors mr-1"
+              >
+                Founder Panel →
+              </button>
+            )}
+            <button 
+              onClick={() => setIsBannerVisible(false)}
+              className="hover:text-warm-205 transition-colors p-0.5 rounded-full hover:bg-white/10"
+              aria-label="Hide indicator"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-1 relative">
+        {/* Desktop sidebar (hidden on mobile) */}
+        <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-warm-200 lg:dark:border-warm-700 lg:bg-white lg:dark:bg-warm-800 z-30">
         <SideNav />
       </aside>
 
-      {/* Main content area */}
-      <div className="lg:pl-64 flex flex-col min-h-screen">
-        {/* Mobile/tablet header */}
+        {/* Main content area */}
+        <div className="lg:pl-64 flex flex-col min-h-screen flex-1">
+          {/* Mobile/tablet header */}
         <header
           className="sticky top-0 z-30 bg-white/80 dark:bg-warm-800/80
             backdrop-blur-lg border-b border-warm-100 dark:border-warm-700
@@ -139,6 +168,15 @@ export function AppLayout({ children }: AppLayoutProps) {
                       
                       <div className="border-t border-warm-100 dark:border-warm-700 my-1 pt-1" />
                       
+                      {profile.role === 'founder' && (
+                        <button
+                          onClick={() => { setIsMenuOpen(false); navigate('/founder'); }}
+                          className="w-full text-left px-3 py-2 rounded-xl text-sm font-semibold text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-950/20 transition-colors"
+                        >
+                          👑 Founder Panel
+                        </button>
+                      )}
+
                       <button
                         onClick={async () => { setIsMenuOpen(false); await logout(); navigate('/auth'); }}
                         className="w-full text-left px-3 py-2 rounded-xl text-sm font-semibold text-red-650 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
@@ -184,7 +222,8 @@ export function AppLayout({ children }: AppLayoutProps) {
           {children || <Outlet />}
         </main>
       </div>
-
+    </div>
+      
       {/* Mobile bottom nav (hidden on desktop) */}
       <div className="lg:hidden">
         <BottomNav />
