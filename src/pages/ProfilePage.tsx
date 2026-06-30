@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   MapPin, Link2, Calendar, Edit2, Check, X, Camera, MessageCircle, 
   Users, Heart, Award, Pin, Globe, Twitter, Instagram, Github, 
@@ -46,6 +46,7 @@ export default function ProfilePage() {
   const [repliesCount, setRepliesCount] = useState(0);
   const [helpfulContributions, setHelpfulContributions] = useState(0);
   
+  const [searchParams] = useSearchParams();
   const [isEditMode, setIsEditMode] = useState(false);
 
   // Edit form state
@@ -284,6 +285,12 @@ export default function ProfilePage() {
 
     fetchProfile();
   }, [paramUsername, user, track]);
+
+  useEffect(() => {
+    if (searchParams.get('edit') === 'true' && isOwnProfile && profile) {
+      setIsEditMode(true);
+    }
+  }, [searchParams, isOwnProfile, profile]);
 
   const handleFollow = async () => {
     if (!user || !profile) return;

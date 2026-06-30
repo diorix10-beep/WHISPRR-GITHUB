@@ -1,10 +1,12 @@
-import { type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { BottomNav } from './BottomNav';
 import { SideNav } from './SideNav';
 import { useNotifications } from '../../contexts/NotificationsContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Logo } from '../common/Logo';
+import { Avatar } from '../common/Avatar';
 
 interface AppLayoutProps {
   children?: ReactNode;
@@ -13,6 +15,8 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const { unreadCount } = useNotifications();
+  const { profile, logout } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-warm-50 dark:bg-warm-900 transition-colors duration-300">
@@ -41,23 +45,111 @@ export function AppLayout({ children }: AppLayoutProps) {
                 WHISPRR
               </h1>
             </div>
-            <button
-              onClick={() => navigate('/notifications')}
-              className="relative p-2 rounded-xl hover:bg-warm-100
-                dark:hover:bg-warm-700 transition-colors"
-              aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
-            >
-              <Bell size={20} className="text-warm-600 dark:text-warm-300" />
-              {unreadCount > 0 && (
-                <span
-                  className="absolute top-1 right-1 flex items-center justify-center
-                    w-4 h-4 bg-primary-500 text-white text-[10px] font-bold rounded-full"
-                  aria-hidden="true"
-                >
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate('/notifications')}
+                className="relative p-2 rounded-xl hover:bg-warm-100
+                  dark:hover:bg-warm-700 transition-colors"
+                aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
+              >
+                <Bell size={20} className="text-warm-600 dark:text-warm-300" />
+                {unreadCount > 0 && (
+                  <span
+                    className="absolute top-1 right-1 flex items-center justify-center
+                      w-4 h-4 bg-primary-500 text-white text-[10px] font-bold rounded-full"
+                    aria-hidden="true"
+                  >
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Mobile/Tablet Profile Menu */}
+              {profile && (
+                <div className="relative">
+                  <button
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    className="flex items-center justify-center p-1 rounded-full border border-warm-200 dark:border-warm-700 hover:scale-105 active:scale-95 transition-all focus:outline-none"
+                    aria-label="Profile menu"
+                  >
+                    <Avatar emoji={profile.avatar_emoji} photoUrl={profile.photo_url} size="xs" />
+                  </button>
+
+                  {/* Dropdown Menu Backdrop */}
+                  {isMenuOpen && (
+                    <div
+                      className="fixed inset-0 z-40 bg-transparent"
+                      onClick={() => setIsMenuOpen(false)}
+                    />
+                  )}
+
+                  {/* Dropdown Menu Container */}
+                  {isMenuOpen && (
+                    <div className="absolute right-0 mt-2.5 w-56 bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-3xl shadow-float py-3 px-2 z-50 animate-scale-in flex flex-col space-y-0.5">
+                      <div className="px-3 py-2 border-b border-warm-100 dark:border-warm-700 mb-2 flex items-center gap-2">
+                         <Avatar emoji={profile.avatar_emoji} photoUrl={profile.photo_url} size="sm" />
+                         <div className="min-w-0">
+                           <p className="font-semibold text-warm-900 dark:text-warm-50 text-sm truncate">{profile.display_name}</p>
+                           <p className="text-xs text-warm-500 truncate">@{profile.username}</p>
+                         </div>
+                      </div>
+
+                      <button
+                        onClick={() => { setIsMenuOpen(false); navigate('/profile'); }}
+                        className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-700 transition-colors"
+                      >
+                        My Profile
+                      </button>
+                      <button
+                        onClick={() => { setIsMenuOpen(false); navigate('/profile?edit=true'); }}
+                        className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-700 transition-colors"
+                      >
+                        Edit Profile
+                      </button>
+                      <button
+                        onClick={() => { setIsMenuOpen(false); navigate('/settings'); }}
+                        className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-700 transition-colors"
+                      >
+                        Settings
+                      </button>
+                      <button
+                        onClick={() => { setIsMenuOpen(false); navigate('/settings#privacy-heading'); }}
+                        className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-700 transition-colors"
+                      >
+                        Privacy
+                      </button>
+                      <button
+                        onClick={() => { setIsMenuOpen(false); navigate('/settings#appearance-heading'); }}
+                        className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-700 transition-colors"
+                      >
+                        Appearance
+                      </button>
+                      <button
+                        onClick={() => { setIsMenuOpen(false); navigate('/feedback'); }}
+                        className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-700 transition-colors"
+                      >
+                        Feedback
+                      </button>
+                      <button
+                        onClick={() => { setIsMenuOpen(false); navigate('/settings#trust-heading'); }}
+                        className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-700 transition-colors"
+                      >
+                        Help & Support
+                      </button>
+                      
+                      <div className="border-t border-warm-100 dark:border-warm-700 my-1 pt-1" />
+                      
+                      <button
+                        onClick={async () => { setIsMenuOpen(false); await logout(); navigate('/auth'); }}
+                        className="w-full text-left px-3 py-2 rounded-xl text-sm font-semibold text-red-650 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+                      >
+                        Log Out
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
-            </button>
+            </div>
           </div>
         </header>
 
