@@ -1202,7 +1202,7 @@ export default function LandingPage() {
         </p>
 
         {/* The Dream */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-950/90 via-warm-950 to-violet-950 p-10 md:p-14 border border-primary-800/30">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-50 via-warm-100 to-violet-50 border border-warm-200 dark:from-primary-950/90 dark:via-warm-950 dark:to-violet-950 dark:border-primary-800/30 p-10 md:p-14">
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="absolute -top-24 -right-24 w-80 h-80 bg-primary-500/10 rounded-full blur-3xl" />
             <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-violet-500/10 rounded-full blur-3xl" />
@@ -1212,8 +1212,8 @@ export default function LandingPage() {
           <div className="relative max-w-3xl mx-auto">
             <div className="text-center mb-10">
               <div className="text-4xl mb-4">✨</div>
-              <h2 className="font-serif text-3xl font-bold text-white mb-3">The Dream</h2>
-              <p className="text-white/45 text-sm italic">
+              <h2 className="font-serif text-3xl font-bold text-warm-900 dark:text-white mb-3">The Dream</h2>
+              <p className="text-warm-600 dark:text-white/45 text-sm italic">
                 This is not a roadmap. This is the long-term mission of WHISPRR.
               </p>
             </div>
@@ -1229,22 +1229,22 @@ export default function LandingPage() {
                 { emoji: '✨', text: 'Create an ecosystem where technology strengthens human connection.' },
                 { emoji: '🎯', text: 'Prove that a social platform can be ethical, joyful, and sustainable.' },
               ].map((item, idx) => (
-                <div key={idx} className="flex items-start gap-4 p-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:bg-white/8 transition-colors">
+                <div key={idx} className="flex items-start gap-4 p-4 bg-white/70 backdrop-blur-sm border border-warm-200/50 dark:bg-white/5 dark:border-white/10 rounded-2xl hover:bg-white dark:hover:bg-white/8 transition-colors">
                   <span className="text-xl flex-shrink-0">{item.emoji}</span>
-                  <p className="text-white/80 text-sm leading-relaxed">{item.text}</p>
+                  <p className="text-warm-900 dark:text-white/80 text-sm leading-relaxed">{item.text}</p>
                 </div>
               ))}
             </div>
 
             {/* Closing statement */}
-            <div className="text-center border-t border-white/10 pt-10 space-y-4">
-              <p className="text-white/80 text-xl md:text-2xl font-serif font-bold leading-relaxed">
+            <div className="text-center border-t border-warm-200 dark:border-white/10 pt-10 space-y-4">
+              <p className="text-warm-900 dark:text-white/80 text-xl md:text-2xl font-serif font-bold leading-relaxed">
                 "The future of WHISPRR will be written together —
               </p>
-              <p className="text-white/80 text-xl md:text-2xl font-serif font-bold leading-relaxed">
+              <p className="text-warm-900 dark:text-white/80 text-xl md:text-2xl font-serif font-bold leading-relaxed">
                 with every conversation, every community, and every person who chooses to belong."
               </p>
-              <p className="text-white/30 text-sm italic mt-6">
+              <p className="text-warm-500 dark:text-white/30 text-sm italic mt-6">
                 This is only the beginning.
               </p>
             </div>

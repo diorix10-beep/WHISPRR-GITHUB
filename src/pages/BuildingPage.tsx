@@ -532,7 +532,7 @@ export default function BuildingPage() {
           </section>
 
           {/* ── THE DREAM ──────────────────────────────────────────────────── */}
-          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-950/90 via-warm-950 to-violet-950 p-10 border border-primary-800/30">
+          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-50 via-warm-100 to-violet-50 border border-warm-200 dark:from-primary-950/90 dark:via-warm-950 dark:to-violet-950 dark:border-primary-800/30 p-10">
             {/* Background elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
               <div className="absolute -top-20 -right-20 w-72 h-72 bg-primary-500/10 rounded-full blur-3xl" />
@@ -541,28 +541,28 @@ export default function BuildingPage() {
 
             <div className="relative">
               <div className="flex items-center gap-3 mb-2">
-                <Stars size={22} className="text-yellow-400" />
-                <h2 className="font-serif text-2xl font-bold text-white">✨ The Dream</h2>
+                <Stars size={22} className="text-yellow-600 dark:text-yellow-400" />
+                <h2 className="font-serif text-2xl font-bold text-warm-900 dark:text-white">✨ The Dream</h2>
               </div>
-              <p className="text-white/50 text-sm mb-8 italic">
+              <p className="text-warm-600 dark:text-white/50 text-sm mb-8 italic">
                 This is not a roadmap. This is the long-term mission of WHISPRR.
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {THE_DREAM.map((item, idx) => (
-                  <div key={idx} className="flex items-start gap-4 p-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:bg-white/8 transition-colors">
+                  <div key={idx} className="flex items-start gap-4 p-4 bg-white/70 backdrop-blur-sm border border-warm-200/50 dark:bg-white/5 dark:border-white/10 rounded-2xl hover:bg-white dark:hover:bg-white/8 transition-colors">
                     <span className="text-2xl flex-shrink-0">{item.emoji}</span>
-                    <p className="text-white/85 text-sm leading-relaxed font-medium">{item.text}</p>
+                    <p className="text-warm-900 dark:text-white/85 text-sm leading-relaxed font-medium">{item.text}</p>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-10 pt-8 border-t border-white/10 text-center space-y-4">
-                <p className="text-white/80 text-lg font-serif font-bold leading-relaxed">
+              <div className="mt-10 pt-8 border-t border-warm-200 dark:border-white/10 text-center space-y-4">
+                <p className="text-warm-900 dark:text-white/80 text-lg font-serif font-bold leading-relaxed">
                   "The future of WHISPRR will be written together —<br />
                   with every conversation, every community, and every person who chooses to belong."
                 </p>
-                <p className="text-white/35 text-xs italic">
+                <p className="text-warm-500 dark:text-white/35 text-xs italic">
                   This is only the beginning.
                 </p>
               </div>
