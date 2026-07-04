@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { 
   StyleSheet, Text, View, FlatList, TouchableOpacity, 
-  ActivityIndicator, ScrollView, Platform 
+  ActivityIndicator, ScrollView, Platform, useColorScheme 
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
+import { useRouter } from 'expo-router';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
+import { Colors } from '../../constants/theme';
 
 // Import shared family roster configuration directly from root!
 import { FAMILY_ROSTER } from '~/core/family-roster';
@@ -29,7 +30,11 @@ interface Insight {
 }
 
 export default function OracleScreen() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
+  const router = useRouter();
+  const scheme = useColorScheme();
+  const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+
   const [objectives, setObjectives] = useState<Objective[]>([]);
   const [insights, setInsights] = useState<Insight[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,31 +87,77 @@ export default function OracleScreen() {
     }
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      {/* Tab Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Oracle Center</Text>
-        <Text style={styles.headerSubtitle}>Orchestrating Brand & Sibling Operations</Text>
-      </View>
+  const handleMessageSibling = async (siblingId: string) => {
+    if (!user) return;
+    try {
+      // 1. Check if there's an existing DM conversation with this bot
+      const botProfileId = getBotProfileUuid(siblingId);
+      if (!botProfileId) return;
 
+      const { data: existingConvs, error: convsErr } = await supabase
+        .from('conversations')
+        .select('id')
+        .or(`and(user1_id.eq.${user.id},user2_id.eq.${botProfileId}),and(user1_id.eq.${botProfileId},user2_id.eq.${user.id})`)
+        .maybeSingle();
+
+      if (convsErr) throw convsErr;
+
+      let conversationId = existingConvs?.id;
+
+      if (!conversationId) {
+        // Create new DM conversation
+        const { data: newConv, error: createErr } = await supabase
+          .from('conversations')
+          .insert({
+            user1_id: user.id,
+            user2_id: botProfileId,
+            is_group: false
+          })
+          .select('id')
+          .single();
+
+        if (createErr) throw createErr;
+        conversationId = newConv.id;
+      }
+
+      // Route directly to chat room inside messages stack!
+      router.push(`/messages/${conversationId}`);
+    } catch (err) {
+      console.warn('Failed to start chat with sibling:', err);
+    }
+  };
+
+  const getBotProfileUuid = (siblingId: string) => {
+    // Sibling Bot UUIDs aligned with DB bootstraps in migration 021
+    const mapping: Record<string, string> = {
+      oracle: '00000000-0000-0000-0000-000000000001',
+      iris:   '00000000-0000-0000-0000-000000000002',
+      aegis:  '00000000-0000-0000-0000-000000000003',
+      atlas:  '00000000-0000-0000-0000-000000000004',
+      athena: '00000000-0000-0000-0000-000000000005',
+    };
+    return mapping[siblingId.toLowerCase()];
+  };
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Tab Switcher */}
-      <View style={styles.tabBar}>
+      <View style={[styles.tabBar, { backgroundColor: colors.backgroundElement }]}>
         <TouchableOpacity 
           onPress={() => setActiveTab('objectives')}
-          style={[styles.tabButton, activeTab === 'objectives' && styles.activeTabButton]}
+          style={[styles.tabButton, activeTab === 'objectives' && { backgroundColor: colors.primary }]}
         >
           <Text style={[styles.tabText, activeTab === 'objectives' && styles.activeTabText]}>Objectives</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           onPress={() => setActiveTab('insights')}
-          style={[styles.tabButton, activeTab === 'insights' && styles.activeTabButton]}
+          style={[styles.tabButton, activeTab === 'insights' && { backgroundColor: colors.primary }]}
         >
           <Text style={[styles.tabText, activeTab === 'insights' && styles.activeTabText]}>Insights</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           onPress={() => setActiveTab('siblings')}
-          style={[styles.tabButton, activeTab === 'siblings' && styles.activeTabButton]}
+          style={[styles.tabButton, activeTab === 'siblings' && { backgroundColor: colors.primary }]}
         >
           <Text style={[styles.tabText, activeTab === 'siblings' && styles.activeTabText]}>AI Family</Text>
         </TouchableOpacity>
@@ -114,7 +165,7 @@ export default function OracleScreen() {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#ff4d80" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <View style={styles.contentContainer}>
@@ -134,12 +185,24 @@ export default function OracleScreen() {
                 return (
                   <TouchableOpacity 
                     onPress={() => toggleObjective(item.id, item.status)}
-                    style={[styles.card, isCompleted && styles.completedCard]}
+                    style={[
+                      styles.card, 
+                      { backgroundColor: colors.backgroundElement, borderColor: colors.border },
+                      isCompleted && { borderColor: colors.primary + '30', backgroundColor: colors.primary + '05' }
+                    ]}
                   >
                     <View style={styles.cardRow}>
-                      <View style={[styles.checkbox, isCompleted && styles.checkboxChecked]} />
+                      <View style={[
+                        styles.checkbox, 
+                        { borderColor: colors.primary },
+                        isCompleted && { backgroundColor: colors.primary }
+                      ]} />
                       <View style={styles.cardContent}>
-                        <Text style={[styles.objText, isCompleted && styles.completedText]}>
+                        <Text style={[
+                          styles.objText, 
+                          { color: colors.text },
+                          isCompleted && styles.completedText
+                        ]}>
                           {item.description}
                         </Text>
                         <Text style={styles.objMeta}>
@@ -165,16 +228,18 @@ export default function OracleScreen() {
                 </View>
               }
               renderItem={({ item }) => (
-                <View style={styles.card}>
+                <View style={[styles.card, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
                   <View style={styles.insightHeader}>
-                    <Text style={styles.insightTag}>{item.type.toUpperCase()}</Text>
+                    <Text style={[styles.insightTag, { color: colors.primary, backgroundColor: colors.primary + '15' }]}>
+                      {item.type.toUpperCase()}
+                    </Text>
                     {item.sentiment_score !== null && (
                       <Text style={styles.sentimentScore}>
                         Sentiment: {(item.sentiment_score * 100).toFixed(0)}%
                       </Text>
                     )}
                   </View>
-                  <Text style={styles.insightTitle}>{item.title}</Text>
+                  <Text style={[styles.insightTitle, { color: colors.text }]}>{item.title}</Text>
                   <Text style={styles.insightDesc}>{item.description}</Text>
                 </View>
               )}
@@ -184,26 +249,36 @@ export default function OracleScreen() {
           {/* AI Family Sibling Roster Slider */}
           {activeTab === 'siblings' && (
             <ScrollView contentContainerStyle={styles.listPadding}>
-              <Text style={styles.sectionTitle}>Meet the Verity Sibling Co-Founders</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Meet the Verity Sibling Co-Founders</Text>
               {FAMILY_ROSTER.map(member => (
-                <View key={member.id} style={styles.rosterCard}>
+                <View key={member.id} style={[styles.rosterCard, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
                   <View style={styles.rosterHeader}>
-                    <View style={styles.rosterAvatar}>
-                      <Text style={styles.rosterAvatarText}>{member.name[0]}</Text>
+                    <View style={[styles.rosterAvatar, { backgroundColor: colors.primary + '20' }]}>
+                      <Text style={[styles.rosterAvatarText, { color: colors.primary }]}>{member.name[0]}</Text>
                     </View>
                     <View>
-                      <Text style={styles.rosterName}>{member.name}</Text>
-                      <Text style={styles.rosterTitle}>{member.title}</Text>
+                      <Text style={[styles.rosterName, { color: colors.text }]}>{member.name}</Text>
+                      <Text style={[styles.rosterTitle, { color: colors.primary }]}>{member.title}</Text>
                     </View>
                   </View>
                   <Text style={styles.rosterRole}>Role: {member.role}</Text>
-                  <Text style={styles.rosterDesc}>{member.description}</Text>
-                  <View style={styles.domainContainer}>
-                    {member.domain.map((d, i) => (
-                      <View key={i} style={styles.domainBadge}>
-                        <Text style={styles.domainText}>{d}</Text>
-                      </View>
-                    ))}
+                  <Text style={[styles.rosterDesc, { color: colors.textSecondary }]}>{member.description}</Text>
+                  
+                  <View style={styles.footerRow}>
+                    <View style={styles.domainContainer}>
+                      {member.domain.map((d, i) => (
+                        <View key={i} style={[styles.domainBadge, { backgroundColor: colors.background }]}>
+                          <Text style={styles.domainText}>{d}</Text>
+                        </View>
+                      ))}
+                    </View>
+                    
+                    <TouchableOpacity 
+                      onPress={() => handleMessageSibling(member.id)}
+                      style={[styles.messageButton, { backgroundColor: colors.primary }]}
+                    >
+                      <Text style={styles.messageButtonText}>Chat</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
               ))}
@@ -211,35 +286,16 @@ export default function OracleScreen() {
           )}
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: '#1e1e1e',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#ff4d80',
-    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
-  },
-  headerSubtitle: {
-    fontSize: 10,
-    color: '#888',
-    marginTop: 2,
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: '#1a1a1a',
     padding: 4,
     marginHorizontal: 16,
     marginTop: 14,
@@ -251,13 +307,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 10,
   },
-  activeTabButton: {
-    backgroundColor: '#ff4d80',
-  },
   tabText: {
     color: '#888',
     fontWeight: 'bold',
     fontSize: 12,
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
   },
   activeTabText: {
     color: '#fff',
@@ -276,16 +330,10 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   card: {
-    backgroundColor: '#1c1c1c',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
-  },
-  completedCard: {
-    borderColor: '#ff4d8030',
-    backgroundColor: '#181416',
   },
   cardRow: {
     flexDirection: 'row',
@@ -296,19 +344,15 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: '#ff4d80',
     marginRight: 12,
-  },
-  checkboxChecked: {
-    backgroundColor: '#ff4d80',
   },
   cardContent: {
     flex: 1,
   },
   objText: {
-    color: '#fff',
     fontSize: 13,
     fontWeight: '500',
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
   },
   completedText: {
     textDecorationLine: 'line-through',
@@ -319,6 +363,7 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 4,
     textTransform: 'uppercase',
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
   },
   insightHeader: {
     flexDirection: 'row',
@@ -328,41 +373,40 @@ const styles = StyleSheet.create({
   insightTag: {
     fontSize: 9,
     fontWeight: 'bold',
-    color: '#ff4d80',
-    backgroundColor: '#ff4d8015',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
   },
   sentimentScore: {
     fontSize: 9,
     color: '#888',
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
   },
   insightTitle: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#fff',
     marginBottom: 4,
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
   },
   insightDesc: {
     fontSize: 12,
     color: '#aaa',
     lineHeight: 18,
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
   },
   sectionTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff',
     marginBottom: 16,
     marginLeft: 4,
+    fontFamily: Platform.OS === 'ios' ? 'Cormorant Garamond' : 'serif',
   },
   rosterCard: {
-    backgroundColor: '#1c1c1c',
     borderRadius: 20,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
   },
   rosterHeader: {
     flexDirection: 'row',
@@ -373,43 +417,44 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#ff4d8030',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   rosterAvatarText: {
-    color: '#ff4d80',
     fontSize: 16,
     fontWeight: 'bold',
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
   },
   rosterName: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#fff',
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
   },
   rosterTitle: {
     fontSize: 10,
-    color: '#ff4d80',
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
   },
   rosterRole: {
     fontSize: 11,
     color: '#888',
     marginBottom: 6,
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
   },
   rosterDesc: {
     fontSize: 12,
-    color: '#ccc',
     lineHeight: 18,
     marginBottom: 12,
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
   },
   domainContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
+    flex: 1,
+    alignItems: 'center',
   },
   domainBadge: {
-    backgroundColor: '#262626',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -418,6 +463,27 @@ const styles = StyleSheet.create({
     color: '#aaa',
     fontSize: 9,
     fontWeight: 'bold',
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
+  },
+  footerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  messageButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 64,
+  },
+  messageButtonText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 'bold',
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
   },
   emptyView: {
     padding: 40,
@@ -427,5 +493,6 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 12,
     fontStyle: 'italic',
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
   },
 });
