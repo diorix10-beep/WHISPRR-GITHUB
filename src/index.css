@@ -3,6 +3,86 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* Theme-aware Text Colors (Light Mode) */
+    --text-warm-50:  #282520;
+    --text-warm-100: #302D28;
+    --text-warm-200: #3D3933;
+    --text-warm-300: #47433C;
+    --text-warm-400: #565148;
+    --text-warm-500: #706B62;
+    --text-warm-600: #282520;
+    --text-warm-700: #1E1B17;
+    --text-warm-750: #151412;
+    --text-warm-800: #151412;
+    --text-warm-850: #151412;
+    --text-warm-900: #151412;
+    --text-warm-925: #151412;
+    --text-warm-950: #151412;
+
+    --text-primary-50:  #7A3330;
+    --text-primary-100: #7A3330;
+    --text-primary-200: #933C37;
+    --text-primary-300: #933C37;
+    --text-primary-400: #B04B44;
+    --text-primary-500: #C96059;
+    --text-primary-600: #933C37;
+    --text-primary-700: #7A3330;
+    --text-primary-800: #662E2B;
+    --text-primary-900: #662E2B;
+
+    --text-accent-50:  #782E4A;
+    --text-accent-100: #782E4A;
+    --text-accent-200: #923558;
+    --text-accent-300: #923558;
+    --text-accent-400: #B0436B;
+    --text-accent-500: #CC5A83;
+    --text-accent-600: #923558;
+    --text-accent-700: #782E4A;
+    --text-accent-800: #64283F;
+    --text-accent-900: #64283F;
+  }
+
+  .dark {
+    /* Theme-aware Text Colors (Dark Mode) */
+    --text-warm-50:  #FAFAF8;
+    --text-warm-100: #F5F4F0;
+    --text-warm-200: #ECEAE3;
+    --text-warm-300: #D9D5CB;
+    --text-warm-400: #B8B3A7;
+    --text-warm-500: #8F8A80;
+    --text-warm-600: #ECEAE3;
+    --text-warm-700: #D9D5CB;
+    --text-warm-750: #B8B3A7;
+    --text-warm-800: #8F8A80;
+    --text-warm-850: #FAFAF8;
+    --text-warm-900: #FAFAF8;
+    --text-warm-925: #FAFAF8;
+    --text-warm-950: #FAFAF8;
+
+    --text-primary-50:  #FDF4F3;
+    --text-primary-100: #FAE7E5;
+    --text-primary-200: #F5CFCC;
+    --text-primary-300: #ECAAA5;
+    --text-primary-400: #DF817A;
+    --text-primary-500: #C96059;
+    --text-primary-600: #ECAAA5;
+    --text-primary-700: #F5CFCC;
+    --text-primary-800: #FAE7E5;
+    --text-primary-900: #FDF4F3;
+
+    --text-accent-50:  #FDF2F5;
+    --text-accent-100: #FAE4EA;
+    --text-accent-200: #F4C9D6;
+    --text-accent-300: #ECA5BB;
+    --text-accent-400: #DE7A9C;
+    --text-accent-500: #CC5A83;
+    --text-accent-600: #ECA5BB;
+    --text-accent-700: #F4C9D6;
+    --text-accent-800: #FAE4EA;
+    --text-accent-900: #FDF2F5;
+  }
+
   body {
     @apply bg-warm-50 text-warm-900 font-sans antialiased;
     -webkit-tap-highlight-color: transparent;
