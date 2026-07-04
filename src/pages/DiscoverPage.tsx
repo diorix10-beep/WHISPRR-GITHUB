@@ -1,16 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search, X, TrendingUp, Users, ChevronRight, Sparkles,
   Music, Gamepad2, Monitor, Dumbbell, Plane, Bike, Film,
   Trophy, Briefcase, Video, Hash, Loader2, RefreshCw,
-  VolumeX, Trash2, Heart, MessageSquare, Compass, EyeOff, ShieldAlert
+  VolumeX, Trash2, Heart, MessageSquare, Compass, EyeOff
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useInterests } from '../contexts/InterestContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
-import { MOODS, INTERESTS } from '../types';
+import { INTERESTS } from '../types';
 import type { Profile, Community, Whisper, Reaction } from '../types';
 import { UserCard } from '../components/discover/UserCard';
 import { Avatar } from '../components/common/Avatar';
@@ -41,6 +41,8 @@ const FEATURED_INTERESTS = [
 
 export default function DiscoverPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const qParam = searchParams.get('q') || '';
   const { user, profile, updateProfile } = useAuth();
   const { track } = useInterests();
   const { showToast } = useToast();
@@ -48,9 +50,9 @@ export default function DiscoverPage() {
   const [activeTab, setActiveTab] = useState<'explore' | 'for_you' | 'controls'>('explore');
 
   // Search state
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(qParam);
   const [searchTab, setSearchTab] = useState<SearchTab>('users');
-  const [isSearchActive, setIsSearchActive] = useState(false);
+  const [isSearchActive, setIsSearchActive] = useState(!!qParam);
   const [userResults, setUserResults] = useState<Profile[]>([]);
   const [communityResults, setCommunityResults] = useState<CommunityWithCount[]>([]);
   const [interestResults, setInterestResults] = useState<string[]>([]);
@@ -66,7 +68,6 @@ export default function DiscoverPage() {
   const [personalizedWhispers, setPersonalizedWhispers] = useState<WhisperWithRelations[]>([]);
   
   const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({});
-  const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [resetting, setResetting] = useState(false);
 
@@ -818,7 +819,7 @@ export default function DiscoverPage() {
           ) : (
             <div className="space-y-4">
                {personalizedWhispers.map(whisper => (
-                 <WhisperCard key={whisper.id} whisper={whisper} currentUserId={user.id} />
+                 <WhisperCard key={whisper.id} whisper={whisper} />
                ))}
             </div>
           )}

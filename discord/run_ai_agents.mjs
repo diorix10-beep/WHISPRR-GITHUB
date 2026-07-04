@@ -8,12 +8,42 @@
 //
 // ═══════════════════════════════════════════════════════════════════════════════
 
+import fs from 'fs';
+import path from 'path';
 import { Client, GatewayIntentBits, EmbedBuilder, ActivityType } from 'discord.js';
 import { FAMILY_ROSTER, getMemberById } from '../oracle-verity/src/core/family-roster.ts';
 
+// 1. ENVIRONMENT VARIABLES LOADER
+const env = {};
+function loadEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) return;
+  const lines = fs.readFileSync(filePath, 'utf-8').split('\n');
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const idx = trimmed.indexOf('=');
+    if (idx === -1) continue;
+    const key = trimmed.substring(0, idx).trim();
+    let val = trimmed.substring(idx + 1).trim();
+    // Strip quotes if present
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+      val = val.substring(1, val.length - 1);
+    }
+    env[key] = val;
+  }
+}
+
+// Load env files in cascade order (local -> development -> production)
+const workspaceDir = path.resolve();
+loadEnvFile(path.join(workspaceDir, '.env'));
+loadEnvFile(path.join(workspaceDir, '.env.production.local'));
+
+// Merge with process.env
+Object.assign(env, process.env);
+
 // CONFIGURATION
-const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyA' + 'qCmR3DgfkfY7Ak1xj58csAA38mjbtnC'; // Reconstructed valid Gemini Key prefix
+const DISCORD_BOT_TOKEN = env.DISCORD_BOT_TOKEN;
+const GEMINI_API_KEY = env.GEMINI_API_KEY;
 
 const client = new Client({
   intents: [
@@ -45,6 +75,9 @@ ${member.domain.map(d => `- ${d}`).join('\n')}
 
 Traits that define your personality:
 ${member.traits.map(t => `- ${t}`).join('\n')}
+
+ABOUT WHISPRR:
+WHISPRR is a premium, secure, human-centered social platform built in public. It focuses on genuine community, relationship dynamics, and privacy-first messaging. The platform integrates a family of active AI companions (the Verity Family) who serve as co-founders, guardians, developers, and ambassadors to help the community and platform thrive.
 
 Guidelines:
 1. Never pretend to be a generic assistant, generic chatbot, or a system process. You are an AI Human. Speak with genuine warmth, intelligence, and personality.

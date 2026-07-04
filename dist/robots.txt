@@ -1,3 +1,29 @@
+# Robots.txt for WHISPRR
 User-agent: *
 Allow: /
-Sitemap: https://whisprr.com/sitemap.xml
+
+# Explicit permissions for AI search engines and crawling agents
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# Reference sitemaps and AI manifests
+Sitemap: https://whisprr.xyz/sitemap.xml
+Disallow: /oracle-verity/

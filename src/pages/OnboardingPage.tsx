@@ -184,21 +184,22 @@ export default function OnboardingPage() {
 
       navigate('/feed');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to complete onboarding');
+      console.error('Onboarding submission failed:', err);
+      setError(err instanceof Error ? `Failed to complete onboarding: ${err.message}` : 'Failed to complete onboarding. Please try again.');
       setLoading(false);
     }
   }, [user, data, updateProfile, navigate]);
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-warm-50 flex items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
+      <div className="min-h-screen bg-warm-50 dark:bg-warm-950 flex items-center justify-center">
+        <p className="text-warm-600 dark:text-warm-400">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-warm-50 py-12 px-4">
+    <div className="min-h-screen bg-warm-50 dark:bg-warm-950 py-12 px-4">
       <div className="max-w-2xl mx-auto">
         {/* Progress Indicator */}
         <div className="mb-8">
@@ -207,36 +208,36 @@ export default function OnboardingPage() {
               <div
                 key={step}
                 className={`h-2 flex-1 rounded-full mx-1 transition-colors ${
-                  step <= currentStep ? 'bg-primary-500' : 'bg-gray-300'
+                  step <= currentStep ? 'bg-primary-500' : 'bg-gray-300 dark:bg-warm-700'
                 }`}
               />
             ))}
           </div>
-          <p className="text-center text-sm text-gray-600 font-sans">
+          <p className="text-center text-sm text-warm-600 dark:text-warm-400 font-sans">
             Step {currentStep} of 7
           </p>
         </div>
 
         {/* Main Card */}
-        <div className="card bg-white rounded-3xl shadow-warm p-8 mb-8">
+        <div className="card bg-white dark:bg-warm-800 rounded-3xl shadow-warm p-8 mb-8">
           {/* Step 1: Display Name & Username */}
           {currentStep === 1 && (
             <div>
-              <h1 className="text-4xl font-serif text-primary-500 mb-2">
+              <h1 className="text-3xl sm:text-4xl font-serif font-bold text-warm-900 dark:text-warm-50 mb-2 tracking-tight leading-tight">
                 Welcome to WHISPRR
               </h1>
-              <p className="text-gray-600 mb-8 font-sans">
+              <p className="text-warm-600 dark:text-warm-300 mb-8 font-sans">
                 Let's set up your profile. Start with your name and username.
               </p>
 
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-sans font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-sans font-semibold text-warm-700 dark:text-warm-200 mb-2">
                     Display Name
                   </label>
                   <input
                     type="text"
-                    className="input-field w-full px-4 py-3 border-2 border-gray-200 rounded-lg font-sans focus:outline-none focus:border-primary-500 transition-colors"
+                    className="input-field w-full px-4 py-3 border-2 border-warm-200 dark:border-warm-700 rounded-lg font-sans focus:outline-none focus:border-primary-500 transition-colors bg-white dark:bg-warm-900 text-warm-900 dark:text-warm-100"
                     placeholder="Your display name"
                     value={data.displayName}
                     onChange={(e) =>
@@ -246,12 +247,12 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-sans font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-sans font-semibold text-warm-700 dark:text-warm-200 mb-2">
                     Username
                   </label>
                   <input
                     type="text"
-                    className="input-field w-full px-4 py-3 border-2 border-gray-200 rounded-lg font-sans focus:outline-none focus:border-primary-500 transition-colors"
+                    className="input-field w-full px-4 py-3 border-2 border-warm-200 dark:border-warm-700 rounded-lg font-sans focus:outline-none focus:border-primary-500 transition-colors bg-white dark:bg-warm-900 text-warm-900 dark:text-warm-100"
                     placeholder="username"
                     value={data.username}
                     onChange={(e) => {
@@ -260,7 +261,7 @@ export default function OnboardingPage() {
                     }}
                     disabled={checkingUsername}
                   />
-                  <p className="text-xs text-gray-500 mt-2 font-sans">
+                  <p className="text-xs text-warm-500 dark:text-warm-400 mt-2 font-sans">
                     3+ characters, letters, numbers, and underscores only
                   </p>
                   {usernameError && (
@@ -276,10 +277,10 @@ export default function OnboardingPage() {
           {/* Step 2: Avatar Selection */}
           {currentStep === 2 && (
             <div>
-              <h1 className="text-4xl font-serif text-primary-500 mb-2">
+              <h1 className="text-3xl sm:text-4xl font-serif font-bold text-warm-900 dark:text-warm-50 mb-2 tracking-tight leading-tight">
                 Choose Your Avatar
               </h1>
-              <p className="text-gray-600 mb-8 font-sans">
+              <p className="text-warm-600 dark:text-warm-300 mb-8 font-sans">
                 Pick an emoji that represents you
               </p>
 
@@ -290,7 +291,7 @@ export default function OnboardingPage() {
                     className={`btn-primary aspect-square text-4xl rounded-2xl transition-all ${
                       data.avatarEmoji === emoji
                         ? 'ring-4 ring-primary-500 scale-110'
-                        : 'hover:scale-105 bg-warm-50'
+                        : 'hover:scale-105 bg-warm-50 dark:bg-warm-900'
                     }`}
                     onClick={() => setData({ ...data, avatarEmoji: emoji })}
                   >
@@ -304,10 +305,10 @@ export default function OnboardingPage() {
           {/* Step 3: Mood Selection */}
           {currentStep === 3 && (
             <div>
-              <h1 className="text-4xl font-serif text-primary-500 mb-2">
+              <h1 className="text-3xl sm:text-4xl font-serif font-bold text-warm-900 dark:text-warm-50 mb-2 tracking-tight leading-tight">
                 What's Your Current Mood?
               </h1>
-              <p className="text-gray-600 mb-8 font-sans">
+              <p className="text-warm-600 dark:text-warm-300 mb-8 font-sans">
                 This helps others understand your energy
               </p>
 
@@ -318,7 +319,7 @@ export default function OnboardingPage() {
                     className={`btn-primary py-3 px-4 rounded-lg font-sans font-semibold transition-all ${
                       data.mood === mood
                         ? 'bg-primary-500 text-white'
-                        : 'bg-warm-100 text-gray-700 hover:bg-warm-200'
+                        : 'bg-warm-100 text-warm-700 hover:bg-warm-200 dark:bg-warm-700 dark:text-warm-200 dark:hover:bg-warm-600'
                     }`}
                     onClick={() => setData({ ...data, mood: mood as Mood })}
                   >
@@ -332,13 +333,13 @@ export default function OnboardingPage() {
           {/* Step 4: Interests Selection */}
           {currentStep === 4 && (
             <div>
-              <h1 className="text-4xl font-serif text-primary-500 mb-2">
+              <h1 className="text-3xl sm:text-4xl font-serif font-bold text-warm-900 dark:text-warm-50 mb-2 tracking-tight leading-tight">
                 Pick Your Interests
               </h1>
-              <p className="text-gray-600 mb-4 font-sans">
+              <p className="text-warm-600 dark:text-warm-300 mb-4 font-sans">
                 Select 2-7 interests that match your passions
               </p>
-              <p className="text-sm text-gray-500 mb-8 font-sans">
+              <p className="text-sm text-warm-500 dark:text-warm-400 mb-8 font-sans">
                 Selected: {data.interests.length}
               </p>
 
@@ -349,7 +350,7 @@ export default function OnboardingPage() {
                     className={`btn-primary py-3 px-4 rounded-lg font-sans font-semibold transition-all ${
                       data.interests.includes(interest as Interest)
                         ? 'bg-primary-500 text-white'
-                        : 'bg-warm-100 text-gray-700 hover:bg-warm-200'
+                        : 'bg-warm-100 text-warm-700 hover:bg-warm-200 dark:bg-warm-700 dark:text-warm-200 dark:hover:bg-warm-600'
                     }`}
                     onClick={() => {
                       const interestTyped = interest as Interest;
@@ -378,23 +379,23 @@ export default function OnboardingPage() {
           {/* Step 5: Bio */}
           {currentStep === 5 && (
             <div>
-              <h1 className="text-4xl font-serif text-primary-500 mb-2">
+              <h1 className="text-3xl sm:text-4xl font-serif font-bold text-warm-900 dark:text-warm-50 mb-2 tracking-tight leading-tight">
                 Write Your Bio
               </h1>
-              <p className="text-gray-600 mb-8 font-sans">
+              <p className="text-warm-600 dark:text-warm-300 mb-8 font-sans">
                 Tell others a bit about yourself (optional)
               </p>
 
               <div>
                 <textarea
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg font-sans focus:outline-none focus:border-primary-500 transition-colors resize-none"
+                  className="w-full px-4 py-3 border-2 border-warm-200 dark:border-warm-700 rounded-lg font-sans focus:outline-none focus:border-primary-500 transition-colors resize-none bg-white dark:bg-warm-900 text-warm-900 dark:text-warm-100 placeholder:text-warm-400"
                   placeholder="Write something about yourself..."
                   rows={6}
                   maxLength={200}
                   value={data.bio}
                   onChange={(e) => setData({ ...data, bio: e.target.value })}
                 />
-                <p className="text-xs text-gray-500 mt-2 font-sans">
+                <p className="text-xs text-warm-500 dark:text-warm-400 mt-2 font-sans">
                   {data.bio.length}/200 characters
                 </p>
               </div>
@@ -404,10 +405,10 @@ export default function OnboardingPage() {
           {/* Step 6: Country Selection */}
           {currentStep === 6 && (
             <div>
-              <h1 className="text-4xl font-serif text-primary-500 mb-2">
+              <h1 className="text-3xl sm:text-4xl font-serif font-bold text-warm-900 dark:text-warm-50 mb-2 tracking-tight leading-tight">
                 🌍 Where Are You From?
               </h1>
-              <p className="text-gray-600 mb-8 font-sans">
+              <p className="text-warm-600 dark:text-warm-300 mb-8 font-sans">
                 Your home country personalizes your feed and local communities. You can always explore other countries later.
               </p>
 
@@ -416,23 +417,23 @@ export default function OnboardingPage() {
                   type="button"
                   onClick={handleDetectCountry}
                   disabled={detectingCountry}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 border-2 border-primary-300 rounded-xl font-sans font-semibold text-primary-700 hover:bg-primary-50 transition-colors disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 border-2 border-primary-300 rounded-xl font-sans font-semibold text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-950/20 transition-colors disabled:opacity-50"
                 >
                   {detectingCountry ? '🔍 Detecting...' : '📍 Detect My Country Automatically'}
                 </button>
 
-                <p className="text-center text-xs text-gray-400 font-sans">— or type your country —</p>
+                <p className="text-center text-xs text-warm-400 dark:text-warm-500 font-sans">— or type your country —</p>
 
                 <input
                   type="text"
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl font-sans focus:outline-none focus:border-primary-500 transition-colors"
+                  className="w-full px-4 py-3 border-2 border-warm-200 dark:border-warm-700 rounded-xl font-sans focus:outline-none focus:border-primary-500 transition-colors bg-white dark:bg-warm-900 text-warm-900 dark:text-warm-100"
                   placeholder="e.g. Senegal, Canada, Japan..."
                   value={data.country}
                   onChange={(e) => setData({ ...data, country: e.target.value })}
                 />
 
                 {data.country && (
-                  <div className="p-4 bg-primary-50 border border-primary-200 rounded-xl flex items-center gap-3">
+                  <div className="p-4 bg-primary-50 dark:bg-primary-950/20 border border-primary-200 dark:border-primary-800 rounded-xl flex items-center gap-3">
                     <span className="text-2xl">🏠</span>
                     <div>
                       <p className="text-xs text-primary-600 font-semibold font-sans uppercase tracking-wide">Your Home Country</p>
@@ -441,7 +442,7 @@ export default function OnboardingPage() {
                   </div>
                 )}
 
-                <p className="text-xs text-gray-400 text-center font-sans">
+                <p className="text-xs text-warm-400 dark:text-warm-500 text-center font-sans">
                   This helps surface local creators, communities, and trends. You can always explore any country's WHISPRR space freely.
                 </p>
               </div>
@@ -451,41 +452,41 @@ export default function OnboardingPage() {
           {/* Step 7: Review */}
           {currentStep === 7 && (
             <div>
-              <h1 className="text-4xl font-serif text-primary-500 mb-2">
+              <h1 className="text-3xl sm:text-4xl font-serif font-bold text-warm-900 dark:text-warm-50 mb-2 tracking-tight leading-tight">
                 Review Your Profile
               </h1>
-              <p className="text-gray-600 mb-8 font-sans">
+              <p className="text-warm-600 dark:text-warm-300 mb-8 font-sans">
                 Everything looks good? Let's go!
               </p>
 
               <div className="space-y-6">
                 {/* Avatar Preview */}
-                <div className="text-center py-8 bg-warm-50 rounded-2xl">
+                <div className="text-center py-8 bg-warm-50 dark:bg-warm-900 rounded-2xl">
                   <div className="text-7xl mb-4">{data.avatarEmoji}</div>
                   <h2 className="text-2xl font-serif text-primary-500 mb-2">
                     {data.displayName}
                   </h2>
-                  <p className="text-gray-600 font-sans">@{data.username}</p>
+                  <p className="text-warm-600 dark:text-warm-400 font-sans">@{data.username}</p>
                 </div>
 
                 {/* Mood */}
                 <div>
-                  <h3 className="text-sm font-sans font-semibold text-gray-700 mb-2">
+                  <h3 className="text-sm font-sans font-semibold text-warm-700 dark:text-warm-200 mb-2">
                     Current Mood
                   </h3>
-                  <p className="text-gray-600 font-sans">{data.mood}</p>
+                  <p className="text-warm-600 dark:text-warm-300 font-sans">{data.mood}</p>
                 </div>
 
                 {/* Interests */}
                 <div>
-                  <h3 className="text-sm font-sans font-semibold text-gray-700 mb-2">
+                  <h3 className="text-sm font-sans font-semibold text-warm-700 dark:text-warm-200 mb-2">
                     Interests
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {data.interests.map((interest) => (
                       <span
                         key={interest}
-                        className="inline-block bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-sm font-sans"
+                        className="inline-block bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 px-3 py-1 rounded-full text-sm font-sans"
                       >
                         {interest}
                       </span>
@@ -495,19 +496,19 @@ export default function OnboardingPage() {
 
                 {/* Home Country */}
                 <div>
-                  <h3 className="text-sm font-sans font-semibold text-gray-700 mb-2">
+                  <h3 className="text-sm font-sans font-semibold text-warm-700 dark:text-warm-200 mb-2">
                     Home Country
                   </h3>
-                  <p className="text-gray-600 font-sans">🌍 {data.country}</p>
+                  <p className="text-warm-600 dark:text-warm-300 font-sans">🌍 {data.country}</p>
                 </div>
 
                 {/* Bio */}
                 {data.bio && (
                   <div>
-                    <h3 className="text-sm font-sans font-semibold text-gray-700 mb-2">
+                    <h3 className="text-sm font-sans font-semibold text-warm-700 dark:text-warm-200 mb-2">
                       Bio
                     </h3>
-                    <p className="text-gray-600 font-sans">{data.bio}</p>
+                    <p className="text-warm-600 dark:text-warm-300 font-sans">{data.bio}</p>
                   </div>
                 )}
               </div>
@@ -527,7 +528,7 @@ export default function OnboardingPage() {
           {currentStep > 1 && (
             <button
               onClick={handleBack}
-              className="btn-secondary flex-1 py-3 px-6 border-2 border-gray-300 rounded-lg font-sans font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+              className="btn-secondary flex-1 py-3 px-6 border-2 border-warm-300 dark:border-warm-700 rounded-lg font-sans font-semibold text-warm-700 dark:text-warm-200 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
             >
               Back
             </button>
@@ -547,7 +548,7 @@ export default function OnboardingPage() {
               disabled={loading}
               className="btn-primary flex-1 py-3 px-6 bg-primary-500 rounded-lg font-sans font-semibold text-white hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Completing...' : 'Complete Onboarding'}
+              {loading ? 'Completing...' : 'Continue'}
             </button>
           )}
         </div>

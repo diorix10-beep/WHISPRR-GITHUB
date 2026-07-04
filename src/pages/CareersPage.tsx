@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { 
-  Briefcase, Heart, Shield, Cpu, BookOpen, Clock, Bot, Sparkles, 
-  CheckCircle, ArrowRight, X, FileText, Send, Award
+  Bot, Sparkles, CheckCircle, ArrowRight, X, Send
 } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';

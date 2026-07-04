@@ -1,18 +1,11 @@
 import { useState, useEffect } from 'react';
 import { 
-  Users, ShieldCheck, Heart, Sparkles, Megaphone, Video, 
-  Copy, Check, UserPlus, Gift, ChevronRight, Award, Send
+  Users, ShieldCheck, Megaphone, Video, 
+  Copy, Check, Gift, Award, Send
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
-
-interface Application {
-  type: 'ambassador' | 'creator';
-  platform?: string;
-  handle?: string;
-  motivation: string;
-}
 
 export default function CommunityProgramPage() {
   const { profile } = useAuth();

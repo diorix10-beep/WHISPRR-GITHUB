@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import {
   Rocket, Calendar, GitCommit, Heart, CheckCircle, Clock, Eye,
-  ArrowRight, FlaskConical, Globe, Sparkles, Stars, Cpu, Mic2,
-  PenLine, Building, Monitor, Smartphone, Users, ShieldCheck, BookOpen
+  FlaskConical, Globe, Sparkles, Stars
 } from 'lucide-react';
 
 type RoadmapTab = 'roadmap' | 'changelog' | 'journey' | 'feedback';

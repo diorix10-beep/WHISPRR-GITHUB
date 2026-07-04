@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Bot, Sparkles, MessageSquare, Shield, Cpu, BookOpen, Clock, 
-  Terminal, ShieldCheck, Database, GitBranch, Heart, Settings, BarChart2
-} from 'lucide-react';
-import { FAMILY_ROSTER, getMemberById } from '../../oracle-verity/src/core/family-roster.ts';
+import { Bot, MessageSquare, Settings, BarChart2 } from 'lucide-react';
+import { FAMILY_ROSTER, getMemberById } from '../core/family-roster';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
@@ -143,7 +140,7 @@ export default function AiFamilyPage() {
     try {
       channel = supabase
         .channel('ai_metrics_realtime')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'ai_metrics' }, (payload) => {
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ai_metrics' }, () => {
           fetchMetrics();
         })
         .subscribe();
@@ -176,8 +173,8 @@ export default function AiFamilyPage() {
     }
 
     const botUuid = BOT_UUIDS[agentId];
-    if (!botUuid) {
-      showToast(`Direct link to ${name} is under construction.`, 'warning');
+     if (!botUuid) {
+      showToast(`Direct link to ${name} is under construction.`, 'info');
       return;
     }
 

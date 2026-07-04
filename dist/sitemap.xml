@@ -1,8 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://whisprr.com</loc>
-    <lastmod>2026-06-07</lastmod>
+    <loc>https://whisprr.xyz</loc>
+    <lastmod>2026-07-01</lastmod>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://whisprr.xyz/discover</loc>
+    <lastmod>2026-07-01</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://whisprr.xyz/careers</loc>
+    <lastmod>2026-07-01</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://whisprr.xyz/trust</loc>
+    <lastmod>2026-07-01</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://whisprr.xyz/privacy</loc>
+    <lastmod>2026-07-01</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://whisprr.xyz/terms</loc>
+    <lastmod>2026-07-01</lastmod>
+    <priority>0.7</priority>
   </url>
 </urlset>

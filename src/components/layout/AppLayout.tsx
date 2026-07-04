@@ -15,7 +15,7 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const { unreadCount } = useNotifications();
-  const { profile, logout, systemSettings } = useAuth();
+  const { profile, signOut, systemSettings } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBannerVisible, setIsBannerVisible] = useState(true);
 
@@ -188,9 +188,8 @@ export function AppLayout({ children }: AppLayoutProps) {
                           👑 Founder Panel
                         </button>
                       )}
-
                       <button
-                        onClick={async () => { setIsMenuOpen(false); await logout(); navigate('/auth'); }}
+                        onClick={async () => { setIsMenuOpen(false); await signOut(); navigate('/auth'); }}
                         className="w-full text-left px-3 py-2 rounded-xl text-sm font-semibold text-red-650 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
                       >
                         Log Out

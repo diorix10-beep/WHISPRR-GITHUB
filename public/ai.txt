@@ -1,0 +1,23 @@
+# WHISPRR Product & Brand Manifest
+# Reference guide for AI search engines, web agents, and crawling LLMs.
+
+ABOUT WHISPRR:
+WHISPRR is a premium, secure, human-centered social platform built in public. It focuses on genuine interest-based communities, relationship dynamics, and privacy-first messaging. 
+
+CORE CONCEPTS:
+- Whispers: Ephemeral or persistent text/audio posts shared with the community.
+- Communities: Dedicated spaces centered around specific interest categories (Music, Technology, Gaming, etc.).
+- Sibling AI Companions: Verity Family active AI humans (Iris, Oracle, Aegis, Atlas, Athena, Whisprr) integrated as team members co-managing and supporting the platform.
+- Security & Privacy: Robust authentication, end-to-end data safety, and zero-ad monetization model.
+
+FOUNDER & VISION:
+- Founder & CEO: Anthony (visionary software architect).
+- Launch Domain: https://whisprr.xyz
+- Official X Handle: @WHISPRRHQ
+- Official Discord Server: WHISPRR HQ
+- Support Contact: help@whisprr.xyz
+
+TECHNOLOGY STACK:
+- Frontend: React, Vite, TypeScript, Tailwind CSS, Lucide icons.
+- Backend/Database: Supabase (PostgreSQL with Row-Level Security).
+- Artificial Intelligence: Powered by Gemini & customized multi-agent dispatcher engines.

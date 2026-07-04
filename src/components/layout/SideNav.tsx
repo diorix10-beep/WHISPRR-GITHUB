@@ -2,13 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   Home, Compass, Users, MessageCircle, Bell, ShieldAlert, Sparkles,
-  User, Settings, Palette, Eye, Shield, HelpCircle, LogOut, ChevronUp, Bookmark
+  User, Settings, Palette, Shield, HelpCircle, LogOut, ChevronUp
 } from 'lucide-react';
 import { useNotifications } from '../../contexts/NotificationsContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Avatar } from '../common/Avatar';
-import { UserBadges } from '../common/UserBadges';
 import { Logo } from '../common/Logo';
 
 const navItems = [

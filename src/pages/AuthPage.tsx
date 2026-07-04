@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Logo } from '../components/common/Logo';
 
@@ -113,17 +114,17 @@ export default function AuthPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-warm-50 flex items-center justify-center">
+      <div className="min-h-screen bg-warm-50 dark:bg-warm-950 flex items-center justify-center">
         <div className="animate-pulse flex flex-col items-center gap-4">
           <div className="w-12 h-12 bg-primary-500 rounded-full"></div>
-          <p className="text-warm-600">Loading...</p>
+          <p className="text-warm-600 dark:text-warm-400">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-warm-50 flex flex-col items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-warm-50 dark:bg-warm-950 flex flex-col items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8 flex flex-col items-center gap-3">
@@ -131,11 +132,11 @@ export default function AuthPage() {
           <h1 className="font-serif text-4xl font-bold text-primary-500">
             WHISPRR
           </h1>
-          <p className="text-warm-600 font-medium">Where connections feel real</p>
+          <p className="text-warm-600 dark:text-warm-400 font-medium">Where connections feel real</p>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-2 mb-8 bg-warm-100 p-1 rounded-2xl">
+        <div className="flex gap-2 mb-8 bg-warm-100 dark:bg-warm-900 p-1 rounded-2xl">
           <button
             onClick={() => {
               setActiveTab('signin');
@@ -144,8 +145,8 @@ export default function AuthPage() {
             }}
             className={`flex-1 py-2.5 px-4 rounded-xl font-medium transition-all duration-200 ${
               activeTab === 'signin'
-                ? 'bg-white text-primary-500 shadow-soft'
-                : 'text-warm-600 hover:text-warm-700'
+                ? 'bg-white dark:bg-warm-800 text-primary-500 shadow-soft'
+                : 'text-warm-600 dark:text-warm-400 hover:text-warm-700 dark:hover:text-warm-200'
             }`}
           >
             Sign In
@@ -158,8 +159,8 @@ export default function AuthPage() {
             }}
             className={`flex-1 py-2.5 px-4 rounded-xl font-medium transition-all duration-200 ${
               activeTab === 'signup'
-                ? 'bg-white text-primary-500 shadow-soft'
-                : 'text-warm-600 hover:text-warm-700'
+                ? 'bg-white dark:bg-warm-800 text-primary-500 shadow-soft'
+                : 'text-warm-600 dark:text-warm-400 hover:text-warm-700 dark:hover:text-warm-200'
             }`}
           >
             Sign Up
@@ -172,8 +173,8 @@ export default function AuthPage() {
             }}
             className={`flex-1 py-2.5 px-4 rounded-xl font-medium transition-all duration-200 ${
               activeTab === 'forgot'
-                ? 'bg-white text-primary-500 shadow-soft'
-                : 'text-warm-600 hover:text-warm-700'
+                ? 'bg-white dark:bg-warm-800 text-primary-500 shadow-soft'
+                : 'text-warm-600 dark:text-warm-400 hover:text-warm-700 dark:hover:text-warm-200'
             }`}
           >
             Reset
@@ -197,7 +198,7 @@ export default function AuthPage() {
           {activeTab === 'signin' && (
             <form onSubmit={handleSignIn} className="space-y-4">
               <div>
-                <label htmlFor="signin-email" className="block text-sm font-medium text-warm-700 mb-2">
+                <label htmlFor="signin-email" className="block text-sm font-semibold text-warm-900 dark:text-white mb-2">
                   Email
                 </label>
                 <input
@@ -212,7 +213,7 @@ export default function AuthPage() {
               </div>
 
               <div>
-                <label htmlFor="signin-password" className="block text-sm font-medium text-warm-700 mb-2">
+                <label htmlFor="signin-password" className="block text-sm font-semibold text-warm-900 dark:text-white mb-2">
                   Password
                 </label>
                 <input
@@ -236,10 +237,10 @@ export default function AuthPage() {
 
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-warm-200"></div>
+                  <div className="w-full border-t border-warm-200 dark:border-warm-700"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-warm-600">or</span>
+                  <span className="px-2 bg-white dark:bg-warm-800 text-warm-600 dark:text-warm-400">or</span>
                 </div>
               </div>
 
@@ -264,7 +265,7 @@ export default function AuthPage() {
           {activeTab === 'signup' && (
             <form onSubmit={handleSignUp} className="space-y-4">
               <div>
-                <label htmlFor="signup-email" className="block text-sm font-medium text-warm-700 mb-2">
+                <label htmlFor="signup-email" className="block text-sm font-semibold text-warm-900 dark:text-white mb-2">
                   Email
                 </label>
                 <input
@@ -279,7 +280,7 @@ export default function AuthPage() {
               </div>
 
               <div>
-                <label htmlFor="signup-password" className="block text-sm font-medium text-warm-700 mb-2">
+                <label htmlFor="signup-password" className="block text-sm font-semibold text-warm-900 dark:text-white mb-2">
                   Password
                 </label>
                 <input
@@ -294,7 +295,7 @@ export default function AuthPage() {
               </div>
 
               <div>
-                <label htmlFor="signup-confirm" className="block text-sm font-medium text-warm-700 mb-2">
+                <label htmlFor="signup-confirm" className="block text-sm font-semibold text-warm-900 dark:text-white mb-2">
                   Confirm Password
                 </label>
                 <input
@@ -318,10 +319,10 @@ export default function AuthPage() {
 
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-warm-200"></div>
+                  <div className="w-full border-t border-warm-200 dark:border-warm-700"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-warm-600">or</span>
+                  <span className="px-2 bg-white dark:bg-warm-800 text-warm-600 dark:text-warm-400">or</span>
                 </div>
               </div>
 
@@ -353,10 +354,10 @@ export default function AuthPage() {
                       </svg>
                     </div>
                   </div>
-                  <h3 className="font-serif text-xl font-semibold text-warm-900 mb-2">
+                  <h3 className="font-serif text-xl font-semibold text-warm-900 dark:text-warm-50 mb-2">
                     Check your email
                   </h3>
-                  <p className="text-warm-600 text-sm mb-6">
+                  <p className="text-warm-600 dark:text-warm-300 text-sm mb-6">
                     We've sent you a link to reset your password. It may take a few minutes to arrive.
                   </p>
                   <button
@@ -373,12 +374,12 @@ export default function AuthPage() {
                 </div>
               ) : (
                 <>
-                  <p className="text-warm-600 text-sm mb-6">
+                  <p className="text-warm-600 dark:text-warm-300 text-sm mb-6">
                     Enter your email address and we'll send you a link to reset your password.
                   </p>
 
                   <div>
-                    <label htmlFor="reset-email" className="block text-sm font-medium text-warm-700 mb-2">
+                    <label htmlFor="reset-email" className="block text-sm font-semibold text-warm-900 dark:text-white mb-2">
                       Email
                     </label>
                     <input
@@ -415,13 +416,13 @@ export default function AuthPage() {
 
         {/* Footer */}
         <div className="text-center mt-8 space-y-2">
-          <p className="text-sm text-warm-500">
-            Join our warm and welcoming community
+          <p className="text-sm text-warm-500 dark:text-warm-400">
+            Join a thoughtful network built for authentic connections.
           </p>
-          <div className="flex items-center justify-center gap-3 text-xs text-warm-400">
-            <a href="/terms" className="hover:text-primary-500 transition-colors">Terms</a>
+          <div className="flex items-center justify-center gap-3 text-xs text-warm-400 dark:text-warm-500">
+            <Link to="/terms" className="hover:text-primary-500 transition-colors">Terms</Link>
             <span>&middot;</span>
-            <a href="/privacy" className="hover:text-primary-500 transition-colors">Privacy</a>
+            <Link to="/privacy" className="hover:text-primary-500 transition-colors">Privacy</Link>
             <span>&middot;</span>
             <a href="mailto:help@whisprr.xyz" className="hover:text-primary-500 transition-colors">Support</a>
           </div>

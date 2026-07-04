@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
-  MapPin, Link2, Calendar, Edit2, Check, X, Camera, MessageCircle, 
-  Users, Heart, Award, Pin, Globe, Twitter, Instagram, Github, 
+  MapPin, Calendar, Edit2, Check, X, Camera, MessageCircle, 
+  Heart, Award, Pin, Globe, Twitter, Instagram, Github, 
   Linkedin, MessageSquare, Youtube, Music, Tv, Gamepad, Chrome, 
   Sparkles, Plus, Search, ArrowUp, ArrowDown, Trash2, HeartHandshake,
   Compass, HelpCircle
@@ -1040,6 +1040,14 @@ export default function ProfilePage() {
                         Follows you
                       </span>
                     )}
+                  </div>
+                  <div className="flex gap-4 text-sm text-warm-500 dark:text-warm-400 mt-2">
+                    <button onClick={() => setFollowModal({ isOpen: true, type: 'followers' })} className="hover:underline text-left">
+                      <span className="font-bold text-warm-800 dark:text-warm-250">{followerCount}</span> followers
+                    </button>
+                    <button onClick={() => setFollowModal({ isOpen: true, type: 'following' })} className="hover:underline text-left">
+                      <span className="font-bold text-warm-800 dark:text-warm-250">{followingCount}</span> following
+                    </button>
                   </div>
                 </div>
               </div>
