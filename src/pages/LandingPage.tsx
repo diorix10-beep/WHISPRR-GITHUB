@@ -452,8 +452,8 @@ export default function LandingPage() {
                      { title: 'Responsibility', desc: 'Moderators and creators own and guide their community guidelines.' }
                   ]).map((val, i) => (
                      <div key={i} className="public-card p-5">
-                        <h4 className="font-bold text-sm text-warm-50 mb-1">{val.title}</h4>
-                        <p className="text-xs text-warm-400 leading-relaxed">{val.desc}</p>
+                        <h4 className="font-bold text-sm text-warm-900 dark:text-warm-50 mb-1">{val.title}</h4>
+                        <p className="text-xs text-warm-600 dark:text-warm-300 leading-relaxed">{val.desc}</p>
                      </div>
                   ))}
                </div>
