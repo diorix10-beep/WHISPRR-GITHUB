@@ -35,6 +35,9 @@ const LandingPage       = lazy(() => import('./pages/LandingPage'));
 const AiFamilyPage      = lazy(() => import('./pages/AiFamilyPage'));
 const CommunityProgramPage = lazy(() => import('./pages/CommunityProgramPage'));
 const CareersPage          = lazy(() => import('./pages/CareersPage'));
+const AiCharactersPage = lazy(() => import('./pages/AiCharactersPage'));
+const AiCharacterCreator = lazy(() => import('./pages/AiCharacterCreator'));
+
 
 function PageLoader() {
   return (
@@ -150,6 +153,8 @@ function AppLoader() {
           <Route path="/communities"                   element={<CommunitiesPage />} />
           <Route path="/communities/:communityId"      element={<CommunityDetailPage />} />
           <Route path="/ai-family"                     element={<AiFamilyPage />} />
+          <Route path="/nexa"                          element={<AiCharactersPage />} />
+          <Route path="/nexa/create"                   element={<AiCharacterCreator />} />
           <Route path="/community-program"             element={<CommunityProgramPage />} />
           <Route path="/careers"                       element={<CareersPage />} />
           <Route path="/whisper/:id"                   element={<WhisperDetailPage />} />

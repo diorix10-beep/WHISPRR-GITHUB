@@ -11,6 +11,7 @@
     "expo-device": "~57.0.0",
     "expo-font": "~57.0.0",
     "expo-glass-effect": "~57.0.0",
+    "expo-haptics": "^57.0.0",
     "expo-image": "~57.0.0",
     "expo-linking": "~57.0.1",
     "expo-router": "~57.0.3",
@@ -32,6 +33,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "eas-cli": "^20.5.1",
     "typescript": "~6.0.3"
   },
   "scripts": {

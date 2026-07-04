@@ -92,7 +92,7 @@ export default function InboxScreen() {
 
       // 4. Fetch unread counts
       const convIds = conversationsWithProfiles.map(c => c.id);
-      let unreadCounts: Record<string, number> = {};
+      const unreadCounts: Record<string, number> = {};
       
       if (convIds.length > 0) {
         const { data: msgs, error: msgsErr } = await supabase

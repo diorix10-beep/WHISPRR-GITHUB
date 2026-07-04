@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   Home, Compass, Users, MessageCircle, Bell, ShieldAlert, Sparkles,
-  User, Settings, Palette, Shield, HelpCircle, LogOut, ChevronUp
+  User, Settings, Palette, Shield, HelpCircle, LogOut, ChevronUp, Bot
 } from 'lucide-react';
 import { useNotifications } from '../../contexts/NotificationsContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -17,6 +17,7 @@ const navItems = [
   { path: '/messages', icon: MessageCircle, label: 'Messages' },
   { path: '/notifications', icon: Bell, label: 'Notifications' },
   { path: '/ai-family', icon: Sparkles, label: 'AI Family' },
+  { path: '/nexa', icon: Bot, label: 'NEXA' },
 ];
 
 export function SideNav() {

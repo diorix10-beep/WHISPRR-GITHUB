@@ -53,7 +53,7 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
   { title: 'Performance Testing', description: 'Load testing, database optimization, and edge infrastructure validation.', status: 'testing', category: 'Infrastructure' },
 
   // ── PLANNED ───────────────────────────────────────────────────────────────
-  { title: 'AI Characters', description: 'Customizable AI companion avatars with distinct personalities.', status: 'planned', category: 'AI' },
+  { title: 'NEXA (AI Characters)', description: 'Create, customize, and chat with intelligent community AI Characters directly inside WHISPRR.', status: 'in_progress', category: 'AI' },
   { title: 'Character Memory', description: 'AI characters that remember your past conversations.', status: 'planned', category: 'AI' },
   { title: 'AI Roleplay', description: 'Collaborative roleplay scenarios with AI-driven narrative.', status: 'planned', category: 'AI' },
   { title: 'AI Companion System', description: 'Full AI companionship framework with relationship layers.', status: 'planned', category: 'AI' },

@@ -153,6 +153,10 @@ export default function ConversationPage() {
 
         setMessages(prev => [...prev, { ...newMsg, profiles: senderProfile ?? undefined }]);
 
+        if (newMsg.sender_id !== user.id) {
+          setTypingUsers(prev => prev.filter(id => id !== newMsg.sender_id));
+        }
+
         if (newMsg.sender_id !== user.id && !newMsg.read) {
           await supabase.from('messages').update({ read: true }).eq('id', newMsg.id);
         }
@@ -272,6 +276,30 @@ export default function ConversationPage() {
           last_message_at: new Date().toISOString(),
         })
         .eq('id', conversationId);
+
+      if (otherUser && (otherUser.role as string) === 'ai_character') {
+        // Simulate typing status immediately for fluid UI
+        setTypingUsers([otherUser.user_id]);
+
+        // Trigger AI reply generation in the background
+        const sessionRes = await supabase.auth.getSession();
+        const token = sessionRes.data.session?.access_token;
+        
+        fetch('/api/ai-chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            conversation_id: conversationId,
+            bot_user_id: otherUser.user_id
+          })
+        }).catch(err => {
+          console.error('Failed to trigger AI response:', err);
+          setTypingUsers([]);
+        });
+      }
     } catch (error: any) {
       console.error('Error sending message:', error);
       setMessageInput(content);

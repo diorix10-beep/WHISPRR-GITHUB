@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { useColorScheme, Image } from 'react-native';
 import { Colors } from '../../constants/theme';
+import { SymbolView } from 'expo-symbols';
 
 export default function AppLayout() {
   const scheme = useColorScheme();
@@ -55,6 +56,21 @@ export default function AppLayout() {
             <Image
               source={require('../../../assets/images/tabIcons/explore.png')}
               style={{ width: size, height: size, tintColor: color }}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="communities"
+        options={{
+          title: 'Communities',
+          headerTitle: 'Communities',
+          headerShown: false, // We'll manage headers inside communities Stack
+          tabBarIcon: ({ color, size }) => (
+            <SymbolView
+              name={{ ios: 'person.3.fill', android: 'groups', web: 'groups' }}
+              size={size}
+              tintColor={color}
             />
           ),
         }}

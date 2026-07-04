@@ -120,7 +120,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (cached) {
           setSystemSettings(JSON.parse(cached));
         }
-      } catch {}
+      } catch (e) {
+        // Ignore cache loading error, fall back to default
+      }
     }
     loadCachedSettings();
   }, []);

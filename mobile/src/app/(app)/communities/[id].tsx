@@ -1,15 +1,26 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { 
   StyleSheet, Text, View, FlatList, TextInput, TouchableOpacity, 
   ActivityIndicator, Platform, RefreshControl, useColorScheme,
   Modal, ScrollView, SafeAreaView, KeyboardAvoidingView
 } from 'react-native';
-import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
-import { Colors } from '../../constants/theme';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useAuth } from '../../../contexts/AuthContext';
+import { supabase } from '../../../lib/supabase';
+import { Colors } from '../../../constants/theme';
 import { SymbolView } from 'expo-symbols';
 import * as Haptics from 'expo-haptics';
 import { MOODS, type Mood } from '~/types';
+
+interface Community {
+  id: string;
+  name: string;
+  description: string;
+  interest: string;
+  emoji: string;
+  owner_id: string;
+  created_at: string;
+}
 
 interface ProfileRelation {
   id: string;
@@ -75,21 +86,21 @@ function formatTimeAgo(dateString: string) {
   return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
-export default function FeedScreen() {
+export default function CommunityDetailScreen() {
+  const { id } = useLocalSearchParams();
   const { user } = useAuth();
+  const navigation = useNavigation();
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
 
+  const [community, setCommunity] = useState<Community | null>(null);
   const [whispers, setWhispers] = useState<Whisper[]>([]);
+  const [isJoined, setIsJoined] = useState(false);
+  const [memberRole, setMemberRole] = useState<string | null>(null);
+  const [membersCount, setMembersCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedFilterMood, setSelectedFilterMood] = useState<Mood | null>(null);
-
-  // Global Search State
-  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
-  const [searchProfiles, setSearchProfiles] = useState<ProfileRelation[]>([]);
-  const [searchWhispers, setSearchWhispers] = useState<Whisper[]>([]);
-  const [searching, setSearching] = useState(false);
+  const [togglingJoin, setTogglingJoin] = useState(false);
 
   // Composer State
   const [showCompose, setShowCompose] = useState(false);
@@ -110,9 +121,43 @@ export default function FeedScreen() {
     }
   };
 
-  const fetchWhispers = useCallback(async (filterMood: Mood | null = null) => {
+  const fetchCommunityData = useCallback(async () => {
+    if (!id || !user) return;
     try {
-      let query = supabase
+      // 1. Fetch community details
+      const { data: comm, error: commErr } = await supabase
+        .from('communities')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (commErr) throw commErr;
+      setCommunity(comm);
+      navigation.setOptions({
+        title: comm.name,
+      });
+
+      // 2. Fetch membership status
+      const { data: membership } = await supabase
+        .from('community_members')
+        .select('*')
+        .eq('community_id', id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      setIsJoined(!!membership);
+      setMemberRole(membership?.role || null);
+
+      // 3. Fetch members count
+      const { count } = await supabase
+        .from('community_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('community_id', id);
+      
+      setMembersCount(count || 0);
+
+      // 4. Fetch community whispers
+      const { data: whispersData, error: whispersError } = await supabase
         .from('whispers')
         .select(`
           id,
@@ -141,19 +186,14 @@ export default function FeedScreen() {
             created_at
           )
         `)
-        .is('parent_id', null);
-
-      if (filterMood) {
-        query = query.eq('mood', filterMood);
-      }
-
-      const { data: whispersData, error: whispersError } = await query
+        .eq('community_id', id)
+        .is('parent_id', null)
         .order('created_at', { ascending: false })
         .limit(50);
 
       if (whispersError) throw whispersError;
 
-      // Fetch comment counts
+      // 5. Fetch comment counts
       const whisperIds = (whispersData || []).map(w => w.id);
       const countMap: Record<string, number> = {};
 
@@ -183,99 +223,64 @@ export default function FeedScreen() {
 
       setWhispers(mappedWhispers);
     } catch (err) {
-      console.warn('Error fetching whispers:', err);
+      console.warn('Error loading community page details:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [id, user, navigation]);
 
   useEffect(() => {
-    fetchWhispers(selectedFilterMood);
-  }, [selectedFilterMood, fetchWhispers]);
+    fetchCommunityData();
+  }, [fetchCommunityData]);
 
   const handleRefresh = () => {
     setRefreshing(true);
-    fetchWhispers(selectedFilterMood);
+    fetchCommunityData();
   };
 
-  const handleSelectFilterMood = (mood: Mood | null) => {
+  const handleToggleMembership = async () => {
+    if (!id || !user || togglingJoin) return;
+    setTogglingJoin(true);
     triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedFilterMood(mood);
-  };
 
-  // Global search implementation
-  const handleGlobalSearch = async (query: string) => {
-    setGlobalSearchQuery(query);
-    if (!query.trim()) {
-      setSearchProfiles([]);
-      setSearchWhispers([]);
-      return;
-    }
-
-    setSearching(true);
     try {
-      // 1. Search profiles
-      const { data: profiles, error: profilesErr } = await supabase
-        .from('profiles')
-        .select('id, user_id, username, display_name, avatar_emoji, photo_url, badges, role')
-        .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
-        .limit(5);
+      if (isJoined) {
+        // Leave
+        const { error } = await supabase
+          .from('community_members')
+          .delete()
+          .eq('community_id', id)
+          .eq('user_id', user.id);
 
-      if (profilesErr) throw profilesErr;
-      setSearchProfiles((profiles as any[]) || []);
-
-      // 2. Search whispers
-      const { data: whispersData, error: whispersErr } = await supabase
-        .from('whispers')
-        .select(`
-          id, content, audio_url, created_at, user_id, mood, community_id, parent_id,
-          profiles:user_id (id, user_id, username, display_name, avatar_emoji, photo_url, badges, role),
-          reactions (id, whisper_id, user_id, type, created_at)
-        `)
-        .ilike('content', `%${query}%`)
-        .is('parent_id', null)
-        .limit(15);
-
-      if (whispersErr) throw whispersErr;
-
-      // 3. Fetch comment counts
-      const whisperIds = (whispersData || []).map(w => w.id);
-      const countMap: Record<string, number> = {};
-
-      if (whisperIds.length > 0) {
-        const { data: commentData } = await supabase
-          .from('comments')
-          .select('whisper_id')
-          .in('whisper_id', whisperIds);
-
-        if (commentData) {
-          commentData.forEach(c => {
-            countMap[c.whisper_id] = (countMap[c.whisper_id] || 0) + 1;
+        if (error) throw error;
+        setIsJoined(false);
+        setMemberRole(null);
+        setMembersCount(prev => Math.max(0, prev - 1));
+      } else {
+        // Join
+        const { error } = await supabase
+          .from('community_members')
+          .insert({
+            community_id: id,
+            user_id: user.id,
+            role: 'member'
           });
-        }
+
+        if (error) throw error;
+        setIsJoined(true);
+        setMemberRole('member');
+        setMembersCount(prev => prev + 1);
       }
-
-      const mappedWhispers: Whisper[] = (whispersData || []).map((w: any) => {
-        const profile = Array.isArray(w.profiles) ? w.profiles[0] : w.profiles;
-        return {
-          ...w,
-          profiles: profile,
-          reactions: w.reactions || [],
-          comment_count: countMap[w.id] || 0
-        };
-      });
-
-      setSearchWhispers(mappedWhispers);
     } catch (err) {
-      console.warn('Global search query failed:', err);
+      console.warn('Failed to toggle community membership:', err);
     } finally {
-      setSearching(false);
+      setTogglingJoin(false);
     }
   };
 
   const handlePostWhisper = async () => {
-    if (!composeContent.trim() || !user) return;
+    if (!composeContent.trim() || !user || !id) return;
     setSubmittingCompose(true);
     try {
       const { error } = await supabase
@@ -283,7 +288,8 @@ export default function FeedScreen() {
         .insert({
           user_id: user.id,
           content: composeContent.trim(),
-          mood: composeMood
+          mood: composeMood,
+          community_id: id // connect to this community!
         });
 
       if (error) throw error;
@@ -292,9 +298,9 @@ export default function FeedScreen() {
       setComposeContent('');
       setComposeMood(null);
       setShowCompose(false);
-      fetchWhispers(selectedFilterMood);
+      fetchCommunityData();
     } catch (err: any) {
-      console.warn('Failed to post whisper:', err.message);
+      console.warn('Failed to post community whisper:', err.message);
     } finally {
       setSubmittingCompose(false);
     }
@@ -304,14 +310,12 @@ export default function FeedScreen() {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
     try {
       setWhispers(prev => prev.filter(w => w.id !== whisperId));
-      setSearchWhispers(prev => prev.filter(w => w.id !== whisperId));
       await supabase.from('reactions').delete().eq('whisper_id', whisperId);
       await supabase.from('comments').delete().eq('whisper_id', whisperId);
-      const { error } = await supabase.from('whispers').delete().eq('id', whisperId);
-      if (error) throw error;
+      await supabase.from('whispers').delete().eq('id', whisperId);
     } catch (err) {
       console.warn('Failed to delete whisper:', err);
-      fetchWhispers(selectedFilterMood);
+      fetchCommunityData();
     }
   };
 
@@ -319,10 +323,9 @@ export default function FeedScreen() {
     if (!user) return;
 
     const whisperIndex = whispers.findIndex(w => w.id === whisperId);
-    const searchWhisperIndex = searchWhispers.findIndex(w => w.id === whisperId);
-    if (whisperIndex === -1 && searchWhisperIndex === -1) return;
+    if (whisperIndex === -1) return;
 
-    const whisper = whisperIndex !== -1 ? whispers[whisperIndex] : searchWhispers[searchWhisperIndex];
+    const whisper = whispers[whisperIndex];
     const existingReactionIdx = (whisper.reactions || []).findIndex(
       r => r.user_id === user.id && r.type === type
     );
@@ -342,17 +345,12 @@ export default function FeedScreen() {
       });
     }
 
-    if (whisperIndex !== -1) {
-      const updatedWhispers = [...whispers];
-      updatedWhispers[whisperIndex] = { ...whisper, reactions: newReactions };
-      setWhispers(updatedWhispers);
-    }
-    if (searchWhisperIndex !== -1) {
-      const updatedSearchWhispers = [...searchWhispers];
-      updatedSearchWhispers[searchWhisperIndex] = { ...whisper, reactions: newReactions };
-      setSearchWhispers(updatedSearchWhispers);
-    }
-
+    const updatedWhispers = [...whispers];
+    updatedWhispers[whisperIndex] = {
+      ...whisper,
+      reactions: newReactions
+    };
+    setWhispers(updatedWhispers);
     triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
 
     try {
@@ -379,8 +377,8 @@ export default function FeedScreen() {
         }
       }
     } catch (err) {
-      console.warn('Reaction database toggle failed, rolling back:', err);
-      fetchWhispers(selectedFilterMood);
+      console.warn('Failed to toggle reaction on community page, rolling back:', err);
+      fetchCommunityData();
     }
   };
 
@@ -459,17 +457,13 @@ export default function FeedScreen() {
       setComments(prev => [...prev, newComment]);
       setNewCommentText('');
       
-      const updateCounts = (list: Whisper[]) => list.map(w => {
+      setWhispers(prev => prev.map(w => {
         if (w.id === selectedWhisperForComments.id) {
           return { ...w, comment_count: w.comment_count + 1 };
         }
         return w;
-      });
+      }));
 
-      setWhispers(updateCounts);
-      setSearchWhispers(updateCounts);
-
-      // Create notification
       if (selectedWhisperForComments.user_id !== user.id) {
         await supabase.from('notifications').insert({
           user_id: selectedWhisperForComments.user_id,
@@ -615,177 +609,108 @@ export default function FeedScreen() {
     );
   };
 
-  const hasSearchQuery = globalSearchQuery.trim() !== '';
+  if (loading || !community) {
+    return (
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  const isOwner = user?.id === community.owner_id;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Global Search Bar */}
-      <View style={[styles.searchBox, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
-        <TextInput
-          placeholder="Search whispers or members..."
-          placeholderTextColor={scheme === 'dark' ? '#555' : '#aaa'}
-          value={globalSearchQuery}
-          onChangeText={handleGlobalSearch}
-          style={[styles.searchInput, { color: colors.text }]}
-        />
-        {hasSearchQuery && (
-          <TouchableOpacity onPress={() => handleGlobalSearch('')} style={styles.clearSearchButton}>
-            <SymbolView
-              name={{ ios: 'xmark.circle.fill', android: 'cancel', web: 'cancel' }}
-              size={16}
-              tintColor={colors.textSecondary}
-            />
-          </TouchableOpacity>
-        )}
+      {/* Community Detail Header Card */}
+      <View style={[styles.detailsCard, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+        <View style={styles.detailsRow}>
+          <View style={[styles.bigEmojiBox, { backgroundColor: colors.primary + '15' }]}>
+            <Text style={styles.bigEmojiText}>{community.emoji}</Text>
+          </View>
+          <View style={styles.detailsTextInfo}>
+            <Text style={[styles.titleName, { color: colors.text }]}>{community.name}</Text>
+            <View style={styles.statsRow}>
+              <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>
+                {membersCount} {membersCount === 1 ? 'member' : 'members'} • {community.interest}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <Text style={[styles.detailsDesc, { color: colors.text }]}>
+          {community.description || 'Welcome to this authentic space.'}
+        </Text>
+
+        <View style={styles.detailsFooter}>
+          {isOwner ? (
+            <View style={[styles.ownerBadge, { borderColor: colors.primary }]}>
+              <Text style={[styles.ownerText, { color: colors.primary }]}>👑 Creator</Text>
+            </View>
+          ) : (
+            <TouchableOpacity 
+              onPress={handleToggleMembership}
+              disabled={togglingJoin}
+              style={[
+                styles.joinButton, 
+                { backgroundColor: colors.primary },
+                isJoined && { backgroundColor: 'transparent', borderColor: colors.primary, borderWidth: 1 }
+              ]}
+            >
+              {togglingJoin ? (
+                <ActivityIndicator size="small" color={isJoined ? colors.primary : '#fff'} />
+              ) : (
+                <Text style={[styles.joinButtonText, { color: '#fff' }, isJoined && { color: colors.primary }]}>
+                  {isJoined ? 'Leave Space' : 'Join Space'}
+                </Text>
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
-      {/* Render Search Results OR Standard Feed */}
-      {hasSearchQuery ? (
-        // SEARCH RESULTS VIEW
-        <View style={{ flex: 1 }}>
-          {searching ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={colors.primary} />
-            </View>
-          ) : (
-            <ScrollView contentContainerStyle={styles.listContainer}>
-              {/* Profiles Result Section */}
-              {searchProfiles.length > 0 && (
-                <View style={styles.searchSection}>
-                  <Text style={[styles.sectionTitle, { color: colors.text }]}>Members</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.profilesScroll}>
-                    {searchProfiles.map(profile => (
-                      <View key={profile.id} style={[styles.profileResultCard, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
-                        <View style={[styles.smallAvatar, { backgroundColor: colors.primary + '15' }]}>
-                          <Text style={{ fontSize: 16 }}>{profile.avatar_emoji || '👤'}</Text>
-                        </View>
-                        <Text style={[styles.profileResultName, { color: colors.text }]} numberOfLines={1}>
-                          {profile.display_name}
-                        </Text>
-                        <Text style={[styles.profileResultUsername, { color: colors.textSecondary }]} numberOfLines={1}>
-                          @{profile.username}
-                        </Text>
-                      </View>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-
-              {/* Whispers Result Section */}
-              <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 12 }]}>Whispers</Text>
-              {searchWhispers.length > 0 ? (
-                searchWhispers.map(whisper => (
-                  <View key={whisper.id}>
-                    {renderWhisperItem({ item: whisper })}
-                  </View>
-                ))
-              ) : (
-                <View style={styles.emptyContainer}>
-                  <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No matching whispers found.</Text>
-                </View>
-              )}
-            </ScrollView>
-          )}
-        </View>
-      ) : (
-        // STANDARD FEED VIEW
-        <View style={{ flex: 1 }}>
-          {/* Mood Filters Header */}
-          <View style={[styles.filterBar, { borderBottomColor: colors.border }]}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-              <TouchableOpacity 
-                onPress={() => handleSelectFilterMood(null)}
-                style={[
-                  styles.filterPill, 
-                  { backgroundColor: colors.backgroundElement, borderColor: colors.border },
-                  selectedFilterMood === null && { backgroundColor: colors.primary, borderColor: colors.primary }
-                ]}
-              >
-                <Text style={[
-                  styles.filterPillText, 
-                  { color: colors.text },
-                  selectedFilterMood === null && { color: '#fff', fontWeight: 'bold' }
-                ]}>
-                  ✨ All moods
-                </Text>
-              </TouchableOpacity>
-              
-              {MOODS.map(mood => (
-                <TouchableOpacity 
-                  key={mood}
-                  onPress={() => handleSelectFilterMood(mood)}
-                  style={[
-                    styles.filterPill, 
-                    { backgroundColor: colors.backgroundElement, borderColor: colors.border },
-                    selectedFilterMood === mood && { backgroundColor: colors.primary, borderColor: colors.primary }
-                  ]}
-                >
-                  <Text style={[
-                    styles.filterPillText, 
-                    { color: colors.text },
-                    selectedFilterMood === mood && { color: '#fff', fontWeight: 'bold' }
-                  ]}>
-                    {mood}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+      {/* Whispers Feed */}
+      <FlatList
+        data={whispers}
+        renderItem={renderWhisperItem}
+        keyExtractor={item => item.id}
+        contentContainerStyle={styles.listContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              No whispers in this community yet.
+            </Text>
           </View>
+        }
+      />
 
-          {/* Whisper List */}
-          {loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.primary} />
-            </View>
-          ) : (
-            <FlatList
-              data={whispers}
-              renderItem={renderWhisperItem}
-              keyExtractor={item => item.id}
-              contentContainerStyle={styles.listContainer}
-              refreshControl={
-                <RefreshControl 
-                  refreshing={refreshing} 
-                  onRefresh={handleRefresh} 
-                  tintColor={colors.primary}
-                  colors={[colors.primary]}
-                />
-              }
-              ListEmptyComponent={
-                <View style={styles.emptyContainer}>
-                  <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                    No whispers in this category yet. Be the first to share one!
-                  </Text>
-                </View>
-              }
-            />
-          )}
-        </View>
+      {/* Floating Action Button (FAB) - only show if joined */}
+      {isJoined && (
+        <TouchableOpacity 
+          style={[styles.fab, { backgroundColor: colors.primary }]}
+          onPress={() => {
+            triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
+            setShowCompose(true);
+          }}
+        >
+          <SymbolView
+            name={{ ios: 'plus', android: 'add', web: 'add' }}
+            size={24}
+            tintColor="#fff"
+          />
+        </TouchableOpacity>
       )}
 
-      {/* Floating Action Button (FAB) */}
-      <TouchableOpacity 
-        style={[styles.fab, { backgroundColor: colors.primary }]}
-        onPress={() => {
-          triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-          setShowCompose(true);
-        }}
-      >
-        <SymbolView
-          name={{ ios: 'plus', android: 'add', web: 'add' }}
-          size={24}
-          tintColor="#fff"
-        />
-      </TouchableOpacity>
-
-      {/* COMPOSE WHISPER MODAL */}
+      {/* COMPOSE MODAL */}
       <Modal visible={showCompose} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowCompose(false)}>
         <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
           <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
             <TouchableOpacity onPress={() => setShowCompose(false)}>
               <Text style={[styles.modalCancel, { color: colors.textSecondary }]}>Cancel</Text>
             </TouchableOpacity>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Share Whisper</Text>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Post to Space</Text>
             <TouchableOpacity 
               onPress={handlePostWhisper}
               disabled={submittingCompose || !composeContent.trim()}
@@ -802,7 +727,7 @@ export default function FeedScreen() {
 
           <ScrollView style={styles.modalContent} keyboardShouldPersistTaps="handled">
             <TextInput
-              placeholder="What are you carrying today? Share a whisper..."
+              placeholder={`Share a whisper inside ${community.name}...`}
               placeholderTextColor={scheme === 'dark' ? '#555' : '#aaa'}
               multiline
               maxLength={5000}
@@ -853,7 +778,6 @@ export default function FeedScreen() {
       {/* COMMENTS / DETAIL MODAL */}
       <Modal visible={selectedWhisperForComments !== null} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setSelectedWhisperForComments(null)}>
         <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-          {/* Header */}
           <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
             <TouchableOpacity onPress={() => setSelectedWhisperForComments(null)}>
               <Text style={[styles.modalCancel, { color: colors.textSecondary }]}>Close</Text>
@@ -862,7 +786,6 @@ export default function FeedScreen() {
             <View style={{ width: 50 }} />
           </View>
 
-          {/* Main Thread Content */}
           <KeyboardAvoidingView 
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
             keyboardVerticalOffset={Platform.OS === 'ios' ? 44 : 0}
@@ -935,13 +858,12 @@ export default function FeedScreen() {
                   <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 20 }} />
                 ) : (
                   <View style={styles.emptyContainer}>
-                    <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No replies yet. Start the conversation!</Text>
+                    <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No replies yet.</Text>
                   </View>
                 )
               }
             />
 
-            {/* Reply Input Bar */}
             <View style={[styles.replyInputBar, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
               <TextInput
                 value={newCommentText}
@@ -978,110 +900,102 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    margin: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    padding: 0,
-    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
-  },
-  clearSearchButton: {
-    padding: 2,
-    marginLeft: 6,
-  },
-  searchSection: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    fontFamily: Platform.OS === 'ios' ? 'Cormorant Garamond' : 'serif',
-    marginHorizontal: 16,
-    marginBottom: 10,
-  },
-  profilesScroll: {
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  profileResultCard: {
-    width: 110,
-    padding: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  smallAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  profileResultName: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
-    textAlign: 'center',
-  },
-  profileResultUsername: {
-    fontSize: 9,
-    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
-    textAlign: 'center',
-    marginTop: 1,
-  },
-  filterBar: {
-    borderBottomWidth: 1,
-    paddingVertical: 12,
-  },
-  filterScroll: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  filterPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginRight: 4,
-  },
-  filterPillText: {
-    fontSize: 13,
-    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
-  },
-  listContainer: {
-    padding: 16,
-    paddingBottom: 80,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  card: {
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 16,
+  detailsCard: {
+    margin: 16,
+    padding: 20,
+    borderRadius: 24,
     borderWidth: 1,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.03,
+        shadowOpacity: 0.02,
         shadowRadius: 8,
       },
       android: {
         elevation: 1,
       },
     }),
+  },
+  detailsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  bigEmojiBox: {
+    width: 50,
+    height: 50,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bigEmojiText: {
+    fontSize: 26,
+  },
+  detailsTextInfo: {
+    marginLeft: 14,
+    flex: 1,
+  },
+  titleName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    fontFamily: Platform.OS === 'ios' ? 'Cormorant Garamond' : 'serif',
+  },
+  statsRow: {
+    marginTop: 2,
+  },
+  statsLabel: {
+    fontSize: 11,
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
+  },
+  detailsDesc: {
+    fontSize: 13.5,
+    lineHeight: 20,
+    marginBottom: 16,
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
+  },
+  detailsFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  joinButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  joinButtonText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
+  },
+  ownerBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  ownerText: {
+    fontSize: 11.5,
+    fontWeight: 'bold',
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
+  },
+  listContainer: {
+    padding: 16,
+    paddingTop: 0,
+    paddingBottom: 80,
+  },
+  card: {
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -1192,22 +1106,20 @@ const styles = StyleSheet.create({
       ios: {
         shadowColor: '#C96059',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 10,
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
       },
       android: {
-        elevation: 6,
+        elevation: 4,
       },
     }),
   },
   emptyContainer: {
-    padding: 60,
+    padding: 40,
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
+    fontSize: 13,
     fontStyle: 'italic',
     fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
   },

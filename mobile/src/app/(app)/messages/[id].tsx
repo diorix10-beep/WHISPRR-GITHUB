@@ -7,12 +7,14 @@ import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useAuth } from '../../../contexts/AuthContext';
 import { supabase } from '../../../lib/supabase';
 import { Colors } from '../../../constants/theme';
+import { SymbolView } from 'expo-symbols';
 
 interface Message {
   id: string;
   conversation_id: string;
   sender_id: string;
-  text: string;
+  content: string; // matches DB column
+  read: boolean;
   created_at: string;
 }
 
@@ -35,6 +37,11 @@ export default function ChatRoomScreen() {
   const [loading, setLoading] = useState(true);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
+  
+  // Realtime Presence for typing indicators
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const channelRef = useRef<any>(null);
+  const typingTimeoutRef = useRef<any>(null);
   const flatListRef = useRef<FlatList>(null);
 
   // Mark messages as read
@@ -53,11 +60,25 @@ export default function ChatRoomScreen() {
     }
   }, [user, id]);
 
-  // Fetch initial chat data
+  // Broadcast typing status
+  const broadcastTyping = useCallback((isTyping: boolean) => {
+    if (channelRef.current) {
+      channelRef.current.track({ typing: isTyping });
+    }
+  }, []);
+
+  const handleInputChange = (text: string) => {
+    setInputText(text);
+    broadcastTyping(true);
+
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => broadcastTyping(false), 2000);
+  };
+
+  // Fetch initial chat data & setup subscriptions
   useEffect(() => {
     if (!id || !user) return;
     const currentUserId = user.id;
-
     let active = true;
 
     async function loadChatData() {
@@ -112,9 +133,12 @@ export default function ChatRoomScreen() {
 
     loadChatData();
 
-    // 3. Subscribe to Realtime messages inside this conversation
-    const channel = supabase
-      .channel(`chat-room-${id}`)
+    // 3. Subscribe to Realtime messages + Presence for typing indicators
+    const channel = supabase.channel(`chat-room-${id}`, {
+      config: { presence: { key: user.id } }
+    });
+
+    channel
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -122,21 +146,41 @@ export default function ChatRoomScreen() {
         filter: `conversation_id=eq.${id}`
       }, (payload) => {
         const newMsg = payload.new as Message;
-        setMessages(prev => {
-          // Prevent duplicates
-          if (prev.some(m => m.id === newMsg.id)) return prev;
-          return [...prev, newMsg];
+        if (active) {
+          setMessages(prev => {
+            if (prev.some(m => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
+          
+          if (newMsg.sender_id !== currentUserId) {
+            markMessagesAsRead();
+          }
+        }
+      })
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const typing: string[] = [];
+        Object.entries(state).forEach(([userId, presences]) => {
+          if (userId !== currentUserId && Array.isArray(presences)) {
+            const latest = presences[presences.length - 1] as any;
+            if (latest?.typing) typing.push(userId);
+          }
         });
-        
-        if (newMsg.sender_id !== currentUserId) {
-          markMessagesAsRead();
+        if (active) {
+          setTypingUsers(typing);
         }
       })
       .subscribe();
 
+    channelRef.current = channel;
+
     return () => {
       active = false;
       supabase.removeChannel(channel);
+      channelRef.current = null;
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
     };
   }, [id, user, navigation, markMessagesAsRead]);
 
@@ -154,6 +198,7 @@ export default function ChatRoomScreen() {
     setSending(true);
     const textToSend = inputText.trim();
     setInputText('');
+    broadcastTyping(false);
 
     try {
       // 1. Insert message
@@ -162,7 +207,7 @@ export default function ChatRoomScreen() {
         .insert({
           conversation_id: id,
           sender_id: user.id,
-          text: textToSend,
+          content: textToSend, // content column!
         })
         .select('*')
         .single();
@@ -221,7 +266,7 @@ export default function ChatRoomScreen() {
             styles.messageText, 
             { color: isMe ? '#fff' : colors.text }
           ]}>
-            {item.text}
+            {item.content}
           </Text>
           <Text style={[
             styles.messageTime, 
@@ -233,6 +278,8 @@ export default function ChatRoomScreen() {
       </View>
     );
   };
+
+  const isOtherUserTyping = otherUser && typingUsers.includes(otherUser.user_id);
 
   if (loading) {
     return (
@@ -263,13 +310,22 @@ export default function ChatRoomScreen() {
         }
       />
 
+      {/* Typing Indicator Display */}
+      {isOtherUserTyping && (
+        <View style={styles.typingIndicatorContainer}>
+          <Text style={[styles.typingIndicatorText, { color: colors.textSecondary }]}>
+            ✍️ {otherUser.display_name} is typing...
+          </Text>
+        </View>
+      )}
+
       {/* Input controls bar */}
       <View style={[styles.inputBar, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
         <TextInput
           placeholder="Message..."
           placeholderTextColor={scheme === 'dark' ? '#555' : '#aaa'}
           value={inputText}
-          onChangeText={setInputText}
+          onChangeText={handleInputChange}
           multiline
           maxLength={1000}
           style={[styles.textInput, { 
@@ -284,10 +340,18 @@ export default function ChatRoomScreen() {
           style={[
             styles.sendButton, 
             { backgroundColor: colors.primary },
-            !inputText.trim() && styles.sendButtonDisabled
+            (!inputText.trim() || sending) && styles.sendButtonDisabled
           ]}
         >
-          <Text style={styles.sendButtonText}>Send</Text>
+          {sending ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <SymbolView
+              name={{ ios: 'paperplane.fill', android: 'send', web: 'send' }}
+              size={16}
+              tintColor="#fff"
+            />
+          )}
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -348,6 +412,16 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
   },
+  typingIndicatorContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 6,
+    alignSelf: 'flex-start',
+  },
+  typingIndicatorText: {
+    fontSize: 11,
+    fontStyle: 'italic',
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
+  },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -367,20 +441,14 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
   },
   sendButton: {
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     justifyContent: 'center',
     alignItems: 'center',
   },
   sendButtonDisabled: {
     opacity: 0.5,
-  },
-  sendButtonText: {
-    color: '#fff',
-    fontSize: 12.5,
-    fontWeight: 'bold',
-    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
   },
   emptyContainer: {
     padding: 40,

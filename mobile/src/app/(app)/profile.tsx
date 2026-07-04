@@ -6,6 +6,26 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { Colors } from '../../constants/theme';
 
+const BADGE_CONFIG: Record<string, { icon: string; label: string }> = {
+  founder: { icon: '👑', label: 'Founder' },
+  admin: { icon: '🛡️', label: 'Admin' },
+  early_supporter: { icon: '🌱', label: 'Early Supporter' },
+  community_creator: { icon: '🧩', label: 'Creator' },
+  community_moderator: { icon: '⭐', label: 'Moderator' },
+  verified: { icon: '✨', label: 'Verified' },
+  top_contributor: { icon: '🏆', label: 'Top Contributor' },
+  verified_org: { icon: '💜', label: 'Verified Org' },
+  verified_creator: { icon: '🎨', label: 'Creator' },
+  ambassador: { icon: '🤝', label: 'Ambassador' },
+  beta_tester: { icon: '🧪', label: 'Beta Tester' },
+  event_host: { icon: '🎉', label: 'Event Host' },
+  community_champion: { icon: '🎖', label: 'Champion' },
+  mentor: { icon: '📚', label: 'Mentor' },
+  translator: { icon: '🌍', label: 'Translator' },
+  volunteer: { icon: '🙋', label: 'Volunteer' },
+  featured_creator: { icon: '🌟', label: 'Featured' },
+};
+
 export default function ProfileScreen() {
   const { user, profile, updateProfile, signOut } = useAuth();
   const scheme = useColorScheme();
@@ -64,6 +84,31 @@ export default function ProfileScreen() {
           <Text style={[styles.usernameSubtitle, { color: colors.textSecondary }]}>
             @{profile?.username || 'username'}
           </Text>
+
+          {/* Badges Section */}
+          {profile?.badges && profile.badges.length > 0 && (
+            <View style={styles.badgesContainer}>
+              {profile.badges.map((badge: string) => {
+                const config = BADGE_CONFIG[badge] || { icon: '🎖', label: badge };
+                return (
+                  <View 
+                    key={badge} 
+                    style={[
+                      styles.badgePill, 
+                      { 
+                        backgroundColor: colors.primary + '10', 
+                        borderColor: colors.primary + '20' 
+                      }
+                    ]}
+                  >
+                    <Text style={[styles.badgeText, { color: colors.primary }]}>
+                      {config.icon} {config.label}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
         </View>
 
         {/* Form Fields */}
@@ -293,6 +338,25 @@ const styles = StyleSheet.create({
   },
   logoutButtonText: {
     fontSize: 14,
+    fontWeight: 'bold',
+    fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
+  },
+  badgesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'center',
+    marginTop: 10,
+    paddingHorizontal: 20,
+  },
+  badgePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  badgeText: {
+    fontSize: 10,
     fontWeight: 'bold',
     fontFamily: Platform.OS === 'ios' ? 'DM Sans' : 'sans-serif',
   },

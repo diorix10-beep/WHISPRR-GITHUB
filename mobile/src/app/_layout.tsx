@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useColorScheme, ActivityIndicator, View, StyleSheet } from 'react-native';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import * as Font from 'expo-font';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { Colors } from '../constants/theme';
 
@@ -47,7 +46,7 @@ function AppContent() {
         router.replace('/(app)');
       }
     }
-  }, [user, profile, loading, segments]);
+  }, [user, profile, loading, segments, router]);
 
   if (loading) {
     return (
