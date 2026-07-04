@@ -73,7 +73,7 @@
 
   /* Secondary Card — subtler inset panels, nested info blocks */
   .public-card-secondary {
-    @apply bg-warm-50/70 border border-warm-150 rounded-2xl
+    @apply bg-warm-50/70 border border-warm-200/50 rounded-2xl
       dark:bg-warm-925 dark:border-white/[0.04]
       transition-all duration-200;
   }
