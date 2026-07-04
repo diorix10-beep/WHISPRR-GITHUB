@@ -116,13 +116,13 @@ interface TimelineEvent {
 }
 
 const TIMELINE: TimelineEvent[] = [
-  { date: 'June 2026', title: '🌱 Private Beta Launch', description: 'WHISPRR opens doors to beta tester list.', icon: '🌱' },
-  { date: 'July 2026', title: '💬 Messaging & Groups', description: 'Direct messages and real-time group chats.', icon: '💬' },
-  { date: 'August 2026', title: '🧩 Communities', description: 'Interest groups with dynamic moderator roles.', icon: '🧩' },
-  { date: 'September 2026', title: '👑 Founder Dashboard', description: 'Central controls and maintenance page bypass.', icon: '👑' },
-  { date: 'September 2026', title: '🏅 Badge & Identity System', description: 'Dynamic timeline user badges.', icon: '🏅' },
-  { date: 'October 2026', title: '🎭 AI Characters', description: 'Interactive virtual companion preview.', icon: '🎭' },
-  { date: 'December 2026', title: '🌍 Public Launch', description: 'Opening registration globally.', icon: '🌍' }
+  { date: 'June 2026', title: 'Private Beta Launch', description: 'WHISPRR opens doors to beta tester list.', icon: '🌱' },
+  { date: 'July 2026', title: 'Messaging & Groups', description: 'Direct messages and real-time group chats.', icon: '💬' },
+  { date: 'August 2026', title: 'Communities', description: 'Interest groups with dynamic moderator roles.', icon: '🧩' },
+  { date: 'September 2026', title: 'Founder Dashboard', description: 'Central controls and maintenance page bypass.', icon: '👑' },
+  { date: 'September 2026', title: 'Badge & Identity System', description: 'Dynamic timeline user badges.', icon: '🏅' },
+  { date: 'October 2026', title: 'NEXA', description: 'Interactive virtual companion preview.', icon: '🎭' },
+  { date: 'December 2026', title: 'Public Launch', description: 'Opening registration globally.', icon: '🌍' }
 ];
 
 interface ChangelogVersion {
@@ -642,7 +642,7 @@ export default function LandingPage() {
                                   ? 'bg-emerald-500 text-white ring-4 ring-emerald-100 dark:ring-emerald-950/40' 
                                   : 'bg-warm-200 dark:bg-warm-800 text-warm-500 border-2 border-warm-350 dark:border-warm-700'
                             }`}>
-                               {item.icon}
+                               {isCompleted ? '✓' : ''}
                             </div>
                             
                             {/* Content box */}
@@ -721,8 +721,8 @@ export default function LandingPage() {
                    {FEEDBACK_IMPACTS.map((f, idx) => (
                       <article key={idx} className="public-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
                          <div>
-                            <p className="font-bold text-warm-900 dark:text-warm-100">{f.title}</p>
-                            <p className="text-[10px] text-warm-500 mt-0.5">👍 {f.votes} community interest flags</p>
+                            <p className="font-bold text-warm-900 dark:text-white">{f.title}</p>
+                            <p className="text-[10px] text-warm-600 dark:text-warm-350 mt-0.5">👍 {f.votes} community interest flags</p>
                          </div>
                          <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full self-start ${
                             f.status === 'implemented' || f.status === 'recently_completed'
@@ -1197,7 +1197,7 @@ export default function LandingPage() {
           ))}
         </div>
 
-        <p className="text-center text-xs text-warm-400 dark:text-warm-600 italic">
+        <p className="text-center text-xs text-warm-900 dark:text-white font-semibold italic">
           These are aspirations, not promises. Features move to the public roadmap only when actively planned or in development.
         </p>
 

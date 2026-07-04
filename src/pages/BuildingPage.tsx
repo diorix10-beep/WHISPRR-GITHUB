@@ -415,11 +415,11 @@ export default function BuildingPage() {
                       }`}>
                         {item.category}
                       </span>
-                      <h4 className="font-semibold text-sm text-warm-50 leading-tight mb-1">
+                      <h4 className="font-semibold text-sm text-warm-900 dark:text-white leading-tight mb-1">
                         {item.title}
                       </h4>
                       {status !== 'released' && (
-                        <p className="text-xs text-warm-500 leading-relaxed">{item.description}</p>
+                        <p className="text-xs text-warm-600 dark:text-warm-350 leading-relaxed">{item.description}</p>
                       )}
                     </div>
                   ))}
@@ -525,7 +525,7 @@ export default function BuildingPage() {
             </div>
 
             <div className="text-center py-4">
-              <p className="text-xs text-warm-400 dark:text-warm-600 italic">
+              <p className="text-xs text-warm-900 dark:text-white font-semibold italic">
                 These are aspirations, not promises. Features move to the roadmap only when actively planned or in development.
               </p>
             </div>
@@ -586,7 +586,7 @@ export default function BuildingPage() {
           </div>
 
           <div className="public-card p-6 space-y-4">
-            <h4 className="font-serif text-base font-bold text-warm-50 pb-2 border-b border-white/[0.06]">
+            <h4 className="font-serif text-base font-bold text-warm-900 dark:text-warm-50 pb-2 border-b border-warm-150 dark:border-white/[0.06]">
               Community Requested Features
             </h4>
             <div className="space-y-3">
@@ -602,10 +602,10 @@ export default function BuildingPage() {
                   f.status === 'in_progress' ? 'In Progress' :
                   f.status;
                 return (
-                  <div key={idx} className="flex items-center justify-between p-3.5 public-card-secondary p-0 rounded-2xl">
+                  <div key={idx} className="flex items-center justify-between p-3.5 public-card-secondary rounded-2xl">
                     <div>
-                      <p className="text-sm font-semibold text-warm-850 dark:text-warm-100">{f.title}</p>
-                      <p className="text-[10px] text-warm-500 mt-0.5">👍 {f.votes.toLocaleString()} community interest flags</p>
+                      <p className="text-sm font-bold text-warm-900 dark:text-warm-100">{f.title}</p>
+                      <p className="text-[10px] text-warm-600 dark:text-warm-350 mt-0.5">👍 {f.votes.toLocaleString()} community interest flags</p>
                     </div>
                     <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full whitespace-nowrap ${statusStyle}`}>
                       {statusLabel}
@@ -623,7 +623,7 @@ export default function BuildingPage() {
         <div className="space-y-6 animate-fade-in">
           {CHANGELOGS.map((ch, idx) => (
             <div key={idx} className="public-card p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
+              <div className="flex items-center justify-between border-b border-warm-150 dark:border-white/[0.06] pb-3">
                 <div>
                   <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-50">{ch.version}</h3>
                 </div>
@@ -634,20 +634,20 @@ export default function BuildingPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-emerald-600 dark:text-emerald-450 uppercase text-xs tracking-wider">New Features</h4>
-                  <ul className="space-y-1 text-xs text-warm-400 list-disc list-inside">
+                  <h4 className="font-semibold text-emerald-700 dark:text-emerald-400 uppercase text-xs tracking-wider">New Features</h4>
+                  <ul className="space-y-1 text-xs text-warm-650 dark:text-warm-300 list-disc list-inside">
                     {ch.newFeatures.map((f, i) => <li key={i}>{f}</li>)}
                   </ul>
                 </div>
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-primary-500 uppercase text-xs tracking-wider">Improvements</h4>
-                  <ul className="space-y-1 text-xs text-warm-400 list-disc list-inside">
+                  <h4 className="font-semibold text-primary-650 dark:text-primary-400 uppercase text-xs tracking-wider">Improvements</h4>
+                  <ul className="space-y-1 text-xs text-warm-650 dark:text-warm-300 list-disc list-inside">
                     {ch.improvements.map((f, i) => <li key={i}>{f}</li>)}
                   </ul>
                 </div>
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-red-500 uppercase text-xs tracking-wider">Bug Fixes</h4>
-                  <ul className="space-y-1 text-xs text-warm-400 list-disc list-inside">
+                  <h4 className="font-semibold text-red-600 dark:text-red-400 uppercase text-xs tracking-wider">Bug Fixes</h4>
+                  <ul className="space-y-1 text-xs text-warm-650 dark:text-warm-300 list-disc list-inside">
                     {ch.bugFixes.map((f, i) => <li key={i}>{f}</li>)}
                   </ul>
                 </div>
@@ -679,9 +679,9 @@ export default function BuildingPage() {
                     <div className={`absolute left-3.5 md:left-1/2 md:-translate-x-1/2 w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs z-10 shadow-sm ${
                       item.done
                         ? 'bg-emerald-500 border-emerald-500 text-white'
-                        : 'bg-warm-950 border-primary-600'
+                        : 'bg-white dark:bg-warm-950 border-primary-650 dark:border-primary-600 text-primary-650 dark:text-primary-400'
                     }`}>
-                      {item.done ? '✓' : item.icon}
+                      {item.done ? '✓' : ''}
                     </div>
 
                     {/* Content card */}
@@ -699,7 +699,7 @@ export default function BuildingPage() {
                         <h4 className="font-serif text-base font-bold text-warm-900 dark:text-warm-100 mb-1">
                           {item.label}
                         </h4>
-                        <p className="text-xs text-warm-500 leading-relaxed">
+                        <p className="text-xs text-warm-600 dark:text-warm-400 leading-relaxed">
                           {item.description}
                         </p>
                         {item.done && (
