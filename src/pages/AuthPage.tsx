@@ -420,9 +420,7 @@ export default function AuthPage() {
             Join a thoughtful network built for authentic connections.
           </p>
           <div className="flex items-center justify-center gap-3 text-xs text-warm-400 dark:text-warm-500">
-            <Link to="/terms" className="hover:text-primary-500 transition-colors">Terms</Link>
-            <span>&middot;</span>
-            <Link to="/privacy" className="hover:text-primary-500 transition-colors">Privacy</Link>
+            <Link to="/trust" className="hover:text-primary-500 transition-colors">Trust & Privacy Center</Link>
             <span>&middot;</span>
             <a href="mailto:help@whisprr.xyz" className="hover:text-primary-500 transition-colors">Support</a>
           </div>

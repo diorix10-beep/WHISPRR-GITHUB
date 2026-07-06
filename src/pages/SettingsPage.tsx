@@ -358,18 +358,6 @@ export default function SettingsPage() {
               Careers at WHISPRR
             </a>
             <a
-              href="/terms"
-              className="block text-sm text-primary-500 hover:underline"
-            >
-              Terms of Service
-            </a>
-            <a
-              href="/privacy"
-              className="block text-sm text-primary-500 hover:underline"
-            >
-              Privacy Policy
-            </a>
-            <a
               href="mailto:help@whisprr.xyz"
               className="block text-sm text-primary-500 hover:underline"
             >
