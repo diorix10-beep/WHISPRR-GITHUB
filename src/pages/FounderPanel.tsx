@@ -3669,102 +3669,102 @@ export default function FounderPanel() {
 
       {activeTab === 'community' && (
         <div className="space-y-6">
-           <div className="bg-[#181818] border border-white/[0.06] p-6 rounded-3xl shadow-soft space-y-4">
-              <h3 className="font-serif text-lg font-bold text-white border-b border-white/[0.06] pb-3">
-                 Community Program Manager
-              </h3>
-              <p className="text-xs text-warm-400">
-                 Manage Ambassador applications, Creator badges allocation, and audit global referral network loops.
-              </p>
-           </div>
+            <div className="public-card p-6 space-y-4 shadow-soft">
+               <h3 className="font-serif text-lg font-bold text-warm-900 dark:text-white border-b border-warm-150 dark:border-white/[0.06] pb-3">
+                  Community Program Manager
+               </h3>
+               <p className="text-xs text-warm-650 dark:text-warm-400">
+                  Manage Ambassador applications, Creator badges allocation, and audit global referral network loops.
+               </p>
+            </div>
 
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Ambassador & Creator Applications List */}
-              <div className="bg-[#181818] border border-white/[0.06] p-6 rounded-3xl space-y-4 shadow-soft">
-                 <h4 className="font-serif text-base font-bold text-white">Pending Applications</h4>
-                 {loadingApps ? (
-                    <div className="flex justify-center py-6">
-                       <Loader2 size={18} className="animate-spin text-primary-500" />
-                    </div>
-                 ) : applications.filter(app => app.status === 'pending').length === 0 ? (
-                    <p className="text-xs text-warm-500 italic text-center py-6">No pending applications at this time.</p>
-                 ) : (
-                    <div className="space-y-3 max-h-[30rem] overflow-y-auto pr-1">
-                       {applications.filter(app => app.status === 'pending').map(app => (
-                          <div key={app.id} className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.04] space-y-2">
-                             <div className="flex items-center justify-between text-xs">
-                                <span className={`font-bold uppercase tracking-wider text-[9px] px-2 py-0.5 rounded-full ${
-                                   app.type === 'ambassador' ? 'bg-amber-500/10 text-amber-400' :
-                                   app.type === 'creator' ? 'bg-primary-500/10 text-primary-400' :
-                                   'bg-purple-500/10 text-purple-400'
-                                }`}>
-                                   {app.type} Application
-                                </span>
-                                <span className="text-warm-500 font-mono">Pending</span>
-                             </div>
-                             <h5 className="font-bold text-sm text-white">
-                                @{app.username} {app.name ? `(${app.name})` : ''}
-                                {app.platform ? ` • ${app.platform}` : ''}
-                                {app.handle ? ` (${app.handle})` : ''}
-                             </h5>
-                             <p className="text-xs text-warm-300 whitespace-pre-wrap">{app.motivation}</p>
-                             <div className="flex gap-2 pt-2">
-                                <button
-                                  onClick={() => handleUpdateApplicationStatus(app.id, 'approved', app.type, app.user_id)}
-                                  disabled={saving}
-                                  className="btn-primary py-1 px-3 text-[10px] rounded-lg disabled:opacity-50"
-                                >
-                                   Approve
-                                </button>
-                                <button
-                                  onClick={() => handleUpdateApplicationStatus(app.id, 'rejected', app.type, app.user_id)}
-                                  disabled={saving}
-                                  className="btn-secondary py-1 px-3 text-[10px] rounded-lg disabled:opacity-50"
-                                >
-                                   Reject
-                                </button>
-                             </div>
-                          </div>
-                       ))}
-                    </div>
-                 )}
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               {/* Ambassador & Creator Applications List */}
+               <div className="public-card p-6 space-y-4 shadow-soft">
+                  <h4 className="font-serif text-base font-bold text-warm-900 dark:text-white">Pending Applications</h4>
+                  {loadingApps ? (
+                     <div className="flex justify-center py-6">
+                        <Loader2 size={18} className="animate-spin text-primary-500" />
+                     </div>
+                  ) : applications.filter(app => app.status === 'pending').length === 0 ? (
+                     <p className="text-xs text-warm-500 italic text-center py-6">No pending applications at this time.</p>
+                  ) : (
+                     <div className="space-y-3 max-h-[30rem] overflow-y-auto pr-1">
+                        {applications.filter(app => app.status === 'pending').map(app => (
+                           <div key={app.id} className="p-4 rounded-2xl bg-warm-50/50 dark:bg-white/[0.02] border border-warm-200/50 dark:border-white/[0.04] space-y-2">
+                              <div className="flex items-center justify-between text-xs">
+                                 <span className={`font-bold uppercase tracking-wider text-[9px] px-2 py-0.5 rounded-full ${
+                                    app.type === 'ambassador' ? 'bg-amber-50/50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400' :
+                                    app.type === 'creator' ? 'bg-primary-50/50 dark:bg-primary-950/20 text-primary-650 dark:text-primary-400' :
+                                    'bg-purple-50/50 dark:bg-purple-950/20 text-purple-650 dark:text-purple-400'
+                                 }`}>
+                                    {app.type} Application
+                                 </span>
+                                 <span className="text-warm-500 font-mono">Pending</span>
+                              </div>
+                              <h5 className="font-bold text-sm text-warm-900 dark:text-white">
+                                 @{app.username} {app.name ? `(${app.name})` : ''}
+                                 {app.platform ? ` • ${app.platform}` : ''}
+                                 {app.handle ? ` (${app.handle})` : ''}
+                              </h5>
+                              <p className="text-xs text-warm-700 dark:text-warm-300 whitespace-pre-wrap">{app.motivation}</p>
+                              <div className="flex gap-2 pt-2">
+                                 <button
+                                   onClick={() => handleUpdateApplicationStatus(app.id, 'approved', app.type, app.user_id)}
+                                   disabled={saving}
+                                   className="btn-primary py-1 px-3 text-[10px] rounded-lg disabled:opacity-50"
+                                 >
+                                    Approve
+                                 </button>
+                                 <button
+                                   onClick={() => handleUpdateApplicationStatus(app.id, 'rejected', app.type, app.user_id)}
+                                   disabled={saving}
+                                   className="btn-secondary py-1 px-3 text-[10px] rounded-lg disabled:opacity-50"
+                                 >
+                                    Reject
+                                 </button>
+                              </div>
+                           </div>
+                        ))}
+                     </div>
+                  )}
+               </div>
 
-              {/* Referral Statistics & Campaign Manager */}
-              <div className="bg-[#181818] border border-white/[0.06] p-6 rounded-3xl space-y-4 shadow-soft">
-                 <h4 className="font-serif text-base font-bold text-white">Referral Campaigns</h4>
-                 <div className="space-y-4">
-                    <div className="p-4 bg-white/[0.02] border border-white/[0.04] rounded-2xl space-y-2">
-                       <h5 className="font-bold text-xs text-white">Launch Campaign: WHISPRR Early Adopter</h5>
-                       <p className="text-[11px] text-warm-400">Reward: Early Member Badge to every user inviting 3+ friends.</p>
-                       <div className="flex justify-between items-center text-xs pt-2">
-                          <span className="text-emerald-400 font-semibold">● Active</span>
-                          <span className="text-warm-500">124 users qualified</span>
-                       </div>
-                    </div>
+               {/* Referral Statistics & Campaign Manager */}
+               <div className="public-card p-6 space-y-4 shadow-soft">
+                  <h4 className="font-serif text-base font-bold text-warm-900 dark:text-white">Referral Campaigns</h4>
+                  <div className="space-y-4">
+                     <div className="p-4 bg-warm-50/50 dark:bg-white/[0.02] border border-warm-200/50 dark:border-white/[0.04] rounded-2xl space-y-2">
+                        <h5 className="font-bold text-xs text-warm-900 dark:text-white">Launch Campaign: WHISPRR Early Adopter</h5>
+                        <p className="text-[11px] text-warm-600 dark:text-warm-400">Reward: Early Member Badge to every user inviting 3+ friends.</p>
+                        <div className="flex justify-between items-center text-xs pt-2">
+                           <span className="text-emerald-550 dark:text-emerald-400 font-semibold">● Active</span>
+                           <span className="text-warm-500">124 users qualified</span>
+                        </div>
+                     </div>
 
-                    <div className="space-y-2">
-                       <h5 className="font-bold text-xs text-white">Leaderboard Audit</h5>
-                       {loadingReferrals ? (
-                          <div className="flex justify-center py-4">
-                             <Loader2 size={16} className="animate-spin text-primary-500" />
-                          </div>
-                       ) : referralLeaderboard.length === 0 ? (
-                          <p className="text-xs text-warm-500 italic py-2">No community referrals yet.</p>
-                       ) : (
-                          <div className="space-y-2 text-xs text-warm-300">
-                             {referralLeaderboard.map((item, i) => (
-                                <div key={i} className="flex justify-between border-b border-white/[0.02] pb-1 last:border-0">
-                                   <span>{i + 1}. @{item.username} <span className="text-[10px] text-warm-500 capitalize">({item.role})</span></span>
-                                   <span className="font-mono">{item.referrals_count || item.referrals || 0} invites</span>
-                                </div>
-                             ))}
-                          </div>
-                       )}
-                    </div>
-                 </div>
-              </div>
-           </div>
+                     <div className="space-y-2">
+                        <h5 className="font-bold text-xs text-warm-900 dark:text-white">Leaderboard Audit</h5>
+                        {loadingReferrals ? (
+                           <div className="flex justify-center py-4">
+                              <Loader2 size={16} className="animate-spin text-primary-500" />
+                           </div>
+                        ) : referralLeaderboard.length === 0 ? (
+                           <p className="text-xs text-warm-500 italic py-2">No community referrals yet.</p>
+                        ) : (
+                           <div className="space-y-2 text-xs text-warm-750 dark:text-warm-300">
+                              {referralLeaderboard.map((item, i) => (
+                                 <div key={i} className="flex justify-between border-b border-warm-150 dark:border-white/[0.02] pb-1 last:border-0">
+                                    <span>{i + 1}. @{item.username} <span className="text-[10px] text-warm-500 capitalize">({item.role})</span></span>
+                                    <span className="font-mono text-warm-900 dark:text-white">{item.referrals_count || item.referrals || 0} invites</span>
+                                 </div>
+                              ))}
+                           </div>
+                        )}
+                     </div>
+                  </div>
+               </div>
+            </div>
         </div>
       )}
       {/* SCHEDULER MODAL OVERLAY */}

@@ -258,20 +258,20 @@ export default function AiFamilyPage() {
   return (
     <div className="page-container max-w-5xl space-y-8 animate-fade-in pb-16">
       {/* Top Banner */}
-      <div className="relative overflow-hidden bg-[#181818] border border-white/[0.06] rounded-3xl p-6 md:p-8 shadow-soft">
+      <div className="relative overflow-hidden public-card p-6 md:p-8 shadow-soft">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-0 right-0 w-80 h-80 bg-primary-500/5 rounded-full blur-3xl" />
         </div>
         <div className="relative flex flex-col md:flex-row md:items-center gap-6 justify-between">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 bg-primary-500/10 text-primary-400 text-xs font-bold px-3 py-1.5 rounded-full">
+            <div className="inline-flex items-center gap-1.5 bg-primary-50/50 dark:bg-primary-950/20 text-primary-650 dark:text-primary-400 text-xs font-bold px-3 py-1.5 rounded-full">
               <Bot size={12} />
               <span>WHISPRR AI Operations</span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-serif font-bold text-white tracking-tight">
+            <h1 className="text-3xl md:text-4xl font-serif font-bold text-warm-900 dark:text-white tracking-tight">
               The AI Family
             </h1>
-            <p className="text-warm-400 text-sm max-w-xl">
+            <p className="text-warm-600 dark:text-warm-400 text-sm max-w-xl">
               Meet the living brains behind the WHISPRR ecosystem. They collaborate autonomously in the background to sustain performance, secure endpoints, map development plans, and support the community.
             </p>
           </div>
@@ -294,8 +294,8 @@ export default function AiFamilyPage() {
                   onClick={() => setSelectedAgentId(member.id)}
                   className={`w-full p-4 rounded-2xl border text-left transition-all duration-200 flex items-center justify-between ${
                     isSelected
-                      ? 'bg-[#181818] border-primary-500 text-white shadow-soft'
-                      : 'bg-transparent border-white/[0.04] text-warm-400 hover:bg-white/[0.02] hover:text-white'
+                      ? 'public-card border-primary-500 text-warm-900 dark:text-white shadow-soft'
+                      : 'bg-transparent border-warm-200/50 dark:border-white/[0.04] text-warm-600 dark:text-warm-400 hover:bg-warm-100/50 dark:hover:bg-white/[0.02] hover:text-warm-900 dark:hover:text-white'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -321,18 +321,18 @@ export default function AiFamilyPage() {
 
         {/* Right Side Detail display panel */}
         <div className="md:col-span-2 space-y-6">
-          <div className="bg-[#181818] border border-white/[0.06] rounded-3xl p-6 md:p-8 space-y-6 shadow-soft relative overflow-hidden">
+          <div className="public-card p-6 md:p-8 space-y-6 shadow-soft relative overflow-hidden">
             <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-b ${currentTheme.gradient} rounded-full blur-3xl pointer-events-none`} />
 
             {/* Header section with Portrait & Name */}
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-white/[0.06] pb-5 relative">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-warm-150 dark:border-white/[0.06] pb-5 relative">
               <div className="flex items-center gap-4">
-                <div className={`w-16 h-16 rounded-2xl border ${currentTheme.border} bg-white/[0.02] flex items-center justify-center text-3xl shadow-inner`}>
+                <div className={`w-16 h-16 rounded-2xl border ${currentTheme.border} bg-warm-50/50 dark:bg-white/[0.02] flex items-center justify-center text-3xl shadow-inner`}>
                   {selectedAgent.emoji}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-2xl font-serif font-bold text-white">{selectedAgent.name}</h2>
+                    <h2 className="text-2xl font-serif font-bold text-warm-900 dark:text-white">{selectedAgent.name}</h2>
                     <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${selectedMeta.statusColor}`}>
                       {selectedMeta.status}
                     </span>
@@ -361,14 +361,14 @@ export default function AiFamilyPage() {
               ) : userMetrics.length > 0 ? (
                 <div className="grid grid-cols-3 gap-4">
                   {userMetrics.map((metric, i) => (
-                    <div key={i} className="bg-white/[0.02] border border-white/[0.04] p-3 rounded-xl text-center space-y-1">
+                    <div key={i} className="bg-warm-50/30 dark:bg-white/[0.02] border border-warm-200/50 dark:border-white/[0.04] p-3 rounded-xl text-center space-y-1">
                       <p className="text-[10px] text-warm-500 font-bold uppercase tracking-wider">{metric.name}</p>
-                      <p className="text-lg font-serif font-bold text-white">{metric.value}</p>
+                      <p className="text-lg font-serif font-bold text-warm-900 dark:text-white">{metric.value}</p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="bg-white/[0.01] border border-dashed border-white/[0.04] p-4 rounded-xl text-center text-xs text-warm-500 italic">
+                <div className="bg-warm-50/10 dark:bg-white/[0.01] border border-dashed border-warm-200/50 dark:border-white/[0.04] p-4 rounded-xl text-center text-xs text-warm-500 italic">
                   No activity logs registered today. Waiting for live telemetry...
                 </div>
               )}
@@ -376,16 +376,16 @@ export default function AiFamilyPage() {
 
             {/* Founder Private Administrative Metrics */}
             {isFounder && (
-              <div className="space-y-3 bg-primary-950/20 border border-primary-500/10 p-4 rounded-2xl relative">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-primary-400 flex items-center gap-1.5">
+              <div className="space-y-3 bg-primary-50/50 dark:bg-primary-950/20 border border-primary-200/50 dark:border-primary-500/10 p-4 rounded-2xl relative">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-primary-700 dark:text-primary-400 flex items-center gap-1.5">
                   <Settings size={13} /> Administrative Telemetry (Founder Only)
                 </h4>
                 {adminMetrics.length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {adminMetrics.map((metric, i) => (
-                      <div key={i} className="bg-black/30 border border-white/[0.02] p-2.5 rounded-lg text-center">
+                      <div key={i} className="bg-warm-100/50 dark:bg-black/30 border border-warm-200/50 dark:border-white/[0.02] p-2.5 rounded-lg text-center">
                         <p className="text-[9px] text-warm-500 uppercase font-bold">{metric.name}</p>
-                        <p className="text-sm font-mono font-semibold text-primary-300 mt-0.5">{metric.value}</p>
+                        <p className="text-sm font-mono font-semibold text-primary-650 dark:text-primary-300 mt-0.5">{metric.value}</p>
                       </div>
                     ))}
                   </div>
@@ -419,7 +419,7 @@ export default function AiFamilyPage() {
             {/* Recent Work / Memories */}
             <div className="space-y-3 relative">
               <h4 className="text-xs font-bold uppercase tracking-wider text-warm-500">Recent Memory Log</h4>
-              <div className="bg-black/30 border border-white/[0.04] p-4 rounded-2xl space-y-2">
+              <div className="bg-warm-50/50 dark:bg-black/30 border border-warm-200/50 dark:border-white/[0.04] p-4 rounded-2xl space-y-2">
                 {selectedMeta.recentWork.map((work, i) => (
                   <p key={i} className="text-xs text-warm-400 leading-relaxed">
                     • {work}
@@ -429,7 +429,7 @@ export default function AiFamilyPage() {
             </div>
 
             {/* Core Roster details footer */}
-            <div className="grid grid-cols-2 gap-4 border-t border-white/[0.06] pt-5 text-xs text-warm-400">
+            <div className="grid grid-cols-2 gap-4 border-t border-warm-150 dark:border-white/[0.06] pt-5 text-xs text-warm-400">
               <div>
                 <span className="font-bold block text-warm-500 uppercase tracking-wider text-[10px] mb-1">Key Traits</span>
                 <span>{selectedAgent.traits.join(', ')}</span>
