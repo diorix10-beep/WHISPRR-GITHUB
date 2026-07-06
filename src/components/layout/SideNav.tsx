@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   Home, Compass, Users, MessageCircle, Bell, ShieldAlert, Sparkles,
-  User, Settings, Palette, Shield, HelpCircle, LogOut, ChevronUp, Bot
+  User, Settings, Shield, HelpCircle, LogOut, ChevronUp, Bot,
+  Monitor, Sun, Moon
 } from 'lucide-react';
 import { useNotifications } from '../../contexts/NotificationsContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -24,7 +25,7 @@ export function SideNav() {
   const navigate = useNavigate();
   const { unreadCount, unreadMessageCount } = useNotifications();
   const { profile, signOut } = useAuth();
-  const { toggleTheme } = useTheme();
+  const { preference, setPreference } = useTheme();
 
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -142,13 +143,47 @@ export function SideNav() {
                 <span>Settings</span>
               </button>
 
-              <button
-                onClick={() => { toggleTheme(); setShowMenu(false); }}
-                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-left text-warm-700 dark:text-warm-200 hover:bg-warm-50 dark:hover:bg-warm-800 transition-colors"
-              >
-                <Palette size={15} className="text-primary-500" />
-                <span>Appearance</span>
-              </button>
+              <div className="px-3 py-2 space-y-1.5 border-t border-warm-100 dark:border-warm-700/80 my-1">
+                <span className="text-[10px] font-bold text-warm-500 uppercase tracking-wider block">Appearance</span>
+                <div className="grid grid-cols-3 gap-1 bg-warm-100 dark:bg-warm-900/50 p-1 rounded-xl">
+                  <button
+                    onClick={() => setPreference('light')}
+                    className={`flex flex-col items-center gap-1 py-1.5 rounded-lg transition-all ${
+                      preference === 'light'
+                        ? 'bg-white text-warm-900 shadow-soft font-bold'
+                        : 'text-warm-500 hover:text-warm-700 dark:text-warm-400 dark:hover:text-warm-200'
+                    }`}
+                    title="Light Mode"
+                  >
+                    <Sun size={14} className={preference === 'light' ? 'text-primary-500' : 'text-warm-400'} />
+                    <span className="text-[9px]">Light</span>
+                  </button>
+                  <button
+                    onClick={() => setPreference('dark')}
+                    className={`flex flex-col items-center gap-1 py-1.5 rounded-lg transition-all ${
+                      preference === 'dark'
+                        ? 'bg-white dark:bg-warm-800 text-warm-900 dark:text-white shadow-soft font-bold'
+                        : 'text-warm-500 hover:text-warm-700 dark:text-warm-400 dark:hover:text-warm-200'
+                    }`}
+                    title="Dark Mode"
+                  >
+                    <Moon size={14} className={preference === 'dark' ? 'text-primary-500' : 'text-warm-400'} />
+                    <span className="text-[9px]">Dark</span>
+                  </button>
+                  <button
+                    onClick={() => setPreference('system')}
+                    className={`flex flex-col items-center gap-1 py-1.5 rounded-lg transition-all ${
+                      preference === 'system'
+                        ? 'bg-white dark:bg-warm-800 text-warm-900 dark:text-white shadow-soft font-bold'
+                        : 'text-warm-500 hover:text-warm-700 dark:text-warm-400 dark:hover:text-warm-200'
+                    }`}
+                    title="System Mode"
+                  >
+                    <Monitor size={14} className={preference === 'system' ? 'text-primary-500' : 'text-warm-400'} />
+                    <span className="text-[9px]">System</span>
+                  </button>
+                </div>
+              </div>
 
               <button
                 onClick={() => { navigate('/notifications'); setShowMenu(false); }}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Moon, Sun, Lock, MessageSquare, User, Shield, Info, ExternalLink, Trash2, Download } from 'lucide-react';
+import { LogOut, Moon, Sun, Lock, MessageSquare, User, Shield, Info, ExternalLink, Trash2, Download, Monitor } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
@@ -9,7 +9,7 @@ import { supabase } from '../lib/supabase';
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { user, profile, updateProfile, signOut } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { preference, setPreference } = useTheme();
   const { showToast } = useToast();
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -195,36 +195,32 @@ export default function SettingsPage() {
           Appearance
         </h2>
 
-        <div className="space-y-4 bg-warm-50 dark:bg-warm-800 p-4 rounded-2xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {theme === 'dark' ? (
-                <Moon size={20} className="text-primary-500" />
-              ) : (
-                <Sun size={20} className="text-primary-500" />
-              )}
-              <div>
-                <p className="font-semibold text-warm-900 dark:text-warm-50">Dark Mode</p>
-                <p className="text-sm text-warm-600 dark:text-warm-400">
-                  {theme === 'dark' ? 'Enabled' : 'Disabled'}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={toggleTheme}
-              role="switch"
-              aria-checked={theme === 'dark'}
-              aria-label="Toggle dark mode"
-              className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
-                theme === 'dark' ? 'bg-primary-500' : 'bg-warm-300 dark:bg-warm-600'
-              }`}
-            >
-              <span
-                className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
-                  theme === 'dark' ? 'translate-x-7' : 'translate-x-1'
-                }`}
-              />
-            </button>
+        <div className="space-y-4 bg-warm-50 dark:bg-warm-800 p-5 rounded-2xl">
+          <p className="text-xs text-warm-600 dark:text-warm-400">
+            Choose your preferred theme appearance. Choosing System Mode will automatically match your browser and operating system settings.
+          </p>
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { id: 'light', label: '🌞 Light Mode', icon: Sun },
+              { id: 'dark', label: '🌙 Dark Mode', icon: Moon },
+              { id: 'system', label: '💻 System Mode', icon: Monitor }
+            ].map(({ id, label, icon: Icon }) => {
+              const isSelected = preference === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setPreference(id as any)}
+                  className={`p-4 rounded-xl border flex flex-col items-center gap-2 font-bold text-xs transition-all ${
+                    isSelected
+                      ? 'bg-white dark:bg-warm-900 border-primary-500 text-warm-900 dark:text-white shadow-soft'
+                      : 'bg-transparent border-warm-200/50 dark:border-white/[0.04] text-warm-500 dark:text-warm-400 hover:bg-warm-100/50 dark:hover:bg-white/[0.02]'
+                  }`}
+                >
+                  <Icon size={18} className={isSelected ? 'text-primary-500' : 'text-warm-400'} />
+                  <span>{label.split(' ').slice(1).join(' ')}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>
