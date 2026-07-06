@@ -29,7 +29,7 @@ export function NexaPlaceholderPage({ title, description }: NexaPlaceholderPageP
           <div className="p-4 rounded-2xl bg-warm-950/40 border border-warm-850 flex flex-col gap-2">
             <h3 className="font-semibold text-warm-200 text-sm">Features in Development:</h3>
             <ul className="text-xs text-warm-400 text-left space-y-1.5 list-disc pl-5">
-              <li>High-fidelity roleplay memory synthesis (Zeta Engine)</li>
+              <li>High-fidelity roleplay memory synthesis (NEXA Adaptive Memory)</li>
               <li>Multi-character plot generation templates</li>
               <li>Global lorebook imports & dynamic context window injection</li>
               <li>Interactive world map triggers and relationship meters</li>
