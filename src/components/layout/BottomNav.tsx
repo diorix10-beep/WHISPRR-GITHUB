@@ -1,17 +1,38 @@
-import { NavLink } from 'react-router-dom';
-import { Home, Compass, Users, MessageCircle, Bell } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { 
+  Home, Compass, Users, MessageCircle, Bell, Menu, Plus, BookOpen, User 
+} from 'lucide-react';
 import { useNotifications } from '../../contexts/NotificationsContext';
-
-const navItems = [
-  { path: '/', icon: Home, label: 'Feed' },
-  { path: '/discover', icon: Compass, label: 'Discover' },
-  { path: '/communities', icon: Users, label: 'Communities' },
-  { path: '/messages', icon: MessageCircle, label: 'Messages' },
-  { path: '/notifications', icon: Bell, label: 'Notifications' },
-];
 
 export function BottomNav() {
   const { unreadCount, unreadMessageCount } = useNotifications();
+  const location = useLocation();
+
+  const isNexa = location.pathname.startsWith('/nexa');
+
+  const whisprrItems = [
+    { path: '/', icon: Home, label: 'Feed' },
+    { path: '/discover', icon: Compass, label: 'Discover' },
+    { path: '/communities', icon: Users, label: 'Communities' },
+    { path: '/messages', icon: MessageCircle, label: 'Messages' },
+    { path: '/notifications', icon: Bell, label: 'Notifications' },
+    { path: '#more', icon: Menu, label: 'More', isAction: true },
+  ];
+
+  const nexaItems = [
+    { path: '/nexa', icon: Compass, label: 'Explore' },
+    { path: '/nexa/chats', icon: MessageCircle, label: 'Chats', badge: true },
+    { path: '/nexa/create', icon: Plus, label: 'Create' },
+    { path: '/nexa/collections', icon: BookOpen, label: 'Library' },
+    { path: '/profile', icon: User, label: 'Profile' },
+  ];
+
+  const items = isNexa ? nexaItems : whisprrItems;
+
+  const handleActionClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.dispatchEvent(new CustomEvent('open-app-launcher'));
+  };
 
   return (
     <nav
@@ -23,23 +44,41 @@ export function BottomNav() {
       aria-label="Main navigation"
     >
       <div className="flex items-center justify-around">
-        {navItems.map(({ path, icon: Icon, label }) => {
-          const isMessages = label === 'Messages';
+        {items.map((item) => {
+          const { path, icon: Icon, label } = item;
+          const isAction = 'isAction' in item && item.isAction;
+          const isMessages = label === 'Messages' || label === 'Chats';
           const isNotifications = label === 'Notifications';
           const badgeCount = isMessages ? unreadMessageCount : isNotifications ? unreadCount : 0;
+
+          if (isAction) {
+            return (
+              <button
+                key={label}
+                onClick={handleActionClick}
+                className="flex flex-col items-center justify-center py-3 px-2 relative
+                  transition-all duration-200 flex-1 text-warm-400 dark:text-warm-500 hover:text-primary-400
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded-lg"
+                aria-label="Open launcher more menu"
+              >
+                <Icon size={22} strokeWidth={1.8} />
+                <span className="text-[10px] mt-0.5 font-medium">{label}</span>
+              </button>
+            );
+          }
 
           return (
             <NavLink
               key={path}
               to={path}
-              end={path === '/'}
+              end={path === '/' || path === '/nexa'}
               className={({ isActive }) =>
                 `flex flex-col items-center justify-center py-3 px-2 relative
                 transition-all duration-200 flex-1
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded-lg
                 ${
                   isActive
-                    ? 'text-primary-500'
+                    ? isNexa ? 'text-red-500' : 'text-primary-500'
                     : 'text-warm-400 dark:text-warm-500 hover:text-primary-400'
                 }`
               }
@@ -49,8 +88,8 @@ export function BottomNav() {
                 <Icon size={22} strokeWidth={1.8} className="transition-colors duration-200" />
                 {badgeCount > 0 && (
                   <span
-                    className="absolute -top-1.5 -right-1.5 flex items-center justify-center
-                      w-4 h-4 bg-primary-500 text-white text-[10px] font-bold rounded-full"
+                    className={`absolute -top-1.5 -right-1.5 flex items-center justify-center
+                      w-4 h-4 text-white text-[10px] font-bold rounded-full ${isNexa ? 'bg-red-500' : 'bg-primary-500'}`}
                     aria-hidden="true"
                   >
                     {badgeCount > 9 ? '9+' : badgeCount}
@@ -65,3 +104,4 @@ export function BottomNav() {
     </nav>
   );
 }
+

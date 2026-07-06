@@ -2,8 +2,9 @@ import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { Outlet, useNavigate, NavLink } from 'react-router-dom';
 import { 
   X, Compass, Plus, MessageSquare, User, BookOpen, 
-  Globe, PenTool, Cpu, Layers, Menu, ArrowLeft, Sun, Moon, Monitor, Users
+  Globe, PenTool, Cpu, Layers, Menu, ArrowLeft, Sun, Moon, Monitor, Users, LayoutGrid
 } from 'lucide-react';
+import { AppLauncherModal } from './AppLauncherModal';
 import { useNotifications } from '../../contexts/NotificationsContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -22,6 +23,7 @@ export function NexaLayout({ children }: NexaLayoutProps) {
   const { preference, setPreference } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
+  const [isLauncherOpen, setIsLauncherOpen] = useState(false);
   const themeMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,7 +33,14 @@ export function NexaLayout({ children }: NexaLayoutProps) {
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    
+    const handleOpen = () => setIsLauncherOpen(true);
+    window.addEventListener('open-app-launcher', handleOpen);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('open-app-launcher', handleOpen);
+    };
   }, []);
 
   const nexaNavItems = [
@@ -55,6 +64,13 @@ export function NexaLayout({ children }: NexaLayoutProps) {
           <div className="flex flex-col h-full relative">
             {/* Nexa Brand Header */}
             <div className="px-6 py-6 border-b border-warm-100 dark:border-warm-800 flex items-center gap-3">
+              <button
+                onClick={() => setIsLauncherOpen(true)}
+                className="p-1.5 rounded-lg hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500 hover:text-warm-900 transition-colors"
+                title="App Launcher"
+              >
+                <LayoutGrid size={18} />
+              </button>
               <img
                 src="/nexy_mascot.png"
                 alt="Nexy Logo"
@@ -161,6 +177,13 @@ export function NexaLayout({ children }: NexaLayoutProps) {
             <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <button
+                  onClick={() => setIsLauncherOpen(true)}
+                  className="p-1.5 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-600 dark:text-warm-300 transition-colors"
+                  title="App Launcher"
+                >
+                  <LayoutGrid size={18} />
+                </button>
+                <button
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                   className="p-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors text-warm-600 dark:text-warm-300"
                   aria-label="Toggle menu"
@@ -245,6 +268,10 @@ export function NexaLayout({ children }: NexaLayoutProps) {
           </main>
         </div>
       </div>
+      <AppLauncherModal 
+        isOpen={isLauncherOpen} 
+        onClose={() => setIsLauncherOpen(false)} 
+      />
     </div>
   );
 

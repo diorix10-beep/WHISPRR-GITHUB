@@ -1,12 +1,13 @@
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Bell, X } from 'lucide-react';
+import { Bell, X, LayoutGrid, Menu } from 'lucide-react';
 import { BottomNav } from './BottomNav';
 import { SideNav } from './SideNav';
 import { useNotifications } from '../../contexts/NotificationsContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Logo } from '../common/Logo';
 import { Avatar } from '../common/Avatar';
+import { AppLauncherModal } from './AppLauncherModal';
 
 interface AppLayoutProps {
   children?: ReactNode;
@@ -18,6 +19,13 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { profile, signOut, systemSettings } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBannerVisible, setIsBannerVisible] = useState(true);
+  const [isLauncherOpen, setIsLauncherOpen] = useState(false);
+
+  useEffect(() => {
+    const handleOpen = () => setIsLauncherOpen(true);
+    window.addEventListener('open-app-launcher', handleOpen);
+    return () => window.removeEventListener('open-app-launcher', handleOpen);
+  }, []);
 
   return (
     <div className="min-h-screen bg-warm-50 dark:bg-warm-900 transition-colors duration-300 flex flex-col">
@@ -65,6 +73,13 @@ export function AppLayout({ children }: AppLayoutProps) {
         >
           <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsLauncherOpen(true)}
+                className="p-1.5 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-700 text-warm-650 dark:text-warm-300 transition-colors"
+                title="App Launcher"
+              >
+                <LayoutGrid size={18} />
+              </button>
               <Logo size={28} />
               <h1
                 className="font-serif text-2xl font-bold
@@ -95,13 +110,22 @@ export function AppLayout({ children }: AppLayoutProps) {
 
               {/* Mobile/Tablet Profile Menu */}
               {profile && (
-                <div className="relative">
+                <div className="flex items-center">
                   <button
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
                     className="flex items-center justify-center p-1 rounded-full border border-warm-200 dark:border-warm-700 hover:scale-105 active:scale-95 transition-all focus:outline-none"
                     aria-label="Profile menu"
                   >
                     <Avatar emoji={profile.avatar_emoji} photoUrl={profile.photo_url} size="xs" />
+                  </button>
+
+                  {/* Hamburger Menu Trigger */}
+                  <button
+                    onClick={() => setIsLauncherOpen(true)}
+                    className="p-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-700 text-warm-650 dark:text-warm-300 transition-colors"
+                    title="More Menu"
+                  >
+                    <Menu size={18} />
                   </button>
 
                   {/* Dropdown Menu Backdrop */}
@@ -239,6 +263,11 @@ export function AppLayout({ children }: AppLayoutProps) {
       <div className="lg:hidden">
         <BottomNav />
       </div>
+
+      <AppLauncherModal 
+        isOpen={isLauncherOpen} 
+        onClose={() => setIsLauncherOpen(false)} 
+      />
     </div>
   );
 }
