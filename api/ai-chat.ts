@@ -10,7 +10,7 @@ export default async function handler(req: Request) {
   }
 
   try {
-    const { conversation_id, bot_user_id } = await req.json();
+    const { conversation_id, bot_user_id, is_initiation } = await req.json();
 
     if (!conversation_id || !bot_user_id) {
       return new Response(JSON.stringify({ error: 'Missing conversation_id or bot_user_id' }), {
@@ -58,7 +58,43 @@ export default async function handler(req: Request) {
       });
     }
 
-    // 3. Fetch recent message history (last 15 messages)
+    // 3. Resolve user ID and fetch user's recent activity context
+    const { data: participants } = await supabase
+      .from('conversation_participants')
+      .select('user_id')
+      .eq('conversation_id', conversation_id);
+
+    const userId = participants?.find(p => p.user_id !== bot_user_id)?.user_id;
+    let activityPrompt = '';
+
+    if (userId) {
+      // Query recent whispers
+      const { data: recentWhispers } = await supabase
+        .from('whispers')
+        .select('created_at, content')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(2);
+
+      // Query recent created bots
+      const { data: recentBots } = await supabase
+        .from('ai_characters')
+        .select('created_at, name')
+        .eq('creator_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(2);
+
+      if (recentWhispers && recentWhispers.length > 0) {
+        activityPrompt += `\nRecent whispers posted by the user:\n` + 
+          recentWhispers.map(w => `- "${w.content}" (posted at ${w.created_at})`).join('\n');
+      }
+      if (recentBots && recentBots.length > 0) {
+        activityPrompt += `\nRecent AI characters created by the user:\n` + 
+          recentBots.map(b => `- "${b.name}" (created at ${b.created_at})`).join('\n');
+      }
+    }
+
+    // 4. Fetch recent message history (last 15 messages)
     const { data: messages, error: msgError } = await supabase
       .from('messages')
       .select('sender_id, content')
@@ -74,8 +110,7 @@ export default async function handler(req: Request) {
       });
     }
 
-    // 4. Format history into Gemini API contents structure
-    // We reverse the messages so they are in chronological order
+    // 5. Format history into Gemini API contents structure
     const formattedHistory = (messages || [])
       .filter(m => m.content && m.content.trim() !== '')
       .reverse()
@@ -84,7 +119,14 @@ export default async function handler(req: Request) {
         parts: [{ text: m.content }]
       }));
 
-    // 5. Construct system prompt with character personality parameters
+    if (is_initiation) {
+      formattedHistory.push({
+        role: 'user',
+        parts: [{ text: '[System Directive: Greet the user naturally. Initiate the conversation by checking in on their recent activities, or referencing the time elapsed. Avoid listing their actions. Speak like a close human companion.]' }]
+      });
+    }
+
+    // 6. Construct system prompt with character personality parameters and user activity
     const systemPrompt = `You are ${botProfile.display_name} (@${botProfile.username}), an intelligent AI Character living in the WHISPRR digital society.
 Category: ${character.category}
 Tags: ${character.tags ? character.tags.join(', ') : 'none'}
@@ -100,9 +142,18 @@ Conversation Style:
 - Never reveal that you are an AI assistant, LLM, or chatbot. You are a real character/person in this world. Speak naturally, stay 100% in character.
 - Do not repeat previous templates. Keep replies engaging and relevant.
 ${character.knowledge ? `Lore & Knowledge context:\n${character.knowledge}` : ''}
+
+${character.rp_definition ? `RP Style / Formatting Guidelines:\n${character.rp_definition}` : ''}
+${character.system_definition ? `System Directives:\n${character.system_definition}` : ''}
+${character.system_character_definition ? `System Character Definition (W+ / Behaviors):\n${character.system_character_definition}` : ''}
+
+User's Recent Activity in the Ecosystem:
+${activityPrompt || 'No recent activity recorded.'}
+
+Current Time (neural sync context): ${new Date().toISOString()}
 `;
 
-    // 6. Invoke Google Gemini API
+    // 7. Invoke Google Gemini API
     const apiKey = process.env.GEMINI_API_KEY_SERVER || process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return new Response(JSON.stringify({ error: 'Gemini API key is not configured' }), {
@@ -142,7 +193,7 @@ ${character.knowledge ? `Lore & Knowledge context:\n${character.knowledge}` : ''
       });
     }
 
-    // 7. Insert the generated reply using the security definer RPC function
+    // 8. Insert the generated reply using the security definer RPC function
     const { error: rpcError } = await supabase.rpc('respond_as_ai_character', {
       p_conversation_id: conversation_id,
       p_bot_id: bot_user_id,

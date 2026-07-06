@@ -108,6 +108,35 @@ export default function ConversationPage() {
         if (msgsError) throw msgsError;
         setMessages(msgs || []);
 
+        // Check if we should trigger an AI initiation response
+        if (conv.type === 'dm' && profiles) {
+          const other = profiles.find(p => p.user_id !== user.id);
+          if (other && (other.role as string) === 'ai_character') {
+            const lastMsg = msgs && msgs.length > 0 ? msgs[msgs.length - 1] : null;
+            const now = new Date().getTime();
+            const lastMsgTime = lastMsg ? new Date(lastMsg.created_at).getTime() : 0;
+            const hoursElapsed = lastMsgTime ? (now - lastMsgTime) / (1000 * 60 * 60) : 9999;
+
+            if (hoursElapsed > 6 || !msgs || msgs.length === 0) {
+              const sessionRes = await supabase.auth.getSession();
+              const token = sessionRes.data.session?.access_token;
+              
+              fetch('/api/ai-chat', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                  conversation_id: conversationId,
+                  bot_user_id: other.user_id,
+                  is_initiation: true
+                })
+              }).catch(err => console.error('Failed to trigger AI initiation:', err));
+            }
+          }
+        }
+
         // Mark unread as read
         const unread = (msgs || []).filter(m => !m.read && m.sender_id !== user.id);
         if (unread.length > 0) {
