@@ -57,7 +57,7 @@ export default async function handler(req: Request) {
 
       if (quickchatRes.status === 401 || quickchatRes.status === 403) {
         return new Response(
-          JSON.stringify({ error: 'Oracle's session has expired. Please contact support.' }),
+          JSON.stringify({ error: "Oracle's session has expired. Please contact support." }),
           { status: 503, headers: { 'Content-Type': 'application/json' } }
         );
       }
