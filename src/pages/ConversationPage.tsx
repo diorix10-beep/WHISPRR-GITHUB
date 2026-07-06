@@ -44,6 +44,7 @@ export default function ConversationPage() {
   const [showAddMembers, setShowAddMembers] = useState(false);
   const [followedUsers, setFollowedUsers] = useState<Profile[]>([]);
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const [initiating, setInitiating] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -117,7 +118,8 @@ export default function ConversationPage() {
             const lastMsgTime = lastMsg ? new Date(lastMsg.created_at).getTime() : 0;
             const hoursElapsed = lastMsgTime ? (now - lastMsgTime) / (1000 * 60 * 60) : 9999;
 
-            if (hoursElapsed > 6 || !msgs || msgs.length === 0) {
+            if ((hoursElapsed > 6 || !msgs || msgs.length === 0) && !initiating) {
+              setInitiating(true);
               const sessionRes = await supabase.auth.getSession();
               const token = sessionRes.data.session?.access_token;
               
@@ -132,7 +134,10 @@ export default function ConversationPage() {
                   bot_user_id: other.user_id,
                   is_initiation: true
                 })
-              }).catch(err => console.error('Failed to trigger AI initiation:', err));
+              }).catch(err => {
+                console.error('Failed to trigger AI initiation:', err);
+                setInitiating(false);
+              });
             }
           }
         }
