@@ -8,7 +8,11 @@ import { ToastProvider } from './contexts/ToastContext';
 import { InterestProvider } from './contexts/InterestContext';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { AppLayout } from './components/layout/AppLayout';
+import { NexaLayout } from './components/layout/NexaLayout';
+import { NexaPlaceholderPage } from './components/common/NexaPlaceholderPage';
 import { Logo } from './components/common/Logo';
+
+const NexaChatsPage       = lazy(() => import('./pages/NexaChatsPage'));
 
 const AuthPage           = lazy(() => import('./pages/AuthPage'));
 const OnboardingPage     = lazy(() => import('./pages/OnboardingPage'));
@@ -138,9 +142,23 @@ function AppLoader() {
   }
 
   return (
-    <AppLayout>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        {/* NEXA Standalone Platform (Crimson/Roleplay branded navigation) */}
+        <Route element={<NexaLayout />}>
+          <Route path="/nexa"                          element={<AiCharactersPage />} />
+          <Route path="/nexa/create"                   element={<AiCharacterCreator />} />
+          <Route path="/nexa/chats"                    element={<NexaChatsPage />} />
+          <Route path="/nexa/worlds"                   element={<NexaPlaceholderPage title="My Worlds" description="Create and manage rich lore-filled environments, cities, and maps." />} />
+          <Route path="/nexa/plots"                    element={<NexaPlaceholderPage title="Create Plot" description="Define structured plotlines, story beats, and branching scenarios." />} />
+          <Route path="/nexa/lorebooks"                element={<NexaPlaceholderPage title="Lorebooks" description="Upload, edit, and organize custom knowledge books for context injections." />} />
+          <Route path="/nexa/models"                   element={<NexaPlaceholderPage title="AI Models" description="Select from specialized roleplay fine-tunes and toggle parameters." />} />
+          <Route path="/nexa/creator-profiles"         element={<NexaPlaceholderPage title="Creator Profiles" description="Browse top NEXA authors, follow creators, and check stats." />} />
+          <Route path="/nexa/collections"              element={<NexaPlaceholderPage title="Collections" description="Gather matching characters, plots, and worlds into public collections." />} />
+        </Route>
+
+        {/* WHISPRR Platform (Purple/Social branded navigation) */}
+        <Route element={<AppLayout />}>
           <Route path="/"                              element={<FeedPage />} />
           <Route path="/discover"                      element={<DiscoverPage />} />
           <Route path="/messages"                      element={<MessagesPage />} />
@@ -153,8 +171,6 @@ function AppLoader() {
           <Route path="/communities"                   element={<CommunitiesPage />} />
           <Route path="/communities/:communityId"      element={<CommunityDetailPage />} />
           <Route path="/ai-family"                     element={<AiFamilyPage />} />
-          <Route path="/nexa"                          element={<AiCharactersPage />} />
-          <Route path="/nexa/create"                   element={<AiCharacterCreator />} />
           <Route path="/community-program"             element={<CommunityProgramPage />} />
           <Route path="/careers"                       element={<CareersPage />} />
           <Route path="/whisper/:id"                   element={<WhisperDetailPage />} />
@@ -170,9 +186,9 @@ function AppLoader() {
             <Route path="/founder"                     element={<FounderPanel />} />
           )}
           <Route path="*"                              element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
-    </AppLayout>
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }
 

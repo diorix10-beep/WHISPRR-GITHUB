@@ -115,7 +115,7 @@ const BADGE_CONFIG: Record<BadgeType, BadgeConfig> = {
 
 interface UserBadgesProps {
   badges?: string[];
-  role?: 'founder' | 'admin' | 'moderator' | 'user';
+  role?: 'founder' | 'admin' | 'moderator' | 'user' | 'ai_character';
   size?: 'sm' | 'md' | 'lg';
   badgeDates?: Record<string, string>; // e.g. { 'founder': '2026-06-29T18:15:00Z' }
 }

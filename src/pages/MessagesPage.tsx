@@ -88,8 +88,9 @@ export default function MessagesPage() {
         })
       );
 
-      setConversations(conversationsWithProfiles);
-      fetchUnreadCounts(userConversations.map(c => c.id));
+      const whisprrConversations = conversationsWithProfiles.filter(c => c.other_user?.role !== 'ai_character');
+      setConversations(whisprrConversations);
+      fetchUnreadCounts(whisprrConversations.map(c => c.id));
     } catch (error) {
       console.error('Error fetching conversations:', error);
     } finally {
