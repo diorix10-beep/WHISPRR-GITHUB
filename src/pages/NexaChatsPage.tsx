@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { MessageSquare, Plus, Search, X, Loader2 } from 'lucide-react';
+import { Plus, Search, X, Loader2 } from 'lucide-react';
 import type { Conversation, Profile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -292,10 +292,14 @@ export default function NexaChatsPage() {
         </div>
       ) : conversations.length === 0 ? (
         <div className="card flex flex-col items-center justify-center py-12 text-center border-red-500/10 dark:border-red-950/20 bg-warm-950/10">
-          <MessageSquare size={48} className="text-warm-300 dark:text-warm-700 mb-4" />
+          <img
+            src="/nexy_mascot.png"
+            alt="Nexy Chats"
+            className="w-16 h-16 rounded-2xl object-cover border border-red-500/20 mb-4 nexa-glow-red opacity-80"
+          />
           <p className="text-warm-700 dark:text-warm-300 font-semibold mb-2">No active chats in the Nexus yet</p>
-          <p className="text-xs text-warm-500 max-w-xs">
-            Browse the Nexus to choose a persona and start an interactive story.
+          <p className="text-xs text-warm-550 max-w-xs leading-relaxed">
+            Your storyline starts here. Choose a community-created persona from the Nexus to start dialogues.
           </p>
           <button
             onClick={() => navigate('/nexa')}

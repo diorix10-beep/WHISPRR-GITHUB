@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Search, MessageSquare, Heart, Sparkles, Compass, Star } from 'lucide-react';
+import { Plus, Search, MessageSquare, Heart, Sparkles, Star } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
@@ -320,27 +320,50 @@ export default function AiCharactersPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      {/* Hero Header */}
-      <div className="relative rounded-3xl overflow-hidden mb-12 bg-gradient-to-br from-warm-900 via-warm-950 to-primary-950/60 p-8 lg:p-12 border border-warm-850 shadow-2xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-        <div className="max-w-xl">
-          <div className="flex items-center gap-2 text-primary-400 font-semibold text-sm tracking-wide uppercase mb-2">
-            <Sparkles size={16} />
-            <span>Living Digital Society</span>
+      {/* Cinematic Hero Header */}
+      <div className="relative rounded-3xl overflow-hidden mb-12 bg-gradient-to-br from-warm-900 via-red-950/30 to-warm-950 p-8 lg:p-12 border border-red-500/10 shadow-2xl flex flex-col lg:flex-row justify-between items-center gap-8 min-h-[300px]">
+        {/* Glowing Backdrops */}
+        <div className="absolute right-[5%] top-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-red-600/10 nexa-portal-pulse pointer-events-none" />
+        <div className="absolute right-[8%] top-1/2 -translate-y-1/2 w-48 h-48 rounded-full border border-red-500/10 nexa-spin-portal pointer-events-none" />
+        
+        {/* Floating Particles */}
+        <div className="nexa-particle absolute w-2 h-2 rounded-full bg-red-400/20 top-8 left-[15%] pointer-events-none" />
+        <div className="nexa-particle absolute w-1.5 h-1.5 rounded-full bg-orange-400/30 top-24 left-[35%] pointer-events-none" style={{ animationDelay: '2s' }} />
+        <div className="nexa-particle absolute w-2.5 h-2.5 rounded-full bg-red-500/15 top-16 right-[30%] pointer-events-none" style={{ animationDelay: '4s' }} />
+
+        <div className="max-w-xl relative z-10 text-center lg:text-left">
+          <div className="inline-flex items-center gap-2 text-red-400 font-semibold text-xs tracking-wider uppercase mb-3 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20">
+            <Sparkles size={12} />
+            <span>NEXA Nexus</span>
           </div>
           <h1 className="text-3xl lg:text-4xl font-serif font-bold text-warm-50 mb-3 leading-tight">
-            NEXA Character Directory
+            Where digital lives begin.
           </h1>
-          <p className="text-warm-400 text-sm lg:text-base">
-            Create, customize, and converse with intelligent personas built by the community. Seamlessly follow creators, build relationships, and discover new minds.
+          <p className="text-warm-400 text-sm lg:text-base leading-relaxed">
+            Weave interactive stories, configure custom lore, and converse with community-forged personas inside the Nexus.
           </p>
         </div>
-        <button
-          onClick={() => navigate('/nexa/create')}
-          className="flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white font-medium px-5 py-3 rounded-2xl shadow-lg transition-all hover:scale-105 active:scale-95 duration-200"
-        >
-          <Plus size={20} />
-          <span>Create Character</span>
-        </button>
+
+        <div className="flex flex-col sm:flex-row lg:flex-col items-center gap-4 shrink-0 relative z-10">
+          <div className="relative group">
+            <img
+              src="/nexy_mascot.png"
+              alt="Nexy Mascot"
+              className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border border-red-500/20 nexa-glow-red select-none transform transition-transform group-hover:scale-105 duration-300"
+            />
+            <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 bg-red-650 text-white font-bold text-[9px] px-2.5 py-0.5 rounded-full shadow border border-red-500/35 uppercase tracking-wide">
+              Nexy
+            </span>
+          </div>
+          
+          <button
+            onClick={() => navigate('/nexa/create')}
+            className="flex items-center gap-2 bg-red-650 hover:bg-red-700 text-white font-semibold px-5 py-3 rounded-2xl shadow-lg shadow-red-500/10 transition-all hover:scale-102 active:scale-98 duration-200 text-sm mt-2"
+          >
+            <Plus size={18} />
+            <span>NEXA Forge</span>
+          </button>
+        </div>
       </div>
 
       {/* Tabs, Search and Rating Filter */}
@@ -444,20 +467,22 @@ export default function AiCharactersPage() {
           ))}
         </div>
       ) : filteredCharacters.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center bg-white dark:bg-warm-850 rounded-3xl border border-warm-200 dark:border-warm-850 p-8 shadow-sm">
-          <div className="w-16 h-16 bg-warm-100 dark:bg-warm-800 rounded-full flex items-center justify-center text-warm-400 dark:text-warm-500 mb-4">
-            <Compass size={32} />
-          </div>
-          <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-50 mb-2">No Characters Found</h3>
+        <div className="flex flex-col items-center justify-center py-16 text-center bg-white dark:bg-warm-850 rounded-3xl border border-warm-200 dark:border-warm-800 p-8 shadow-sm">
+          <img
+            src="/nexy_mascot.png"
+            alt="Nexy Search"
+            className="w-16 h-16 rounded-2xl object-cover border border-warm-200 dark:border-warm-750 mb-4 opacity-70 filter grayscale-30"
+          />
+          <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-50 mb-2">No Personas in this Coordinate</h3>
           <p className="text-warm-500 dark:text-warm-400 text-sm max-w-sm mb-6">
-            There are no characters matching your criteria. Try adjusting your search query, selecting another category, or build your own NEXA Character.
+            There are no personas matching your criteria in the NEXA Nexus. Try adjusting filters or forge your own companion.
           </p>
           <button
             onClick={() => navigate('/nexa/create')}
-            className="flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white font-semibold px-5 py-2.5 rounded-xl shadow transition-all duration-200"
+            className="flex items-center gap-2 bg-red-650 hover:bg-red-700 text-white font-semibold px-5 py-2.5 rounded-xl shadow transition-all duration-200 text-xs"
           >
-            <Plus size={18} />
-            <span>Create NEXA Character</span>
+            <Plus size={16} />
+            <span>NEXA Forge</span>
           </button>
         </div>
       ) : (

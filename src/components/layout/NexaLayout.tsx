@@ -53,9 +53,11 @@ export function NexaLayout({ children }: NexaLayoutProps) {
           <div className="flex flex-col h-full relative">
             {/* Nexa Brand Header */}
             <div className="px-6 py-6 border-b border-warm-100 dark:border-warm-800 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-red-650 flex items-center justify-center text-white shadow-md shadow-red-500/20 font-bold text-lg font-serif">
-                N
-              </div>
+              <img
+                src="/nexy_mascot.png"
+                alt="Nexy Logo"
+                className="w-9 h-9 rounded-xl object-cover border border-red-500/25 nexa-glow-red"
+              />
               <div>
                 <h1 className="font-serif text-2xl font-bold text-red-650 dark:text-red-500 tracking-wide">
                   NEXA
@@ -181,9 +183,11 @@ export function NexaLayout({ children }: NexaLayoutProps) {
                   <div className="flex flex-col gap-6">
                     <div className="flex items-center justify-between border-b border-warm-100 dark:border-warm-800 pb-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-red-650 flex items-center justify-center text-white font-bold text-md font-serif">
-                          N
-                        </div>
+                        <img
+                          src="/nexy_mascot.png"
+                          alt="Nexy Logo"
+                          className="w-8 h-8 rounded-lg object-cover border border-red-500/25 nexa-glow-red"
+                        />
                         <span className="font-serif font-bold text-lg text-red-650 dark:text-red-500">NEXA</span>
                       </div>
                       <button onClick={() => setIsMenuOpen(false)} className="p-1 rounded-lg hover:bg-warm-100 dark:hover:bg-warm-800">

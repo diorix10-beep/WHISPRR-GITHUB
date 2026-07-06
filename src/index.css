@@ -295,3 +295,36 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* NEXA Visual Language Styles */
+@keyframes nexa-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.15; }
+  50% { transform: translateY(-15px) rotate(10deg); opacity: 0.4; }
+}
+
+@keyframes nexa-pulse-ambient {
+  0%, 100% { opacity: 0.2; transform: scale(1); filter: blur(50px); }
+  50% { opacity: 0.45; transform: scale(1.1); filter: blur(60px); }
+}
+
+@keyframes nexa-spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.nexa-particle {
+  animation: nexa-float 8s ease-in-out infinite;
+}
+
+.nexa-glow-red {
+  box-shadow: 0 0 35px -5px rgba(220, 38, 38, 0.25);
+}
+
+.nexa-portal-pulse {
+  animation: nexa-pulse-ambient 12s ease-in-out infinite;
+}
+
+.nexa-spin-portal {
+  animation: nexa-spin-slow 24s linear infinite;
+}
+
