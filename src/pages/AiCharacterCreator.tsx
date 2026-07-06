@@ -803,7 +803,7 @@ export default function AiCharacterCreator() {
           {/* Step Indicators */}
           <div className="mb-6 overflow-x-auto pb-4 no-scrollbar">
             <div className="flex gap-4 min-w-[650px] justify-between">
-              {['Identity', 'Appearance', 'Opening Scene', 'Character Core', 'Voice Examples', 'Behavior Rules', 'Universe Library', 'Review & Publish'].map((step, idx) => {
+              {['Identity', 'Appearance', 'Opening Scene', term('System Prompt', 'Creator Core'), 'Voice Examples', term('Behavioral Rules', 'Character Rules'), term('Lorebook / World Info', 'Universe Library'), 'Review & Publish'].map((step, idx) => {
                 const stepId = idx + 1;
                 const isCompleted = currentStep > stepId;
                 const isActive = currentStep === stepId;
@@ -1102,7 +1102,7 @@ export default function AiCharacterCreator() {
             {currentStep === 4 && (
               <div className="space-y-6">
                 <h3 className="text-base font-serif font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-800 pb-3">
-                  {term('System Character Definition', 'Character Core')}
+                  {term('System Prompt', 'Creator Core')}
                 </h3>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-warm-750 dark:text-warm-300 mb-2">
@@ -1119,7 +1119,7 @@ export default function AiCharacterCreator() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-warm-750 dark:text-warm-300 mb-2">
-                    System Character Definition
+                    {term('System Prompt (System Character Definition)', 'Creator Core')}
                   </label>
                   <textarea
                     name="systemCharacterDefinition"
@@ -1159,11 +1159,11 @@ export default function AiCharacterCreator() {
             {currentStep === 6 && (
               <div className="space-y-6">
                 <h3 className="text-base font-serif font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-800 pb-3">
-                  {term('System Definition & Constraints', 'Behavior Rules')}
+                  {term('Behavioral Rules', 'Character Rules')}
                 </h3>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-warm-750 dark:text-warm-300 mb-2">
-                    Behavior Rules (OOC Instructions & Guidelines)
+                    {term('Behavioral Rules (OOC Instructions & Guidelines)', 'Character Rules')}
                   </label>
                   <textarea
                     name="systemDefinition"
@@ -1194,11 +1194,11 @@ export default function AiCharacterCreator() {
             {currentStep === 7 && (
               <div className="space-y-6">
                 <h3 className="text-base font-serif font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-800 pb-3">
-                  {term('Lorebooks & World Info', 'Universe Library')}
+                  {term('Lorebook / World Info', 'Universe Library')}
                 </h3>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-warm-750 dark:text-warm-300 mb-2">
-                    Lorebook / World Knowledge
+                    {term('Lorebook / World Knowledge', 'Character Facts')}
                   </label>
                   <textarea
                     name="knowledge"
