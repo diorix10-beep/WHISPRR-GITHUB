@@ -1,21 +1,7 @@
-// Quickchat Widget Simulation Loader Script
-(function() {
-  window.QuickchatWidgetConfig = {
-    scenarioId: "da01a00a-60d7-41ec-b827-8178cd3bf084", // Oracle's ID
-    name: "Oracle",
-    theme: "amber"
-  };
+// Quickchat AI Official Widget Loader
+(function(e,a,d,i,c,t=a.createElement(d)){
+  e[c]=e[c]||function(){(e[c].q=e[c].q||[]).push(arguments)},
+  t.src=i,t.async=1,a.body.insertAdjacentElement("beforeend",t)
+})(window,document,"script","https://bubble.quickchat.ai/chat.js","_quickchat");
 
-  // Create root element for mounting the React widget portal
-  if (!document.getElementById('quickchat-widget-root')) {
-    const rootDiv = document.createElement('div');
-    rootDiv.id = 'quickchat-widget-root';
-    document.body.appendChild(rootDiv);
-  }
-
-  // Dispatch event indicating loader is ready
-  const event = new CustomEvent('quickchat-widget-ready', {
-    detail: window.QuickchatWidgetConfig
-  });
-  window.dispatchEvent(event);
-})();
+_quickchat("init", "5isdyzru54");

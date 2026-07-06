@@ -11,7 +11,6 @@ import { AppLayout } from './components/layout/AppLayout';
 import { NexaLayout } from './components/layout/NexaLayout';
 import { NexaPlaceholderPage } from './components/common/NexaPlaceholderPage';
 import { Logo } from './components/common/Logo';
-import { QuickchatWidget } from './components/common/QuickchatWidget';
 
 const OracleAssistantPage = lazy(() => import('./pages/OracleAssistantPage'));
 
@@ -193,7 +192,6 @@ function AppLoader() {
           <Route path="*"                              element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
-      <QuickchatWidget />
     </Suspense>
   );
 }

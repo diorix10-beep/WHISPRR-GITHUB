@@ -347,4 +347,14 @@ html {
   animation: nexa-spirit-orbit 6s linear infinite;
 }
 
+/* Hide floating Quickchat bubble on the Oracle assistant page */
+body.route-oracle iframe[src*="quickchat.ai"],
+body.route-oracle iframe[src*="5isdyzru54"],
+body.route-oracle #quickchat-iframe {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+
 
