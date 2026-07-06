@@ -270,10 +270,10 @@ export default function NexaChatsPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-serif font-bold text-warm-900 dark:text-warm-50 flex items-center gap-2">
-            <span className="text-red-650">🔴</span> NEXA Roleplay Chats
+            <span className="text-red-650">🔴</span> NEXA Chats
           </h1>
           <p className="text-sm text-warm-500">
-            Your active storytelling and roleplay dialogues
+            Your active storytelling and dialogues inside the NEXA Nexus
           </p>
         </div>
         <button
@@ -293,15 +293,15 @@ export default function NexaChatsPage() {
       ) : conversations.length === 0 ? (
         <div className="card flex flex-col items-center justify-center py-12 text-center border-red-500/10 dark:border-red-950/20 bg-warm-950/10">
           <MessageSquare size={48} className="text-warm-300 dark:text-warm-700 mb-4" />
-          <p className="text-warm-700 dark:text-warm-300 font-semibold mb-2">No active roleplay chats yet</p>
+          <p className="text-warm-700 dark:text-warm-300 font-semibold mb-2">No active chats in the Nexus yet</p>
           <p className="text-xs text-warm-500 max-w-xs">
-            Browse the directory to choose a character and start an interactive story.
+            Browse the Nexus to choose a persona and start an interactive story.
           </p>
           <button
             onClick={() => navigate('/nexa')}
             className="mt-6 bg-red-650 hover:bg-red-700 text-white font-semibold py-2 px-5 rounded-xl text-xs shadow-sm transition-all"
           >
-            Explore Characters
+            Explore Nexus
           </button>
         </div>
       ) : (

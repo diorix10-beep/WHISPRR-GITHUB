@@ -367,7 +367,7 @@ export default function AiCharacterCreator() {
           <span>Back to Directory</span>
         </button>
 
-        {/* Character.AI Importer */}
+        {/* Persona File Importer */}
         <div className="relative">
           <input
             type="file"
@@ -381,7 +381,7 @@ export default function AiCharacterCreator() {
             className="btn-secondary py-1.5 px-4 text-xs flex items-center gap-2"
           >
             <FileCode size={14} className="text-primary-500" />
-            <span>Import from Character.AI</span>
+            <span>Import Definition File</span>
           </button>
         </div>
       </div>
@@ -390,13 +390,13 @@ export default function AiCharacterCreator() {
       <div className="mb-10">
         <div className="flex items-center gap-2.5 text-primary-500 font-semibold text-xs tracking-wide uppercase mb-1">
           <Bot size={16} />
-          <span>Creator Lab</span>
+          <span>NEXA Forge</span>
         </div>
         <h1 className="text-3xl font-serif font-bold text-warm-900 dark:text-warm-50">
-          Create NEXA Character
+          Forge a Character
         </h1>
         <p className="text-warm-500 dark:text-warm-400 text-sm mt-1">
-          Shape a new citizen for the NEXA storytelling ecosystem. Build their mind, behavior, and rating.
+          Shape a new citizen for the NEXA storytelling ecosystem inside the Forge. Build their mind, behavior, and rating.
         </p>
       </div>
 

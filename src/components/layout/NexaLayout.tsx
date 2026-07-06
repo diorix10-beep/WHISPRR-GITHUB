@@ -33,16 +33,16 @@ export function NexaLayout({ children }: NexaLayoutProps) {
   }, []);
 
   const nexaNavItems = [
-    { path: '/nexa', icon: Compass, label: 'Explore' },
-    { path: '/nexa?tab=my-creations', icon: Users, label: 'My Characters' },
-    { path: '/nexa/create', icon: Plus, label: 'Create Character' },
-    { path: '/nexa/chats', icon: MessageSquare, label: 'My Chats', badge: true },
+    { path: '/nexa', icon: Compass, label: 'Explore Nexus' },
+    { path: '/nexa?tab=my-creations', icon: Users, label: 'My Personas' },
+    { path: '/nexa/create', icon: Plus, label: 'NEXA Forge' },
+    { path: '/nexa/chats', icon: MessageSquare, label: 'NEXA Chats', badge: true },
     { path: '/nexa/creator-profiles', icon: User, label: 'Creator Profiles' },
-    { path: '/nexa/lorebooks', icon: BookOpen, label: 'Lorebooks' },
-    { path: '/nexa/worlds', icon: Globe, label: 'My Worlds' },
-    { path: '/nexa/plots', icon: PenTool, label: 'Create Plot' },
-    { path: '/nexa/models', icon: Cpu, label: 'AI Models' },
-    { path: '/nexa/collections', icon: Layers, label: 'Collections' },
+    { path: '/nexa/lorebooks', icon: BookOpen, label: 'NEXA Lorebooks' },
+    { path: '/nexa/worlds', icon: Globe, label: 'NEXA Worlds' },
+    { path: '/nexa/plots', icon: PenTool, label: 'NEXA Plots' },
+    { path: '/nexa/models', icon: Cpu, label: 'NEXA Core Models' },
+    { path: '/nexa/collections', icon: Layers, label: 'NEXA Collections' },
   ];
 
   return (
