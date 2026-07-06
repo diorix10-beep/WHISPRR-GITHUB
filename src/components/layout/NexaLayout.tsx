@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { Outlet, useNavigate, NavLink } from 'react-router-dom';
 import { 
   X, Compass, Plus, MessageSquare, User, BookOpen, 
-  Globe, PenTool, Cpu, Layers, Menu, ArrowLeft, Sun, Moon, Monitor
+  Globe, PenTool, Cpu, Layers, Menu, ArrowLeft, Sun, Moon, Monitor, Users
 } from 'lucide-react';
 import { useNotifications } from '../../contexts/NotificationsContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -34,6 +34,7 @@ export function NexaLayout({ children }: NexaLayoutProps) {
 
   const nexaNavItems = [
     { path: '/nexa', icon: Compass, label: 'Explore' },
+    { path: '/nexa?tab=my-creations', icon: Users, label: 'My Characters' },
     { path: '/nexa/create', icon: Plus, label: 'Create Character' },
     { path: '/nexa/chats', icon: MessageSquare, label: 'My Chats', badge: true },
     { path: '/nexa/creator-profiles', icon: User, label: 'Creator Profiles' },

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Search, MessageSquare, Heart, Sparkles, Compass, Star } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -79,7 +79,17 @@ export default function AiCharactersPage() {
   const [selectedRating, setSelectedRating] = useState('All Ratings');
   const [likedIds, setLikedIds] = useState<string[]>([]);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab') as 'explore' | 'my-creations' | 'favorites';
   const [activeTab, setActiveTab] = useState<'explore' | 'my-creations' | 'favorites'>('explore');
+
+  useEffect(() => {
+    if (tabParam) {
+      setActiveTab(tabParam);
+    } else {
+      setActiveTab('explore');
+    }
+  }, [tabParam]);
 
   const fetchCharacters = useCallback(async () => {
     setLoading(true);
