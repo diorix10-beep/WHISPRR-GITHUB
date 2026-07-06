@@ -192,80 +192,60 @@ export default function AiCharacterCreator() {
     if (!interviewInput.trim()) return;
 
     const userText = interviewInput.trim();
-    setOracleMessages(prev => [...prev, { sender: 'user', text: userText }]);
+    const currentMessages = [...oracleMessages, { sender: 'user', text: userText } as ChatMessage];
+    setOracleMessages(currentMessages);
     setInterviewInput('');
     setIsOracleTyping(true);
 
-    // Save user answers to formData fields based on step
-    let nextStep = interviewStep;
-    let nextFormData = { ...formData };
+    try {
+      const response = await fetch('/api/oracle-guide', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: currentMessages,
+          formData,
+          interviewStep
+        })
+      });
 
-    switch (interviewStep) {
-      case 0: // Name
-        nextFormData.name = userText;
-        nextStep = 1;
-        break;
-      case 1: // Biography/Concept
-        nextFormData.shortDescription = userText.substring(0, 80);
-        nextFormData.longDescription = userText;
-        nextStep = 2;
-        break;
-      case 2: // Personality
-        nextFormData.personality = userText;
-        nextFormData.systemCharacterDefinition = `[Character: ${formData.name || '{{char}}'}]\n[Mind: ${userText}]`;
-        nextStep = 3;
-        break;
-      case 3: // Speech/Greeting
-        nextFormData.greeting = userText;
-        nextFormData.exampleDialogues = `{{char}}: "${userText}"`;
-        nextStep = 4;
-        break;
-      case 4: // Opening Scene
-        nextFormData.scenario = userText;
-        nextStep = 5;
-        break;
-      case 5: // Category & Rating
-        nextFormData.category = CATEGORY_OPTIONS.includes(userText) ? userText : 'General';
-        nextStep = 6;
-        break;
-      case 6: // Profile icon url
-        nextFormData.avatarUrl = userText;
-        nextStep = 7;
-        break;
-    }
+      if (!response.ok) throw new Error('Failed to reach Oracle');
+      const data = await response.json();
 
-    setFormData(nextFormData);
-    setInterviewStep(nextStep);
-
-    // Delayed Oracle typing response
-    setTimeout(() => {
-      setIsOracleTyping(false);
-      let reply = '';
-      switch (nextStep) {
-        case 1:
-          reply = `Wonderful! Tell me about ${nextFormData.name}. What do they look like, what is their backstory, or what do they do?`;
-          break;
-        case 2:
-          reply = `Fascinating. What kind of person are they? Describe their personality traits, goals, or fears.`;
-          break;
-        case 3:
-          reply = `And how do they speak? Give me an example of their voice, or a greeting message they would say when we first meet them.`;
-          break;
-        case 4:
-          reply = `Where are they when we first meet them? Describe the opening scene or the setting of your roleplay.`;
-          break;
-        case 5:
-          reply = `Which universe category/genre best describes their story? Options: ${CATEGORY_OPTIONS.slice(0, 6).join(', ')}, etc.`;
-          break;
-        case 6:
-          reply = `Lastly, if you have a direct URL to a profile avatar picture, paste it here. Or type 'skip' to use a default icon.`;
-          break;
-        case 7:
-          reply = `I think they're ready! Would you like to meet them and start a private playtest conversation?`;
-          break;
+      let nextFormData = { ...formData };
+      
+      // If Oracle extracted structured field data, sync it live to the form state
+      if (data.extractedField && data.extractedValue) {
+        const field = data.extractedField;
+        const val = data.extractedValue;
+        
+        if (field === 'longDescription') {
+          nextFormData.longDescription = val;
+          nextFormData.shortDescription = val.substring(0, 80);
+        } else if (field === 'personality') {
+          nextFormData.personality = val;
+          nextFormData.systemCharacterDefinition = `[Character: ${nextFormData.name || '{{char}}'}]\n[Mind: ${val}]`;
+        } else {
+          // @ts-ignore
+          nextFormData[field] = val;
+        }
+        setFormData(nextFormData);
       }
-      setOracleMessages(prev => [...prev, { sender: 'oracle', text: reply }]);
-    }, 1000);
+
+      setOracleMessages(prev => [...prev, { sender: 'oracle', text: data.response }]);
+
+      if (data.shouldAdvance) {
+        setInterviewStep(prev => Math.min(prev + 1, 7));
+      }
+
+    } catch (err) {
+      console.error('Oracle guide API error:', err);
+      setOracleMessages(prev => [...prev, { 
+        sender: 'oracle', 
+        text: "I had a brief connection issue, but my digital sensors are back online. Could you tell me more about that?" 
+      }]);
+    } finally {
+      setIsOracleTyping(false);
+    }
   };
 
   // Meet Your Character / Start Playtest Draft
