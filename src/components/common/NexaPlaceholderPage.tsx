@@ -37,9 +37,6 @@ export function NexaPlaceholderPage({ title, description }: NexaPlaceholderPageP
           </div>
         </div>
 
-        <div className="text-xs text-red-400/80 font-medium tracking-wide">
-          Requires Active NEXA+ Subscription
-        </div>
       </div>
     </div>
   );
