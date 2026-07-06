@@ -17,6 +17,9 @@ interface AICharacter {
   category: string;
   tags: string[];
   visibility: 'public' | 'private' | 'unlisted';
+  content_rating?: 'SFW' | 'Mature' | 'NSFW';
+  avatar_url?: string;
+  banner_url?: string;
   chats_count: number;
   likes_count: number;
   followers_count: number;
@@ -44,6 +47,13 @@ const CATEGORIES = [
   'Helpers'
 ];
 
+const RATINGS = [
+  'All Ratings',
+  'SFW',
+  'Mature',
+  'NSFW'
+];
+
 export default function AiCharactersPage() {
   const navigate = useNavigate();
   const { profile } = useAuth();
@@ -53,6 +63,7 @@ export default function AiCharactersPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedRating, setSelectedRating] = useState('All Ratings');
   const [likedIds, setLikedIds] = useState<string[]>([]);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'explore' | 'my-creations' | 'favorites'>('explore');
@@ -60,7 +71,6 @@ export default function AiCharactersPage() {
   const fetchCharacters = useCallback(async () => {
     setLoading(true);
     try {
-      // Query database with explicit foreign key aliases to avoid PostgREST ambiguity
       const { data, error } = await supabase
         .from('ai_characters')
         .select(`
@@ -72,7 +82,6 @@ export default function AiCharactersPage() {
       if (error) throw error;
       setCharacters(data || []);
 
-      // If user is authenticated, fetch their likes and follows
       if (profile?.user_id) {
         const { data: likes } = await supabase
           .from('ai_character_likes')
@@ -174,7 +183,6 @@ export default function AiCharactersPage() {
     try {
       showToast(`Opening channel with ${character.bot_profile?.display_name || 'NEXA Character'}...`, 'success');
 
-      // 1. Check if user already shares a conversation with the character bot
       const { data: myConvs, error: myConvsError } = await supabase
         .from('conversation_participants')
         .select('conversation_id')
@@ -207,7 +215,6 @@ export default function AiCharactersPage() {
         }
       }
 
-      // 2. Create new DM conversation
       const { data: newConv, error: createError } = await supabase
         .from('conversations')
         .insert({
@@ -220,7 +227,6 @@ export default function AiCharactersPage() {
       if (createError) throw createError;
       if (!newConv) throw new Error('Failed to create conversation.');
 
-      // 3. Add participants (User + Bot)
       const { error: partError } = await supabase
         .from('conversation_participants')
         .insert([
@@ -230,7 +236,6 @@ export default function AiCharactersPage() {
 
       if (partError) throw partError;
 
-      // 4. Insert character greeting message automatically as the first message
       await supabase.from('messages').insert({
         conversation_id: newConv.id,
         sender_id: character.user_id,
@@ -238,7 +243,6 @@ export default function AiCharactersPage() {
         read: false
       });
 
-      // Update last message metadata
       await supabase
         .from('conversations')
         .update({
@@ -259,7 +263,6 @@ export default function AiCharactersPage() {
   const exploreCharacters = characters.filter(c => {
     const matchesSearch = 
       c.bot_profile?.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.bot_profile?.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.short_description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
 
@@ -267,7 +270,11 @@ export default function AiCharactersPage() {
       selectedCategory === 'All' || 
       c.category.toLowerCase() === selectedCategory.toLowerCase();
 
-    return matchesSearch && matchesCategory;
+    const matchesRating = 
+      selectedRating === 'All Ratings' ||
+      c.content_rating === selectedRating;
+
+    return matchesSearch && matchesCategory && matchesRating;
   });
 
   const filteredCharacters = exploreCharacters.filter(c => {
@@ -302,13 +309,13 @@ export default function AiCharactersPage() {
         </button>
       </div>
 
-      {/* Tabs and Filtering */}
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-center mb-8 border-b border-warm-200 dark:border-warm-800 pb-4">
+      {/* Tabs, Search and Rating Filter */}
+      <div className="flex flex-col lg:flex-row gap-4 justify-between items-center mb-8 border-b border-warm-200 dark:border-warm-800 pb-4">
         {/* Navigation Tabs */}
-        <div className="flex gap-2 p-1 bg-warm-100 dark:bg-warm-850 rounded-2xl self-stretch md:self-auto">
+        <div className="flex gap-2 p-1 bg-warm-100 dark:bg-warm-850 rounded-2xl self-stretch lg:self-auto">
           <button
             onClick={() => setActiveTab('explore')}
-            className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wider uppercase transition-all duration-200 ${
+            className={`flex-1 lg:flex-none px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wider uppercase transition-all duration-200 ${
               activeTab === 'explore'
                 ? 'bg-white dark:bg-warm-800 text-warm-900 dark:text-warm-50 shadow-sm'
                 : 'text-warm-500 dark:text-warm-450 hover:text-warm-800 dark:hover:text-warm-200'
@@ -318,7 +325,7 @@ export default function AiCharactersPage() {
           </button>
           <button
             onClick={() => setActiveTab('my-creations')}
-            className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wider uppercase transition-all duration-200 ${
+            className={`flex-1 lg:flex-none px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wider uppercase transition-all duration-200 ${
               activeTab === 'my-creations'
                 ? 'bg-white dark:bg-warm-800 text-warm-900 dark:text-warm-50 shadow-sm'
                 : 'text-warm-500 dark:text-warm-450 hover:text-warm-800 dark:hover:text-warm-200'
@@ -328,7 +335,7 @@ export default function AiCharactersPage() {
           </button>
           <button
             onClick={() => setActiveTab('favorites')}
-            className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wider uppercase transition-all duration-200 ${
+            className={`flex-1 lg:flex-none px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wider uppercase transition-all duration-200 ${
               activeTab === 'favorites'
                 ? 'bg-white dark:bg-warm-800 text-warm-900 dark:text-warm-50 shadow-sm'
                 : 'text-warm-500 dark:text-warm-450 hover:text-warm-800 dark:hover:text-warm-200'
@@ -338,16 +345,30 @@ export default function AiCharactersPage() {
           </button>
         </div>
 
-        {/* Search */}
-        <div className="relative w-full md:w-80">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-warm-450" />
-          <input
-            type="text"
-            placeholder="Search characters, tags..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white dark:bg-warm-800/80 border border-warm-200 dark:border-warm-700 rounded-2xl py-3 pl-11 pr-4 text-sm text-warm-900 dark:text-warm-50 placeholder-warm-450 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/60 transition-all"
-          />
+        {/* Filters Panel */}
+        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto items-stretch sm:items-center">
+          {/* Content Rating Selector */}
+          <select
+            value={selectedRating}
+            onChange={(e) => setSelectedRating(e.target.value)}
+            className="bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-2xl px-4 py-3 text-xs text-warm-700 dark:text-warm-300 font-semibold focus:outline-none"
+          >
+            {RATINGS.map(r => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+
+          {/* Search Box */}
+          <div className="relative flex-1 sm:w-64">
+            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-warm-450" />
+            <input
+              type="text"
+              placeholder="Search by name, tags..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-white dark:bg-warm-800/80 border border-warm-200 dark:border-warm-700 rounded-2xl py-3 pl-11 pr-4 text-xs text-warm-900 dark:text-warm-50 placeholder-warm-450 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+            />
+          </div>
         </div>
       </div>
 
@@ -410,6 +431,7 @@ export default function AiCharactersPage() {
           {filteredCharacters.map(char => {
             const isLiked = likedIds.includes(char.id);
             const isFollowing = followingIds.includes(char.id);
+            const avatarImg = char.avatar_url || char.bot_profile?.photo_url;
 
             return (
               <div
@@ -423,29 +445,41 @@ export default function AiCharactersPage() {
                 <div>
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-4 min-w-0">
-                      {char.bot_profile?.photo_url ? (
+                      {avatarImg ? (
                         <img
-                          src={char.bot_profile.photo_url}
-                          alt={char.bot_profile.display_name}
+                          src={avatarImg}
+                          alt={char.bot_profile?.display_name || 'Avatar'}
                           className="w-14 h-14 rounded-2xl object-cover border border-warm-150 dark:border-warm-750"
                         />
                       ) : (
                         <div className="w-14 h-14 rounded-2xl bg-warm-100 dark:bg-warm-800 flex items-center justify-center text-3xl border border-warm-150 dark:border-warm-750">
-                          {char.bot_profile?.avatar_emoji || '💫'}
+                          {char.bot_profile?.avatar_emoji || '🤖'}
                         </div>
                       )}
                       <div className="min-w-0">
-                        <h3 className="font-serif text-lg font-bold text-warm-900 dark:text-warm-50 truncate flex items-center gap-1.5">
-                          <span>{char.bot_profile?.display_name}</span>
+                        <h3 className="font-serif text-base font-bold text-warm-900 dark:text-warm-50 truncate">
+                          {char.bot_profile?.display_name}
                         </h3>
-                        <p className="text-xs text-warm-500 truncate">@{char.bot_profile?.username}</p>
+                        <span className="text-[9px] uppercase font-bold tracking-wider text-primary-500">
+                          NEXA Bot
+                        </span>
                       </div>
                     </div>
 
-                    {/* Category Tag */}
-                    <span className="text-[10px] uppercase tracking-wider font-semibold px-2.5 py-1 bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 rounded-lg">
-                      {char.category}
-                    </span>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className="text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 rounded-lg">
+                        {char.category}
+                      </span>
+                      {char.content_rating && (
+                        <span className={`text-[8px] font-bold tracking-wider px-1.5 py-0.2 rounded ${
+                          char.content_rating === 'NSFW' 
+                            ? 'bg-red-50 dark:bg-red-950/20 text-red-650 dark:text-red-400' 
+                            : 'bg-warm-200 dark:bg-warm-750 text-warm-600 dark:text-warm-400'
+                        }`}>
+                          {char.content_rating}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <p className="text-warm-600 dark:text-warm-350 text-sm line-clamp-3 mb-4 leading-relaxed h-15">
