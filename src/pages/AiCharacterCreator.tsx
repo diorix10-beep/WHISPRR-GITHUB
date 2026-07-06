@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  ArrowLeft, ArrowRight, Save, Bot, Check, RefreshCw, Upload, Image, FileCode 
+  ArrowLeft, ArrowRight, Save, Bot, Check, RefreshCw, Upload, Image, FileCode, HelpCircle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -13,8 +13,9 @@ const STEPS = [
   { id: 3, label: 'Lore', desc: 'Greeting & biography' },
   { id: 4, label: 'Personality', desc: 'Traits & scenario context' },
   { id: 5, label: 'Chat Style', desc: 'Example dialogue & tone' },
-  { id: 6, label: 'Knowledge', desc: 'Special lore & facts' },
-  { id: 7, label: 'Preview', desc: 'Final review & publish' }
+  { id: 6, label: 'Definitions', desc: 'RP & system prompts' },
+  { id: 7, label: 'Knowledge', desc: 'Special lore & facts' },
+  { id: 8, label: 'Preview', desc: 'Final review & publish' }
 ];
 
 const GRADIENTS = [
@@ -48,6 +49,14 @@ export default function AiCharacterCreator() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
 
+  // Help Section Toggles
+  const [showRPHelp, setShowRPHelp] = useState(false);
+  const [showSysHelp, setShowSysHelp] = useState(false);
+  const [showCharHelp, setShowCharHelp] = useState(false);
+
+  // Draft Restore States
+  const [showRestoreBanner, setShowRestoreBanner] = useState(false);
+
   // Form State
   const [formData, setFormData] = useState({
     name: '',
@@ -64,11 +73,63 @@ export default function AiCharacterCreator() {
     scenario: '',
     exampleDialogues: '',
     conversationStyle: 'Warm, conversational, structured.',
+    rpDefinition: '',
+    systemDefinition: '',
+    systemCharacterDefinition: '',
     knowledge: '',
     creatorNotes: '',
     exampleConversations: '',
     tagsString: ''
   });
+
+  // Draft checking on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('nexa-character-creator-draft');
+    if (saved) {
+      try {
+        const { formData: savedData } = JSON.parse(saved);
+        if (savedData && (savedData.name || savedData.greeting || savedData.personality)) {
+          setShowRestoreBanner(true);
+        }
+      } catch (e) {
+        console.error('Error loading draft:', e);
+      }
+    }
+  }, []);
+
+  // Auto save draft every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (formData.name || formData.greeting || formData.personality) {
+        localStorage.setItem(
+          'nexa-character-creator-draft',
+          JSON.stringify({ formData, currentStep })
+        );
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [formData, currentStep]);
+
+  const handleRestoreDraft = () => {
+    const saved = localStorage.getItem('nexa-character-creator-draft');
+    if (saved) {
+      try {
+        const { formData: savedData, currentStep: savedStep } = JSON.parse(saved);
+        setFormData(savedData);
+        setCurrentStep(savedStep || 1);
+        showToast('Draft restored successfully!', 'success');
+      } catch (e) {
+        showToast('Failed to restore draft', 'error');
+      }
+    }
+    setShowRestoreBanner(false);
+  };
+
+  const handleDiscardDraft = () => {
+    localStorage.removeItem('nexa-character-creator-draft');
+    setShowRestoreBanner(false);
+    showToast('Draft discarded', 'info');
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -176,6 +237,28 @@ export default function AiCharacterCreator() {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
+  const applyTemplate = (field: 'rp' | 'sys' | 'char') => {
+    if (field === 'rp') {
+      setFormData(prev => ({
+        ...prev,
+        rpDefinition: `{{char}} will always write replies in third-person past tense. Format actions using asterisks like *she smiles softly*. Keep replies to medium length (2-3 paragraphs).`
+      }));
+      showToast('RP Definition template applied!', 'success');
+    } else if (field === 'sys') {
+      setFormData(prev => ({
+        ...prev,
+        systemDefinition: `[System directive: Keep formatting consistent. Avoid speaking, acting, or responding on behalf of {{user}}. Maintain logical timeline continuity and follow roleplay boundaries strictly.]`
+      }));
+      showToast('System Definition template applied!', 'success');
+    } else if (field === 'char') {
+      setFormData(prev => ({
+        ...prev,
+        systemCharacterDefinition: `[Character: {{char}}]\n[Mind: intelligent, observant, reserved]\n[Speech: calm, poetic, uses brief pauses]\n[Backstory: guardian of the crystal archive, speaks with dry wit]`
+      }));
+      showToast('System Character Definition template applied!', 'success');
+    }
+  };
+
   const handleSubmit = async () => {
     if (!profile) {
       showToast('You must be logged in to build NEXA Characters', 'error');
@@ -191,7 +274,7 @@ export default function AiCharacterCreator() {
     try {
       const { error } = await supabase.rpc('create_ai_character', {
         p_name: formData.name.trim(),
-        p_username: '', // Generated dynamically in Postgres
+        p_username: '', 
         p_avatar_emoji: '🤖',
         p_greeting: formData.greeting.trim(),
         p_short_description: formData.shortDescription.trim(),
@@ -208,10 +291,16 @@ export default function AiCharacterCreator() {
         p_banner_url: formData.bannerUrl.trim(),
         p_content_rating: formData.contentRating,
         p_creator_notes: formData.creatorNotes.trim(),
-        p_example_conversations: formData.exampleConversations.trim()
+        p_example_conversations: formData.exampleConversations.trim(),
+        p_rp_definition: formData.rpDefinition.trim(),
+        p_system_definition: formData.systemDefinition.trim(),
+        p_system_character_definition: formData.systemCharacterDefinition.trim()
       });
 
       if (error) throw error;
+
+      // Clear draft upon successful publish
+      localStorage.removeItem('nexa-character-creator-draft');
 
       showToast('NEXA Character created successfully!', 'success');
       navigate('/nexa');
@@ -226,7 +315,35 @@ export default function AiCharacterCreator() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-8 relative">
+      {/* Draft Recovery Banner */}
+      {showRestoreBanner && (
+        <div className="mb-6 p-4 bg-primary-50 dark:bg-primary-950/20 border border-primary-100 dark:border-primary-900/50 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 animate-fade-in shadow-sm">
+          <div>
+            <p className="text-sm font-semibold text-warm-900 dark:text-warm-100">
+              Unsaved draft found
+            </p>
+            <p className="text-xs text-warm-500 dark:text-warm-400">
+              We found a draft from your last session. Would you like to restore it?
+            </p>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={handleRestoreDraft}
+              className="px-3 py-1.5 bg-primary-500 hover:bg-primary-600 text-white rounded-xl text-xs font-semibold shadow"
+            >
+              Restore Draft
+            </button>
+            <button
+              onClick={handleDiscardDraft}
+              className="px-3 py-1.5 bg-warm-200 dark:bg-warm-800 hover:bg-warm-300 dark:hover:bg-warm-700 text-warm-700 dark:text-warm-300 rounded-xl text-xs font-semibold"
+            >
+              Discard
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Back button */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <button
@@ -393,7 +510,6 @@ export default function AiCharacterCreator() {
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Avatar upload/link */}
               <div className="space-y-4">
                 <label className="block text-xs font-bold uppercase tracking-wider text-warm-750 dark:text-warm-300">
                   Profile Avatar Image
@@ -441,7 +557,6 @@ export default function AiCharacterCreator() {
                 </div>
               </div>
 
-              {/* Cover banner URL */}
               <div className="space-y-4">
                 <label className="block text-xs font-bold uppercase tracking-wider text-warm-750 dark:text-warm-300">
                   Custom Cover Banner
@@ -652,11 +767,142 @@ export default function AiCharacterCreator() {
           </div>
         )}
 
-        {/* Step 6: Knowledge context */}
+        {/* Step 6: Definitions */}
         {currentStep === 6 && (
           <div className="space-y-6">
             <h3 className="text-lg font-serif font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-800 pb-3">
-              Step 6: Lore & Specialist Knowledge (Infinite Character Length)
+              Step 6: Roleplay & System Definitions
+            </h3>
+
+            {/* 1. RP Definition */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="block text-xs font-bold uppercase tracking-wider text-warm-750 dark:text-warm-300">
+                  RP Definition (Formatting & Actions style)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowRPHelp(!showRPHelp)}
+                  className="text-xs text-primary-500 flex items-center gap-1 font-semibold"
+                >
+                  <HelpCircle size={13} />
+                  <span>{showRPHelp ? 'Hide Help' : 'Show Help & Templates'}</span>
+                </button>
+              </div>
+
+              {showRPHelp && (
+                <div className="p-4 bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-2xl space-y-3 text-xs text-warm-600 dark:text-warm-400">
+                  <p><strong>Explanation:</strong> Details structural parameters for roleplaying style, tense, point of view (first, second, or third person), and paragraph lengths.</p>
+                  <p><strong>Best Practices:</strong> Use explicit tags like {"{{char}}"} and {"{{user}}"} to avoid model name confusion.</p>
+                  <p><strong>Example:</strong> <em>"{"{{char}}"} writes detailed replies in third-person past tense. Format actions using *asterisks*."</em></p>
+                  <button
+                    type="button"
+                    onClick={() => applyTemplate('rp')}
+                    className="btn-secondary py-1 px-3 text-[10px] font-bold"
+                  >
+                    Apply RP Style Template
+                  </button>
+                </div>
+              )}
+
+              <textarea
+                name="rpDefinition"
+                value={formData.rpDefinition}
+                onChange={handleChange}
+                rows={3}
+                placeholder="Specify tenses, POVs, formatting guidelines, or reply lengths..."
+                className="w-full bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-2xl py-3 px-4 text-sm text-warm-900 dark:text-warm-50 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+              />
+            </div>
+
+            {/* 2. System Definition */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="block text-xs font-bold uppercase tracking-wider text-warm-750 dark:text-warm-300">
+                  System Definition (LLM Directives)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowSysHelp(!showSysHelp)}
+                  className="text-xs text-primary-500 flex items-center gap-1 font-semibold"
+                >
+                  <HelpCircle size={13} />
+                  <span>{showSysHelp ? 'Hide Help' : 'Show Help & Templates'}</span>
+                </button>
+              </div>
+
+              {showSysHelp && (
+                <div className="p-4 bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-2xl space-y-3 text-xs text-warm-600 dark:text-warm-400">
+                  <p><strong>Explanation:</strong> Direct instructions injected into the system prompt to guide LLM behavior (e.g. prohibiting playing the user's side of the conversation).</p>
+                  <p><strong>Best Practices:</strong> Keep instructions clear, command-like, and use square brackets for tagging.</p>
+                  <p><strong>Example:</strong> <em>"[System: Under no circumstances should {"{{char}}"} speak or make actions for {"{{user}}"}.]"</em></p>
+                  <button
+                    type="button"
+                    onClick={() => applyTemplate('sys')}
+                    className="btn-secondary py-1 px-3 text-[10px] font-bold"
+                  >
+                    Apply System Directives Template
+                  </button>
+                </div>
+              )}
+
+              <textarea
+                name="systemDefinition"
+                value={formData.systemDefinition}
+                onChange={handleChange}
+                rows={3}
+                placeholder="e.g. [System directive: Do not speak for the user. Keep formatting in second person.]"
+                className="w-full bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-2xl py-3 px-4 text-sm text-warm-900 dark:text-warm-50 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+              />
+            </div>
+
+            {/* 3. System Character Definition */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="block text-xs font-bold uppercase tracking-wider text-warm-750 dark:text-warm-300">
+                  System Character Definition (W+ / Advanced formats)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowCharHelp(!showCharHelp)}
+                  className="text-xs text-primary-500 flex items-center gap-1 font-semibold"
+                >
+                  <HelpCircle size={13} />
+                  <span>{showCharHelp ? 'Hide Help' : 'Show Help & Templates'}</span>
+                </button>
+              </div>
+
+              {showCharHelp && (
+                <div className="p-4 bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-2xl space-y-3 text-xs text-warm-600 dark:text-warm-400">
+                  <p><strong>Explanation:</strong> Structured description formatting preferred by experienced model creators, outlining mindsets, voice tones, skills, and background lists.</p>
+                  <p><strong>Best Practices:</strong> Use lists or key-value structures like `[Mind: curious, reserved]` for best parsing.</p>
+                  <button
+                    type="button"
+                    onClick={() => applyTemplate('char')}
+                    className="btn-secondary py-1 px-3 text-[10px] font-bold"
+                  >
+                    Apply W+ Character Template
+                  </button>
+                </div>
+              )}
+
+              <textarea
+                name="systemCharacterDefinition"
+                value={formData.systemCharacterDefinition}
+                onChange={handleChange}
+                rows={4}
+                placeholder="[Character: {{char}}]\n[Mind: intelligent, observant, reserved]..."
+                className="w-full bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-2xl py-3 px-4 text-sm text-warm-900 dark:text-warm-50 font-mono focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Step 7: Knowledge context */}
+        {currentStep === 7 && (
+          <div className="space-y-6">
+            <h3 className="text-lg font-serif font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-800 pb-3">
+              Step 7: Lore & Specialist Knowledge (Infinite Character Length)
             </h3>
 
             <div>
@@ -678,17 +924,17 @@ export default function AiCharacterCreator() {
           </div>
         )}
 
-        {/* Step 7: Final Review & Publish */}
-        {currentStep === 7 && (
+        {/* Step 8: Final Review & Publish */}
+        {currentStep === 8 && (
           <div className="space-y-6">
             <h3 className="text-lg font-serif font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-800 pb-3">
-              Step 7: Final Review & Preview
+              Step 8: Final Review & Preview
             </h3>
 
             {/* Mock Card Preview */}
             <div className="max-w-md mx-auto rounded-3xl border border-warm-200 dark:border-warm-700 bg-warm-50 dark:bg-warm-800/40 p-6 shadow-md select-none">
               <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 min-w-0">
                   <div className="w-14 h-14 rounded-2xl bg-warm-100 dark:bg-warm-800 flex items-center justify-center border border-warm-200 dark:border-warm-700 overflow-hidden shrink-0">
                     {formData.avatarUrl ? (
                       <img src={formData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
