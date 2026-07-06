@@ -15,6 +15,11 @@ const CATEGORY_OPTIONS = [
   'Cyberpunk', 'Post-Apocalyptic', 'Original Characters (OC)', 'Fandoms'
 ];
 
+const THEMES = ['Age Regression', 'Comfort', 'Healing', 'Angst', 'Found Family', 'Domestic Life', 'School Life', 'Parenthood'];
+const DYNAMICS = ['Lovers', 'Friends', 'Family', 'Caregiver', 'Mentor', 'Rivals', 'Siblings'];
+const SETTINGS = ['Modern', 'Medieval', 'School', 'Space', 'Apocalypse', 'Cyberpunk'];
+const MOODS = ['Wholesome', 'Emotional', 'Dark', 'Psychological', 'Comedic', 'Cozy'];
+
 interface ChatMessage {
   sender: 'oracle' | 'user';
   text: string;
@@ -143,6 +148,17 @@ export default function AiCharacterCreator() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const toggleTag = (tag: string) => {
+    const list = formData.tagsString.split(',').map(t => t.trim()).filter(Boolean);
+    const index = list.indexOf(tag);
+    if (index >= 0) {
+      list.splice(index, 1);
+    } else {
+      list.push(tag);
+    }
+    setFormData(prev => ({ ...prev, tagsString: list.join(', ') }));
   };
 
   const handleRestoreDraft = () => {
@@ -702,6 +718,17 @@ export default function AiCharacterCreator() {
                 <span className="text-[10px] font-bold uppercase tracking-wider bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 rounded-md mt-2">
                   {formData.category || 'General'}
                 </span>
+                
+                {formData.tagsString && (
+                  <div className="flex flex-wrap justify-center gap-1.5 mt-3 max-w-full px-4">
+                    {formData.tagsString.split(',').map(t => t.trim()).filter(Boolean).map(tag => (
+                      <span key={tag} className="text-[9px] font-semibold bg-warm-100 dark:bg-warm-800 text-warm-650 dark:text-warm-400 px-2 py-0.5 rounded-full border border-warm-200 dark:border-warm-700">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
                 <p className="text-xs text-warm-500 dark:text-warm-400 mt-4 max-w-xs leading-normal">
                   {formData.shortDescription || 'Your character\'s bio will update live as you reply to Oracle.'}
                 </p>
@@ -874,6 +901,126 @@ export default function AiCharacterCreator() {
                       <option value="unlisted">Unlisted</option>
                       <option value="private">Private</option>
                     </select>
+                  </div>
+                </div>
+
+                {/* Themes, Dynamics, Settings & Mood Selectors */}
+                <div className="space-y-4 pt-4 border-t border-warm-100 dark:border-warm-800">
+                  <h4 className="text-xs font-bold text-warm-850 dark:text-warm-200 flex items-center gap-1.5">
+                    <Sparkles size={14} className="text-red-500" />
+                    <span>Story Themes & Classifications</span>
+                  </h4>
+                  <p className="text-[10px] text-warm-500">
+                    Select themes, settings, dynamics, and moods to help other creators discover your character inside the Nexus.
+                  </p>
+                  
+                  {/* Themes */}
+                  <div className="space-y-2">
+                    <span className="block text-[9px] font-bold uppercase tracking-wider text-warm-500">Themes</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {THEMES.map(t => {
+                        const active = formData.tagsString.split(',').map(tag => tag.trim().toLowerCase()).includes(t.toLowerCase());
+                        return (
+                          <button
+                            type="button"
+                            key={t}
+                            onClick={() => toggleTag(t)}
+                            className={`px-3 py-1.5 rounded-xl text-[10px] font-semibold border transition-all ${
+                              active
+                                ? 'bg-red-50 border-red-300 text-red-750 dark:bg-red-950/30 dark:border-red-900 dark:text-red-350'
+                                : 'bg-warm-50 dark:bg-warm-800 border-warm-200 dark:border-warm-700 text-warm-600 dark:text-warm-400 hover:border-warm-300'
+                            }`}
+                          >
+                            {t}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Dynamics */}
+                  <div className="space-y-2">
+                    <span className="block text-[9px] font-bold uppercase tracking-wider text-warm-500">Relationship Dynamics</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {DYNAMICS.map(t => {
+                        const active = formData.tagsString.split(',').map(tag => tag.trim().toLowerCase()).includes(t.toLowerCase());
+                        return (
+                          <button
+                            type="button"
+                            key={t}
+                            onClick={() => toggleTag(t)}
+                            className={`px-3 py-1.5 rounded-xl text-[10px] font-semibold border transition-all ${
+                              active
+                                ? 'bg-red-50 border-red-300 text-red-750 dark:bg-red-950/30 dark:border-red-900 dark:text-red-350'
+                                : 'bg-warm-50 dark:bg-warm-800 border-warm-200 dark:border-warm-700 text-warm-600 dark:text-warm-400 hover:border-warm-300'
+                            }`}
+                          >
+                            {t}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Settings */}
+                  <div className="space-y-2">
+                    <span className="block text-[9px] font-bold uppercase tracking-wider text-warm-500">Settings</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {SETTINGS.map(t => {
+                        const active = formData.tagsString.split(',').map(tag => tag.trim().toLowerCase()).includes(t.toLowerCase());
+                        return (
+                          <button
+                            type="button"
+                            key={t}
+                            onClick={() => toggleTag(t)}
+                            className={`px-3 py-1.5 rounded-xl text-[10px] font-semibold border transition-all ${
+                              active
+                                ? 'bg-red-50 border-red-300 text-red-750 dark:bg-red-950/30 dark:border-red-900 dark:text-red-350'
+                                : 'bg-warm-50 dark:bg-warm-800 border-warm-200 dark:border-warm-700 text-warm-600 dark:text-warm-400 hover:border-warm-300'
+                            }`}
+                          >
+                            {t}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Moods */}
+                  <div className="space-y-2">
+                    <span className="block text-[9px] font-bold uppercase tracking-wider text-warm-500">Mood</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {MOODS.map(t => {
+                        const active = formData.tagsString.split(',').map(tag => tag.trim().toLowerCase()).includes(t.toLowerCase());
+                        return (
+                          <button
+                            type="button"
+                            key={t}
+                            onClick={() => toggleTag(t)}
+                            className={`px-3 py-1.5 rounded-xl text-[10px] font-semibold border transition-all ${
+                              active
+                                ? 'bg-red-50 border-red-300 text-red-750 dark:bg-red-950/30 dark:border-red-900 dark:text-red-350'
+                                : 'bg-warm-50 dark:bg-warm-800 border-warm-200 dark:border-warm-700 text-warm-600 dark:text-warm-400 hover:border-warm-300'
+                            }`}
+                          >
+                            {t}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Custom Tags */}
+                  <div className="space-y-2">
+                    <span className="block text-[9px] font-bold uppercase tracking-wider text-warm-500">Custom Tags (Comma Separated)</span>
+                    <input
+                      type="text"
+                      name="tagsString"
+                      value={formData.tagsString}
+                      onChange={handleChange}
+                      placeholder="e.g. superhero, ninja, custom-tag"
+                      className="w-full bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-xl py-3 px-4 text-xs text-warm-900 dark:text-warm-50 focus:outline-none"
+                    />
                   </div>
                 </div>
               </div>

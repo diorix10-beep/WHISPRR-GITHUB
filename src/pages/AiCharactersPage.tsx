@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Search, MessageSquare, Heart, Sparkles, Star } from 'lucide-react';
+import { Plus, Search, MessageSquare, Heart, Sparkles, Star, Filter, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
@@ -50,16 +50,15 @@ const CATEGORIES = [
   'Slice of Life',
   'Anime',
   'Games',
-  'Superheroes',
   'School',
-  'Mafia',
-  'Royalty',
   'Medieval',
-  'Cyberpunk',
-  'Post-Apocalyptic',
-  'Original Characters (OC)',
-  'Fandoms'
+  'Cyberpunk'
 ];
+
+const THEMES = ['Age Regression', 'Comfort', 'Healing', 'Angst', 'Found Family', 'Domestic Life', 'School Life', 'Parenthood'];
+const DYNAMICS = ['Lovers', 'Friends', 'Family', 'Caregiver', 'Mentor', 'Rivals', 'Siblings'];
+const SETTINGS = ['Modern', 'Medieval', 'School', 'Space', 'Apocalypse', 'Cyberpunk'];
+const MOODS = ['Wholesome', 'Emotional', 'Dark', 'Psychological', 'Comedic', 'Cozy'];
 
 const RATINGS = [
   'All Ratings',
@@ -78,8 +77,23 @@ export default function AiCharactersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedRating, setSelectedRating] = useState('All Ratings');
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [likedIds, setLikedIds] = useState<string[]>([]);
   const [followingIds, setFollowingIds] = useState<string[]>([]);
+
+  const toggleTagFilter = (tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const clearFilters = () => {
+    setSelectedTags([]);
+    setSelectedCategory('All');
+    setSelectedRating('All Ratings');
+  };
+
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get('tab') as 'explore' | 'my-creations' | 'favorites';
   const [activeTab, setActiveTab] = useState<'explore' | 'my-creations' | 'favorites'>('explore');
@@ -309,7 +323,13 @@ export default function AiCharactersPage() {
       selectedRating === 'All Ratings' ||
       c.content_rating === selectedRating;
 
-    return matchesSearch && matchesCategory && matchesRating;
+    const matchesTags = 
+      selectedTags.length === 0 || 
+      selectedTags.every(filterTag => 
+        c.tags?.some(charTag => charTag.toLowerCase() === filterTag.toLowerCase())
+      );
+
+    return matchesSearch && matchesCategory && matchesRating && matchesTags;
   });
 
   const filteredCharacters = exploreCharacters.filter(c => {
@@ -434,7 +454,7 @@ export default function AiCharactersPage() {
       </div>
 
       {/* Categories Scroller */}
-      <div className="flex gap-2 overflow-x-auto pb-4 mb-8 no-scrollbar">
+      <div className="flex gap-2 overflow-x-auto pb-4 mb-4 no-scrollbar">
         {CATEGORIES.map(category => (
           <button
             key={category}
@@ -448,6 +468,147 @@ export default function AiCharactersPage() {
             {category}
           </button>
         ))}
+      </div>
+
+      {/* Advanced Tag Filter Toggle & Custom Chips */}
+      <div className="flex flex-col gap-4 mb-8">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 ${
+              showFilters || selectedTags.length > 0
+                ? 'bg-red-500 border-red-500 text-white shadow-md'
+                : 'bg-white dark:bg-warm-800 border-warm-200 dark:border-warm-700 text-warm-700 dark:text-warm-300 hover:border-warm-300 dark:hover:border-warm-650'
+            }`}
+          >
+            <Filter size={14} />
+            <span>Theme & Dynamics Filters {selectedTags.length > 0 && `(${selectedTags.length})`}</span>
+          </button>
+
+          {(selectedTags.length > 0 || selectedCategory !== 'All' || selectedRating !== 'All Ratings') && (
+            <button
+              onClick={clearFilters}
+              className="text-xs font-semibold text-warm-500 hover:text-red-500 flex items-center gap-1 transition-colors"
+            >
+              <X size={14} />
+              <span>Clear All</span>
+            </button>
+          )}
+        </div>
+
+        {/* Selected Filter Chips Row */}
+        {selectedTags.length > 0 && (
+          <div className="flex flex-wrap gap-2 items-center bg-warm-100/50 dark:bg-warm-850/40 p-2.5 rounded-2xl border border-warm-200/50 dark:border-warm-800">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-warm-450 px-1">Active filters:</span>
+            {selectedTags.map(tag => (
+              <button
+                key={tag}
+                onClick={() => toggleTagFilter(tag)}
+                className="flex items-center gap-1 px-2.5 py-1 bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-full text-xs font-medium text-warm-700 dark:text-warm-350 hover:bg-red-50 hover:border-red-200 hover:text-red-550 dark:hover:bg-red-950/20 dark:hover:border-red-900 transition-all"
+              >
+                <span>{tag}</span>
+                <X size={10} className="text-warm-400" />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Advanced Filters Expandable Grid */}
+        {showFilters && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-6 bg-white dark:bg-warm-850 border border-warm-200 dark:border-warm-750 rounded-3xl shadow-sm animate-fade-in">
+            {/* Themes */}
+            <div className="space-y-3">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-warm-400">Themes</span>
+              <div className="flex flex-wrap gap-1.5">
+                {THEMES.map(t => {
+                  const active = selectedTags.includes(t);
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => toggleTagFilter(t)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+                        active
+                          ? 'bg-red-50 border-red-300 text-red-750 dark:bg-red-950/30 dark:border-red-900 dark:text-red-350 shadow-sm'
+                          : 'bg-warm-50 dark:bg-warm-800 border-warm-200 dark:border-warm-700 text-warm-700 dark:text-warm-300 hover:border-warm-350'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Dynamics */}
+            <div className="space-y-3">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-warm-400">Dynamics</span>
+              <div className="flex flex-wrap gap-1.5">
+                {DYNAMICS.map(t => {
+                  const active = selectedTags.includes(t);
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => toggleTagFilter(t)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+                        active
+                          ? 'bg-red-50 border-red-300 text-red-750 dark:bg-red-950/30 dark:border-red-900 dark:text-red-350 shadow-sm'
+                          : 'bg-warm-50 dark:bg-warm-800 border-warm-200 dark:border-warm-700 text-warm-700 dark:text-warm-300 hover:border-warm-350'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Settings */}
+            <div className="space-y-3">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-warm-400">Settings</span>
+              <div className="flex flex-wrap gap-1.5">
+                {SETTINGS.map(t => {
+                  const active = selectedTags.includes(t);
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => toggleTagFilter(t)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+                        active
+                          ? 'bg-red-50 border-red-300 text-red-750 dark:bg-red-950/30 dark:border-red-900 dark:text-red-350 shadow-sm'
+                          : 'bg-warm-50 dark:bg-warm-800 border-warm-200 dark:border-warm-700 text-warm-700 dark:text-warm-300 hover:border-warm-350'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Moods */}
+            <div className="space-y-3">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-warm-400">Mood</span>
+              <div className="flex flex-wrap gap-1.5">
+                {MOODS.map(t => {
+                  const active = selectedTags.includes(t);
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => toggleTagFilter(t)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+                        active
+                          ? 'bg-red-50 border-red-300 text-red-750 dark:bg-red-950/30 dark:border-red-900 dark:text-red-350 shadow-sm'
+                          : 'bg-warm-50 dark:bg-warm-800 border-warm-200 dark:border-warm-700 text-warm-700 dark:text-warm-300 hover:border-warm-350'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main Grid Section */}
