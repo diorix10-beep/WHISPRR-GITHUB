@@ -38,13 +38,26 @@ interface AICharacter {
 
 const CATEGORIES = [
   'All',
-  'Companions',
-  'Roleplay',
-  'Mentors',
+  'Romance',
   'Fantasy',
-  'Anime',
+  'Sci-Fi',
+  'Horror',
+  'Mystery',
+  'Action',
+  'Adventure',
   'Historical',
-  'Helpers'
+  'Slice of Life',
+  'Anime',
+  'Games',
+  'Superheroes',
+  'School',
+  'Mafia',
+  'Royalty',
+  'Medieval',
+  'Cyberpunk',
+  'Post-Apocalyptic',
+  'Original Characters (OC)',
+  'Fandoms'
 ];
 
 const RATINGS = [
@@ -80,7 +93,18 @@ export default function AiCharactersPage() {
         `);
 
       if (error) throw error;
-      setCharacters(data || []);
+      
+      const ORACLE_FAMILY_IDS = [
+        'da01a00a-60d7-41ec-b827-8178cd3bf084', // Oracle
+        'da01a00b-60d7-41ec-b827-8178cd3bf084', // Iris
+        'da01a00c-60d7-41ec-b827-8178cd3bf084', // Atlas
+        'da01a00d-60d7-41ec-b827-8178cd3bf084', // Athena
+        'da01a00e-60d7-41ec-b827-8178cd3bf084', // Aegis
+        'da01a00f-60d7-41ec-b827-8178cd3bf084'  // Whisprr
+      ];
+      
+      const filtered = (data || []).filter(char => !ORACLE_FAMILY_IDS.includes(char.user_id));
+      setCharacters(filtered);
 
       if (profile?.user_id) {
         const { data: likes } = await supabase

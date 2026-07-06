@@ -30,13 +30,26 @@ const GRADIENTS = [
 ];
 
 const CATEGORY_OPTIONS = [
-  'Companions',
-  'Roleplay',
-  'Mentors',
+  'Romance',
   'Fantasy',
-  'Anime',
+  'Sci-Fi',
+  'Horror',
+  'Mystery',
+  'Action',
+  'Adventure',
   'Historical',
-  'Helpers'
+  'Slice of Life',
+  'Anime',
+  'Games',
+  'Superheroes',
+  'School',
+  'Mafia',
+  'Royalty',
+  'Medieval',
+  'Cyberpunk',
+  'Post-Apocalyptic',
+  'Original Characters (OC)',
+  'Fandoms'
 ];
 
 export default function AiCharacterCreator() {
@@ -60,7 +73,7 @@ export default function AiCharacterCreator() {
   // Form State
   const [formData, setFormData] = useState({
     name: '',
-    category: 'Companions',
+    category: 'Romance',
     visibility: 'public' as 'public' | 'private' | 'unlisted',
     contentRating: 'SFW' as 'SFW' | 'Mature' | 'NSFW',
     avatarUrl: '',
