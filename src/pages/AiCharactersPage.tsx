@@ -4,6 +4,7 @@ import { Plus, Search, MessageSquare, Heart, Sparkles, Star } from 'lucide-react
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
+import { NexaSpirit } from '../components/nexa/NexaSpirit';
 
 interface AICharacter {
   id: string;
@@ -345,15 +346,18 @@ export default function AiCharactersPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row lg:flex-col items-center gap-4 shrink-0 relative z-10">
-          <div className="relative group">
-            <img
-              src="/nexy_mascot.png"
-              alt="Nexy Mascot"
-              className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border border-red-500/20 nexa-glow-red select-none transform transition-transform group-hover:scale-105 duration-300"
-            />
-            <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 bg-red-650 text-white font-bold text-[9px] px-2.5 py-0.5 rounded-full shadow border border-red-500/35 uppercase tracking-wide">
-              Nexy
-            </span>
+          <div className="flex items-center gap-3">
+            <div className="relative group">
+              <img
+                src="/nexy_mascot.png"
+                alt="Nexy Mascot"
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl object-cover border border-red-500/20 nexa-glow-red select-none transform transition-transform group-hover:scale-105 duration-300"
+              />
+              <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 bg-red-650 text-white font-bold text-[9px] px-2.5 py-0.5 rounded-full shadow border border-red-500/35 uppercase tracking-wide">
+                Nexy
+              </span>
+            </div>
+            <NexaSpirit size="sm" showLabel showProgress />
           </div>
           
           <button
@@ -468,14 +472,10 @@ export default function AiCharactersPage() {
         </div>
       ) : filteredCharacters.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center bg-white dark:bg-warm-850 rounded-3xl border border-warm-200 dark:border-warm-800 p-8 shadow-sm">
-          <img
-            src="/nexy_mascot.png"
-            alt="Nexy Search"
-            className="w-16 h-16 rounded-2xl object-cover border border-warm-200 dark:border-warm-750 mb-4 opacity-70 filter grayscale-30"
-          />
+          <NexaSpirit size="md" showProgress className="mb-4" />
           <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-50 mb-2">No Personas in this Coordinate</h3>
           <p className="text-warm-500 dark:text-warm-400 text-sm max-w-sm mb-6">
-            There are no personas matching your criteria in the NEXA Nexus. Try adjusting filters or forge your own companion.
+            Your Spirit couldn't find any personas matching your criteria. Try adjusting filters or forge your own companion.
           </p>
           <button
             onClick={() => navigate('/nexa/create')}

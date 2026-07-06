@@ -1,4 +1,4 @@
-import { Sparkles } from 'lucide-react';
+import { NexaSpirit } from '../nexa/NexaSpirit';
 
 interface NexaPlaceholderPageProps {
   title: string;
@@ -6,12 +6,12 @@ interface NexaPlaceholderPageProps {
 }
 
 export function NexaPlaceholderPage({ title, description }: NexaPlaceholderPageProps) {
+
   return (
     <div className="max-w-4xl mx-auto px-6 py-12">
       <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-red-950/40 via-warm-900 to-warm-950 p-8 lg:p-12 border border-red-500/10 shadow-2xl flex flex-col items-center text-center gap-6">
-        <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 animate-pulse">
-          <Sparkles size={32} />
-        </div>
+        {/* Spirit instead of generic icon */}
+        <NexaSpirit size="lg" showLabel showProgress />
         
         <div>
           <span className="text-red-400 font-semibold text-xs tracking-wider uppercase bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20">

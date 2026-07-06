@@ -328,3 +328,23 @@ html {
   animation: nexa-spin-slow 24s linear infinite;
 }
 
+/* NEXA Spirit Animations */
+@keyframes nexa-spirit-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+@keyframes nexa-spirit-orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.nexa-spirit-breathe {
+  animation: nexa-spirit-breathe 4s ease-in-out infinite;
+}
+
+.nexa-spirit-orbit {
+  animation: nexa-spirit-orbit 6s linear infinite;
+}
+
+
