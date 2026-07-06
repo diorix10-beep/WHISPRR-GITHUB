@@ -11,6 +11,9 @@ import { AppLayout } from './components/layout/AppLayout';
 import { NexaLayout } from './components/layout/NexaLayout';
 import { NexaPlaceholderPage } from './components/common/NexaPlaceholderPage';
 import { Logo } from './components/common/Logo';
+import { QuickchatWidget } from './components/common/QuickchatWidget';
+
+const OracleAssistantPage = lazy(() => import('./pages/OracleAssistantPage'));
 
 const NexaChatsPage       = lazy(() => import('./pages/NexaChatsPage'));
 
@@ -182,12 +185,15 @@ function AppLoader() {
           <Route path="/feedback"                      element={<FeedbackDashboard />} />
           <Route path="/about"                         element={<LandingPage />} />
           <Route path="/building"                      element={<BuildingPage />} />
+          <Route path="/oracle"                        element={<OracleAssistantPage />} />
+          <Route path="/help"                          element={<OracleAssistantPage />} />
           {profile?.role === 'founder' && (
             <Route path="/founder"                     element={<FounderPanel />} />
           )}
           <Route path="*"                              element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
+      <QuickchatWidget />
     </Suspense>
   );
 }
