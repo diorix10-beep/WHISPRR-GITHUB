@@ -8,8 +8,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Logo } from '../common/Logo';
 import { Avatar } from '../common/Avatar';
 import { AppLauncherModal } from './AppLauncherModal';
-import { CreationMenuFAB } from './CreationMenuFAB';
-
 interface AppLayoutProps {
   children?: ReactNode;
 }
@@ -264,8 +262,6 @@ export function AppLayout({ children }: AppLayoutProps) {
       <div className="lg:hidden">
         <BottomNav />
       </div>
-
-      <CreationMenuFAB />
 
       <AppLauncherModal 
         isOpen={isLauncherOpen} 
