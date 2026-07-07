@@ -77,18 +77,10 @@ export default function NexaChatsPage() {
       );
 
       // Only display chats with AI Characters (role: 'ai_character')
-      // Exclude Oracle Family members based on their seeded UUIDs
-      const ORACLE_FAMILY_IDS = [
-        'da01a00a-60d7-41ec-b827-8178cd3bf084', // Oracle
-        'da01a00b-60d7-41ec-b827-8178cd3bf084', // Iris
-        'da01a00c-60d7-41ec-b827-8178cd3bf084', // Atlas
-        'da01a00d-60d7-41ec-b827-8178cd3bf084', // Athena
-        'da01a00e-60d7-41ec-b827-8178cd3bf084', // Aegis
-        'da01a00f-60d7-41ec-b827-8178cd3bf084'  // Whisprr
-      ];
-
+      // Exclude Oracle Family members
       const nexaChats = conversationsWithProfiles.filter(
-        (c) => c.other_user?.role === 'ai_character' && !ORACLE_FAMILY_IDS.includes(c.other_user.user_id)
+        (c) => c.other_user?.role === 'ai_character' && 
+               !['Oracle', 'Iris', 'Atlas', 'Athena', 'Aegis', 'Whisprr'].includes(c.other_user?.display_name || '')
       );
 
       setConversations(nexaChats);
@@ -155,20 +147,11 @@ export default function NexaChatsPage() {
     setSearching(true);
     try {
       // Find public AI Characters to chat with (excluding Oracle Family)
-      const ORACLE_FAMILY_IDS = [
-        'da01a00a-60d7-41ec-b827-8178cd3bf084',
-        'da01a00b-60d7-41ec-b827-8178cd3bf084',
-        'da01a00c-60d7-41ec-b827-8178cd3bf084',
-        'da01a00d-60d7-41ec-b827-8178cd3bf084',
-        'da01a00e-60d7-41ec-b827-8178cd3bf084',
-        'da01a00f-60d7-41ec-b827-8178cd3bf084'
-      ];
-
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('role', 'ai_character')
-        .not('user_id', 'in', `(${ORACLE_FAMILY_IDS.join(',')})`)
+        .not('display_name', 'in', '("Oracle","Iris","Atlas","Athena","Aegis","Whisprr")')
         .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
         .limit(10);
 

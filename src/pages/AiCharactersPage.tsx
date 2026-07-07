@@ -118,16 +118,11 @@ export default function AiCharactersPage() {
 
       if (error) throw error;
       
-      const ORACLE_FAMILY_IDS = [
-        'da01a00a-60d7-41ec-b827-8178cd3bf084', // Oracle
-        'da01a00b-60d7-41ec-b827-8178cd3bf084', // Iris
-        'da01a00c-60d7-41ec-b827-8178cd3bf084', // Atlas
-        'da01a00d-60d7-41ec-b827-8178cd3bf084', // Athena
-        'da01a00e-60d7-41ec-b827-8178cd3bf084', // Aegis
-        'da01a00f-60d7-41ec-b827-8178cd3bf084'  // Whisprr
-      ];
-      
-      const filtered = (data || []).filter(char => !ORACLE_FAMILY_IDS.includes(char.user_id));
+      // Exclude system-seeded Oracle Family members
+      const filtered = (data || []).filter(char => 
+        char.creator_notes !== 'System-seeded member of the WHISPRR AI Family.' &&
+        !['Oracle', 'Iris', 'Atlas', 'Athena', 'Aegis', 'Whisprr'].includes(char.bot_profile?.display_name)
+      );
       setCharacters(filtered);
 
       if (profile?.user_id) {
