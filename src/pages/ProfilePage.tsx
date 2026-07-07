@@ -1021,6 +1021,11 @@ export default function ProfilePage() {
                 <div className="pb-2">
                   <h1 className="font-serif text-3xl font-bold text-warm-900 dark:text-warm-50 flex items-center gap-2">
                     {profile.display_name}
+                    {profile.username === 'oracle' && (
+                      <span className="flex items-center justify-center bg-emerald-500 text-white rounded-full p-1 w-6 h-6 shadow-sm" title="Verified System Oracle">
+                        <Check size={14} strokeWidth={3} />
+                      </span>
+                    )}
                     <UserBadges badges={profile.badges} role={profile.role} size="lg" />
                   </h1>
                   <div className="flex flex-wrap items-center gap-3 text-warm-600 dark:text-warm-400 mt-1">

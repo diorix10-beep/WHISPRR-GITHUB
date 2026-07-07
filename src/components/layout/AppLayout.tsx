@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { Bell, X, LayoutGrid, Menu } from 'lucide-react';
 import { BottomNav } from './BottomNav';
 import { SideNav } from './SideNav';
@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Logo } from '../common/Logo';
 import { Avatar } from '../common/Avatar';
 import { AppLauncherModal } from './AppLauncherModal';
+import { CreationMenuFAB } from './CreationMenuFAB';
 
 interface AppLayoutProps {
   children?: ReactNode;
@@ -15,8 +16,6 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const navigate = useNavigate();
-  const location = useLocation();
-  const isOraclePage = location.pathname === '/oracle' || location.pathname === '/help';
   const { unreadCount } = useNotifications();
   const { profile, signOut, systemSettings } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -266,23 +265,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         <BottomNav />
       </div>
 
-      {/* Floating Oracle FAB — hidden on /oracle and /help */}
-      {!isOraclePage && (
-        <button
-          onClick={() => navigate('/oracle')}
-          className="fixed z-40 bottom-20 lg:bottom-6 right-4 lg:right-6 w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg shadow-amber-500/30 hover:shadow-xl hover:shadow-amber-500/40 hover:scale-110 transition-all flex items-center justify-center group"
-          title="Chat with Oracle"
-          aria-label="Open Oracle Assistant"
-        >
-          <img
-            src="/family/oracle.png"
-            alt="Oracle"
-            className="w-8 h-8 rounded-full object-cover border-2 border-white/30 group-hover:border-white/50 transition-all"
-            onError={(e) => { (e.target as HTMLImageElement).src = '/nexy_mascot.png'; }}
-          />
-          <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white dark:border-warm-900 animate-pulse" />
-        </button>
-      )}
+      <CreationMenuFAB />
 
       <AppLauncherModal 
         isOpen={isLauncherOpen} 

@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
+import { ContextualOracle } from '../components/nexa/ContextualOracle';
 
 const CATEGORY_OPTIONS = [
   'Romance', 'Fantasy', 'Sci-Fi', 'Horror', 'Mystery', 'Action', 
@@ -518,7 +519,8 @@ export default function AiCharacterCreator() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 relative">
+    <>
+    <div className="page-container max-w-6xl mx-auto py-6 sm:py-8 flex flex-col min-h-screen relative">
       
       {/* Draft Recovery Banner */}
       {showRestoreBanner && (
@@ -1352,5 +1354,13 @@ export default function AiCharacterCreator() {
       )}
 
     </div>
+    
+      <ContextualOracle 
+        context={{ 
+          page: 'Character Creator', 
+          details: `User is in ${creationMode} mode.` 
+        }} 
+      />
+    </>
   );
 }

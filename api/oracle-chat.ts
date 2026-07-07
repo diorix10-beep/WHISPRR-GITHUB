@@ -11,7 +11,7 @@ export default async function handler(req: Request) {
   }
 
   try {
-    const { text, conv_id } = await req.json();
+    const { text, conv_id, context_page, context_details, is_system_directive } = await req.json();
 
     if (!text || typeof text !== 'string' || text.trim().length === 0) {
       return new Response(
@@ -31,10 +31,15 @@ export default async function handler(req: Request) {
       );
     }
 
+    let finalMessage = text.trim();
+    if (context_page && !is_system_directive) {
+      finalMessage = `[System Context: The user is currently in the ${context_page} section. ${context_details || ''}]\n\nUser: ${finalMessage}`;
+    }
+
     // Build request body for Quickchat Chat API
     const body: Record<string, string> = {
       scenario_id: scenarioId,
-      text: text.trim(),
+      text: finalMessage,
     };
 
     // Include conv_id for conversation continuity
