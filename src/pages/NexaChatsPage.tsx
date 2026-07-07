@@ -6,7 +6,6 @@ import type { Conversation, Profile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/common/Avatar';
-import { NexaSpirit } from '../components/nexa/NexaSpirit';
 
 interface ConversationWithProfiles extends Conversation {
   conversation_participants: { user_id: string }[];
@@ -293,7 +292,6 @@ export default function NexaChatsPage() {
         </div>
       ) : conversations.length === 0 ? (
         <div className="card flex flex-col items-center justify-center py-12 text-center border-red-500/10 dark:border-red-950/20 bg-warm-950/10">
-          <NexaSpirit size="lg" showLabel showProgress className="mb-4" />
           <p className="text-warm-700 dark:text-warm-300 font-semibold mb-2">No active chats in the Nexus yet</p>
           <p className="text-xs text-warm-550 max-w-xs leading-relaxed">
             Your Spirit is waiting. Choose a community-created persona from the Nexus to begin your first storyline.

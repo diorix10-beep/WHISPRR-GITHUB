@@ -4,7 +4,6 @@ import { Plus, Search, MessageSquare, Heart, Sparkles, Star, Filter, X } from 'l
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
-import { NexaSpirit } from '../components/nexa/NexaSpirit';
 
 interface AICharacter {
   id: string;
@@ -377,7 +376,6 @@ export default function AiCharactersPage() {
                 Nexy
               </span>
             </div>
-            <NexaSpirit size="sm" showLabel showProgress />
           </div>
           
           <button
@@ -633,7 +631,6 @@ export default function AiCharactersPage() {
         </div>
       ) : filteredCharacters.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center bg-white dark:bg-warm-850 rounded-3xl border border-warm-200 dark:border-warm-800 p-8 shadow-sm">
-          <NexaSpirit size="md" showProgress className="mb-4" />
           <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-50 mb-2">No Personas in this Coordinate</h3>
           <p className="text-warm-500 dark:text-warm-400 text-sm max-w-sm mb-6">
             Your Spirit couldn't find any personas matching your criteria. Try adjusting filters or forge your own companion.

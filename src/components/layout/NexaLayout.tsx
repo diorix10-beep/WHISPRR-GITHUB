@@ -9,8 +9,6 @@ import { useNotifications } from '../../contexts/NotificationsContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Avatar } from '../common/Avatar';
-import { NexaSpiritProvider } from '../../contexts/NexaSpiritContext';
-import { NexaSpirit } from '../nexa/NexaSpirit';
 
 interface NexaLayoutProps {
   children?: ReactNode;
@@ -114,16 +112,8 @@ export function NexaLayout({ children }: NexaLayoutProps) {
               ))}
             </nav>
 
-            {/* Spirit Widget + Exit Footer */}
+            {/* Bottom Footer Actions */}
             <div className="p-3 border-t border-warm-100 dark:border-warm-800 flex flex-col gap-3">
-              {/* NEXA Spirit */}
-              <div className="flex items-center gap-3 px-2 py-2 rounded-xl bg-warm-50 dark:bg-warm-800/50 border border-warm-100 dark:border-warm-750">
-                <NexaSpirit size="sm" showProgress />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-bold text-red-500 uppercase tracking-wider truncate">Your Spirit</p>
-                  <p className="text-[9px] text-warm-500 dark:text-warm-400">Evolves with you</p>
-                </div>
-              </div>
               {/* Theme Selector */}
               <div className="relative" ref={themeMenuRef}>
                 <button
@@ -275,5 +265,5 @@ export function NexaLayout({ children }: NexaLayoutProps) {
     </div>
   );
 
-  return <NexaSpiritProvider>{content}</NexaSpiritProvider>;
+  return content;
 }
