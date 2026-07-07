@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.107.0",
+    "@vercel/speed-insights": "^2.0.0",
     "date-fns": "^4.4.0",
     "discord.js": "^14.26.4",
     "lucide-react": "^0.344.0",

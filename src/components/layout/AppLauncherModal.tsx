@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { 
-  X, Globe, Bot, Sparkles, User, Bookmark, Settings, 
+  X, Globe, Bot, User, Bookmark, Settings, 
   Layers, HelpCircle, Shield, FileText
 } from 'lucide-react';
 
@@ -22,7 +22,6 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
   const apps = [
     { name: 'WHISPRR', desc: 'Social Network', path: '/', icon: Globe, color: 'bg-primary-500/10 text-primary-500 border-primary-500/20 hover:bg-primary-500/20' },
     { name: 'NEXA', desc: 'Roleplay Studio', path: '/nexa', icon: Bot, color: 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20' },
-    { name: 'AI Family', desc: 'Verity AI Hub', path: '/ai-family', icon: Sparkles, color: 'bg-purple-500/10 text-purple-500 border-purple-500/20 hover:bg-purple-500/20' },
     { name: 'Oracle Help', desc: 'System Oracle', path: '/oracle', icon: HelpCircle, color: 'bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20' },
   ];
 

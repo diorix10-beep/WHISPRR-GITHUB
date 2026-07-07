@@ -38,7 +38,6 @@ const FounderPanel       = lazy(() => import('./pages/FounderPanel'));
 const MaintenancePage   = lazy(() => import('./pages/MaintenancePage'));
 const BuildingPage      = lazy(() => import('./pages/BuildingPage'));
 const LandingPage       = lazy(() => import('./pages/LandingPage'));
-const AiFamilyPage      = lazy(() => import('./pages/AiFamilyPage'));
 const CommunityProgramPage = lazy(() => import('./pages/CommunityProgramPage'));
 const CareersPage          = lazy(() => import('./pages/CareersPage'));
 const AiCharactersPage = lazy(() => import('./pages/AiCharactersPage'));
@@ -172,7 +171,6 @@ function AppLoader() {
           <Route path="/notifications"                 element={<NotificationsPage />} />
           <Route path="/communities"                   element={<CommunitiesPage />} />
           <Route path="/communities/:communityId"      element={<CommunityDetailPage />} />
-          <Route path="/ai-family"                     element={<AiFamilyPage />} />
           <Route path="/community-program"             element={<CommunityProgramPage />} />
           <Route path="/careers"                       element={<CareersPage />} />
           <Route path="/whisper/:id"                   element={<WhisperDetailPage />} />

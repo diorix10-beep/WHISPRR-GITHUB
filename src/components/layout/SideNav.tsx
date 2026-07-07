@@ -17,7 +17,6 @@ const navItems = [
   { path: '/communities', icon: Users, label: 'Communities' },
   { path: '/messages', icon: MessageCircle, label: 'Messages' },
   { path: '/notifications', icon: Bell, label: 'Notifications' },
-  { path: '/ai-family', icon: Sparkles, label: 'AI Family' },
   { path: '/nexa', icon: Bot, label: 'NEXA' },
 ];
 

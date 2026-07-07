@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, RotateCcw, Sparkles } from 'lucide-react';
+import { Send, RotateCcw, Sparkles } from 'lucide-react';
 
 interface ChatMessage {
   id: string;
@@ -13,7 +12,6 @@ const CONV_ID_KEY = 'whisprr_oracle_conv_id';
 const CHAT_HISTORY_KEY = 'whisprr_oracle_chat_history';
 
 export default function OracleAssistantPage() {
-  const navigate = useNavigate();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -165,13 +163,6 @@ export default function OracleAssistantPage() {
           >
             <RotateCcw size={12} />
             <span className="hidden sm:inline">New Chat</span>
-          </button>
-          <button
-            onClick={() => navigate('/ai-family')}
-            className="flex items-center gap-1.5 text-[10px] text-warm-500 hover:text-warm-900 dark:hover:text-warm-100 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-warm-100 dark:hover:bg-warm-800"
-          >
-            <ArrowLeft size={12} />
-            <span className="hidden sm:inline">AI Family</span>
           </button>
         </div>
       </div>
