@@ -44,14 +44,14 @@ export function ContextualOracle({ context }: ContextualOracleProps) {
     setIsLoading(true);
     try {
       const systemDirective = `[System Directive: The user is currently in the ${context.page} section. ${context.details || ''} Proactively offer help related to this context in a short, friendly, one-sentence greeting.]`;
-      
+
       const res = await fetch('/api/oracle-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: systemDirective, is_system_directive: true }),
       });
       const data = await res.json();
-      
+
       if (res.ok && data.response) {
         setMessages([{
           id: `oracle-${Date.now()}`,
@@ -86,10 +86,10 @@ export function ContextualOracle({ context }: ContextualOracleProps) {
       const res = await fetch('/api/oracle-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          text, 
-          context_page: context.page, 
-          context_details: context.details 
+        body: JSON.stringify({
+          text,
+          context_page: context.page,
+          context_details: context.details
         }),
       });
 
@@ -124,10 +124,9 @@ export function ContextualOracle({ context }: ContextualOracleProps) {
   // Minimized State
   if (!isOpen) {
     return (
-      <div 
-        className={`fixed bottom-24 lg:bottom-12 right-4 lg:right-6 z-40 transition-all duration-300 ${
-          isHovered ? 'translate-x-0' : 'translate-x-2'
-        }`}
+      <div
+        className={`fixed bottom-24 lg:bottom-12 right-4 lg:right-6 z-40 transition-all duration-300 ${isHovered ? 'translate-x-0' : 'translate-x-2'
+          }`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -204,11 +203,10 @@ export function ContextualOracle({ context }: ContextualOracleProps) {
                 onError={(e) => { (e.target as HTMLImageElement).src = '/nexy_mascot.png'; }}
               />
             )}
-            <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-[12px] leading-relaxed ${
-              msg.role === 'user'
+            <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-[12px] leading-relaxed ${msg.role === 'user'
                 ? 'bg-primary-600 text-white rounded-tr-sm'
                 : 'bg-warm-50 dark:bg-warm-900 text-warm-900 dark:text-warm-50 border border-warm-200 dark:border-warm-700 rounded-tl-sm shadow-sm'
-            }`}>
+              }`}>
               <p className="whitespace-pre-wrap">{msg.content}</p>
             </div>
           </div>
