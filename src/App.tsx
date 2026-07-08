@@ -10,6 +10,8 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { AppLayout } from './components/layout/AppLayout';
 import { NexaLayout } from './components/layout/NexaLayout';
 import { NexaPlaceholderPage } from './components/common/NexaPlaceholderPage';
+import { ProtectedRoute } from './components/common/ProtectedRoute';
+import { PublicOnlyRoute } from './components/common/PublicOnlyRoute';
 import { Logo } from './components/common/Logo';
 
 const OracleAssistantPage = lazy(() => import('./pages/OracleAssistantPage'));
@@ -42,6 +44,7 @@ const CommunityProgramPage = lazy(() => import('./pages/CommunityProgramPage'));
 const CareersPage          = lazy(() => import('./pages/CareersPage'));
 const AiCharactersPage = lazy(() => import('./pages/AiCharactersPage'));
 const AiCharacterCreator = lazy(() => import('./pages/AiCharacterCreator'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 
 function PageLoader() {
@@ -56,7 +59,7 @@ function PageLoader() {
 }
 
 function AppLoader() {
-  const { user, profile, loading, systemSettings } = useAuth();
+  const { profile, loading, systemSettings } = useAuth();
 
   const isMaintenanceActive = false; // Maintenance mode deactivated
 
@@ -115,80 +118,67 @@ function AppLoader() {
     }
   }
 
-  if (!user) {
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/"        element={<LandingPage />} />
-          <Route path="/auth"    element={<AuthPage />} />
-          <Route path="/privacy" element={<PrivacyPage />} />
-          <Route path="/terms"   element={<TermsPage />} />
-          <Route path="/trust"   element={<TrustPage />} />
-          <Route path="/building" element={<BuildingPage />} />
-          <Route path="*"        element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
-    );
-  }
-
-  if (!profile?.onboarding_complete) {
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/onboarding" element={<OnboardingPage />} />
-          <Route path="*"           element={<Navigate to="/onboarding" replace />} />
-        </Routes>
-      </Suspense>
-    );
-  }
-
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
-        {/* NEXA Standalone Platform (Crimson/Roleplay branded navigation) */}
-        <Route element={<NexaLayout />}>
-          <Route path="/nexa"                          element={<AiCharactersPage />} />
-          <Route path="/nexa/create"                   element={<AiCharacterCreator />} />
-          <Route path="/nexa/chats"                    element={<NexaChatsPage />} />
-          <Route path="/nexa/worlds"                   element={<NexaPlaceholderPage title="My Worlds" description="Create and manage rich lore-filled environments, cities, and maps." />} />
-          <Route path="/nexa/plots"                    element={<NexaPlaceholderPage title="Create Plot" description="Define structured plotlines, story beats, and branching scenarios." />} />
-          <Route path="/nexa/lorebooks"                element={<NexaPlaceholderPage title="Lorebooks" description="Upload, edit, and organize custom knowledge books for context injections." />} />
-          <Route path="/nexa/models"                   element={<NexaPlaceholderPage title="AI Models" description="Select from specialized roleplay fine-tunes and toggle parameters." />} />
-          <Route path="/nexa/creator-profiles"         element={<NexaPlaceholderPage title="Creator Profiles" description="Browse top NEXA authors, follow creators, and check stats." />} />
-          <Route path="/nexa/collections"              element={<NexaPlaceholderPage title="Collections" description="Gather matching characters, plots, and worlds into public collections." />} />
+        {/* Public Routes */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/trust" element={<TrustPage />} />
+        <Route path="/building" element={<BuildingPage />} />
+
+        {/* Public Only (Login/Signup) */}
+        <Route element={<PublicOnlyRoute />}>
+          <Route path="/auth" element={<AuthPage />} />
         </Route>
 
-        {/* WHISPRR Platform (Purple/Social branded navigation) */}
-        <Route element={<AppLayout />}>
-          <Route path="/"                              element={<FeedPage />} />
-          <Route path="/discover"                      element={<DiscoverPage />} />
-          <Route path="/messages"                      element={<MessagesPage />} />
-          <Route path="/messages/:conversationId"      element={<ConversationPage />} />
-          <Route path="/group-chat"                    element={<GroupChatPage />} />
-          <Route path="/profile"                       element={<ProfilePage />} />
-          <Route path="/profile/:username"             element={<ProfilePage />} />
-          <Route path="/settings"                      element={<SettingsPage />} />
-          <Route path="/notifications"                 element={<NotificationsPage />} />
-          <Route path="/communities"                   element={<CommunitiesPage />} />
-          <Route path="/communities/:communityId"      element={<CommunityDetailPage />} />
-          <Route path="/community-program"             element={<CommunityProgramPage />} />
-          <Route path="/careers"                       element={<CareersPage />} />
-          <Route path="/whisper/:id"                   element={<WhisperDetailPage />} />
-          <Route path="/voice-rooms"                   element={<VoiceRoomsPage />} />
-          <Route path="/voice-rooms/:roomId"           element={<VoiceRoomsPage />} />
-          <Route path="/privacy"                       element={<PrivacyPage />} />
-          <Route path="/terms"                         element={<TermsPage />} />
-          <Route path="/trust"                         element={<TrustPage />} />
-          <Route path="/feedback"                      element={<FeedbackDashboard />} />
-          <Route path="/about"                         element={<LandingPage />} />
-          <Route path="/building"                      element={<BuildingPage />} />
-          <Route path="/oracle"                        element={<OracleAssistantPage />} />
-          <Route path="/help"                          element={<OracleAssistantPage />} />
-          {profile?.role === 'founder' && (
-            <Route path="/founder"                     element={<FounderPanel />} />
-          )}
-          <Route path="*"                              element={<Navigate to="/" replace />} />
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/onboarding" element={<OnboardingPage />} />
+
+          {/* NEXA Standalone Platform */}
+          <Route element={<NexaLayout />}>
+            <Route path="/nexa" element={<AiCharactersPage />} />
+            <Route path="/nexa/create" element={<AiCharacterCreator />} />
+            <Route path="/nexa/chats" element={<NexaChatsPage />} />
+            <Route path="/nexa/worlds" element={<NexaPlaceholderPage title="My Worlds" description="Create and manage rich lore-filled environments, cities, and maps." />} />
+            <Route path="/nexa/plots" element={<NexaPlaceholderPage title="Create Plot" description="Define structured plotlines, story beats, and branching scenarios." />} />
+            <Route path="/nexa/lorebooks" element={<NexaPlaceholderPage title="Lorebooks" description="Upload, edit, and organize custom knowledge books for context injections." />} />
+            <Route path="/nexa/models" element={<NexaPlaceholderPage title="AI Models" description="Select from specialized roleplay fine-tunes and toggle parameters." />} />
+            <Route path="/nexa/creator-profiles" element={<NexaPlaceholderPage title="Creator Profiles" description="Browse top NEXA authors, follow creators, and check stats." />} />
+            <Route path="/nexa/collections" element={<NexaPlaceholderPage title="Collections" description="Gather matching characters, plots, and worlds into public collections." />} />
+          </Route>
+
+          {/* WHISPRR Platform */}
+          <Route element={<AppLayout />}>
+            <Route path="/discover" element={<DiscoverPage />} />
+            <Route path="/feed" element={<FeedPage />} />
+            <Route path="/messages" element={<MessagesPage />} />
+            <Route path="/messages/:conversationId" element={<ConversationPage />} />
+            <Route path="/group-chat" element={<GroupChatPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile/:username" element={<ProfilePage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/communities" element={<CommunitiesPage />} />
+            <Route path="/communities/:communityId" element={<CommunityDetailPage />} />
+            <Route path="/community-program" element={<CommunityProgramPage />} />
+            <Route path="/careers" element={<CareersPage />} />
+            <Route path="/whisper/:id" element={<WhisperDetailPage />} />
+            <Route path="/voice-rooms" element={<VoiceRoomsPage />} />
+            <Route path="/voice-rooms/:roomId" element={<VoiceRoomsPage />} />
+            <Route path="/feedback" element={<FeedbackDashboard />} />
+            <Route path="/oracle" element={<OracleAssistantPage />} />
+            <Route path="/help" element={<OracleAssistantPage />} />
+            {profile?.role === 'founder' && (
+              <Route path="/founder" element={<FounderPanel />} />
+            )}
+          </Route>
         </Route>
+
+        {/* Catch-all 404 Route */}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
   );

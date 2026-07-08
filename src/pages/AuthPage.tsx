@@ -72,9 +72,13 @@ export default function AuthPage() {
       setPassword('');
       setConfirmPassword('');
       setActiveTab('signin');
-      setError('Account created! Please check your email to verify your account, then sign in.');
+      setError('Account created! Please check your email (and spam folder) to verify your account, then sign in.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Sign up failed. Please try again.');
+      let msg = err instanceof Error ? err.message : 'Sign up failed. Please try again.';
+      if (msg.toLowerCase().includes('already registered')) {
+        msg = 'An account with this email already exists. Please sign in or reset your password.';
+      }
+      setError(msg);
       setIsLoading(false);
     }
   };

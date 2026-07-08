@@ -153,6 +153,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (_event, session) => {
         if (!mounted) return;
 
+        if (_event === 'SIGNED_OUT') {
+          setState({ user: null, session: null, profile: null, loading: false });
+          return;
+        }
+
         if (session?.user) {
           setState(prev => ({ ...prev, user: session.user, session, loading: true }));
           const profile = await fetchProfile(session.user.id);
