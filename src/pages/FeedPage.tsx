@@ -6,6 +6,8 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { WhisperCard } from '../components/feed/WhisperCard';
 import { ComposeWhisper } from '../components/feed/ComposeWhisper';
+import { WhisperSkeleton } from '../components/feed/WhisperSkeleton';
+import { useIntersectionObserver } from 'react-intersection-observer';
 
 type FeedMode = 'for_you' | 'following';
 
@@ -130,10 +132,18 @@ export default function FeedPage() {
     }
   }, [user]);
 
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const { ref: loadMoreRef, inView } = useIntersectionObserver({
+    threshold: 0.1,
+  });
+
   // Load chronological feed (fallback for "For You" or used for "Following")
-  const loadChronologicalFeed = useCallback(async (filterMood: Mood | null, mode: FeedMode) => {
+  const loadChronologicalFeed = useCallback(async (filterMood: Mood | null, mode: FeedMode, pageNum: number = 0, isAppend = false) => {
     try {
       setError(null);
+      const limit = 20;
       let query = supabase
         .from('whispers')
         .select(`
@@ -142,7 +152,8 @@ export default function FeedPage() {
           reactions(id, whisper_id, user_id, type, created_at)
         `)
         .is('parent_id', null)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(pageNum * limit, (pageNum + 1) * limit - 1);
 
       if (filterMood) query = query.eq('mood', filterMood);
 
@@ -175,9 +186,20 @@ export default function FeedPage() {
           comment_count: countMap.get(w.id) || 0,
         }));
 
-        setWhispers(result);
+        if (isAppend) {
+          setWhispers(prev => {
+            // Deduplicate
+            const existingIds = new Set(prev.map(p => p.id));
+            const newItems = result.filter(r => !existingIds.has(r.id));
+            return [...prev, ...newItems];
+          });
+        } else {
+          setWhispers(result);
+        }
+        setHasMore(whispersData.length === limit);
       } else {
-        setWhispers([]);
+        if (!isAppend) setWhispers([]);
+        setHasMore(false);
       }
     } catch (err) {
       console.error('Error loading feed:', err);
@@ -185,29 +207,51 @@ export default function FeedPage() {
     }
   }, [user, followedIds]);
 
-  const loadWhispers = useCallback(async (filterMood: Mood | null, mode: FeedMode) => {
-    if (mode === 'for_you' && hasInterestData) {
+  const loadWhispers = useCallback(async (filterMood: Mood | null, mode: FeedMode, pageNum: number = 0, isAppend = false) => {
+    if (mode === 'for_you' && hasInterestData && pageNum === 0) {
       await loadPersonalizedFeed(filterMood);
+      // We don't have pagination for personalized feed yet, so we'll just stop here
+      // To properly paginate, we'd fall back to chronological for page > 0, but for simplicity
+      // we'll just set hasMore to false for personalized for now, or fetch chronological if they scroll.
+      // Actually, let's fetch chronological if pageNum > 0:
+      if (pageNum > 0) {
+        await loadChronologicalFeed(filterMood, mode, pageNum, isAppend);
+      }
     } else {
-      await loadChronologicalFeed(filterMood, mode);
+      await loadChronologicalFeed(filterMood, mode, pageNum, isAppend);
     }
     setIsLoading(false);
     setIsRefreshing(false);
+    setIsFetchingMore(false);
   }, [hasInterestData, loadPersonalizedFeed, loadChronologicalFeed]);
 
   useEffect(() => {
+    setPage(0);
+    setHasMore(true);
     setIsLoading(true);
-    loadWhispers(selectedMood, feedMode);
+    loadWhispers(selectedMood, feedMode, 0, false);
 
     const channel = supabase
       .channel('feed-whispers')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'whispers' }, () => {
-        loadWhispers(selectedMood, feedMode);
+        // Option to show a "New posts available" button instead of auto-refresh
+        // For now, auto-refresh page 0
+        setPage(0);
+        loadWhispers(selectedMood, feedMode, 0, false);
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [selectedMood, feedMode, loadWhispers]);
+
+  useEffect(() => {
+    if (inView && hasMore && !isLoading && !isFetchingMore) {
+      setIsFetchingMore(true);
+      const nextPage = page + 1;
+      setPage(nextPage);
+      loadWhispers(selectedMood, feedMode, nextPage, true);
+    }
+  }, [inView, hasMore, isLoading, isFetchingMore, page, selectedMood, feedMode, loadWhispers]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -319,12 +363,11 @@ export default function FeedPage() {
       )}
 
       {/* Loading State */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary-300 border-t-primary-500 mx-auto mb-4" />
-            <p className="text-warm-600 dark:text-warm-400">Loading whispers...</p>
-          </div>
+      {isLoading && whispers.length === 0 ? (
+        <div className="space-y-4 py-4">
+          <WhisperSkeleton />
+          <WhisperSkeleton />
+          <WhisperSkeleton />
         </div>
       ) : whispers.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -355,6 +398,27 @@ export default function FeedPage() {
               onReactionChange={handleReactionChange}
             />
           ))}
+          
+          {/* Infinite Scroll trigger */}
+          {hasMore && (
+            <div ref={loadMoreRef} className="py-6 flex justify-center">
+              {isFetchingMore ? (
+                <div className="flex gap-2 items-center text-primary-500">
+                  <div className="animate-bounce w-2 h-2 bg-primary-500 rounded-full" />
+                  <div className="animate-bounce w-2 h-2 bg-primary-500 rounded-full" style={{ animationDelay: '100ms' }} />
+                  <div className="animate-bounce w-2 h-2 bg-primary-500 rounded-full" style={{ animationDelay: '200ms' }} />
+                </div>
+              ) : (
+                <div className="h-4 w-4" /> // Invisible trigger
+              )}
+            </div>
+          )}
+          
+          {!hasMore && whispers.length > 0 && (
+            <div className="text-center py-8 text-warm-400 text-sm">
+              You've reached the end of the feed.
+            </div>
+          )}
         </div>
       )}
 

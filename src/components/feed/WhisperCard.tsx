@@ -1,7 +1,8 @@
 import { useState, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Heart, Flame, Sparkles, Trash2 } from 'lucide-react';
+import { Heart, Flame, Sparkles, Trash2, Share2, Bookmark } from 'lucide-react';
+import { motion } from 'framer-motion';
 import type { Whisper, Profile, Reaction } from '../../types';
 import { Avatar } from '../common/Avatar';
 import { MoodBadge } from '../common/MoodBadge';
@@ -129,6 +130,30 @@ export const WhisperCard = memo(function WhisperCard({
     navigate(`/profile/${whisper.profiles.username}`);
   }, [navigate, whisper.profiles.username]);
 
+  const handleShare = useCallback(async () => {
+    const url = `${window.location.origin}/whisper/${whisper.id}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Whisper by @${whisper.profiles.username}`,
+          text: whisper.content.substring(0, 50) + '...',
+          url,
+        });
+      } catch (err) {
+        console.log('Share cancelled or failed', err);
+      }
+    } else {
+      await navigator.clipboard.writeText(url);
+      // Ideally use a toast here
+    }
+  }, [whisper]);
+
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const handleBookmark = useCallback(() => {
+    // Optimistic UI update, backend to be implemented in a future PR
+    setIsBookmarked(prev => !prev);
+  }, []);
+
   const getWhisperBadges = () => {
     const list = [...(whisper.profiles?.badges || [])];
     if (communityOwnerId && whisper.user_id === communityOwnerId) {
@@ -203,52 +228,89 @@ export const WhisperCard = memo(function WhisperCard({
       </div>
 
       {/* Reactions */}
-      <div className="flex items-center gap-3 pt-3 border-t border-warm-100 dark:border-warm-700">
-        <button
+      <div className="flex items-center flex-wrap gap-2 pt-3 border-t border-warm-100 dark:border-warm-700">
+        <motion.button
+          whileTap={{ scale: 0.85 }}
+          whileHover={{ scale: 1.05 }}
           onClick={() => handleReaction('felt')}
           disabled={reactionLoading !== null}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-200 ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors duration-200 ${
             userReactions.felt
               ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300'
               : 'text-warm-500 dark:text-warm-400 hover:bg-warm-100 dark:hover:bg-warm-700'
           } disabled:opacity-50`}
         >
-          <Heart size={16} fill={userReactions.felt ? 'currentColor' : 'none'} />
+          <motion.div animate={userReactions.felt ? { scale: [1, 1.2, 1] } : {}}>
+            <Heart size={16} fill={userReactions.felt ? 'currentColor' : 'none'} />
+          </motion.div>
           <span className="text-xs font-medium">{reactionCounts.felt}</span>
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
+          whileTap={{ scale: 0.85 }}
+          whileHover={{ scale: 1.05 }}
           onClick={() => handleReaction('warmth')}
           disabled={reactionLoading !== null}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-200 ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors duration-200 ${
             userReactions.warmth
               ? 'bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-300'
               : 'text-warm-500 dark:text-warm-400 hover:bg-warm-100 dark:hover:bg-warm-700'
           } disabled:opacity-50`}
         >
-          <Flame size={16} fill={userReactions.warmth ? 'currentColor' : 'none'} />
+          <motion.div animate={userReactions.warmth ? { scale: [1, 1.2, 1] } : {}}>
+            <Flame size={16} fill={userReactions.warmth ? 'currentColor' : 'none'} />
+          </motion.div>
           <span className="text-xs font-medium">{reactionCounts.warmth}</span>
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
+          whileTap={{ scale: 0.85 }}
+          whileHover={{ scale: 1.05 }}
           onClick={() => handleReaction('spark')}
           disabled={reactionLoading !== null}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-200 ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors duration-200 ${
             userReactions.spark
               ? 'bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300'
               : 'text-warm-500 dark:text-warm-400 hover:bg-warm-100 dark:hover:bg-warm-700'
           } disabled:opacity-50`}
         >
-          <Sparkles size={16} fill={userReactions.spark ? 'currentColor' : 'none'} />
+          <motion.div animate={userReactions.spark ? { scale: [1, 1.2, 1] } : {}}>
+            <Sparkles size={16} fill={userReactions.spark ? 'currentColor' : 'none'} />
+          </motion.div>
           <span className="text-xs font-medium">{reactionCounts.spark}</span>
-        </button>
+        </motion.button>
 
-        <button
+        <div className="flex-1" />
+
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={handleBookmark}
+          className={`p-2 rounded-full transition-colors ${
+            isBookmarked
+              ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/20'
+              : 'text-warm-400 hover:text-warm-600 dark:hover:text-warm-200 hover:bg-warm-100 dark:hover:bg-warm-800'
+          }`}
+          title="Save Whisper"
+        >
+          <Bookmark size={16} fill={isBookmarked ? 'currentColor' : 'none'} />
+        </motion.button>
+
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={handleShare}
+          className="p-2 text-warm-400 hover:text-warm-600 dark:hover:text-warm-200 hover:bg-warm-100 dark:hover:bg-warm-800 rounded-full transition-colors"
+          title="Share Whisper"
+        >
+          <Share2 size={16} />
+        </motion.button>
+
+        <motion.button
+          whileTap={{ scale: 0.95 }}
           onClick={handleWhisperClick}
-          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full text-warm-500 dark:text-warm-400 hover:bg-warm-100 dark:hover:bg-warm-700 transition-all duration-200 text-xs font-medium"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-warm-500 dark:text-warm-400 hover:bg-warm-100 dark:hover:bg-warm-700 transition-colors duration-200 text-xs font-medium"
         >
           {whisper.comment_count} {whisper.comment_count === 1 ? 'reply' : 'replies'}
-        </button>
+        </motion.button>
       </div>
     </div>
   );

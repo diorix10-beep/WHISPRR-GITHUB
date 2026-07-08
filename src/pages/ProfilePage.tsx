@@ -18,6 +18,7 @@ import { UserBadges } from '../components/common/UserBadges';
 import { FollowListModal } from '../components/profile/FollowListModal';
 import { PhotoUpload } from '../components/common/PhotoUpload';
 import { BannerUpload } from '../components/profile/BannerUpload';
+import { WhisperCard } from '../components/feed/WhisperCard';
 
 interface WhisperWithProfile extends Whisper {
   profiles: Profile;
@@ -49,8 +50,13 @@ export default function ProfilePage() {
   const [searchParams] = useSearchParams();
   const [isEditMode, setIsEditMode] = useState(false);
 
+  type ProfileTab = 'posts' | 'replies' | 'media' | 'saved';
+  const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
+  const [tabLoading, setTabLoading] = useState(false);
+
   // Edit form state
   const [editForm, setEditForm] = useState({
+    username: '',
     display_name: '',
     bio: '',
     mood: '',
@@ -88,8 +94,13 @@ export default function ProfilePage() {
   const [interestSearch, setInterestSearch] = useState('');
   const [customInterest, setCustomInterest] = useState('');
 
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const checkUsernameTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Modal state
   const [editError, setEditError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [followModal, setFollowModal] = useState<{
     isOpen: boolean;
     type: 'followers' | 'following';
@@ -145,6 +156,7 @@ export default function ProfilePage() {
         const favorites = profileData.favorites || {};
         
         setEditForm({
+          username: profileData.username || '',
           display_name: profileData.display_name || '',
           bio: profileData.bio || '',
           mood: profileData.mood || '',
@@ -292,6 +304,67 @@ export default function ProfilePage() {
     }
   }, [searchParams, isOwnProfile, profile]);
 
+  // Fetch tab content when activeTab changes
+  useEffect(() => {
+    if (!profile) return;
+    const fetchTabContent = async () => {
+      setTabLoading(true);
+      try {
+        let query = supabase
+          .from('whispers')
+          .select(`
+            *,
+            profiles:user_id(
+              id, user_id, display_name, username, avatar_emoji, photo_url, bio, mood, badges
+            ),
+            reactions(id, whisper_id, user_id, type, created_at)
+          `)
+          .eq('user_id', profile.user_id)
+          .order('created_at', { ascending: false });
+
+        if (activeTab === 'posts') {
+          query = query.is('parent_id', null);
+        } else if (activeTab === 'replies') {
+          query = query.not('parent_id', 'is', null);
+        } else if (activeTab === 'media') {
+          // Placeholder for when we add media attachments
+          query = query.eq('id', '00000000-0000-0000-0000-000000000000'); // Always empty for now
+        } else if (activeTab === 'saved' && isOwnProfile) {
+          // Will query bookmarks table later, empty for now
+          query = query.eq('id', '00000000-0000-0000-0000-000000000000'); 
+        }
+
+        const { data: whispersData } = await query;
+        if (whispersData) {
+          const { data: commentData } = await supabase
+            .from('comments')
+            .select('whisper_id')
+            .in('whisper_id', whispersData.map(w => w.id));
+
+          const commentMap = new Map<string, number>();
+          commentData?.forEach(comment => {
+            commentMap.set(comment.whisper_id, (commentMap.get(comment.whisper_id) || 0) + 1);
+          });
+
+          const whispersWithCounts = whispersData.map((whisper: any) => ({
+            ...whisper,
+            comment_count: commentMap.get(whisper.id) || 0,
+          }));
+
+          setWhispers(whispersWithCounts);
+        } else {
+           setWhispers([]);
+        }
+      } catch (err) {
+        console.error('Error fetching tab content:', err);
+      } finally {
+        setTabLoading(false);
+      }
+    };
+    
+    fetchTabContent();
+  }, [activeTab, profile, isOwnProfile]);
+
   const handleFollow = async () => {
     if (!user || !profile) return;
 
@@ -320,9 +393,10 @@ export default function ProfilePage() {
   };
 
   const handleEditSave = async () => {
-    if (!profile) return;
-    setEditError(null);
+    if (!profile || usernameError) return;
 
+    setSaving(true);
+    setEditError(null);
     try {
       const social_links = {
         ...(editForm.social_twitter ? { twitter: editForm.social_twitter } : {}),
@@ -349,6 +423,7 @@ export default function ProfilePage() {
       const languages = editForm.languages.split(',').map(l => l.trim()).filter(l => l);
 
       const updates = {
+        username: editForm.username,
         display_name: editForm.display_name,
         bio: editForm.bio,
         mood: editForm.mood,
@@ -663,6 +738,55 @@ export default function ProfilePage() {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Username Edit */}
+              <div>
+                <label className="block text-sm font-semibold text-warm-900 dark:text-warm-50 mb-2">Username</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-warm-400">@</span>
+                  <input
+                    type="text"
+                    value={editForm.username}
+                    onChange={(e) => {
+                      const newUsername = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+                      setEditForm(prev => ({ ...prev, username: newUsername }));
+                      
+                      // Live validation
+                      if (checkUsernameTimeoutRef.current) clearTimeout(checkUsernameTimeoutRef.current);
+                      if (newUsername === profile?.username) {
+                        setUsernameError(null);
+                        return;
+                      }
+                      if (newUsername.length < 3) {
+                        setUsernameError('Username must be at least 3 characters');
+                        return;
+                      }
+                      
+                      setIsCheckingUsername(true);
+                      checkUsernameTimeoutRef.current = setTimeout(async () => {
+                        const { data } = await supabase.from('profiles').select('id').eq('username', newUsername).maybeSingle();
+                        if (data) {
+                          setUsernameError('Username is already taken');
+                        } else {
+                          setUsernameError(null);
+                        }
+                        setIsCheckingUsername(false);
+                      }, 500);
+                    }}
+                    className={`input-field pl-8 ${usernameError ? 'border-error-500 focus:ring-error-500 focus:border-error-500' : ''}`}
+                    maxLength={30}
+                  />
+                  {isCheckingUsername && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="animate-spin h-4 w-4 border-2 border-primary-500 border-t-transparent rounded-full" />
+                    </div>
+                  )}
+                </div>
+                {usernameError && <p className="mt-1 text-xs text-error-500">{usernameError}</p>}
+                {!usernameError && editForm.username !== profile?.username && editForm.username.length >= 3 && !isCheckingUsername && (
+                   <p className="mt-1 text-xs text-green-500 flex items-center gap-1"><Check size={12}/> Username is available</p>
+                )}
+              </div>
+
               {/* Display Name Edit */}
               <div>
                 <label className="block text-sm font-semibold text-warm-900 dark:text-warm-50 mb-2">Display Name</label>
@@ -1322,20 +1446,15 @@ export default function ProfilePage() {
             <h2 className="flex items-center gap-2 text-sm font-semibold text-warm-900 dark:text-warm-50 mb-4">
               <Pin size={16} className="text-primary-500" /> Pinned Whisper
             </h2>
-            <div className="card border border-primary-200 dark:border-primary-800/50 shadow-sm cursor-pointer hover:shadow-md transition-all" onClick={() => navigate(`/whisper/${pinnedWhisper.id}`)}>
-               {isOwnProfile && (
-                 <button onClick={(e) => { e.stopPropagation(); handlePinWhisper(pinnedWhisper.id); }} className="absolute top-10 right-4 p-2 text-warm-400 hover:text-warm-600 dark:hover:text-warm-200 z-10 bg-white/50 dark:bg-warm-800/50 rounded-full backdrop-blur">
-                   <Pin size={16} />
-                 </button>
-               )}
-               <p className="text-warm-900 dark:text-warm-50 text-lg mb-3 font-serif pr-8">
-                 "{pinnedWhisper.content}"
-               </p>
-               <div className="flex gap-4 text-xs font-medium text-warm-500 dark:text-warm-400">
-                 <span className="flex items-center gap-1.5"><Heart size={14}/> {pinnedWhisper.reactions?.length || 0}</span>
-                 <span className="flex items-center gap-1.5"><MessageSquare size={14}/> {pinnedWhisper.comment_count}</span>
-                 <span>{new Date(pinnedWhisper.created_at).toLocaleDateString()}</span>
-               </div>
+            <div className="relative group">
+              {isOwnProfile && (
+                <div className="absolute top-10 right-4 z-10">
+                  <button onClick={(e) => { e.stopPropagation(); handlePinWhisper(pinnedWhisper.id); }} className="p-2 text-warm-400 hover:text-warm-600 dark:hover:text-warm-200 bg-white/50 dark:bg-warm-800/50 rounded-full backdrop-blur">
+                    <Pin size={16} className="fill-primary-500 text-primary-500" />
+                  </button>
+                </div>
+              )}
+              <WhisperCard whisper={pinnedWhisper as any} />
             </div>
           </div>
         )}
@@ -1343,42 +1462,80 @@ export default function ProfilePage() {
         {/* All Whispers Section */}
         {!isEditMode && (
           <div>
-            <h2 className="font-serif text-2xl font-bold text-warm-900 dark:text-warm-50 mb-6">Latest Whispers</h2>
-            {whispers.length === 0 ? (
+            <div className="flex items-center gap-4 border-b border-warm-100 dark:border-warm-800 mb-6 px-2 overflow-x-auto">
+              <button
+                onClick={() => setActiveTab('posts')}
+                className={`py-3 px-2 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${
+                  activeTab === 'posts' 
+                    ? 'border-primary-500 text-primary-600 dark:text-primary-400' 
+                    : 'border-transparent text-warm-500 hover:text-warm-700 dark:hover:text-warm-300'
+                }`}
+              >
+                Posts
+              </button>
+              <button
+                onClick={() => setActiveTab('replies')}
+                className={`py-3 px-2 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${
+                  activeTab === 'replies' 
+                    ? 'border-primary-500 text-primary-600 dark:text-primary-400' 
+                    : 'border-transparent text-warm-500 hover:text-warm-700 dark:hover:text-warm-300'
+                }`}
+              >
+                Replies
+              </button>
+              <button
+                onClick={() => setActiveTab('media')}
+                className={`py-3 px-2 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${
+                  activeTab === 'media' 
+                    ? 'border-primary-500 text-primary-600 dark:text-primary-400' 
+                    : 'border-transparent text-warm-500 hover:text-warm-700 dark:hover:text-warm-300'
+                }`}
+              >
+                Media
+              </button>
+              {isOwnProfile && (
+                <button
+                  onClick={() => setActiveTab('saved')}
+                  className={`py-3 px-2 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${
+                    activeTab === 'saved' 
+                      ? 'border-primary-500 text-primary-600 dark:text-primary-400' 
+                      : 'border-transparent text-warm-500 hover:text-warm-700 dark:hover:text-warm-300'
+                  }`}
+                >
+                  Saved
+                </button>
+              )}
+            </div>
+            {tabLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-300 border-t-primary-500" />
+              </div>
+            ) : whispers.length === 0 ? (
               <div className="text-center py-12 bg-white dark:bg-warm-800 rounded-3xl border border-warm-100 dark:border-warm-800">
                 <MessageSquare size={32} className="mx-auto text-warm-300 dark:text-warm-600 mb-3" />
-                <p className="text-warm-600 dark:text-warm-400">No whispers yet</p>
+                <p className="text-warm-600 dark:text-warm-400">
+                  {activeTab === 'posts' && 'No whispers yet'}
+                  {activeTab === 'replies' && 'No replies yet'}
+                  {activeTab === 'media' && 'No media yet'}
+                  {activeTab === 'saved' && 'No saved whispers yet'}
+                </p>
               </div>
             ) : (
               <div className="space-y-4">
-                {whispers.filter(w => w.id !== profile.pinned_whisper_id).map(whisper => (
-                  <div
-                    key={whisper.id}
-                    className="card cursor-pointer hover:shadow-md transition-shadow relative group"
-                    onClick={() => navigate(`/whisper/${whisper.id}`)}
-                  >
-                    {isOwnProfile && (
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handlePinWhisper(whisper.id); }} 
-                        className="absolute top-4 right-4 p-2 text-warm-300 hover:text-primary-500 transition-colors opacity-0 group-hover:opacity-100 md:opacity-100"
-                        title="Pin to profile"
-                      >
-                        <Pin size={16} className={whisper.id === profile.pinned_whisper_id ? "fill-primary-500 text-primary-500" : ""} />
-                      </button>
-                    )}
-                    <p className="text-warm-900 dark:text-warm-50 text-lg mb-3 font-serif pr-8">
-                      {whisper.content}
-                    </p>
-                    {whisper.mood && (
-                      <div className="mb-3">
-                        <MoodBadge mood={whisper.mood} size="sm" />
+                {whispers.filter(w => w.id !== profile.pinned_whisper_id).map((whisper: any) => (
+                  <div key={whisper.id} className="relative group">
+                    {isOwnProfile && activeTab === 'posts' && (
+                      <div className="absolute top-4 right-4 z-10">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handlePinWhisper(whisper.id); }} 
+                          className="p-2 text-warm-300 hover:text-primary-500 transition-colors opacity-0 group-hover:opacity-100 md:opacity-100 bg-white/50 dark:bg-warm-800/50 rounded-full backdrop-blur"
+                          title="Pin to profile"
+                        >
+                          <Pin size={16} className={whisper.id === profile.pinned_whisper_id ? "fill-primary-500 text-primary-500" : ""} />
+                        </button>
                       </div>
                     )}
-                    <div className="flex gap-5 text-xs font-medium text-warm-500 dark:text-warm-400">
-                      <span className="flex items-center gap-1.5"><Heart size={14}/> {whisper.reactions?.length || 0}</span>
-                      <span className="flex items-center gap-1.5"><MessageSquare size={14}/> {whisper.comment_count}</span>
-                      <span>{new Date(whisper.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric'})}</span>
-                    </div>
+                    <WhisperCard whisper={whisper} />
                   </div>
                 ))}
               </div>
