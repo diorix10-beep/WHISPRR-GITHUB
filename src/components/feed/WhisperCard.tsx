@@ -38,18 +38,25 @@ export const WhisperCard = memo(function WhisperCard({
 
   const isOwnWhisper = user?.id === whisper.user_id;
 
+  const reactions = whisper.reactions || [];
+  
+  // Safely handle if profiles comes back as an array from Supabase
+  const whisperProfile = Array.isArray(whisper.profiles) 
+    ? whisper.profiles[0] 
+    : whisper.profiles;
+
   // Count reactions by type
   const reactionCounts = {
-    felt: whisper.reactions.filter(r => r.type === 'felt').length,
-    warmth: whisper.reactions.filter(r => r.type === 'warmth').length,
-    spark: whisper.reactions.filter(r => r.type === 'spark').length,
+    felt: reactions.filter(r => r.type === 'felt').length,
+    warmth: reactions.filter(r => r.type === 'warmth').length,
+    spark: reactions.filter(r => r.type === 'spark').length,
   };
 
   // Check if current user has reacted with each type
   const userReactions = {
-    felt: whisper.reactions.some(r => r.user_id === user?.id && r.type === 'felt'),
-    warmth: whisper.reactions.some(r => r.user_id === user?.id && r.type === 'warmth'),
-    spark: whisper.reactions.some(r => r.user_id === user?.id && r.type === 'spark'),
+    felt: reactions.some(r => r.user_id === user?.id && r.type === 'felt'),
+    warmth: reactions.some(r => r.user_id === user?.id && r.type === 'warmth'),
+    spark: reactions.some(r => r.user_id === user?.id && r.type === 'spark'),
   };
 
   const handleReaction = useCallback(async (type: 'felt' | 'warmth' | 'spark') => {
@@ -155,7 +162,7 @@ export const WhisperCard = memo(function WhisperCard({
   }, []);
 
   const getWhisperBadges = () => {
-    const list = [...(whisper.profiles?.badges || [])];
+    const list = [...(whisperProfile?.badges || [])];
     if (communityOwnerId && whisper.user_id === communityOwnerId) {
       list.push('community_creator');
     }
@@ -174,22 +181,22 @@ export const WhisperCard = memo(function WhisperCard({
           onClick={handleProfileClick}
         >
           <Avatar
-            emoji={whisper.profiles.avatar_emoji}
-            photoUrl={whisper.profiles.photo_url}
+            emoji={whisperProfile?.avatar_emoji || '👤'}
+            photoUrl={whisperProfile?.photo_url}
             size="md"
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline gap-2">
               <span className="font-semibold text-warm-900 dark:text-warm-50 truncate">
-                {whisper.profiles.display_name}
+                {whisperProfile?.display_name || 'Unknown User'}
               </span>
               <UserBadges 
                 badges={getWhisperBadges()} 
-                role={whisper.profiles.role}
+                role={whisperProfile?.role}
                 size="sm" 
               />
               <span className="text-sm text-warm-500 dark:text-warm-400 truncate">
-                @{whisper.profiles.username}
+                @{whisperProfile?.username || 'unknown'}
               </span>
             </div>
             <span className="text-xs text-warm-400 dark:text-warm-500">
