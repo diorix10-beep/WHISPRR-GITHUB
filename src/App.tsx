@@ -13,6 +13,7 @@ import { NexaPlaceholderPage } from './components/common/NexaPlaceholderPage';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { PublicOnlyRoute } from './components/common/PublicOnlyRoute';
 import { Logo } from './components/common/Logo';
+import { ReloadPrompt } from './components/common/ReloadPrompt';
 
 const OracleAssistantPage = lazy(() => import('./pages/OracleAssistantPage'));
 
@@ -203,6 +204,7 @@ function App() {
               <NotificationsProvider>
                 <UnreadMessagesProvider>
                   <InterestProvider>
+                    <ReloadPrompt />
                     <AppLoader />
                   </InterestProvider>
                 </UnreadMessagesProvider>
