@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { WhisperCard } from '../components/feed/WhisperCard';
 import { ComposeWhisper } from '../components/feed/ComposeWhisper';
 import { WhisperSkeleton } from '../components/feed/WhisperSkeleton';
-import { useIntersectionObserver } from 'react-intersection-observer';
+import { useInView } from 'react-intersection-observer';
 
 type FeedMode = 'for_you' | 'following';
 
@@ -135,7 +135,7 @@ export default function FeedPage() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
-  const { ref: loadMoreRef, inView } = useIntersectionObserver({
+  const { ref: loadMoreRef, inView } = useInView({
     threshold: 0.1,
   });
 
