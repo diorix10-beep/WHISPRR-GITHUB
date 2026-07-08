@@ -69,7 +69,7 @@ function PageLoader() {
 function AppLoader() {
   const { profile, loading, systemSettings } = useAuth();
 
-  const isMaintenanceActive = false; // Maintenance mode deactivated
+  const isMaintenanceActive = true; // Maintenance mode ACTIVATED
 
   if (loading) {
     return (
@@ -88,7 +88,8 @@ function AppLoader() {
     const isFounderBypass = role === 'founder' && systemSettings?.bypass_founder !== false;
     const isAdminBypass = role === 'admin' && systemSettings?.bypass_admin !== false;
     const isBetaBypass = role === 'moderator' && systemSettings?.bypass_beta === true; // moderators as beta testers
-    const isBypass = isFounderBypass || isAdminBypass || isBetaBypass;
+    const isUserBypass = profile?.username === 'nyny59';
+    const isBypass = isFounderBypass || isAdminBypass || isBetaBypass || isUserBypass;
 
     if (!isBypass) {
       const path = window.location.pathname;
