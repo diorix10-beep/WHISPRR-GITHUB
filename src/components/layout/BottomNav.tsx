@@ -11,7 +11,7 @@ export function BottomNav() {
   const isNexa = location.pathname.startsWith('/nexa');
 
   const whisprrItems = [
-    { path: '/', icon: Home, label: 'Feed' },
+    { path: '/feed', icon: Home, label: 'Feed' },
     { path: '/discover', icon: Compass, label: 'Discover' },
     { path: '/communities', icon: Users, label: 'Communities' },
     { path: '/messages', icon: MessageCircle, label: 'Messages' },

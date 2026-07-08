@@ -46,6 +46,14 @@ const AiCharactersPage = lazy(() => import('./pages/AiCharactersPage'));
 const AiCharacterCreator = lazy(() => import('./pages/AiCharacterCreator'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
+function IndexRoute() {
+  const { user } = useAuth();
+  if (user) {
+    return <Navigate to="/feed" replace />;
+  }
+  return <LandingPage />;
+}
+
 
 function PageLoader() {
   return (
@@ -122,7 +130,7 @@ function AppLoader() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<IndexRoute />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/trust" element={<TrustPage />} />
