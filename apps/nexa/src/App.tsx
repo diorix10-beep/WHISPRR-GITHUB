@@ -28,6 +28,8 @@ const TermsPage          = lazy(() => import('./pages/TermsPage'));
 const TrustPage          = lazy(() => import('./pages/TrustPage'));
 const AiCharactersPage = lazy(() => import('./pages/AiCharactersPage'));
 const AiCharacterCreator = lazy(() => import('./pages/AiCharacterCreator'));
+const PersonasPage = lazy(() => import('./pages/PersonasPage'));
+const PersonaEditorPage = lazy(() => import('./pages/PersonaEditorPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 function PageLoader() {
   return (
@@ -129,6 +131,10 @@ function AppLoader() {
             <Route path="/chat/:id" element={<ConversationPage />} />
             <Route path="/oracle" element={<OracleAssistantPage />} />
             <Route path="/help" element={<OracleAssistantPage />} />
+            <Route path="/personas" element={<PersonasPage />} />
+            <Route path="/personas/new" element={<PersonaEditorPage />} />
+            <Route path="/personas/:id/edit" element={<PersonaEditorPage />} />
+            <Route path="/personas/:id" element={<PersonaEditorPage />} />
             <Route path="/worlds" element={<NexaPlaceholderPage title="My Worlds" description="Create and manage rich lore-filled environments, cities, and maps." />} />
             <Route path="/plots" element={<NexaPlaceholderPage title="Create Plot" description="Define structured plotlines, story beats, and branching scenarios." />} />
             <Route path="/lorebooks" element={<NexaPlaceholderPage title="Lorebooks" description="Upload, edit, and organize custom knowledge books for context injections." />} />

@@ -58,6 +58,28 @@ export interface Profile {
   home_country?: string;
 }
 
+export interface Persona {
+  id: string;
+  user_id: string;
+  avatar_url: string | null;
+  name: string;
+  description: string | null;
+  gender: string | null;
+  age: string | null;
+  pronouns: string | null;
+  personality: string | null;
+  appearance: string | null;
+  occupation: string | null;
+  backstory: string | null;
+  greeting: string | null;
+  relationships: string | null;
+  tags: string[];
+  is_public: boolean;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Whisper {
   id: string;
   user_id: string;

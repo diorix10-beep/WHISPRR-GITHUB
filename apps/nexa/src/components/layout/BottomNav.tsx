@@ -8,26 +8,14 @@ export function BottomNav() {
   const { unreadCount, unreadMessageCount } = useNotifications();
   const location = useLocation();
 
-  const isNexa = location.pathname.startsWith('/nexa');
-
-  const whisprrItems = [
-    { path: '/feed', icon: Home, label: 'Feed' },
-    { path: '/discover', icon: Compass, label: 'Discover' },
-    { path: '/communities', icon: Users, label: 'Communities' },
-    { path: '/messages', icon: MessageCircle, label: 'Messages' },
-    { path: '/notifications', icon: Bell, label: 'Notifications' },
-    { path: '#more', icon: Menu, label: 'More', isAction: true },
-  ];
-
   const nexaItems = [
-    { path: '/nexa', icon: Compass, label: 'Explore' },
-    { path: '/nexa/chats', icon: MessageCircle, label: 'Chats', badge: true },
-    { path: '/nexa/create', icon: Plus, label: 'Create' },
-    { path: '/nexa/collections', icon: BookOpen, label: 'Library' },
-    { path: '/profile', icon: User, label: 'Profile' },
+    { path: '/', icon: Compass, label: 'Explore' },
+    { path: '/chats', icon: MessageCircle, label: 'Chats', badge: true },
+    { path: '/create', icon: Plus, label: 'Create' },
+    { path: '/personas', icon: User, label: 'Personas' },
   ];
 
-  const items = isNexa ? nexaItems : whisprrItems;
+  const items = nexaItems;
 
   const handleActionClick = (e: React.MouseEvent) => {
     e.preventDefault();

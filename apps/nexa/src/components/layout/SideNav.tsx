@@ -17,6 +17,7 @@ const whisprrUrl = isLocalhost ? 'http://localhost:5173' : 'https://whisprr.xyz'
 const navItems = [
   { path: '/', icon: Bot, label: 'Characters' },
   { path: '/chats', icon: MessageCircle, label: 'Chats' },
+  { path: '/personas', icon: User, label: 'Personas' },
   { path: '/worlds', icon: Compass, label: 'Worlds' },
   { path: '/creator', icon: Sparkles, label: 'Creator Studio' },
 ];
