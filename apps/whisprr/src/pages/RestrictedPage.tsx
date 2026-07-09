@@ -4,7 +4,7 @@ import { Logo } from '../components/common/Logo';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export function RestrictedPage() {
+export default function RestrictedPage() {
   const { signOut, upgradeToEcosystem } = useAuth();
   const navigate = useNavigate();
   const [isUpgrading, setIsUpgrading] = useState(false);

@@ -15,14 +15,18 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [preference, setPreferenceState] = useState<ThemePreference>(() => {
-    const stored = localStorage.getItem('whisprr-theme-preference');
-    if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
-    
-    // For backwards compatibility, check old key
-    const oldStored = localStorage.getItem('whisprr-theme');
-    if (oldStored === 'light' || oldStored === 'dark') return oldStored;
+    try {
+      const stored = localStorage.getItem('nexa-theme-preference');
+      if (stored === 'light' || stored === 'dark' || stored === 'system') return stored as ThemePreference;
+      
+      // For backwards compatibility, check old key
+      const oldStored = localStorage.getItem('nexa-theme');
+      if (oldStored === 'light' || oldStored === 'dark') return oldStored as ThemePreference;
+    } catch (e) {
+      console.warn('localStorage is not available:', e);
+    }
 
-    return 'system';
+    return 'dark'; // NEXA defaults to dark
   });
 
   const [activeTheme, setActiveTheme] = useState<ActiveTheme>('light');
@@ -39,7 +43,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       }
       setActiveTheme(active);
       document.documentElement.classList.toggle('dark', active === 'dark');
-      localStorage.setItem('whisprr-theme', active); // legacy checks compatibility
+      try {
+        localStorage.setItem('nexa-theme', active); // legacy checks compatibility
+      } catch (e) {
+        console.warn('Could not save theme preference:', e);
+      }
     };
 
     updateActiveTheme();
@@ -51,7 +59,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setPreference = (pref: ThemePreference) => {
     setPreferenceState(pref);
-    localStorage.setItem('whisprr-theme-preference', pref);
+    try {
+      localStorage.setItem('nexa-theme-preference', pref);
+    } catch (e) {
+      console.warn('Could not save theme preference:', e);
+    }
   };
 
   const toggleTheme = () => {
