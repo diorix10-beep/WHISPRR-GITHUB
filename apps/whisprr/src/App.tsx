@@ -8,8 +8,6 @@ import { ToastProvider } from './contexts/ToastContext';
 import { InterestProvider } from './contexts/InterestContext';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { AppLayout } from './components/layout/AppLayout';
-import { NexaLayout } from './components/layout/NexaLayout';
-import { NexaPlaceholderPage } from './components/common/NexaPlaceholderPage';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { PublicOnlyRoute } from './components/common/PublicOnlyRoute';
 import { Logo } from './components/common/Logo';
