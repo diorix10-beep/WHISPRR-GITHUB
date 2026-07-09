@@ -77,7 +77,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-xl font-semibold text-warm-900 dark:text-warm-50 mb-3">8. Children's Privacy Guidelines</h2>
           <p className="leading-relaxed">
-            The WHISPRR platform is rigorously designed for mature audiences and is explicitly not directed toward individuals under the age of thirteen (13). We adhere strictly to the Children's Online Privacy Protection Act (COPPA) and equivalent international frameworks, meaning we never knowingly solicit, collect, or retain personal information from children under thirteen. If we receive confirmed notification that we have inadvertently collected data from an underage user, we will take immediate action to expunge that information from our servers.
+            The WHISPRR platform is rigorously designed for mature audiences and is explicitly not directed toward individuals under the age of eighteen (18). We adhere strictly to the Children's Online Privacy Protection Act (COPPA) and equivalent international frameworks, meaning we never knowingly solicit, collect, or retain personal information from individuals under eighteen. If we receive confirmed notification that we have inadvertently collected data from an underage user, we will take immediate action to expunge that information from our servers.
           </p>
         </section>
 

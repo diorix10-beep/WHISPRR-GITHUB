@@ -140,7 +140,7 @@ export default function TrustPage() {
             </div>
             <div>
               <h4 className="font-bold text-warm-900 dark:text-warm-100 text-sm mb-1">2. Eligibility</h4>
-              <p>The Service is intended solely for users thirteen (13) years of age or older. By accessing, you warrant that you meet this minimum age and possess the legal capacity to enter this agreement.</p>
+              <p>The Service is intended solely for users who are at least eighteen (18) years of age. By accessing or utilizing the Service, you represent and warrant that you are at least 18 years old and have the legal capacity to enter into this agreement. Users under the age of 18 are not permitted to create an account or use the Service.</p>
             </div>
             <div>
               <h4 className="font-bold text-warm-900 dark:text-warm-100 text-sm mb-1">3. Account Responsibilities</h4>
@@ -206,7 +206,7 @@ export default function TrustPage() {
               <li><strong>Location Data:</strong> We deliberately abstain from requesting or tracking your geographic location or GPS signals.</li>
               <li><strong>Contact Lists:</strong> We never attempt to scrape your personal address book or personal contact records.</li>
               <li><strong>Biometric Data:</strong> WHISPRR strictly prohibits the capture of biometric markers or health classifications.</li>
-              <li><strong>Children's Privacy:</strong> We actively reject the retention of any data concerning individuals under thirteen, maintaining strict COPPA compliance.</li>
+              <li><strong>Children's Privacy:</strong> We actively reject the retention of any data concerning individuals under eighteen, maintaining strict compliance with applicable privacy laws.</li>
             </ul>
           </div>
         );

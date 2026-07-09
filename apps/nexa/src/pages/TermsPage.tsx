@@ -32,7 +32,10 @@ export default function TermsPage() {
         <section>
           <h2 className="text-xl font-semibold text-warm-900 dark:text-warm-50 mb-3">2. Eligibility</h2>
           <p className="leading-relaxed">
-            The Service is intended solely for users who are thirteen (13) years of age or older. By accessing or utilizing the Service, you represent and warrant that you meet this minimum age requirement and possess the legal capacity to enter into this agreement. If you are between the ages of thirteen (13) and eighteen (18), you further affirm that you possess verifiable consent from a parent or legal guardian to utilize the Service.
+            The Service is intended solely for users who are at least eighteen (18) years of age. By creating an account or accessing the Service, you represent and warrant that you are at least 18 years old and have the legal capacity to enter into this agreement.
+          </p>
+          <p className="leading-relaxed mt-4">
+            Users under the age of 18 are not permitted to create an account or use the Service.
           </p>
         </section>
 

@@ -14,6 +14,8 @@ const { chromium } = require('playwright');
 
     await page.waitForTimeout(4000);
 
+    await page.screenshot({ path: 'scratch/playwright_test/whisprr_home.png' });
+    
     const html = await page.content();
     if (html.includes('Something went wrong')) {
       console.log('FOUND "Something went wrong" text on page!');
