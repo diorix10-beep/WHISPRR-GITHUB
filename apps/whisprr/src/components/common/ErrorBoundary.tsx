@@ -36,10 +36,16 @@ export class ErrorBoundary extends Component<Props, State> {
             <h1 className="font-serif text-2xl font-bold text-warm-900 dark:text-warm-50 mb-3">
               Something went wrong
             </h1>
-            <p className="text-warm-600 dark:text-warm-400 mb-8">
+            <p className="text-warm-600 dark:text-warm-400 mb-6">
               An unexpected error occurred. Please try refreshing the page.
             </p>
-            <div className="flex flex-col gap-3">
+
+            <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg text-left overflow-auto text-xs text-red-800 dark:text-red-200 mb-6 max-h-48 whitespace-pre-wrap">
+              <p className="font-bold mb-2">Error Details (for debugging):</p>
+              <p>{this.state.error?.toString()}</p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={this.handleReset}
                 className="btn-primary w-full"
