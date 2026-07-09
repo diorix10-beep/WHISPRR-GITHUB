@@ -63,7 +63,7 @@ function PageLoader() {
 function AppLoader() {
   const { profile, loading, systemSettings } = useAuth();
 
-  const isMaintenanceActive = systemSettings?.enabled === true;
+  const isMaintenanceActive = false; // Disabled per user request
 
   if (loading) {
     return (

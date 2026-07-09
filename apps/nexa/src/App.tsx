@@ -30,6 +30,7 @@ const AiCharactersPage = lazy(() => import('./pages/AiCharactersPage'));
 const AiCharacterCreator = lazy(() => import('./pages/AiCharacterCreator'));
 const PersonasPage = lazy(() => import('./pages/PersonasPage'));
 const PersonaEditorPage = lazy(() => import('./pages/PersonaEditorPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 function PageLoader() {
   return (
@@ -135,6 +136,7 @@ function AppLoader() {
             <Route path="/personas/new" element={<PersonaEditorPage />} />
             <Route path="/personas/:id/edit" element={<PersonaEditorPage />} />
             <Route path="/personas/:id" element={<PersonaEditorPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="/worlds" element={<NexaPlaceholderPage title="My Worlds" description="Create and manage rich lore-filled environments, cities, and maps." />} />
             <Route path="/plots" element={<NexaPlaceholderPage title="Create Plot" description="Define structured plotlines, story beats, and branching scenarios." />} />
             <Route path="/lorebooks" element={<NexaPlaceholderPage title="Lorebooks" description="Upload, edit, and organize custom knowledge books for context injections." />} />
