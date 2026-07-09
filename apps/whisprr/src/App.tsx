@@ -147,19 +147,6 @@ function AppLoader() {
         <Route element={<ProtectedRoute />}>
           <Route path="/onboarding" element={<OnboardingPage />} />
 
-          {/* NEXA Standalone Platform */}
-          <Route element={<NexaLayout />}>
-            <Route path="/nexa" element={<AiCharactersPage />} />
-            <Route path="/nexa/create" element={<AiCharacterCreator />} />
-            <Route path="/nexa/chats" element={<NexaChatsPage />} />
-            <Route path="/nexa/worlds" element={<NexaPlaceholderPage title="My Worlds" description="Create and manage rich lore-filled environments, cities, and maps." />} />
-            <Route path="/nexa/plots" element={<NexaPlaceholderPage title="Create Plot" description="Define structured plotlines, story beats, and branching scenarios." />} />
-            <Route path="/nexa/lorebooks" element={<NexaPlaceholderPage title="Lorebooks" description="Upload, edit, and organize custom knowledge books for context injections." />} />
-            <Route path="/nexa/models" element={<NexaPlaceholderPage title="AI Models" description="Select from specialized roleplay fine-tunes and toggle parameters." />} />
-            <Route path="/nexa/creator-profiles" element={<NexaPlaceholderPage title="Creator Profiles" description="Browse top NEXA authors, follow creators, and check stats." />} />
-            <Route path="/nexa/collections" element={<NexaPlaceholderPage title="Collections" description="Gather matching characters, plots, and worlds into public collections." />} />
-          </Route>
-
           {/* WHISPRR Platform */}
           <Route element={<AppLayout />}>
             <Route path="/discover" element={<DiscoverPage />} />
@@ -179,8 +166,6 @@ function AppLoader() {
             <Route path="/voice-rooms" element={<VoiceRoomsPage />} />
             <Route path="/voice-rooms/:roomId" element={<VoiceRoomsPage />} />
             <Route path="/feedback" element={<FeedbackDashboard />} />
-            <Route path="/oracle" element={<OracleAssistantPage />} />
-            <Route path="/help" element={<OracleAssistantPage />} />
             {profile?.role === 'founder' && (
               <Route path="/founder" element={<FounderPanel />} />
             )}

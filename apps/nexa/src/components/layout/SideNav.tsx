@@ -11,13 +11,14 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { Avatar } from '../common/Avatar';
 import { Logo } from '../common/Logo';
 
+const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+const whisprrUrl = isLocalhost ? 'http://localhost:5173' : 'https://whisprr.xyz';
+
 const navItems = [
-  { path: '/feed', icon: Home, label: 'Feed' },
-  { path: '/discover', icon: Compass, label: 'Discover' },
-  { path: '/communities', icon: Users, label: 'Communities' },
-  { path: '/messages', icon: MessageCircle, label: 'Messages' },
-  { path: '/notifications', icon: Bell, label: 'Notifications' },
-  { path: '/nexa', icon: Bot, label: 'NEXA' },
+  { path: '/', icon: Bot, label: 'Characters' },
+  { path: '/chats', icon: MessageCircle, label: 'Chats' },
+  { path: '/worlds', icon: Compass, label: 'Worlds' },
+  { path: '/creator', icon: Sparkles, label: 'Creator Studio' },
 ];
 
 export function SideNav() {
@@ -115,6 +116,18 @@ export function SideNav() {
           );
         })}
       </nav>
+
+      <div className="px-3 pb-4">
+        <a 
+          href={whisprrUrl}
+          className="flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 text-warm-600 dark:text-warm-400 hover:bg-warm-100 dark:hover:bg-warm-800"
+        >
+          <Home size={22} className="opacity-70" />
+          <span className="font-semibold text-[15px] hidden xl:block">
+            Back to WHISPRR
+          </span>
+        </a>
+      </div>
 
       {/* User card at bottom with popup menu */}
       {profile && (
