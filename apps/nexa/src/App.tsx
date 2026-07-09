@@ -20,6 +20,7 @@ const OracleAssistantPage = lazy(() => import('./pages/OracleAssistantPage'));
 const NexaChatsPage       = lazy(() => import('./pages/NexaChatsPage'));
 
 const AuthPage           = lazy(() => import('./pages/AuthPage'));
+const ResetPasswordPage  = lazy(() => import('./pages/ResetPasswordPage'));
 const OnboardingPage     = lazy(() => import('./pages/OnboardingPage'));
 const ConversationPage   = lazy(() => import('./pages/ConversationPage'));
 const PrivacyPage        = lazy(() => import('./pages/PrivacyPage'));
@@ -67,17 +68,19 @@ function AppLoader() {
     if (!isBypass) {
       const path = window.location.pathname;
       const isAuthRoute = path === '/auth';
+      const isResetPasswordRoute = path === '/reset-password';
       const isPublicRoute = ['/', '/about', '/building', '/privacy', '/terms', '/trust'].includes(path);
 
       const allowAuth = systemSettings?.allow_auth !== false;
       const allowPublic = systemSettings?.allow_public !== false;
 
       // Allow auth route if permitted
-      if (isAuthRoute && allowAuth) {
+      if ((isAuthRoute || isResetPasswordRoute) && allowAuth) {
         return (
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/auth"    element={<AuthPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/terms"   element={<TermsPage />} />
               <Route path="/trust"   element={<TrustPage />} />
@@ -111,6 +114,7 @@ function AppLoader() {
         {/* Public Only (Login/Signup) */}
         <Route element={<PublicOnlyRoute />}>
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Route>
 
         {/* Protected Routes */}
