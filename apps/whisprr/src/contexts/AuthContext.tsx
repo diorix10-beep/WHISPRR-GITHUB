@@ -23,6 +23,7 @@ interface AuthContextType extends AuthState {
   systemSettings: any;
   fetchSystemSettings: () => Promise<void>;
   updateSystemSettings: (updates: any) => Promise<void>;
+  upgradeToEcosystem: () => Promise<void>;
 }
 
 const AUTH_TIMEOUT_MS = 10000;
@@ -234,6 +235,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
+  const upgradeToEcosystem = async () => {
+    if (!state.user) return;
+    const { error } = await supabase
+      .from('profiles')
+      .update({ access_level: 'ecosystem' })
+      .eq('user_id', state.user.id);
+    
+    if (error) {
+      throw error;
+    }
+    
+    // Refresh the profile so the routing constraint releases them immediately
+    await refreshProfile();
+  };
+
   return (
     <AuthContext.Provider value={{
       ...state,
@@ -248,6 +264,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       systemSettings,
       fetchSystemSettings,
       updateSystemSettings,
+      upgradeToEcosystem
     }}>
       {children}
     </AuthContext.Provider>

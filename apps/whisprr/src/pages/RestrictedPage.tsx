@@ -1,9 +1,27 @@
-import { ArrowLeft, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, Sparkles, LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Logo } from '../common/Logo';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export function RestrictedPage() {
-  const { signOut } = useAuth();
+  const { signOut, upgradeToEcosystem } = useAuth();
+  const navigate = useNavigate();
+  const [isUpgrading, setIsUpgrading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleUpgrade = async () => {
+    setIsUpgrading(true);
+    setError('');
+    try {
+      await upgradeToEcosystem();
+      // After upgrade, ProtectedRoute will stop intercepting and let them into the app.
+      navigate('/', { replace: true });
+    } catch (err) {
+      setError('Failed to upgrade account. Please try again or contact support.');
+      setIsUpgrading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-warm-50 dark:bg-warm-950 flex flex-col items-center justify-center p-4">
@@ -18,17 +36,31 @@ export function RestrictedPage() {
         </h1>
         
         <p className="text-warm-600 dark:text-warm-300 leading-relaxed">
-          Your NEXA account gives you access to NEXA only.
+          Your current account gives you access to NEXA only.
           <br /><br />
-          To join the WHISPRR community and access the complete ecosystem, please create a WHISPRR account.
+          To join the WHISPRR community and access the complete ecosystem without losing your characters and conversations, you can upgrade your account for free!
         </p>
         
-        <div className="w-full flex flex-col gap-3 mt-4">
+        {error && (
+          <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-sm w-full">
+            {error}
+          </div>
+        )}
+        
+        <div className="w-full flex flex-col gap-3 mt-2">
           <button
-            onClick={() => signOut()}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5"
+            onClick={handleUpgrade}
+            disabled={isUpgrading}
+            className="w-full flex items-center justify-center gap-2 py-4 px-4 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed"
           >
-            Sign Out to Create Account
+            {isUpgrading ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>
+                <Sparkles size={18} />
+                Upgrade to WHISPRR Membership
+              </>
+            )}
           </button>
           
           <button
@@ -37,6 +69,14 @@ export function RestrictedPage() {
           >
             <ArrowLeft size={18} />
             Return to NEXA
+          </button>
+
+          <button
+            onClick={() => signOut()}
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 text-warm-500 hover:text-warm-600 dark:hover:text-warm-400 font-medium transition-all text-sm mt-2"
+          >
+            <LogOut size={16} />
+            Sign out of this account
           </button>
         </div>
 
