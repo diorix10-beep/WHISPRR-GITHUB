@@ -63,7 +63,7 @@ function PageLoader() {
 function AppLoader() {
   const { profile, loading, systemSettings } = useAuth();
 
-  const isMaintenanceActive = true; // Maintenance mode ACTIVATED
+  const isMaintenanceActive = systemSettings?.enabled === true;
 
   if (loading) {
     return (
