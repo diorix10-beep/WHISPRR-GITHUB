@@ -126,8 +126,7 @@ export function PhotoUpload({
 
       const { error: updateError } = await supabase
         .from('profiles')
-        .upsert({ user_id: user.id, photo_url: publicUrl })
-        .eq('user_id', user.id);
+        .upsert({ user_id: user.id, photo_url: publicUrl }, { onConflict: 'user_id' });
 
       if (updateError) throw updateError;
 

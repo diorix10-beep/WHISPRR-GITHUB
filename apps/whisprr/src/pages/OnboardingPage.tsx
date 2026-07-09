@@ -182,9 +182,10 @@ export default function OnboardingPage() {
       localStorage.removeItem('whisprr_referrer');
 
       navigate('/feed');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Onboarding submission failed:', err);
-      setError(err instanceof Error ? `Failed to complete onboarding: ${err.message}` : 'Failed to complete onboarding. Please try again.');
+      const errorMessage = err?.message || (typeof err === 'string' ? err : 'Unknown database error');
+      setError(`Failed to complete onboarding: ${errorMessage}`);
       setLoading(false);
     }
   }, [user, data, updateProfile, navigate]);
