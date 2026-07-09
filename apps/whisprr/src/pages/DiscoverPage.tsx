@@ -15,6 +15,8 @@ import type { Profile, Community, Whisper, Reaction } from '../types';
 import { UserCard } from '../components/discover/UserCard';
 import { Avatar } from '../components/common/Avatar';
 import { WhisperCard } from '../components/feed/WhisperCard';
+import { EmptyState } from '../components/common/EmptyState';
+import { LoadingSkeleton, WhisperSkeleton } from '../components/common/LoadingSkeleton';
 
 type SearchTab = 'users' | 'communities' | 'interests';
 
@@ -499,11 +501,11 @@ export default function DiscoverPage() {
 
   if (loading) {
     return (
-      <div className="page-container flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <Loader2 size={36} className="animate-spin text-primary-500 mx-auto mb-3" />
-          <p className="text-warm-500 text-sm">Discovering people & communities...</p>
-        </div>
+      <div className="page-container max-w-4xl space-y-4">
+        <LoadingSkeleton height={40} width="30%" className="mb-6" />
+        <WhisperSkeleton />
+        <WhisperSkeleton />
+        <WhisperSkeleton />
       </div>
     );
   }
@@ -808,11 +810,11 @@ export default function DiscoverPage() {
             </button>
           </div>
           {personalizedWhispers.length === 0 ? (
-            <div className="text-center py-12 bg-white dark:bg-warm-800 rounded-3xl border border-warm-100 dark:border-warm-800">
-               <EyeOff size={32} className="mx-auto text-warm-300 dark:text-warm-600 mb-3" />
-               <p className="text-warm-600 dark:text-warm-400">No whispers found in your feed bubble yet.</p>
-               <p className="text-xs text-warm-500 mt-1">Interacting with communities & posts will generate personalized recommendations!</p>
-            </div>
+            <EmptyState
+              icon={EyeOff}
+              title="No whispers found yet"
+              description="Interacting with communities & posts will generate personalized recommendations!"
+            />
           ) : (
             <div className="space-y-4">
                {personalizedWhispers.map(whisper => (

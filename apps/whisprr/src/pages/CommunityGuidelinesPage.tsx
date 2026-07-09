@@ -1,12 +1,19 @@
-import { Navbar } from '../components/layout/Navbar';
-import { Footer } from '../components/layout/Footer';
+import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function CommunityGuidelinesPage() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-warm-50 dark:bg-warm-950 flex flex-col">
-      <Navbar />
-      
       <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-12 md:py-20">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-warm-600 dark:text-warm-400 hover:text-primary-500 mb-6"
+        >
+          <ArrowLeft size={18} />
+          Back
+        </button>
         <div className="bg-white dark:bg-warm-900 rounded-3xl p-8 md:p-12 shadow-sm border border-warm-200 dark:border-warm-800">
           <div className="mb-12">
             <h1 className="text-3xl md:text-5xl font-bold text-warm-900 dark:text-white mb-6">Community Guidelines</h1>
@@ -81,8 +88,6 @@ export default function CommunityGuidelinesPage() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

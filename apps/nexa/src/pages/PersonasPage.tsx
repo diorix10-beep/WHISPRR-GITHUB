@@ -4,7 +4,7 @@ import { Plus, Settings, User, Edit2, Trash2, CheckCircle, ShieldAlert } from 'l
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
-import type { Persona } from '@shared/types';
+import type { Persona } from '../types';
 
 export default function PersonasPage() {
   const { user, profile } = useAuth();

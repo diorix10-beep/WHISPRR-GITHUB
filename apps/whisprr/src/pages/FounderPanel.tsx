@@ -149,7 +149,11 @@ export default function FounderPanel() {
   const [loadingReferrals, setLoadingReferrals] = useState(false);
 
   // AI Team tab states
-  
+  const [aiDrafts, setAiDrafts] = useState<any[]>([]);
+  const [aiRecommendations, setAiRecommendations] = useState<any[]>([]);
+  const [aiObjectives, setAiObjectives] = useState<any[]>([]);
+  const [aiCampaigns, setAiCampaigns] = useState<any[]>([]);
+
   // Ecosystem social platforms state
   const [socialPlatforms, setSocialPlatforms] = useState<any[]>([]);
 

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera } from 'lucide-react';
+import { ArrowRight, Sparkles, MapPin, Upload, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { MOODS, INTERESTS } from '../types';
@@ -285,11 +285,11 @@ export default function OnboardingPage() {
               </p>
 
               <div className="relative group mb-12">
-                <div className="rounded-full shadow-2xl ring-8 ring-white dark:ring-warm-800 transition-transform duration-300 hover:scale-105">
+                <div className="w-48 h-48 rounded-full shadow-2xl ring-8 ring-white dark:ring-warm-800 transition-transform duration-300 hover:scale-105 flex items-center justify-center overflow-hidden bg-warm-100 dark:bg-warm-800">
                   <Avatar 
-                    src={data.photoUrl} 
-                    fallback={data.displayName?.charAt(0) || '?'} 
-                    size={180} 
+                    photoUrl={data.photoUrl} 
+                    emoji={data.displayName?.charAt(0) || '?'} 
+                    size="xl" 
                   />
                 </div>
               </div>
@@ -476,8 +476,14 @@ export default function OnboardingPage() {
 
               <div className="space-y-6">
                 {/* Avatar Preview */}
-                <div className="text-center py-8 bg-warm-50 dark:bg-warm-900 rounded-2xl">
-                  <div className="text-7xl mb-4">{data.avatarEmoji}</div>
+                <div className="text-center py-8 bg-warm-50 dark:bg-warm-900 rounded-2xl flex flex-col items-center">
+                  <div className="w-24 h-24 mb-4 rounded-full overflow-hidden flex items-center justify-center bg-warm-200 dark:bg-warm-800 border-2 border-white dark:border-warm-900">
+                    <Avatar 
+                      photoUrl={data.photoUrl} 
+                      emoji={data.displayName?.charAt(0) || '?'} 
+                      size="xl" 
+                    />
+                  </div>
                   <h2 className="text-2xl font-serif text-primary-500 mb-2">
                     {data.displayName}
                   </h2>

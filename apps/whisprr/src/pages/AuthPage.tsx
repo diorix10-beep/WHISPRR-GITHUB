@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Logo } from '../components/common/Logo';
+import { Button } from '../components/common/Button';
 
 type TabType = 'signin' | 'signup' | 'forgot';
 
@@ -241,13 +242,13 @@ export default function AuthPage() {
                 />
               </div>
 
-              <button
+              <Button
                 type="submit"
-                disabled={isLoading}
-                className="btn-primary w-full"
+                isLoading={isLoading}
+                fullWidth
               >
-                {isLoading ? 'Signing in...' : 'Sign In'}
-              </button>
+                Sign In
+              </Button>
 
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
@@ -258,19 +259,22 @@ export default function AuthPage() {
                 </div>
               </div>
 
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                fullWidth
                 onClick={handleGoogleSignIn}
-                disabled={isLoading}
-                className="btn-secondary w-full flex items-center justify-center gap-2"
+                isLoading={isLoading}
+                leftIcon={
+                  <svg className="w-5 h-5" viewBox="0 0 24 24">
+                    <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="14" fill="currentColor">
+                      G
+                    </text>
+                  </svg>
+                }
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="14" fill="currentColor">
-                    G
-                  </text>
-                </svg>
                 Continue with Google
-              </button>
+              </Button>
 
             </form>
           )}
@@ -349,13 +353,14 @@ export default function AuthPage() {
                 </label>
               </div>
 
-              <button
+              <Button
                 type="submit"
-                disabled={isLoading || !agreedTo18 || !agreedToTerms}
-                className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                isLoading={isLoading}
+                disabled={!agreedTo18 || !agreedToTerms}
+                fullWidth
               >
-                {isLoading ? 'Creating account...' : 'Create Account'}
-              </button>
+                Create Account
+              </Button>
 
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
@@ -366,19 +371,23 @@ export default function AuthPage() {
                 </div>
               </div>
 
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                fullWidth
                 onClick={handleGoogleSignIn}
-                disabled={isLoading || !agreedTo18 || !agreedToTerms}
-                className="btn-secondary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                isLoading={isLoading}
+                disabled={!agreedTo18 || !agreedToTerms}
+                leftIcon={
+                  <svg className="w-5 h-5" viewBox="0 0 24 24">
+                    <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="14" fill="currentColor">
+                      G
+                    </text>
+                  </svg>
+                }
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="14" fill="currentColor">
-                    G
-                  </text>
-                </svg>
                 Continue with Google
-              </button>
+              </Button>
             </form>
           )}
 
@@ -400,17 +409,17 @@ export default function AuthPage() {
                   <p className="text-warm-600 dark:text-warm-300 text-sm mb-6">
                     We've sent you a link to reset your password. It may take a few minutes to arrive.
                   </p>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     onClick={() => {
                       setResetSent(false);
                       setEmail('');
                       setActiveTab('signin');
                     }}
-                    className="btn-ghost"
                   >
                     Back to Sign In
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <>
@@ -433,21 +442,22 @@ export default function AuthPage() {
                     />
                   </div>
 
-                  <button
+                  <Button
                     type="submit"
-                    disabled={isLoading}
-                    className="btn-primary w-full"
+                    isLoading={isLoading}
+                    fullWidth
                   >
-                    {isLoading ? 'Sending...' : 'Send Reset Link'}
-                  </button>
+                    Send Reset Link
+                  </Button>
 
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     onClick={() => setActiveTab('signin')}
-                    className="btn-ghost w-full"
+                    fullWidth
                   >
                     Back to Sign In
-                  </button>
+                  </Button>
                 </>
               )}
             </form>

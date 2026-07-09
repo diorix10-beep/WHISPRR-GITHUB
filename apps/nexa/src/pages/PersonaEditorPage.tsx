@@ -4,7 +4,7 @@ import { ArrowLeft, Save, User, UserCircle, Upload } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
-import type { Persona } from '@shared/types';
+import type { Persona } from '../types';
 
 export default function PersonaEditorPage() {
   const { id } = useParams();

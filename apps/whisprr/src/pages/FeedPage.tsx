@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus, RefreshCw, Sparkles } from 'lucide-react';
+import { Plus, RefreshCw, Sparkles, Users, MessageSquare } from 'lucide-react';
 import type { Whisper, Profile, Reaction } from '../types';
 import { MOODS, type Mood } from '../types';
 import { supabase } from '../lib/supabase';
@@ -7,6 +7,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { WhisperCard } from '../components/feed/WhisperCard';
 import { ComposeWhisper } from '../components/feed/ComposeWhisper';
 import { WhisperSkeleton } from '../components/feed/WhisperSkeleton';
+import { EmptyState } from '../components/common/EmptyState';
+import { Button } from '../components/common/Button';
 import { useInView } from 'react-intersection-observer';
 
 type FeedMode = 'for_you' | 'following';
@@ -362,7 +364,6 @@ export default function FeedPage() {
         </div>
       )}
 
-      {/* Loading State */}
       {isLoading && whispers.length === 0 ? (
         <div className="space-y-4 py-4">
           <WhisperSkeleton />
@@ -370,22 +371,26 @@ export default function FeedPage() {
           <WhisperSkeleton />
         </div>
       ) : whispers.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="text-4xl mb-4">🤫</div>
-          <h2 className="text-lg font-semibold text-warm-900 dark:text-warm-50 mb-2">
-            {feedMode === 'following' ? 'Nothing here yet' : 'No whispers yet'}
-          </h2>
-          <p className="text-warm-600 dark:text-warm-400 mb-6">
-            {feedMode === 'following'
-              ? 'Follow people from the Discover page to see their whispers here.'
-              : selectedMood
-                ? `No whispers with the "${selectedMood}" mood. Try a different filter or share one!`
-                : 'Be the first to share your thoughts!'}
-          </p>
-          {feedMode === 'following' ? (
-            <a href="/discover" className="btn-primary">Discover People</a>
-          ) : (
-            <button onClick={() => setShowCompose(true)} className="btn-primary">Share a Whisper</button>
+        <div className="mt-8">
+          <EmptyState
+            icon={feedMode === 'following' ? Users : MessageSquare}
+            title={feedMode === 'following' ? 'Nothing here yet' : 'No whispers yet'}
+            description={
+              feedMode === 'following'
+                ? 'Follow people from the Discover page to see their whispers here.'
+                : selectedMood
+                  ? `No whispers with the "${selectedMood}" mood. Try a different filter or share one!`
+                  : 'Be the first to share your thoughts!'
+            }
+            actionLabel={feedMode === 'following' ? undefined : 'Share a Whisper'}
+            onAction={feedMode === 'following' ? undefined : () => setShowCompose(true)}
+          />
+          {feedMode === 'following' && (
+            <div className="flex justify-center mt-4">
+              <a href="/discover">
+                <Button>Discover People</Button>
+              </a>
+            </div>
           )}
         </div>
       ) : (

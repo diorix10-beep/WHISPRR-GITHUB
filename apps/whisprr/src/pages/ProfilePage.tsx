@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   MapPin, Calendar, Edit2, Check, X, Camera, MessageCircle, 
@@ -13,12 +13,14 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useInterests } from '../contexts/InterestContext';
 import { Avatar } from '../components/common/Avatar';
-import { MoodBadge } from '../components/common/MoodBadge';
+// import { MoodBadge } from '../components/common/MoodBadge';
 import { UserBadges } from '../components/common/UserBadges';
 import { FollowListModal } from '../components/profile/FollowListModal';
 import { PhotoUpload } from '../components/common/PhotoUpload';
 import { BannerUpload } from '../components/profile/BannerUpload';
 import { WhisperCard } from '../components/feed/WhisperCard';
+import { EmptyState } from '../components/common/EmptyState';
+import { Button } from '../components/common/Button';
 
 interface WhisperWithProfile extends Whisper {
   profiles: Profile;
@@ -1511,14 +1513,17 @@ export default function ProfilePage() {
                 <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-300 border-t-primary-500" />
               </div>
             ) : whispers.length === 0 ? (
-              <div className="text-center py-12 bg-white dark:bg-warm-800 rounded-3xl border border-warm-100 dark:border-warm-800">
-                <MessageSquare size={32} className="mx-auto text-warm-300 dark:text-warm-600 mb-3" />
-                <p className="text-warm-600 dark:text-warm-400">
-                  {activeTab === 'posts' && 'No whispers yet'}
-                  {activeTab === 'replies' && 'No replies yet'}
-                  {activeTab === 'media' && 'No media yet'}
-                  {activeTab === 'saved' && 'No saved whispers yet'}
-                </p>
+              <div className="mt-8">
+                <EmptyState
+                  icon={MessageSquare}
+                  title={
+                    activeTab === 'posts' ? 'No whispers yet' :
+                    activeTab === 'replies' ? 'No replies yet' :
+                    activeTab === 'media' ? 'No media yet' :
+                    'No saved whispers yet'
+                  }
+                  description={isOwnProfile ? "Share your first whisper to see it here." : "Check back later!"}
+                />
               </div>
             ) : (
               <div className="space-y-4">

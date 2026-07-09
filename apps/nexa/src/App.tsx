@@ -106,7 +106,10 @@ function AppLoader() {
       } else {
         return (
           <Suspense fallback={<PageLoader />}>
-            <MaintenancePage settings={systemSettings} />
+            <div className="min-h-screen flex items-center justify-center bg-warm-950 text-white flex-col text-center p-8">
+              <h1 className="text-3xl font-bold mb-4">Under Maintenance</h1>
+              <p className="text-warm-400">NEXA is currently undergoing scheduled maintenance. Please check back soon.</p>
+            </div>
           </Suspense>
         );
       }

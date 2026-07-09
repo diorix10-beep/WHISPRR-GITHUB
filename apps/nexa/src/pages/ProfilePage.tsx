@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/common/Avatar';
-import type { Persona } from '@shared/types';
+import type { Persona } from '../types';
 
 export default function ProfilePage() {
   const { user, profile, updateProfile, signOut } = useAuth();

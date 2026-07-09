@@ -37,7 +37,7 @@ export default function SuspendedPage() {
         <div className="bg-warm-50 dark:bg-warm-950/50 p-6 rounded-2xl mb-8 border border-warm-200 dark:border-warm-800">
           <p className="text-sm font-semibold text-warm-500 uppercase tracking-wider mb-2">Reason</p>
           <p className="text-warm-800 dark:text-warm-200 mb-6 whitespace-pre-wrap">
-            {suspension.reason}
+            {suspension.description}
           </p>
           
           {!isPermanent && suspension.expires_at && (

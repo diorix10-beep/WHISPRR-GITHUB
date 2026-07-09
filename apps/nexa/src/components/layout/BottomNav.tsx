@@ -64,10 +64,9 @@ export function BottomNav() {
                 `flex flex-col items-center justify-center py-3 px-2 relative
                 transition-all duration-200 flex-1
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded-lg
-                ${
-                  isActive
-                    ? isNexa ? 'text-red-500' : 'text-primary-500'
-                    : 'text-warm-400 dark:text-warm-500 hover:text-primary-400'
+                ${isActive
+                    ? 'text-red-500'
+                    : 'text-warm-400 dark:text-warm-500 hover:text-red-400'
                 }`
               }
               aria-label={badgeCount > 0 ? `${label}, ${badgeCount} unread` : label}
@@ -77,7 +76,7 @@ export function BottomNav() {
                 {badgeCount > 0 && (
                   <span
                     className={`absolute -top-1.5 -right-1.5 flex items-center justify-center
-                      w-4 h-4 text-white text-[10px] font-bold rounded-full ${isNexa ? 'bg-red-500' : 'bg-primary-500'}`}
+                      w-4 h-4 text-white text-[10px] font-bold rounded-full bg-red-500`}
                     aria-hidden="true"
                   >
                     {badgeCount > 9 ? '9+' : badgeCount}

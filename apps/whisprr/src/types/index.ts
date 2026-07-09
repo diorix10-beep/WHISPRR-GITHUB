@@ -58,6 +58,7 @@ export interface Profile {
   legal_accepted_version?: string | null;
   legal_accepted_at?: string | null;
   legal_accepted_ip?: string | null;
+  access_level?: 'whisprr' | 'nexa' | 'ecosystem';
 }
 
 export interface UserViolation {

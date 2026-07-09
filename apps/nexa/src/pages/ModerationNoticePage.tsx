@@ -46,9 +46,9 @@ export default function ModerationNoticePage() {
         </div>
 
         <div className="bg-warm-50 dark:bg-warm-950/50 p-6 rounded-2xl mb-8 border border-warm-200 dark:border-warm-800">
-          <p className="text-sm font-semibold text-warm-500 uppercase tracking-wider mb-2">Reason for notice</p>
-          <p className="text-warm-800 dark:text-warm-200 mb-4 whitespace-pre-wrap">
-            {warning.reason}
+          <p className="font-medium text-warm-900 dark:text-white mb-2">Reason for notice:</p>
+          <p className="text-warm-700 dark:text-warm-300 bg-white/50 dark:bg-warm-900/50 p-4 rounded-xl border border-warm-200 dark:border-warm-700">
+            {warning.description}
           </p>
           <p className="text-sm text-warm-600 dark:text-warm-400">
             Please review our <Link to="/guidelines" className="text-primary-500 hover:underline">Community Guidelines</Link> to ensure your future interactions align with our platform rules.

@@ -259,7 +259,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
-    setState({ user: null, session: null, profile: null, loading: false });
+    setState({ user: null, session: null, profile: null, loading: false, violations: [] });
   };
 
   const resetPassword = async (email: string) => {
