@@ -94,16 +94,10 @@ export default function AuthPage() {
         
         {/* Shared Ecosystem Messaging */}
         {activeTab !== 'forgot' && (
-          <div className="text-center bg-warm-900/30 backdrop-blur-md border border-white/5 p-4 rounded-2xl">
-            <p className="text-warm-400 text-sm">
-              Already have a <span className="font-bold text-white">WHISPRR</span> account?
-              <br />
-              <button 
-                onClick={() => setActiveTab('signin')}
-                className="text-red-400 font-semibold mt-1 hover:text-red-300 transition-colors"
-              >
-                Sign in with the same account.
-              </button>
+          <div className="text-center bg-warm-900/30 backdrop-blur-md border border-white/5 p-4 rounded-2xl mt-4">
+            <p className="text-warm-400 text-sm leading-relaxed">
+              Already have a <span className="font-bold text-white">WHISPRR</span> account?<br/>
+              <span className="text-warm-300">Sign in with the same account.</span>
             </p>
           </div>
         )}
