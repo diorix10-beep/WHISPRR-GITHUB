@@ -209,7 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: `${window.location.origin}/auth` },
     });
     if (error) throw error;
   };
@@ -217,7 +217,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithApple = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'apple',
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: `${window.location.origin}/auth` },
     });
     if (error) throw error;
   };

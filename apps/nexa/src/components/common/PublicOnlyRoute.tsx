@@ -13,5 +13,14 @@ export function PublicOnlyRoute() {
     return <Navigate to={from} replace />;
   }
 
+  // Prevent flash of login screen while Supabase parses OAuth callback hash in the background
+  if (window.location.hash.includes('access_token=') || window.location.hash.includes('error_description=')) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-warm-50 dark:bg-warm-900">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-300 border-t-primary-500" />
+      </div>
+    );
+  }
+
   return <Outlet />;
 }
