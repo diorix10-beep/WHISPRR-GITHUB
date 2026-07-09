@@ -45,6 +45,7 @@ const LegalAcceptancePage   = lazy(() => import('./pages/LegalAcceptancePage'));
 const ModerationNoticePage  = lazy(() => import('./pages/ModerationNoticePage'));
 const SuspendedPage         = lazy(() => import('./pages/SuspendedPage'));
 const CommunityGuidelinesPage = lazy(() => import('./pages/CommunityGuidelinesPage'));
+const WelcomePage           = lazy(() => import('./pages/WelcomePage'));
 
 function IndexRoute() {
   const { user } = useAuth();
@@ -148,6 +149,7 @@ function AppLoader() {
         <Route element={<ProtectedRoute />}>
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/legal-acceptance" element={<LegalAcceptancePage />} />
+          <Route path="/welcome" element={<WelcomePage />} />
           <Route path="/moderation-notice" element={<ModerationNoticePage />} />
           <Route path="/suspended" element={<SuspendedPage />} />
 

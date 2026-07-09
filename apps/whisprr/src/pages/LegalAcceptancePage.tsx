@@ -15,7 +15,7 @@ export default function LegalAcceptancePage() {
     setLoading(true);
     try {
       await acceptLegalTerms(CURRENT_LEGAL_VERSION);
-      navigate('/');
+      navigate('/welcome');
     } catch (err) {
       console.error(err);
       setLoading(false);
