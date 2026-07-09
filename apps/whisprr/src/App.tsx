@@ -15,10 +15,6 @@ import { PublicOnlyRoute } from './components/common/PublicOnlyRoute';
 import { Logo } from './components/common/Logo';
 import { ReloadPrompt } from './components/common/ReloadPrompt';
 
-const OracleAssistantPage = lazy(() => import('./pages/OracleAssistantPage'));
-
-const NexaChatsPage       = lazy(() => import('./pages/NexaChatsPage'));
-
 const AuthPage           = lazy(() => import('./pages/AuthPage'));
 const OnboardingPage     = lazy(() => import('./pages/OnboardingPage'));
 const FeedPage           = lazy(() => import('./pages/FeedPage'));
@@ -43,8 +39,6 @@ const BuildingPage      = lazy(() => import('./pages/BuildingPage'));
 const LandingPage       = lazy(() => import('./pages/LandingPage'));
 const CommunityProgramPage = lazy(() => import('./pages/CommunityProgramPage'));
 const CareersPage          = lazy(() => import('./pages/CareersPage'));
-const AiCharactersPage = lazy(() => import('./pages/AiCharactersPage'));
-const AiCharacterCreator = lazy(() => import('./pages/AiCharacterCreator'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 function IndexRoute() {

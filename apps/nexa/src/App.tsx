@@ -21,41 +21,13 @@ const NexaChatsPage       = lazy(() => import('./pages/NexaChatsPage'));
 
 const AuthPage           = lazy(() => import('./pages/AuthPage'));
 const OnboardingPage     = lazy(() => import('./pages/OnboardingPage'));
-const FeedPage           = lazy(() => import('./pages/FeedPage'));
-const DiscoverPage       = lazy(() => import('./pages/DiscoverPage'));
-const MessagesPage       = lazy(() => import('./pages/MessagesPage'));
 const ConversationPage   = lazy(() => import('./pages/ConversationPage'));
-const ProfilePage        = lazy(() => import('./pages/ProfilePage'));
-const SettingsPage       = lazy(() => import('./pages/SettingsPage'));
-const NotificationsPage  = lazy(() => import('./pages/NotificationsPage'));
-const CommunitiesPage    = lazy(() => import('./pages/CommunitiesPage'));
-const CommunityDetailPage = lazy(() => import('./pages/CommunityDetailPage'));
-const WhisperDetailPage  = lazy(() => import('./pages/WhisperDetailPage'));
-const VoiceRoomsPage     = lazy(() => import('./pages/VoiceRoomsPage'));
-const GroupChatPage      = lazy(() => import('./pages/GroupChatPage'));
 const PrivacyPage        = lazy(() => import('./pages/PrivacyPage'));
 const TermsPage          = lazy(() => import('./pages/TermsPage'));
 const TrustPage          = lazy(() => import('./pages/TrustPage'));
-const FeedbackDashboard  = lazy(() => import('./pages/FeedbackDashboard'));
-const FounderPanel       = lazy(() => import('./pages/FounderPanel'));
-const MaintenancePage   = lazy(() => import('./pages/MaintenancePage'));
-const BuildingPage      = lazy(() => import('./pages/BuildingPage'));
-const LandingPage       = lazy(() => import('./pages/LandingPage'));
-const CommunityProgramPage = lazy(() => import('./pages/CommunityProgramPage'));
-const CareersPage          = lazy(() => import('./pages/CareersPage'));
 const AiCharactersPage = lazy(() => import('./pages/AiCharactersPage'));
 const AiCharacterCreator = lazy(() => import('./pages/AiCharacterCreator'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
-
-function IndexRoute() {
-  const { user } = useAuth();
-  if (user) {
-    return <Navigate to="/feed" replace />;
-  }
-  return <LandingPage />;
-}
-
-
 function PageLoader() {
   return (
     <div className="h-screen flex items-center justify-center bg-warm-50 dark:bg-warm-900">
