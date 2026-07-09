@@ -78,7 +78,8 @@ export function SideNav() {
 
       {/* Nav links */}
       <nav className="flex-1 px-3 py-4 space-y-1" aria-label="Main navigation">
-        {visibleNavItems.map(({ path, icon: Icon, label, external }) => {
+        {visibleNavItems.map((item) => {
+          const { path, icon: Icon, label, external } = item;
           const isMessages = label === 'Messages';
           const isNotifications = label === 'Notifications';
           const badgeCount = isMessages ? unreadMessageCount : isNotifications ? unreadCount : 0;
