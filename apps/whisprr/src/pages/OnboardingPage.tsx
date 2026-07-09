@@ -217,8 +217,8 @@ export default function OnboardingPage() {
           </p>
         </div>
 
-        {/* Main Card */}
-        <div className="card bg-white dark:bg-warm-800 rounded-3xl shadow-warm p-8 mb-8">
+        {/* Main Wrapper */}
+        <div className={currentStep === 2 ? "mb-8" : "card bg-white dark:bg-warm-800 rounded-3xl shadow-warm p-8 mb-8"}>
           {/* Step 1: Display Name & Username */}
           {currentStep === 1 && (
             <div>
@@ -275,32 +275,37 @@ export default function OnboardingPage() {
 
           {/* Step 2: Avatar Selection */}
           {currentStep === 2 && (
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-serif font-bold text-warm-900 dark:text-warm-50 mb-2 tracking-tight leading-tight">
+            <div className="flex flex-col items-center justify-center py-12 px-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <h1 className="text-4xl sm:text-5xl font-serif font-bold text-warm-900 dark:text-warm-50 mb-4 tracking-tight leading-tight text-center">
                 Add a Profile Photo
               </h1>
-              <p className="text-warm-600 dark:text-warm-300 mb-8 font-sans">
-                Upload a real photo to help others recognize you
+              <p className="text-lg text-warm-600 dark:text-warm-300 mb-12 font-sans text-center max-w-md">
+                A profile photo helps people recognize you. You can always change it later.
               </p>
 
-              <div className="flex flex-col items-center gap-6">
-                <div className="relative">
+              <div className="relative group mb-12">
+                <div className="rounded-full shadow-2xl ring-8 ring-white dark:ring-warm-800 transition-transform duration-300 hover:scale-105">
                   <Avatar 
                     src={data.photoUrl} 
                     fallback={data.displayName?.charAt(0) || '?'} 
-                    size={120} 
+                    size={180} 
                   />
-                  <button
-                    onClick={() => setShowPhotoUpload(true)}
-                    className="absolute bottom-0 right-0 p-3 bg-primary-500 text-white rounded-full hover:bg-primary-600 transition-colors shadow-lg"
-                  >
-                    <Camera size={20} />
-                  </button>
                 </div>
-                <p className="text-sm text-warm-500 font-sans text-center">
-                  You can upload a photo now or skip and do it later in your profile settings.
-                </p>
               </div>
+
+              <button
+                onClick={() => setShowPhotoUpload(true)}
+                className="btn-primary w-full max-w-xs py-4 text-lg font-semibold rounded-2xl mb-6 shadow-xl hover:-translate-y-1 transition-all"
+              >
+                Upload Photo
+              </button>
+
+              <button
+                onClick={() => setCurrentStep(3)}
+                className="text-warm-500 hover:text-warm-700 dark:hover:text-warm-300 font-semibold transition-colors"
+              >
+                Skip for now
+              </button>
 
               <PhotoUpload
                 isOpen={showPhotoUpload}
