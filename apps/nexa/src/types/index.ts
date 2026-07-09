@@ -55,6 +55,22 @@ export interface Profile {
   referrals_count?: number;
   referred_by?: string | null;
   home_country?: string;
+  legal_accepted_version?: string | null;
+  legal_accepted_at?: string | null;
+  legal_accepted_ip?: string | null;
+}
+
+export interface UserViolation {
+  id: string;
+  user_id: string;
+  rule_violated: string;
+  violated_section_link: string;
+  violation_level: number;
+  description: string;
+  acknowledged: boolean;
+  expires_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Whisper {

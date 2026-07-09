@@ -1,13 +1,14 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
-import type { Profile } from '../types';
+import type { Profile, UserViolation } from '../types';
 import { supabase } from '../lib/supabase';
 
 interface AuthState {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
+  violations: UserViolation[];
   loading: boolean;
 }
 
@@ -24,9 +25,12 @@ interface AuthContextType extends AuthState {
   fetchSystemSettings: () => Promise<void>;
   updateSystemSettings: (updates: any) => Promise<void>;
   upgradeToEcosystem: () => Promise<void>;
+  acceptLegalTerms: (version: string) => Promise<void>;
+  acknowledgeViolation: (violationId: string) => Promise<void>;
 }
 
 const AUTH_TIMEOUT_MS = 10000;
+export const CURRENT_LEGAL_VERSION = '2026-07-09-v1';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -35,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: null,
     session: null,
     profile: null,
+    violations: [],
     loading: true,
   });
 
@@ -57,6 +62,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const initializedRef = useRef(false);
 
+  const fetchViolations = useCallback(async (userId: string): Promise<UserViolation[]> => {
+    try {
+      const { data } = await supabase
+        .from('user_violations')
+        .select('*')
+        .eq('user_id', userId)
+        .or('acknowledged.eq.false,and(violation_level.gte.3,expires_at.gt.now())');
+      return (data as UserViolation[]) || [];
+    } catch {
+      return [];
+    }
+  }, []);
+
   const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
     try {
       const { data } = await supabase
@@ -72,10 +90,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshProfile = useCallback(async () => {
     if (state.user) {
-      const profile = await fetchProfile(state.user.id);
-      setState(prev => ({ ...prev, profile }));
+      const [profile, violations] = await Promise.all([
+        fetchProfile(state.user.id),
+        fetchViolations(state.user.id)
+      ]);
+      setState(prev => ({ ...prev, profile, violations }));
     }
-  }, [state.user, fetchProfile]);
+  }, [state.user, fetchProfile, fetchViolations]);
 
   const updateProfile = useCallback(async (updates: Partial<Profile>) => {
     if (!state.user) return;
@@ -154,18 +175,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!mounted) return;
 
         if (_event === 'SIGNED_OUT') {
-          setState({ user: null, session: null, profile: null, loading: false });
+          setState({ user: null, session: null, profile: null, violations: [], loading: false });
           return;
         }
 
         if (session?.user) {
           setState(prev => ({ ...prev, user: session.user, session, loading: true }));
-          const profile = await fetchProfile(session.user.id);
+          const [profile, violations] = await Promise.all([
+            fetchProfile(session.user.id),
+            fetchViolations(session.user.id)
+          ]);
           if (mounted) {
-            setState({ user: session.user, session, profile, loading: false });
+            setState({ user: session.user, session, profile, violations, loading: false });
           }
         } else {
-          setState({ user: null, session: null, profile: null, loading: false });
+          setState({ user: null, session: null, profile: null, violations: [], loading: false });
         }
       }
     );
@@ -174,13 +198,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!mounted) return;
 
       if (session?.user) {
-        const profile = await fetchProfile(session.user.id);
+        const [profile, violations] = await Promise.all([
+          fetchProfile(session.user.id),
+          fetchViolations(session.user.id)
+        ]);
         if (mounted) {
-          setState({ user: session.user, session, profile, loading: false });
+          setState({ user: session.user, session, profile, violations, loading: false });
         }
       } else {
         if (mounted) {
-          setState({ user: null, session: null, profile: null, loading: false });
+          setState({ user: null, session: null, profile: null, violations: [], loading: false });
         }
       }
       initializedRef.current = true;
@@ -196,7 +223,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchProfile]);
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        data: {
+          legal_accepted_version: CURRENT_LEGAL_VERSION
+        }
+      }
+    });
     if (error) throw error;
   };
 
@@ -235,17 +270,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const upgradeToEcosystem = async () => {
+    // Legacy support to bypass old errors, currently a no-op since everyone is ecosystem now
+    return Promise.resolve();
+  };
+
+  const acceptLegalTerms = async (version: string) => {
     if (!state.user) return;
     const { error } = await supabase
       .from('profiles')
-      .update({ access_level: 'ecosystem' })
+      .update({
+        legal_accepted_version: version,
+        legal_accepted_at: new Date().toISOString()
+      })
       .eq('user_id', state.user.id);
-    
-    if (error) {
-      throw error;
-    }
-    
-    // Refresh the profile so the routing constraint releases them immediately
+      
+    if (error) throw error;
+    await refreshProfile();
+  };
+
+  const acknowledgeViolation = async (violationId: string) => {
+    if (!state.user) return;
+    const { error } = await supabase
+      .from('user_violations')
+      .update({ acknowledged: true })
+      .eq('id', violationId)
+      .eq('user_id', state.user.id);
+      
+    if (error) throw error;
     await refreshProfile();
   };
 
@@ -263,7 +314,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       systemSettings,
       fetchSystemSettings,
       updateSystemSettings,
-      upgradeToEcosystem
+      upgradeToEcosystem,
+      acceptLegalTerms,
+      acknowledgeViolation
     }}>
       {children}
     </AuthContext.Provider>

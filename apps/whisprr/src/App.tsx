@@ -38,7 +38,13 @@ const LandingPage       = lazy(() => import('./pages/LandingPage'));
 const CommunityProgramPage = lazy(() => import('./pages/CommunityProgramPage'));
 const CareersPage          = lazy(() => import('./pages/CareersPage'));
 const RestrictedPage       = lazy(() => import('./pages/RestrictedPage'));
-const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+const NotFoundPage         = lazy(() => import('./pages/NotFoundPage'));
+
+// Legal & Moderation Pages
+const LegalAcceptancePage   = lazy(() => import('./pages/LegalAcceptancePage'));
+const ModerationNoticePage  = lazy(() => import('./pages/ModerationNoticePage'));
+const SuspendedPage         = lazy(() => import('./pages/SuspendedPage'));
+const CommunityGuidelinesPage = lazy(() => import('./pages/CommunityGuidelinesPage'));
 
 function IndexRoute() {
   const { user } = useAuth();
@@ -131,6 +137,7 @@ function AppLoader() {
         <Route path="/trust" element={<TrustPage />} />
         <Route path="/building" element={<BuildingPage />} />
         <Route path="/restricted" element={<RestrictedPage />} />
+        <Route path="/guidelines" element={<CommunityGuidelinesPage />} />
 
         {/* Public Only (Login/Signup) */}
         <Route element={<PublicOnlyRoute />}>
@@ -140,6 +147,9 @@ function AppLoader() {
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/legal-acceptance" element={<LegalAcceptancePage />} />
+          <Route path="/moderation-notice" element={<ModerationNoticePage />} />
+          <Route path="/suspended" element={<SuspendedPage />} />
 
           {/* WHISPRR Platform */}
           <Route element={<AppLayout />}>

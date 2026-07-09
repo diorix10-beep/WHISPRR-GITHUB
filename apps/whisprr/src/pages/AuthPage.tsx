@@ -14,6 +14,10 @@ export default function AuthPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  
+  // Legal Acceptance
+  const [agreedTo18, setAgreedTo18] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -50,6 +54,12 @@ export default function AuthPage() {
     try {
       if (!email || !password || !confirmPassword) {
         setError('Please fill in all fields');
+        setIsLoading(false);
+        return;
+      }
+
+      if (!agreedTo18 || !agreedToTerms) {
+        setError('You must confirm your age and agree to the legal terms to create an account.');
         setIsLoading(false);
         return;
       }
@@ -313,10 +323,36 @@ export default function AuthPage() {
                 />
               </div>
 
+              <div className="space-y-3 mt-2">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-1 w-5 h-5 rounded border-warm-300 text-primary-500 focus:ring-primary-500 bg-white dark:bg-warm-900"
+                    checked={agreedTo18}
+                    onChange={(e) => setAgreedTo18(e.target.checked)}
+                  />
+                  <span className="text-sm text-warm-700 dark:text-warm-300">
+                    I confirm that I am at least 18 years old or older.
+                  </span>
+                </label>
+
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-1 w-5 h-5 rounded border-warm-300 text-primary-500 focus:ring-primary-500 bg-white dark:bg-warm-900"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  />
+                  <span className="text-sm text-warm-700 dark:text-warm-300">
+                    I agree to the <Link to="/terms" className="text-primary-500 hover:underline" target="_blank">Terms of Service</Link> and <Link to="/privacy" className="text-primary-500 hover:underline" target="_blank">Privacy Policy</Link>. (Please read the terms of service and privacy policy as it is important).
+                  </span>
+                </label>
+              </div>
+
               <button
                 type="submit"
-                disabled={isLoading}
-                className="btn-primary w-full"
+                disabled={isLoading || !agreedTo18 || !agreedToTerms}
+                className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Creating account...' : 'Create Account'}
               </button>
@@ -333,8 +369,8 @@ export default function AuthPage() {
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
-                disabled={isLoading}
-                className="btn-secondary w-full flex items-center justify-center gap-2"
+                disabled={isLoading || !agreedTo18 || !agreedToTerms}
+                className="btn-secondary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="14" fill="currentColor">

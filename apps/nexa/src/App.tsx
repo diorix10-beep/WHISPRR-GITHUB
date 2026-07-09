@@ -32,6 +32,13 @@ const PersonasPage = lazy(() => import('./pages/PersonasPage'));
 const PersonaEditorPage = lazy(() => import('./pages/PersonaEditorPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+
+// Legal & Moderation Pages
+const LegalAcceptancePage   = lazy(() => import('./pages/LegalAcceptancePage'));
+const ModerationNoticePage  = lazy(() => import('./pages/ModerationNoticePage'));
+const SuspendedPage         = lazy(() => import('./pages/SuspendedPage'));
+const CommunityGuidelinesPage = lazy(() => import('./pages/CommunityGuidelinesPage'));
+
 function PageLoader() {
   return (
     <div className="h-screen flex items-center justify-center bg-warm-50 dark:bg-warm-900">
@@ -113,6 +120,7 @@ function AppLoader() {
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/trust" element={<TrustPage />} />
+        <Route path="/guidelines" element={<CommunityGuidelinesPage />} />
 
         {/* Public Only (Login/Signup) */}
         <Route element={<PublicOnlyRoute />}>
@@ -123,6 +131,9 @@ function AppLoader() {
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/legal-acceptance" element={<LegalAcceptancePage />} />
+          <Route path="/moderation-notice" element={<ModerationNoticePage />} />
+          <Route path="/suspended" element={<SuspendedPage />} />
 
           {/* NEXA Standalone Platform */}
           <Route element={<NexaLayout />}>

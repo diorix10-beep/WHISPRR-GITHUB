@@ -14,6 +14,10 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Legal Acceptance
+  const [agreedTo18, setAgreedTo18] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -23,6 +27,12 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
     try {
       if (!email || !password || !confirmPassword) {
         setError('Please fill in all fields');
+        setIsLoading(false);
+        return;
+      }
+
+      if (!agreedTo18 || !agreedToTerms) {
+        setError('You must confirm your age and agree to the legal terms to create an account.');
         setIsLoading(false);
         return;
       }
@@ -116,13 +126,42 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
         </div>
       </div>
 
+      <div className="space-y-3 mt-2">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            className="mt-1 w-5 h-5 rounded border-warm-300 text-red-500 focus:ring-red-500 bg-white dark:bg-warm-900"
+            checked={agreedTo18}
+            onChange={(e) => setAgreedTo18(e.target.checked)}
+          />
+          <span className="text-sm text-warm-700 dark:text-warm-300">
+            I confirm that I am at least 18 years old or older.
+          </span>
+        </label>
+
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            className="mt-1 w-5 h-5 rounded border-warm-300 text-red-500 focus:ring-red-500 bg-white dark:bg-warm-900"
+            checked={agreedToTerms}
+            onChange={(e) => setAgreedToTerms(e.target.checked)}
+          />
+          <span className="text-sm text-warm-700 dark:text-warm-300">
+            I agree to the <a href="/terms" className="text-red-500 hover:underline" target="_blank">Terms of Service</a> and <a href="/privacy" className="text-red-500 hover:underline" target="_blank">Privacy Policy</a>. (Please read the terms of service and privacy policy as it is important).
+          </span>
+        </label>
+      </div>
+
       <button
         type="submit"
-        disabled={isLoading || !!success}
-        className="w-full py-4 px-6 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-[0_0_20px_rgba(239,68,68,0.3)] hover:shadow-[0_0_30px_rgba(239,68,68,0.5)] transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center mt-2"
+        disabled={isLoading || !agreedTo18 || !agreedToTerms}
+        className="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3.5 px-4 rounded-xl shadow-[0_0_20px_rgba(239,68,68,0.3)] hover:shadow-[0_0_25px_rgba(239,68,68,0.5)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
       >
         {isLoading ? (
-          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          <span className="flex items-center justify-center gap-2">
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            Creating Account...
+          </span>
         ) : (
           'Create Account'
         )}
