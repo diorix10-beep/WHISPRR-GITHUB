@@ -21,7 +21,7 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
 
   const apps = [
     { name: 'WHISPRR', desc: 'Social Network', path: '/feed', icon: Globe, color: 'bg-primary-500/10 text-primary-500 border-primary-500/20 hover:bg-primary-500/20', external: false },
-    { name: 'NEXA', desc: 'Roleplay Studio', path: 'https://nexa.whisprr.xyz', icon: Bot, color: 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20', external: true },
+    { name: 'NEXA', desc: 'Roleplay Studio', path: '#nexa', icon: Bot, color: 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20', isNexa: true },
     { name: 'Oracle', desc: 'System Guide', path: 'https://nexa.whisprr.xyz/oracle', icon: HelpCircle, color: 'bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20', external: true },
   ];
 
@@ -59,12 +59,16 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
             {apps.map((app) => {
               const Icon = app.icon;
               const isExternal = 'external' in app && app.external;
+              const isNexa = 'isNexa' in app && app.isNexa;
               
               return (
                 <button
                   key={app.name}
                   onClick={() => {
-                    if (isExternal) {
+                    if (isNexa) {
+                      window.dispatchEvent(new CustomEvent('open-nexa-promo'));
+                      onClose();
+                    } else if (isExternal) {
                       window.location.href = app.path;
                     } else {
                       handleNavigate(app.path);

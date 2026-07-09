@@ -20,7 +20,7 @@ const navItems = [
   { path: '/communities', icon: Users, label: 'Communities' },
   { path: '/messages', icon: MessageCircle, label: 'Messages' },
   { path: '/notifications', icon: Bell, label: 'Notifications' },
-  { path: nexaUrl, icon: Bot, label: 'NEXA', external: true },
+  { path: '#nexa', icon: Bot, label: 'NEXA', isNexa: true },
 ];
 
 export function SideNav() {
@@ -106,20 +106,22 @@ export function SideNav() {
             </>
           );
 
-          const className = "flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 text-warm-600 dark:text-warm-400 hover:bg-warm-100 dark:hover:bg-warm-700 hover:text-warm-900 dark:hover:text-warm-100";
-
-          if (external) {
-            return (
-              <a key={path} href={path} className={className}>
-                {content}
-              </a>
-            );
-          }
+          const isExternal = 'external' in item && item.external;
+          const isNexa = 'isNexa' in item && item.isNexa;
 
           return (
             <NavLink
               key={path}
               to={path}
+              onClick={(e) => {
+                if (isNexa) {
+                  e.preventDefault();
+                  window.dispatchEvent(new CustomEvent('open-nexa-promo'));
+                } else if (isExternal) {
+                  e.preventDefault();
+                  window.location.href = path;
+                }
+              }}
               end={path === '/' || path === '/profile'}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 ${

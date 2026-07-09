@@ -8,6 +8,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Logo } from '../common/Logo';
 import { Avatar } from '../common/Avatar';
 import { AppLauncherModal } from './AppLauncherModal';
+import { NexaPromoModal } from '../modals/NexaPromoModal';
+
 interface AppLayoutProps {
   children?: ReactNode;
 }
@@ -19,11 +21,19 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBannerVisible, setIsBannerVisible] = useState(true);
   const [isLauncherOpen, setIsLauncherOpen] = useState(false);
+  const [isNexaPromoOpen, setIsNexaPromoOpen] = useState(false);
 
   useEffect(() => {
-    const handleOpen = () => setIsLauncherOpen(true);
-    window.addEventListener('open-app-launcher', handleOpen);
-    return () => window.removeEventListener('open-app-launcher', handleOpen);
+    const handleOpenLauncher = () => setIsLauncherOpen(true);
+    const handleOpenNexaPromo = () => setIsNexaPromoOpen(true);
+    
+    window.addEventListener('open-app-launcher', handleOpenLauncher);
+    window.addEventListener('open-nexa-promo', handleOpenNexaPromo);
+    
+    return () => {
+      window.removeEventListener('open-app-launcher', handleOpenLauncher);
+      window.removeEventListener('open-nexa-promo', handleOpenNexaPromo);
+    };
   }, []);
 
   return (
@@ -267,6 +277,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         isOpen={isLauncherOpen} 
         onClose={() => setIsLauncherOpen(false)} 
       />
+      <NexaPromoModal isOpen={isNexaPromoOpen} onClose={() => setIsNexaPromoOpen(false)} />
     </div>
   );
 }
