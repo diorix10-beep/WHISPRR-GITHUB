@@ -13,9 +13,9 @@ export function ProtectedRoute() {
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  // If the user has not completed onboarding, only allow them to access the onboarding page.
+  // If the user has no profile or has not completed onboarding, only allow them to access the onboarding page.
   // We don't want to redirect them to /onboarding if they're already on it.
-  if (profile && !profile.onboarding_complete && location.pathname !== '/onboarding') {
+  if ((!profile || !profile.onboarding_complete) && location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />;
   }
 

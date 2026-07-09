@@ -493,11 +493,8 @@ export default function DiscoverPage() {
   }, [user, profile, followingMap]);
 
   if (!user || !profile) {
-    return (
-      <div className="page-container">
-        <p className="text-center text-warm-600">Please log in to discover</p>
-      </div>
-    );
+    // ProtectedRoute handles the redirect, so we just return null here to avoid flashing incorrect messages.
+    return null;
   }
 
   if (loading) {
