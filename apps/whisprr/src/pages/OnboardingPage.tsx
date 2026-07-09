@@ -1,18 +1,19 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Camera } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { MOODS, INTERESTS } from '../types';
 import type { Mood, Interest } from '../types';
+import { Avatar } from '../components/common/Avatar';
+import { PhotoUpload } from '../components/common/PhotoUpload';
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7;
-
-const AVATAR_EMOJIS = ['💫', '🌙', '🦋', '🌸', '🎨', '🎵', '🌊', '✨', '🌿', '🔥', '💜', '🌻', '🌈', '🎭', '📖', '🌍', '🎪', '🍀', '🦊', '🐝', '🌺', '💭', '🪐', '⭐'];
 
 interface OnboardingData {
   displayName: string;
   username: string;
-  avatarEmoji: string;
+  photoUrl: string | null;
   mood: Mood | null;
   interests: Interest[];
   bio: string;
@@ -24,6 +25,7 @@ export default function OnboardingPage() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);
+  const [showPhotoUpload, setShowPhotoUpload] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
@@ -47,7 +49,7 @@ export default function OnboardingPage() {
   const [data, setData] = useState<OnboardingData>({
     displayName: profile?.display_name || '',
     username: profile?.username || '',
-    avatarEmoji: profile?.avatar_emoji || AVATAR_EMOJIS[0],
+    photoUrl: profile?.photo_url || null,
     mood: (profile?.mood as Mood) || null,
     interests: (profile?.interests as Interest[]) || [],
     bio: profile?.bio || '',
@@ -109,10 +111,7 @@ export default function OnboardingPage() {
 
       setCurrentStep(2);
     } else if (currentStep === 2) {
-      if (!data.avatarEmoji) {
-        setError('Please select an avatar');
-        return;
-      }
+      // Photo upload is optional, just proceed
       setCurrentStep(3);
     } else if (currentStep === 3) {
       if (!data.mood) {
@@ -170,7 +169,7 @@ export default function OnboardingPage() {
       await updateProfile({
         display_name: data.displayName,
         username: data.username,
-        avatar_emoji: data.avatarEmoji,
+        photo_url: data.photoUrl,
         mood: data.mood,
         interests: data.interests,
         bio: data.bio || null,
@@ -278,27 +277,37 @@ export default function OnboardingPage() {
           {currentStep === 2 && (
             <div>
               <h1 className="text-3xl sm:text-4xl font-serif font-bold text-warm-900 dark:text-warm-50 mb-2 tracking-tight leading-tight">
-                Choose Your Avatar
+                Add a Profile Photo
               </h1>
               <p className="text-warm-600 dark:text-warm-300 mb-8 font-sans">
-                Pick an emoji that represents you
+                Upload a real photo to help others recognize you
               </p>
 
-              <div className="grid grid-cols-6 gap-4">
-                {AVATAR_EMOJIS.map((emoji) => (
+              <div className="flex flex-col items-center gap-6">
+                <div className="relative">
+                  <Avatar 
+                    src={data.photoUrl} 
+                    fallback={data.displayName?.charAt(0) || '?'} 
+                    size={120} 
+                  />
                   <button
-                    key={emoji}
-                    className={`btn-primary aspect-square text-4xl rounded-2xl transition-all ${
-                      data.avatarEmoji === emoji
-                        ? 'ring-4 ring-primary-500 scale-110'
-                        : 'hover:scale-105 bg-warm-50 dark:bg-warm-900'
-                    }`}
-                    onClick={() => setData({ ...data, avatarEmoji: emoji })}
+                    onClick={() => setShowPhotoUpload(true)}
+                    className="absolute bottom-0 right-0 p-3 bg-primary-500 text-white rounded-full hover:bg-primary-600 transition-colors shadow-lg"
                   >
-                    {emoji}
+                    <Camera size={20} />
                   </button>
-                ))}
+                </div>
+                <p className="text-sm text-warm-500 font-sans text-center">
+                  You can upload a photo now or skip and do it later in your profile settings.
+                </p>
               </div>
+
+              <PhotoUpload
+                isOpen={showPhotoUpload}
+                onClose={() => setShowPhotoUpload(false)}
+                currentPhotoUrl={data.photoUrl}
+                onPhotoUpdated={(url) => setData({ ...data, photoUrl: url })}
+              />
             </div>
           )}
 
