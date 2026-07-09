@@ -1,6 +1,6 @@
 import { ArrowLeft, ShieldAlert, Sparkles, LogOut } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { Logo } from '../common/Logo';
+import { useAuth } from '../contexts/AuthContext';
+import { Logo } from '../components/common/Logo';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
