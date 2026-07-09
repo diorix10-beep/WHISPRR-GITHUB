@@ -72,3 +72,27 @@ Charge a small platform commission on marketplace sales of custom characters, wo
 3. **The free experience must remain genuinely enjoyable.**
 4. **Unified Ecosystem.** Simple, single subscriptions are preferred over fragmented, product-specific paywalls.
 
+---
+
+## Ecosystem Architecture & Identity Principles
+
+1. **NEXA must become its own product**
+   NEXA is not just "WHISPRR with different pages." It must progressively develop its own identity:
+   - Its own landing page and branding.
+   - Its own navigation and design language.
+   - Its own UI/UX focused entirely on AI roleplay and worldbuilding.
+   - Its own loading experience.
+
+2. **Shared Ecosystem**
+   Despite having distinct products, the underlying ecosystem is unified:
+   - One login, one profile, one identity.
+   - One subscription system across the ecosystem.
+   - Seamless SSO (Single Sign-On) between platforms.
+
+3. **Ecosystem Launcher (Future)**
+   An application launcher (similar to Google's app launcher) will allow users to seamlessly switch between WHISPRR, NEXA, Oracle, and future products without leaving the ecosystem.
+
+4. **Domain Strategy**
+   - Currently, we use `whisprr.xyz` (WHISPRR) and `nexa.whisprr.xyz` (NEXA).
+   - In the future, we may migrate to a dedicated domain like `nexa.ai`. The architecture (Monorepo + SSO) is designed so this only requires DNS/Redirect updates, not a codebase rewrite.
+   - Our goal is to build *one ecosystem* made of multiple products that work together seamlessly.
