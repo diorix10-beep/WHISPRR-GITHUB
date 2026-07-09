@@ -200,6 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email, 
       password,
       options: {
+        data: { access_level: 'nexa' },
         emailRedirectTo: window.location.origin
       }
     });

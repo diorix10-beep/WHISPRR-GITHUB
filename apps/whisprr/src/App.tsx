@@ -37,6 +37,7 @@ const BuildingPage      = lazy(() => import('./pages/BuildingPage'));
 const LandingPage       = lazy(() => import('./pages/LandingPage'));
 const CommunityProgramPage = lazy(() => import('./pages/CommunityProgramPage'));
 const CareersPage          = lazy(() => import('./pages/CareersPage'));
+const RestrictedPage       = lazy(() => import('./pages/RestrictedPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 function IndexRoute() {
@@ -129,6 +130,7 @@ function AppLoader() {
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/trust" element={<TrustPage />} />
         <Route path="/building" element={<BuildingPage />} />
+        <Route path="/restricted" element={<RestrictedPage />} />
 
         {/* Public Only (Login/Signup) */}
         <Route element={<PublicOnlyRoute />}>

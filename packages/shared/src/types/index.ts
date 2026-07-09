@@ -32,6 +32,7 @@ export interface Profile {
   birthday: string | null;
   website: string | null;
   onboarding_complete: boolean;
+  access_level?: 'ecosystem' | 'nexa';
   profile_visible: boolean;
   online_status_visible: boolean;
   read_receipts_enabled: boolean;

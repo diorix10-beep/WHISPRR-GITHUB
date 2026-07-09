@@ -19,5 +19,10 @@ export function ProtectedRoute() {
     return <Navigate to="/onboarding" replace />;
   }
 
+  // Prevent NEXA-only accounts from accessing WHISPRR
+  if (profile && profile.access_level === 'nexa') {
+    return <Navigate to="/restricted" replace />;
+  }
+
   return <Outlet />;
 }
