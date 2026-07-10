@@ -27,24 +27,29 @@ const CommunityDetailPage = lazy(() => import('./pages/CommunityDetailPage'));
 const WhisperDetailPage  = lazy(() => import('./pages/WhisperDetailPage'));
 const VoiceRoomsPage     = lazy(() => import('./pages/VoiceRoomsPage'));
 const GroupChatPage      = lazy(() => import('./pages/GroupChatPage'));
-const PrivacyPage        = lazy(() => import('./pages/PrivacyPage'));
-const TermsPage          = lazy(() => import('./pages/TermsPage'));
 const TrustPage          = lazy(() => import('./pages/TrustPage'));
 const FeedbackDashboard  = lazy(() => import('./pages/FeedbackDashboard'));
 const FounderPanel       = lazy(() => import('./pages/FounderPanel'));
-const MaintenancePage   = lazy(() => import('./pages/MaintenancePage'));
-const BuildingPage      = lazy(() => import('./pages/BuildingPage'));
-const LandingPage       = lazy(() => import('./pages/LandingPage'));
+const MaintenancePage    = lazy(() => import('./pages/MaintenancePage'));
+const BuildingPage       = lazy(() => import('./pages/BuildingPage'));
+const LandingPage        = lazy(() => import('./pages/LandingPage'));
 const CommunityProgramPage = lazy(() => import('./pages/CommunityProgramPage'));
-const CareersPage          = lazy(() => import('./pages/CareersPage'));
-const RestrictedPage       = lazy(() => import('./pages/RestrictedPage'));
-const NotFoundPage         = lazy(() => import('./pages/NotFoundPage'));
+const CareersPage        = lazy(() => import('./pages/CareersPage'));
+const RestrictedPage     = lazy(() => import('./pages/RestrictedPage'));
+const NotFoundPage       = lazy(() => import('./pages/NotFoundPage'));
+// Legal & Policy Pages
+const TermsPage                = lazy(() => import('./pages/legal/TermsPage'));
+const PrivacyPage              = lazy(() => import('./pages/legal/PrivacyPage'));
+const CommunityGuidelinesPage  = lazy(() => import('./pages/legal/CommunityGuidelinesPage'));
+const CreatorPolicyPage        = lazy(() => import('./pages/legal/CreatorPolicyPage'));
+const MessagingPolicyPage      = lazy(() => import('./pages/legal/MessagingPolicyPage'));
+const AdvertisingPolicyPage    = lazy(() => import('./pages/legal/AdvertisingPolicyPage'));
+const CookiePolicyPage         = lazy(() => import('./pages/legal/CookiePolicyPage'));
 
-// Legal & Moderation Pages
+// Moderation & Flow Pages
 const LegalAcceptancePage   = lazy(() => import('./pages/LegalAcceptancePage'));
 const ModerationNoticePage  = lazy(() => import('./pages/ModerationNoticePage'));
 const SuspendedPage         = lazy(() => import('./pages/SuspendedPage'));
-const CommunityGuidelinesPage = lazy(() => import('./pages/CommunityGuidelinesPage'));
 const WelcomePage           = lazy(() => import('./pages/WelcomePage'));
 
 function IndexRoute() {
@@ -136,9 +141,13 @@ function AppLoader() {
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/trust" element={<TrustPage />} />
+        <Route path="/guidelines" element={<CommunityGuidelinesPage />} />
+        <Route path="/creator-policy" element={<CreatorPolicyPage />} />
+        <Route path="/messaging-policy" element={<MessagingPolicyPage />} />
+        <Route path="/advertising-policy" element={<AdvertisingPolicyPage />} />
+        <Route path="/cookie-policy" element={<CookiePolicyPage />} />
         <Route path="/building" element={<BuildingPage />} />
         <Route path="/restricted" element={<RestrictedPage />} />
-        <Route path="/guidelines" element={<CommunityGuidelinesPage />} />
 
         {/* Public Only (Login/Signup) */}
         <Route element={<PublicOnlyRoute />}>

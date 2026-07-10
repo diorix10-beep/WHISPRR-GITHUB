@@ -23,21 +23,32 @@ const AuthPage           = lazy(() => import('./pages/AuthPage'));
 const ResetPasswordPage  = lazy(() => import('./pages/ResetPasswordPage'));
 const OnboardingPage     = lazy(() => import('./pages/OnboardingPage'));
 const ConversationPage   = lazy(() => import('./pages/ConversationPage'));
-const PrivacyPage        = lazy(() => import('./pages/PrivacyPage'));
-const TermsPage          = lazy(() => import('./pages/TermsPage'));
-const TrustPage          = lazy(() => import('./pages/TrustPage'));
 const AiCharactersPage = lazy(() => import('./pages/AiCharactersPage'));
+
+// Legal & Policy Pages
+const TermsPage                = lazy(() => import('./pages/legal/TermsPage'));
+const PrivacyPage              = lazy(() => import('./pages/legal/PrivacyPage'));
+const AiSafetyPolicyPage       = lazy(() => import('./pages/legal/AiSafetyPolicyPage'));
+const ResponsibleAiPolicyPage  = lazy(() => import('./pages/legal/ResponsibleAiPolicyPage'));
+const PersonaPolicyPage        = lazy(() => import('./pages/legal/PersonaPolicyPage'));
+const AiCreatorPolicyPage      = lazy(() => import('./pages/legal/AiCreatorPolicyPage'));
+const ModelUsagePolicyPage     = lazy(() => import('./pages/legal/ModelUsagePolicyPage'));
+const PromptPolicyPage         = lazy(() => import('./pages/legal/PromptPolicyPage'));
+const MemoryPolicyPage         = lazy(() => import('./pages/legal/MemoryPolicyPage'));
+const CookiePolicyPage         = lazy(() => import('./pages/legal/CookiePolicyPage'));
+
+// Moderation & Flow Pages
+const LegalAcceptancePage   = lazy(() => import('./pages/LegalAcceptancePage'));
+const ModerationNoticePage  = lazy(() => import('./pages/ModerationNoticePage'));
+const SuspendedPage         = lazy(() => import('./pages/SuspendedPage'));
+
+
+const TrustPage             = lazy(() => import('./pages/TrustPage'));
 const AiCharacterCreator = lazy(() => import('./pages/AiCharacterCreator'));
 const PersonasPage = lazy(() => import('./pages/PersonasPage'));
 const PersonaEditorPage = lazy(() => import('./pages/PersonaEditorPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
-
-// Legal & Moderation Pages
-const LegalAcceptancePage   = lazy(() => import('./pages/LegalAcceptancePage'));
-const ModerationNoticePage  = lazy(() => import('./pages/ModerationNoticePage'));
-const SuspendedPage         = lazy(() => import('./pages/SuspendedPage'));
-const CommunityGuidelinesPage = lazy(() => import('./pages/CommunityGuidelinesPage'));
 
 function PageLoader() {
   return (
@@ -123,7 +134,14 @@ function AppLoader() {
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/trust" element={<TrustPage />} />
-        <Route path="/guidelines" element={<CommunityGuidelinesPage />} />
+        <Route path="/ai-safety-policy" element={<AiSafetyPolicyPage />} />
+        <Route path="/responsible-ai-policy" element={<ResponsibleAiPolicyPage />} />
+        <Route path="/persona-policy" element={<PersonaPolicyPage />} />
+        <Route path="/ai-creator-policy" element={<AiCreatorPolicyPage />} />
+        <Route path="/model-usage-policy" element={<ModelUsagePolicyPage />} />
+        <Route path="/prompt-policy" element={<PromptPolicyPage />} />
+        <Route path="/memory-policy" element={<MemoryPolicyPage />} />
+        <Route path="/cookie-policy" element={<CookiePolicyPage />} />
 
         {/* Public Only (Login/Signup) */}
         <Route element={<PublicOnlyRoute />}>

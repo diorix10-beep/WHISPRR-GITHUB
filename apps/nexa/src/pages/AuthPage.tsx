@@ -5,7 +5,7 @@ import { SignInForm } from '../components/auth/SignInForm';
 import { SignUpForm } from '../components/auth/SignUpForm';
 import { ForgotPasswordForm } from '../components/auth/ForgotPasswordForm';
 import { AuthProviders } from '../components/auth/AuthProviders';
-
+import { Footer } from '@whisprr/shared';
 type TabType = 'signin' | 'signup' | 'forgot';
 
 export default function AuthPage() {
@@ -32,7 +32,7 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-warm-950 flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden">
+    <div className="min-h-screen bg-warm-950 flex flex-col relative overflow-x-hidden">
       
       {/* Immersive Background */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
@@ -41,7 +41,8 @@ export default function AuthPage() {
         <div className="absolute top-[40%] left-[30%] w-[40%] h-[40%] bg-purple-900/20 rounded-full blur-[150px] mix-blend-screen opacity-40"></div>
       </div>
 
-      <div className="w-full max-w-md relative z-10 flex flex-col gap-6">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 relative">
+        <div className="w-full max-w-md relative z-10 flex flex-col gap-6">
         
         <AuthHero />
 
@@ -102,6 +103,8 @@ export default function AuthPage() {
           </div>
         )}
       </div>
+      </div>
+      <Footer product="nexa" />
     </div>
   );
 }
