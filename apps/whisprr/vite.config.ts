@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import path from 'path';
 
 export default defineConfig({
   plugins: [
@@ -62,6 +63,11 @@ export default defineConfig({
       },
     }),
   ],
+  resolve: {
+    alias: {
+      '@whisprr/shared': path.resolve(__dirname, '../../packages/shared/src'),
+    },
+  },
   optimizeDeps: {
     exclude: ['lucide-react'],
   },

@@ -1,8 +1,7 @@
 {
-  "framework": "vite",
   "installCommand": "npm install",
   "buildCommand": "npm run build",
-  "outputDirectory": "dist",
+  "outputDirectory": "apps/whisprr/dist",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
