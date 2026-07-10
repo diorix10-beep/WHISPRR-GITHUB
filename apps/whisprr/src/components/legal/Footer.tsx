@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Logo } from '../common/Logo';
 
 export interface FooterProps {
-  product: 'whisprr' | 'nexa';
+  product: 'whisprr' | 'chimera';
 }
 
 export function Footer({ product }: FooterProps) {

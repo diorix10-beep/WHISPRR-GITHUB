@@ -32,11 +32,11 @@ export default function RestrictedPage() {
         </div>
         
         <h1 className="font-serif text-2xl font-bold text-warm-900 dark:text-warm-50">
-          NEXA Account Detected
+          CHIMERA Account Detected
         </h1>
         
         <p className="text-warm-600 dark:text-warm-300 leading-relaxed">
-          Your current account gives you access to NEXA only.
+          Your current account gives you access to CHIMERA only.
           <br /><br />
           To join the WHISPRR community and access the complete ecosystem without losing your characters and conversations, you can upgrade your account for free!
         </p>
@@ -64,11 +64,11 @@ export default function RestrictedPage() {
           </button>
           
           <button
-            onClick={() => window.location.href = 'https://nexa.whisprr.xyz'}
+            onClick={() => window.location.href = 'https://chimera.whisprr.xyz'}
             className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-warm-100 dark:bg-warm-800 text-warm-700 dark:text-warm-300 font-bold rounded-xl hover:bg-warm-200 dark:hover:bg-warm-700 transition-all"
           >
             <ArrowLeft size={18} />
-            Return to NEXA
+            Return to CHIMERA
           </button>
 
           <button

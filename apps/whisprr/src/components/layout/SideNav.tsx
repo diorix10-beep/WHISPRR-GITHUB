@@ -12,7 +12,7 @@ import { Avatar } from '../common/Avatar';
 import { Logo } from '../common/Logo';
 
 const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
-const nexaUrl = isLocalhost ? 'http://localhost:5174' : 'https://nexa.whisprr.xyz';
+const chimeraUrl = isLocalhost ? 'http://localhost:5174' : 'https://chimera.whisprr.xyz';
 
 const navItems = [
   { path: '/feed', icon: Home, label: 'Feed' },
@@ -20,7 +20,7 @@ const navItems = [
   { path: '/communities', icon: Users, label: 'Communities' },
   { path: '/messages', icon: MessageCircle, label: 'Messages' },
   { path: '/notifications', icon: Bell, label: 'Notifications' },
-  { path: '#nexa', icon: Bot, label: 'NEXA', isNexa: true },
+  { path: '#chimera', icon: Bot, label: 'CHIMERA', isChimera: true },
 ];
 
 export function SideNav() {
@@ -108,16 +108,16 @@ export function SideNav() {
           );
 
           const isExternal = 'external' in item && item.external;
-          const isNexa = 'isNexa' in item && item.isNexa;
+          const isChimera = 'isChimera' in item && item.isChimera;
 
           return (
             <NavLink
               key={path}
               to={path}
               onClick={(e) => {
-                if (isNexa) {
+                if (isChimera) {
                   e.preventDefault();
-                  window.dispatchEvent(new CustomEvent('open-nexa-promo'));
+                  window.dispatchEvent(new CustomEvent('open-chimera-promo'));
                 } else if (isExternal) {
                   e.preventDefault();
                   window.location.href = path;

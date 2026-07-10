@@ -8,7 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Logo } from '../common/Logo';
 import { Avatar } from '../common/Avatar';
 import { AppLauncherModal } from './AppLauncherModal';
-import { NexaPromoModal } from '../modals/NexaPromoModal';
+import { ChimeraPromoModal } from '../modals/ChimeraPromoModal';
 
 interface AppLayoutProps {
   children?: ReactNode;
@@ -21,18 +21,18 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBannerVisible, setIsBannerVisible] = useState(true);
   const [isLauncherOpen, setIsLauncherOpen] = useState(false);
-  const [isNexaPromoOpen, setIsNexaPromoOpen] = useState(false);
+  const [isChimeraPromoOpen, setIsChimeraPromoOpen] = useState(false);
 
   useEffect(() => {
     const handleOpenLauncher = () => setIsLauncherOpen(true);
-    const handleOpenNexaPromo = () => setIsNexaPromoOpen(true);
+    const handleOpenChimeraPromo = () => setIsChimeraPromoOpen(true);
     
     window.addEventListener('open-app-launcher', handleOpenLauncher);
-    window.addEventListener('open-nexa-promo', handleOpenNexaPromo);
+    window.addEventListener('open-chimera-promo', handleOpenChimeraPromo);
     
     return () => {
       window.removeEventListener('open-app-launcher', handleOpenLauncher);
-      window.removeEventListener('open-nexa-promo', handleOpenNexaPromo);
+      window.removeEventListener('open-chimera-promo', handleOpenChimeraPromo);
     };
   }, []);
 
@@ -277,7 +277,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         isOpen={isLauncherOpen} 
         onClose={() => setIsLauncherOpen(false)} 
       />
-      <NexaPromoModal isOpen={isNexaPromoOpen} onClose={() => setIsNexaPromoOpen(false)} />
+      <ChimeraPromoModal isOpen={isChimeraPromoOpen} onClose={() => setIsChimeraPromoOpen(false)} />
     </div>
   );
 }

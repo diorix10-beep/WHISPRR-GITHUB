@@ -30,13 +30,13 @@ export function ProtectedRoute() {
     return <Navigate to="/moderation-notice" replace />;
   }
 
-  // Prevent CHIMERA-only accounts from accessing WHISPRR
-  if (profile && profile.access_level === 'chimera') {
+  // Prevent non-ecosystem/non-CHIMERA accounts from accessing CHIMERA
+  if (profile && profile.access_level !== 'chimera' && profile.access_level !== 'ecosystem') {
     return <Navigate to="/restricted" replace />;
   }
 
-  // If the user has no profile or has not completed onboarding, only allow them to access the onboarding page.
-  if ((!profile || !profile.onboarding_complete) && location.pathname !== '/onboarding') {
+  // If the user has not completed onboarding, only allow them to access the onboarding page.
+  if (profile && !profile.onboarding_complete && location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />;
   }
 

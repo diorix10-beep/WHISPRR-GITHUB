@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Logo } from './Logo';
 
 export interface FooterProps {
-  product: 'whisprr' | 'nexa';
+  product: 'whisprr' | 'chimera';
 }
 
 export function Footer({ product }: FooterProps) {
@@ -19,7 +19,7 @@ export function Footer({ product }: FooterProps) {
     { label: 'Cookie Policy', href: '/cookie-policy' },
   ];
 
-  const nexaLinks = [
+  const chimeraLinks = [
     { label: 'Terms of Service', href: '/terms' },
     { label: 'Privacy Policy', href: '/privacy' },
     { label: 'AI Safety Policy', href: '/ai-safety-policy' },
@@ -32,7 +32,7 @@ export function Footer({ product }: FooterProps) {
     { label: 'Cookie Policy', href: '/cookie-policy' },
   ];
 
-  const links = product === 'whisprr' ? whisprrLinks : nexaLinks;
+  const links = product === 'whisprr' ? whisprrLinks : chimeraLinks;
 
   return (
     <footer className="w-full bg-warm-900 text-warm-200 py-12 px-6 mt-auto">
@@ -67,10 +67,10 @@ export function Footer({ product }: FooterProps) {
 
       <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-warm-800 flex flex-col sm:flex-row items-center justify-between gap-4">
         <p className="text-sm text-warm-500">
-          © {currentYear} {product === 'whisprr' ? 'WHISPRR' : 'NEXA'}. All rights reserved.
+          © {currentYear} {product === 'whisprr' ? 'WHISPRR' : 'CHIMERA'}. All rights reserved.
         </p>
         <div className="flex items-center gap-4 text-sm text-warm-500">
-          <span>contact@{product === 'whisprr' ? 'whisprr.xyz' : 'nexa.ai'}</span>
+          <span>contact@{product === 'whisprr' ? 'whisprr.xyz' : 'chimera.ai'}</span>
         </div>
       </div>
     </footer>

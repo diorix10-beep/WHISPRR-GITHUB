@@ -121,7 +121,7 @@ const TIMELINE: TimelineEvent[] = [
   { date: 'August 2026', title: 'Communities', description: 'Interest groups with dynamic moderator roles.', icon: '🧩' },
   { date: 'September 2026', title: 'Founder Dashboard', description: 'Central controls and maintenance page bypass.', icon: '👑' },
   { date: 'September 2026', title: 'Badge & Identity System', description: 'Dynamic timeline user badges.', icon: '🏅' },
-  { date: 'October 2026', title: 'NEXA', description: 'Interactive virtual companion preview.', icon: '🎭' },
+  { date: 'October 2026', title: 'CHIMERA', description: 'Interactive virtual companion preview.', icon: '🎭' },
   { date: 'December 2026', title: 'Public Launch', description: 'Opening registration globally.', icon: '🌍' }
 ];
 

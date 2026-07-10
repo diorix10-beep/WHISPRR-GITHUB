@@ -247,6 +247,31 @@ export const PERSONAL_VALUES = [
 
 export type PersonalValue = typeof PERSONAL_VALUES[number];
 
+export interface Persona {
+  id: string;
+  creator_id: string;
+  name: string;
+  avatar_url?: string | null;
+  tagline?: string | null;
+  description?: string | null;
+  greeting?: string | null;
+  visibility: 'public' | 'private' | 'unlisted';
+  base_model: string;
+  system_prompt?: string | null;
+  gender?: string | null;
+  age?: string | number | null;
+  pronouns?: string | null;
+  occupation?: string | null;
+  appearance?: string | null;
+  personality?: string | null;
+  backstory?: string | null;
+  relationships?: string | null;
+  tags?: string[];
+  is_default?: boolean;
+  is_public?: boolean;
+  created_at: string;
+  updated_at: string;
+}
 export const LOOKING_FOR_OPTIONS = [
   'New Friends',
   'Meaningful Conversations',
