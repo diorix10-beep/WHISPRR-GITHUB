@@ -1,4 +1,4 @@
-import { LegalPageLayout } from '@whisprr/shared';
+import { LegalPageLayout } from '../../components/legal/LegalPageLayout';
 
 export default function AdvertisingPolicyPage() {
   return (

@@ -5,7 +5,7 @@ import { SignInForm } from '../components/auth/SignInForm';
 import { SignUpForm } from '../components/auth/SignUpForm';
 import { ForgotPasswordForm } from '../components/auth/ForgotPasswordForm';
 import { AuthProviders } from '../components/auth/AuthProviders';
-import { Footer } from '@whisprr/shared';
+import { Footer } from '../components/legal/Footer';
 type TabType = 'signin' | 'signup' | 'forgot';
 
 export default function AuthPage() {

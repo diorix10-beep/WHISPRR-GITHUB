@@ -10,7 +10,7 @@ import {
 import { Logo } from '../components/common/Logo';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../contexts/ToastContext';
-import { Footer } from '@whisprr/shared';
+import { Footer } from '../components/legal/Footer';
 type LandingSection = 'home' | 'about' | 'building' | 'updates' | 'beta' | 'connect';
 
 interface BlogArticle {
