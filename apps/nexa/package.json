@@ -11,7 +11,6 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
   },
   "dependencies": {
-    "@whisprr/shared": "*",
     "@supabase/supabase-js": "^2.107.0",
     "@vercel/speed-insights": "^2.0.0",
     "date-fns": "^4.4.0",
