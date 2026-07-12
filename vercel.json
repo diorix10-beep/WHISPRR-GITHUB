@@ -1,6 +1,6 @@
 {
   "installCommand": "npm install",
-  "buildCommand": "npm run build --workspace=whisprr",
+  "buildCommand": "cd apps/whisprr && npm run build",
   "outputDirectory": "apps/whisprr/dist",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
