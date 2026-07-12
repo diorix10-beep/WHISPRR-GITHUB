@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Logo } from '../components/common/Logo';
 import { Button } from '../components/common/Button';
+import { brand } from '../brand/brandConfig';
 
 type TabType = 'signin' | 'signup' | 'forgot';
 
@@ -132,7 +133,7 @@ export default function AuthPage() {
       <div className="min-h-screen bg-warm-50 dark:bg-warm-950 flex items-center justify-center">
         <div className="animate-pulse flex flex-col items-center gap-4">
           <div className="w-12 h-12 bg-primary-500 rounded-full"></div>
-          <p className="text-warm-600 dark:text-warm-400">Loading...</p>
+          <p className="text-warm-600 dark:text-warm-400">{brand.loadingText}</p>
         </div>
       </div>
     );
@@ -145,9 +146,9 @@ export default function AuthPage() {
         <div className="text-center mb-8 flex flex-col items-center gap-3">
           <Logo size={64} />
           <h1 className="font-serif text-4xl font-bold text-primary-500">
-            WHISPRR
+            {brand.name}
           </h1>
-          <p className="text-warm-600 dark:text-warm-400 font-medium">Where connections feel real</p>
+          <p className="text-warm-600 dark:text-warm-400 font-medium">{brand.authSubtitle}</p>
         </div>
 
         {/* Tab Navigation */}
@@ -467,12 +468,12 @@ export default function AuthPage() {
         {/* Footer */}
         <div className="text-center mt-8 space-y-2">
           <p className="text-sm text-warm-500 dark:text-warm-400">
-            Join a thoughtful network built for authentic connections.
+            {brand.footerText}
           </p>
           <div className="flex items-center justify-center gap-3 text-xs text-warm-400 dark:text-warm-500">
             <Link to="/trust" className="hover:text-primary-500 transition-colors">Trust & Privacy Center</Link>
             <span>&middot;</span>
-            <a href="mailto:help@whisprr.xyz" className="hover:text-primary-500 transition-colors">Support</a>
+            <a href={`mailto:${brand.supportEmail}`} className="hover:text-primary-500 transition-colors">Support</a>
           </div>
         </div>
       </div>
