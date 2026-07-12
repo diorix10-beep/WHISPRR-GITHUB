@@ -115,7 +115,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchSystemSettings = useCallback(async () => {
     try {
-      // Fetch static JSON first as it propagates instantly
       const res = await fetch('/maintenance_mode.json').catch(() => null);
       if (res && res.ok) {
         const value = await res.json();
@@ -140,7 +139,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateSystemSettings = useCallback(async (updates: any) => {
     try {
-      // Sync local cache first for instant feedback
       setSystemSettings(updates);
       localStorage.setItem('whisprr_system_settings', JSON.stringify(updates));
 
@@ -153,7 +151,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           updated_by: state.user?.id || null
         });
       
-      // Ignore schema cache errors and treat the update as successful locally
       if (error && !error.message.includes('public.system_settings')) {
         throw error;
       }
@@ -229,16 +226,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: {
         data: {
+          access_level: 'whisprr',
           legal_accepted_version: CURRENT_LEGAL_VERSION
-        }
+        },
+        emailRedirectTo: window.location.origin
       }
     });
     if (error) throw error;
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+
+    if (data.user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('access_level')
+        .eq('user_id', data.user.id)
+        .maybeSingle();
+
+      if (profile?.access_level === 'chimera') {
+        await supabase.auth.signOut();
+        throw new Error(
+          'This is a CHIMERA-only account. CHIMERA accounts cannot sign in to WHISPRR. ' +
+          'Please create a separate WHISPRR account to continue.'
+        );
+      }
+    }
   };
 
   const signInWithGoogle = async () => {
@@ -271,7 +286,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const upgradeToEcosystem = async () => {
-    // Legacy support to bypass old errors, currently a no-op since everyone is ecosystem now
     return Promise.resolve();
   };
 
