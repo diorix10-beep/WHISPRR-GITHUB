@@ -344,343 +344,82 @@ export default function LandingPage() {
         {/* HOMEPAGE */}
         {activeSection === 'home' && (
           <div className="space-y-16 animate-fade-in">
-            {/* Hero Header & Title */}
-            <div className="text-center max-w-3xl mx-auto space-y-6 pt-10 pb-4 relative z-10">
-              <div className="inline-flex items-center gap-2 bg-primary-50 dark:bg-primary-950/20 text-primary-600 dark:text-primary-400 text-xs font-bold px-3 py-1.5 rounded-full">
-                <Sparkles size={12} className="animate-pulse" />
-                <span>An Open Project Story</span>
-              </div>
-              
-              <h1 className="text-4xl sm:text-6xl font-serif font-bold text-warm-900 dark:text-warm-50 leading-tight tracking-tight">
-                Where connections <br className="hidden md:inline" />
-                <span className="bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent">feel real.</span>
-              </h1>
-              
-              <p className="text-warm-650 dark:text-warm-350 text-lg leading-relaxed max-w-xl mx-auto">
-                WHISPRR is a thoughtful network built for authentic conversations, close-knit communities, 
-                and organic interest matching. Designed to respect your time and nurture real connections.
-              </p>
-
-              <div className="flex flex-wrap items-center justify-center gap-4">
-                <button
-                  onClick={() => navigate('/auth')}
-                  className="btn-primary py-3 px-8 text-base font-bold shadow-soft"
-                >
-                  Join WHISPRR
-                </button>
-                <a
-                  href={import.meta.env.VITE_DISCORD_INVITE_URL || "https://discord.gg/WHISPRRHQ"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-warm-100 dark:bg-warm-850 hover:bg-warm-200 dark:hover:bg-warm-800 text-warm-900 dark:text-warm-100 border border-warm-250 dark:border-warm-750 font-bold py-3 px-8 rounded-2xl text-base flex items-center gap-2 transition-all shadow-sm"
-                >
-                  Join Discord <ExternalLink size={16} />
-                </a>
-              </div>
-            </div>
-
-            {/* Split Showcase Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 py-8 relative items-center">
+            {/* Hero Section */}
+            <div className="flex flex-col lg:flex-row items-center gap-10 py-8 relative">
               <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
-                <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary-500/5 rounded-full blur-[120px]" />
-                <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-accent-500/5 rounded-full blur-[120px]" />
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-500/5 rounded-full blur-3xl" />
+                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent-500/5 rounded-full blur-3xl" />
               </div>
 
-              {/* Left Side: Floating iPhone Mockup */}
-              <div className="lg:col-span-5 flex justify-center">
-                <motion.div
-                  initial={{ y: 0 }}
-                  animate={{ y: [0, -8, 0] }}
-                  transition={{
-                    duration: 5,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                  className="w-[290px] h-[580px] bg-[#0c0a09] rounded-[3rem] border-8 border-warm-800 dark:border-warm-800 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] dark:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)] relative overflow-hidden flex flex-col z-10"
-                >
-                  {/* Dynamic Island */}
-                  <div className="w-28 h-6 bg-black rounded-full absolute top-2 left-1/2 transform -translate-x-1/2 z-30 flex items-center justify-between px-3">
-                    <div className="w-1.5 h-1.5 bg-neutral-800 rounded-full" />
-                    <div className="w-10 h-1 bg-neutral-900 rounded-full" />
-                  </div>
+              <div className="flex-1 space-y-6 text-center lg:text-left">
+                <div className="inline-flex items-center gap-2 bg-primary-50 dark:bg-primary-950/20 text-primary-600 dark:text-primary-400 text-xs font-bold px-3 py-1.5 rounded-full">
+                  <Sparkles size={12} className="animate-pulse" />
+                  <span>An Open Project Story</span>
+                </div>
+                
+                <h1 className="text-4xl sm:text-6xl font-serif font-bold text-warm-900 dark:text-warm-50 leading-tight tracking-tight">
+                  Where connections <br className="hidden md:inline" />
+                  <span className="bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent">feel real.</span>
+                </h1>
+                
+                <p className="text-warm-600 dark:text-warm-300 text-lg leading-relaxed max-w-lg mx-auto lg:mx-0">
+                  WHISPRR is a thoughtful network built for authentic conversations, close-knit communities, 
+                  and organic interest matching. Designed to respect your time and nurture real connections.
+                </p>
 
-                  {/* Mobile Screen Area */}
-                  <div className="flex-1 mt-10 p-4 flex flex-col justify-between overflow-hidden bg-warm-50 dark:bg-[#121110]">
-                    {/* Screen Top Bar */}
-                    <div className="flex items-center justify-between pb-2 border-b border-warm-200/50 dark:border-warm-800/40">
-                      <div className="flex items-center gap-1">
-                        <Logo size={20} />
-                        <span className="font-serif font-bold text-[10px] text-warm-900 dark:text-warm-100">WHISPRR</span>
-                      </div>
-                      <span className="text-[7px] bg-green-150 dark:bg-green-950/40 text-green-700 dark:text-green-400 font-bold px-1.5 py-0.5 rounded">BETA CLIENT</span>
-                    </div>
-
-                    {/* Interactive Tab Contents */}
-                    <div className="flex-1 py-3 overflow-y-auto min-h-0 text-left">
-                      <AnimatePresence mode="wait">
-                        {activeMockupTab === 'feed' && (
-                          <motion.div
-                            key="feed"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 10 }}
-                            className="space-y-3"
-                          >
-                            <div className="p-2.5 bg-white dark:bg-warm-850 rounded-xl border border-warm-200/40 dark:border-warm-800/30 shadow-sm space-y-1.5">
-                              <div className="flex items-center gap-1.5">
-                                <div className="w-5 h-5 bg-primary-100 rounded-full flex items-center justify-center text-[10px]">👑</div>
-                                <span className="font-bold text-[9px] text-warm-900 dark:text-warm-100">nyny59</span>
-                                <span className="text-[6px] bg-primary-500/10 text-primary-500 font-semibold px-1 rounded-full">FOUNDER</span>
-                              </div>
-                              <p className="text-[9px] text-warm-700 dark:text-warm-300 leading-normal">
-                                Building a social workspace that encourages dialogue, not metrics traps. Let us return to authentic interest hubs.
-                              </p>
-                            </div>
-
-                            <div className="p-2.5 bg-white dark:bg-warm-850 rounded-xl border border-warm-200/40 dark:border-warm-800/30 shadow-sm space-y-1.5">
-                              <div className="flex items-center gap-1.5">
-                                <div className="w-5 h-5 bg-accent-100 rounded-full flex items-center justify-center text-[10px]">🎨</div>
-                                <span className="font-bold text-[9px] text-warm-900 dark:text-warm-100">elena_art</span>
-                                <span className="text-[6px] bg-accent-500/10 text-accent-500 font-semibold px-1 rounded-full">CREATOR</span>
-                              </div>
-                              <p className="text-[9px] text-warm-700 dark:text-warm-300 leading-normal">
-                                The new split layout on the desktop homepage is coming together beautifully! It really visualizes the open project spirit.
-                              </p>
-                            </div>
-                          </motion.div>
-                        )}
-
-                        {activeMockupTab === 'discover' && (
-                          <motion.div
-                            key="discover"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 10 }}
-                            className="space-y-3"
-                          >
-                            <div className="relative">
-                              <Search size={10} className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-warm-400" />
-                              <div className="w-full bg-white dark:bg-warm-850 border border-warm-200/60 dark:border-warm-800/50 rounded-lg pl-7 pr-2 py-1.5 text-[8px] text-warm-400">
-                                Search tags, circles, or companions...
-                              </div>
-                            </div>
-                            <div className="space-y-1.5">
-                              <span className="text-[8px] font-bold text-warm-400 uppercase tracking-wider block">Trending Tags</span>
-                              <div className="flex flex-wrap gap-1">
-                                {['#build-in-public', '#ai-characters', '#philosophy', '#creative-writing', '#ui-design'].map(tag => (
-                                  <span key={tag} className="text-[8px] bg-warm-150 dark:bg-warm-800/60 text-warm-700 dark:text-warm-300 px-1.5 py-0.5 rounded-md">
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          </motion.div>
-                        )}
-
-                        {activeMockupTab === 'communities' && (
-                          <motion.div
-                            key="communities"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 10 }}
-                            className="space-y-2.5"
-                          >
-                            <span className="text-[8px] font-bold text-warm-400 uppercase tracking-wider block">Your Communities</span>
-                            {[
-                              { name: 'Developer HQ', desc: 'Active codebase updates and build loops.', icon: '💻', count: 184 },
-                              { name: 'Creative Forge', desc: 'Writing and persona generation tools.', icon: '✍️', count: 142 },
-                              { name: 'Philosophical Cafe', desc: 'Grounded dialogue on digital spaces.', icon: '☕', count: 96 }
-                            ].map(c => (
-                              <div key={c.name} className="p-2 bg-white dark:bg-warm-850 rounded-xl border border-warm-200/40 dark:border-warm-800/30 flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs">{c.icon}</span>
-                                  <div>
-                                    <h4 className="font-bold text-[8px] text-warm-900 dark:text-warm-100 leading-tight">{c.name}</h4>
-                                    <p className="text-[6px] text-warm-450 dark:text-warm-400">{c.desc}</p>
-                                  </div>
-                                </div>
-                                <span className="text-[6px] text-warm-400 bg-warm-100 dark:bg-warm-800 px-1 py-0.5 rounded">{c.count} members</span>
-                              </div>
-                            ))}
-                          </motion.div>
-                        )}
-
-                        {activeMockupTab === 'spirits' && (
-                          <motion.div
-                            key="spirits"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 10 }}
-                            className="space-y-2.5"
-                          >
-                            <span className="text-[8px] font-bold text-warm-400 uppercase tracking-wider block">AI Studio Companions</span>
-                            {[
-                              { name: 'Oracle Guide', role: 'Conversational Partner', icon: '🔮', stage: 3 },
-                              { name: 'Ember Spirit', role: 'Creative Assistant', icon: '🔥', stage: 1 }
-                            ].map(s => (
-                              <div key={s.name} className="p-2 bg-white dark:bg-warm-850 rounded-xl border border-warm-200/40 dark:border-warm-800/30 flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs">{s.icon}</span>
-                                  <div>
-                                    <h4 className="font-bold text-[8px] text-warm-900 dark:text-warm-100">{s.name}</h4>
-                                    <p className="text-[6px] text-warm-400">{s.role}</p>
-                                  </div>
-                                </div>
-                                <span className="text-[6px] bg-primary-500/10 text-primary-500 font-bold px-1.5 py-0.5 rounded-full">Stage {s.stage}</span>
-                              </div>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* Mockup iPhone Bottom Bar Navigation */}
-                    <div className="flex items-center justify-between pt-2 border-t border-warm-200/50 dark:border-warm-800/40 text-warm-400">
-                      {[
-                        { id: 'feed', label: 'Feed', icon: MessageSquare },
-                        { id: 'discover', label: 'Explore', icon: Compass },
-                        { id: 'communities', label: 'Circles', icon: Users },
-                        { id: 'spirits', label: 'Spirits', icon: Sparkles }
-                      ].map(tab => {
-                        const Icon = tab.icon;
-                        const active = activeMockupTab === tab.id;
-                        return (
-                          <button
-                            key={tab.id}
-                            onClick={() => setActiveMockupTab(tab.id as any)}
-                            className={`flex flex-col items-center gap-0.5 flex-1 transition-colors ${active ? 'text-primary-500' : 'hover:text-warm-700 dark:hover:text-warm-200'}`}
-                          >
-                            <Icon size={12} />
-                            <span className="text-[6px] font-semibold">{tab.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </motion.div>
+                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4">
+                  <button
+                    onClick={() => navigate('/auth')}
+                    className="btn-primary py-3 px-8 text-base font-bold shadow-soft"
+                  >
+                    Join WHISPRR
+                  </button>
+                  <a
+                    href={import.meta.env.VITE_DISCORD_INVITE_URL || "https://discord.gg/WHISPRRHQ"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-warm-100 dark:bg-warm-850 hover:bg-warm-200 dark:hover:bg-warm-800 text-warm-900 dark:text-warm-100 border border-warm-250 dark:border-warm-750 font-bold py-3 px-8 rounded-2xl text-base flex items-center gap-2 transition-all shadow-sm"
+                  >
+                    Join Discord <ExternalLink size={16} />
+                  </a>
+                </div>
               </div>
 
-              {/* Right Side: Realistic MacBook Display with VS Code */}
-              <div className="lg:col-span-7 flex justify-center">
-                <motion.div
-                  initial={{ y: 0 }}
-                  animate={{ y: [0, 8, 0] }}
-                  transition={{
-                    duration: 5,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: 0.5
-                  }}
-                  className="w-full max-w-[500px] sm:max-w-[580px] bg-[#121110] border border-white/5 rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] overflow-hidden flex flex-col h-[340px] text-left relative z-10"
-                >
-                  {/* Editor Window Header Bar */}
-                  <div className="h-9 bg-[#1b1a19] border-b border-white/[0.04] flex items-center justify-between px-4 select-none">
-                    {/* Circle Window Buttons */}
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
-                      <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
-                      <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
-                    </div>
-                    {/* Centered Tab Title */}
-                    <span className="text-[10px] font-mono text-warm-400 flex items-center gap-1.5">
-                      <FileCode size={10} className="text-primary-400" />
-                      LandingPage.tsx — WHISPRR — Editor
-                    </span>
-                    <div className="w-14" /> {/* Spacer */}
-                  </div>
+              {/* Mockup Preview */}
+              <div className="flex-1 w-full max-w-sm mx-auto relative flex justify-center">
+                 <div className="w-72 h-[30rem] bg-warm-100 dark:bg-warm-850 rounded-[2.2rem] border-8 border-warm-800 dark:border-warm-700 shadow-float relative overflow-hidden flex flex-col">
+                   <div className="w-20 h-4 bg-warm-800 dark:bg-warm-700 rounded-full mx-auto mt-3" />
+                   
+                   <div className="flex-1 p-6 flex flex-col justify-between mt-4">
+                     <div className="space-y-4">
+                       <div className="flex items-center justify-between">
+                         <div className="flex items-center gap-1.5">
+                            <Logo size={24} />
+                            <span className="font-serif font-bold text-xs text-warm-900 dark:text-warm-100">WHISPRR</span>
+                         </div>
+                         <span className="text-[8px] bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 font-bold px-1.5 py-0.5 rounded">ONLINE</span>
+                       </div>
+                       
+                       <div className="p-3.5 bg-white dark:bg-warm-800 rounded-2xl border border-warm-200/50 dark:border-warm-800/40 shadow-sm space-y-2">
+                         <div className="flex items-center gap-1">
+                            <span className="text-[10px]">👑</span>
+                            <span className="font-bold text-[10px] text-warm-900 dark:text-warm-100">nyny59</span>
+                            <span className="text-[8px] bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300 font-bold px-1 rounded-full">FOUNDER</span>
+                         </div>
+                         <p className="text-[10px] text-warm-650 dark:text-warm-300 leading-relaxed font-medium">
+                           We designed WHISPRR to be a human social grid. No metrics traps, just real conversations.
+                         </p>
+                       </div>
+                     </div>
 
-                  {/* VS Code Body Layout */}
-                  <div className="flex-1 flex min-h-0">
-                    {/* Side Sidebar - File Explorer */}
-                    <div className="w-28 bg-[#181716] border-r border-white/[0.04] p-3 space-y-3 font-mono text-[8px] text-warm-400 select-none hidden sm:block">
-                      <div className="space-y-1">
-                        <span className="text-[7px] font-bold text-warm-500 uppercase tracking-wider block">Explorer</span>
-                        <div className="flex items-center gap-1 text-warm-200">
-                          <FolderOpen size={8} className="text-yellow-500" />
-                          <span>apps/whisprr</span>
+                     <div className="space-y-1.5 pt-4 border-t border-warm-200/50 dark:border-warm-800/40">
+                        <p className="text-[9px] text-warm-500 text-center">Ready to explore?</p>
+                        <div className="w-full py-1.5 bg-primary-500 text-white text-center rounded-xl text-[9px] font-bold cursor-pointer" onClick={() => navigate('/auth')}>
+                           Launch Platform
                         </div>
-                        <div className="pl-3 space-y-1">
-                          <div className="flex items-center gap-1">
-                            <Folder size={8} className="text-yellow-600" />
-                            <span>src</span>
-                          </div>
-                          <div className="pl-3 space-y-1">
-                            <div className="flex items-center gap-1">
-                              <Folder size={8} className="text-yellow-600" />
-                              <span>components</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <FolderOpen size={8} className="text-yellow-600" />
-                              <span>pages</span>
-                            </div>
-                            <div className="pl-3 flex items-center gap-1 text-primary-400 bg-white/5 px-1 py-0.5 rounded">
-                              <FileCode size={8} />
-                              <span className="font-bold">LandingPage.tsx</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Editor Screen & Terminal */}
-                    <div className="flex-1 flex flex-col min-h-0 bg-[#121110]">
-                      {/* Editor Tabs bar */}
-                      <div className="h-6 bg-[#161514] flex items-center px-2 select-none border-b border-white/[0.02]">
-                        <div className="bg-[#121110] border-t-2 border-primary-500 px-3 h-full flex items-center gap-1.5 text-[8px] font-mono text-warm-200">
-                          <FileCode size={8} className="text-primary-400" />
-                          <span>LandingPage.tsx</span>
-                        </div>
-                      </div>
-
-                      {/* Code Editor Body */}
-                      <div className="flex-1 p-4 font-mono text-[8px] sm:text-[9px] leading-relaxed text-warm-300 overflow-y-auto space-y-1">
-                        <div><span className="text-purple-400">import</span> &#123; useState, useEffect &#125; <span className="text-purple-400">from</span> <span className="text-green-300">'react'</span>;</div>
-                        <div><span className="text-purple-400">import</span> &#123; Logo &#125; <span className="text-purple-400">from</span> <span className="text-green-300">'../components/common/Logo'</span>;</div>
-                        <div><span className="text-purple-400">import</span> &#123; supabase &#125; <span className="text-purple-400">from</span> <span className="text-green-300">'../lib/supabase'</span>;</div>
-                        <div className="h-1" />
-                        <div><span className="text-blue-400">export default function</span> <span className="text-yellow-300">LandingPage</span>() &#123;</div>
-                        <div className="pl-3 text-warm-500">// 1. Build split visual dashboard for mobile & desktop</div>
-                        <div className="pl-3"><span className="text-blue-400">const</span> [activeTab, setActiveTab] = <span className="text-yellow-300">useState</span>(<span className="text-green-300">'feed'</span>);</div>
-                        <div className="pl-3"><span className="text-blue-400">const</span> [online, setOnline] = <span className="text-yellow-300">useState</span>(<span className="text-blue-400">true</span>);</div>
-                        <div className="pl-3"><span className="text-purple-400">return</span> (</div>
-                        <div className="pl-6">&lt;<span className="text-blue-400">div</span> className=<span className="text-green-300">"grid grid-cols-12 gap-8 items-center"</span>&gt;</div>
-                        <div className="pl-9">&lt;<span className="text-blue-400">iPhoneMockup</span> active=&#123;activeTab&#125; /&gt;</div>
-                        <div className="pl-9">&lt;<span className="text-blue-400">StudioDisplay</span> code=&#123;true&#125; /&gt;</div>
-                        <div className="pl-6">&lt;/<span className="text-blue-400">div</span>&gt;</div>
-                        <div className="pl-3">);</div>
-                        <div>&#125;</div>
-                      </div>
-
-                      {/* VS Code Bottom Panel - Terminal */}
-                      <div className="h-28 bg-[#161514] border-t border-white/[0.04] p-3 font-mono text-[8px] leading-relaxed flex flex-col justify-between">
-                        <div className="flex items-center justify-between pb-1.5 border-b border-white/[0.02]">
-                          <div className="flex items-center gap-3 text-warm-400 select-none">
-                            <span className="text-warm-200 font-bold border-b border-primary-500 pb-0.5">Terminal</span>
-                            <span>Problems</span>
-                            <span>Output</span>
-                            <span>Debug Console</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-warm-400 select-none">
-                            <Terminal size={8} />
-                            <span>node (dev)</span>
-                          </div>
-                        </div>
-                        
-                        <div className="flex-1 pt-1.5 space-y-0.5 text-warm-400 select-all overflow-y-auto">
-                          <div>diawchimeresenegal@macbook WHISPRR-GITHUB % <span className="text-green-400 font-bold">npm run dev</span></div>
-                          <div className="text-warm-500">&gt; whisprr@0.0.0 dev</div>
-                          <div className="text-warm-500">&gt; vite</div>
-                          <div className="text-green-400 font-semibold flex items-center gap-1.5">
-                            <Check size={8} className="text-green-400" />
-                            ➜ VITE v5.4.8  ready in 436 ms
-                          </div>
-                          <div className="pl-3 text-warm-300">➜  Local:   <span className="text-blue-400">http://localhost:5173/</span></div>
-                          <div className="pl-3 text-warm-500">➜  press h + enter to show help</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
+                     </div>
+                   </div>
+                 </div>
               </div>
             </div>
 

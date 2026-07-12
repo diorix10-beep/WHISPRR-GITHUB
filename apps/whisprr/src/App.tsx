@@ -12,6 +12,7 @@ import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { PublicOnlyRoute } from './components/common/PublicOnlyRoute';
 import { Logo } from './components/common/Logo';
 import { ReloadPrompt } from './components/common/ReloadPrompt';
+import { DevPreviewWrapper } from './components/common/DevPreviewWrapper';
 
 const AuthPage           = lazy(() => import('./pages/AuthPage'));
 const OnboardingPage     = lazy(() => import('./pages/OnboardingPage'));
@@ -205,7 +206,9 @@ function App() {
                 <UnreadMessagesProvider>
                   <InterestProvider>
                     <ReloadPrompt />
-                    <AppLoader />
+                    <DevPreviewWrapper>
+                      <AppLoader />
+                    </DevPreviewWrapper>
                   </InterestProvider>
                 </UnreadMessagesProvider>
               </NotificationsProvider>
