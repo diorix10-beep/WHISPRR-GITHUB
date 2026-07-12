@@ -971,4 +971,55 @@ should improve the ecosystem.
 
 Never add complexity without adding value.
 
-Leave WHISPRR and NEXA better than yesterday.
+Leave WHISPRR and CHIMERA better than yesterday.
+
+---
+
+# WHISPRR & CHIMERA PRODUCT VISION & CREATOR WELLNESS CONSTITUTION
+
+## Core Philosophy
+WHISPRR and CHIMERA should feel like they were built by the same company. Users should naturally experience the same values throughout both platforms.
+We are building products for creators, not products designed to maximize screen time. Our goal is to help people create, connect, collaborate and share while encouraging healthy and sustainable creativity.
+
+## Shared Company Values
+Every product decision should reflect these principles:
+- Humans come first.
+- Creativity before engagement.
+- Community before dependency.
+- Respect user autonomy.
+- Encourage healthy digital habits.
+- Build trust.
+- Never use manipulative design patterns.
+
+These principles should be reflected in every interaction rather than simply written in a policy.
+
+## Product & Creator Wellness Integration
+Do not implement "Creator Wellness" as a standalone feature. Instead, integrate this philosophy into the entire experience:
+- Gentle break reminders
+- Quiet hours
+- Optional wellness settings
+- Optional weekly creator summaries
+- Optional wellness check-ins
+- Healthy usage insights
+These features must always remain optional. Never automatically ban users, force logouts, lock accounts, shame users, or manipulate users into staying online.
+
+## Product Microcopy Guidelines
+All platform messages should reflect our philosophy.
+- **Instead of:** *You've reached your limit.*
+  **Use:** *💜 You've been creating for a while. Your stories and your community will still be here after a short break.*
+- **Instead of:** *Come back now!*
+  **Use:** *Your community has been creating while you were away.*
+- **Instead of:** *No content found.*
+  **Use:** *Every creator starts with a first story.*
+
+## Ecosystem Identity
+- **CHIMERA (Creation Studio)**: Where creators create. Contains AI Character Studio, Prompt Studio, World Studio, Lore Studio, Story Studio (Human Writing, AI-Assisted Writing, Collaborative Writing), Roleplay Studio, Collaboration Studio, and One-Click Publish to WHISPRR.
+- **WHISPRR (Social Home)**: Where creations live and creators connect. Find communities, talk with other creators, publish stories, share AI characters/worlds/lorebooks/prompts, receive feedback, collaborate, follow and message other creators.
+
+**Motto:**
+> Create freely. Connect meaningfully. Take care of yourself.
+> 💜 WHISPRR
+
+**Key Distinction:**
+> CHIMERA empowers creators to build AI roleplay experiences. WHISPRR empowers those experiences to find a community.
+

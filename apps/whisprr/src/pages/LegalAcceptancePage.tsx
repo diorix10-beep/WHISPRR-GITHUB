@@ -7,6 +7,7 @@ export default function LegalAcceptancePage() {
   const [agreedTo18, setAgreedTo18] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { profile, acceptLegalTerms, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -19,11 +20,13 @@ export default function LegalAcceptancePage() {
   const handleAccept = async () => {
     if (!agreedTo18 || !agreedToTerms) return;
     setLoading(true);
+    setError(null);
     try {
       await acceptLegalTerms(CURRENT_LEGAL_VERSION);
       navigate('/welcome');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setError(err?.message || err?.details || JSON.stringify(err) || 'Failed to save acceptance. Please check your connection.');
       setLoading(false);
     }
   };
@@ -31,6 +34,12 @@ export default function LegalAcceptancePage() {
   return (
     <div className="min-h-screen bg-warm-50 dark:bg-warm-950 flex flex-col items-center justify-center p-4">
       <div className="max-w-md w-full bg-white dark:bg-warm-900 rounded-3xl p-8 shadow-xl border border-warm-200 dark:border-warm-800">
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 rounded-2xl border border-red-200 dark:border-red-900/50 text-sm font-medium leading-relaxed">
+            <span className="font-bold block mb-1">Acceptance Failed</span>
+            {error}
+          </div>
+        )}
         <div className="flex flex-col items-center text-center mb-8">
           <div className="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 text-primary-500 rounded-full flex items-center justify-center mb-4">
             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
