@@ -1,7 +1,7 @@
 {
-  "installCommand": "cd apps/chimera && npm install",
-  "buildCommand": "cd apps/chimera && npm run build",
-  "outputDirectory": "apps/chimera/dist",
+  "installCommand": "npm install",
+  "buildCommand": "npm run build --workspace=whisprr",
+  "outputDirectory": "apps/whisprr/dist",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
