@@ -300,6 +300,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq('user_id', state.user.id);
       
     if (error) throw error;
+    
+    // Proactively update state first to prevent router race conditions
+    setState(prev => ({
+      ...prev,
+      profile: prev.profile ? { ...prev.profile, legal_accepted_version: version } : null
+    }));
+
     await refreshProfile();
   };
 

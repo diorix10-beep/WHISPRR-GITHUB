@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, CURRENT_LEGAL_VERSION } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
@@ -7,8 +7,14 @@ export default function LegalAcceptancePage() {
   const [agreedTo18, setAgreedTo18] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { acceptLegalTerms, signOut } = useAuth();
+  const { profile, acceptLegalTerms, signOut } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (profile && profile.legal_accepted_version === CURRENT_LEGAL_VERSION) {
+      navigate('/welcome');
+    }
+  }, [profile, navigate]);
 
   const handleAccept = async () => {
     if (!agreedTo18 || !agreedToTerms) return;
