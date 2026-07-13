@@ -4,6 +4,9 @@ import {
   Layers, HelpCircle, Shield, FileText
 } from 'lucide-react';
 
+const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+const whisprrUrl = isLocalhost ? 'http://localhost:5174' : 'https://whisprr.xyz';
+
 interface AppLauncherModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -14,21 +17,25 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
 
   if (!isOpen) return null;
 
-  const handleNavigate = (path: string) => {
-    navigate(path);
+  const handleNavigate = (path: string, external?: boolean) => {
+    if (external) {
+      window.location.href = path;
+    } else {
+      navigate(path);
+    }
     onClose();
   };
 
   const apps = [
-    { name: 'WHISPRR', desc: 'Social Network', path: '/feed', icon: Globe, color: 'bg-primary-500/10 text-primary-500 border-primary-500/20 hover:bg-primary-500/20' },
-    { name: 'CHIMERA', desc: 'Roleplay Studio', path: '/chimera', icon: Bot, color: 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20' },
+    { name: 'WHISPRR', desc: 'Social Network', path: `${whisprrUrl}/feed`, icon: Globe, color: 'bg-primary-500/10 text-primary-500 border-primary-500/20 hover:bg-primary-500/20', external: true },
+    { name: 'CHIMERA', desc: 'Roleplay Studio', path: '/', icon: Bot, color: 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20' },
     { name: 'Oracle Help', desc: 'System Oracle', path: '/oracle', icon: HelpCircle, color: 'bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20' },
   ];
 
   const moreLinks = [
     { label: 'My Profile', path: '/profile', icon: User },
-    { label: 'Saved & Bookmarks', path: '/discover?tab=bookmarks', icon: Bookmark },
-    { label: 'CHIMERA Studio / Drafts', path: '/chimera?tab=my-creations', icon: FileText },
+    { label: 'Saved & Bookmarks', path: `${whisprrUrl}/discover?tab=bookmarks`, icon: Bookmark, external: true },
+    { label: 'CHIMERA Studio / Drafts', path: '/personas', icon: FileText },
     { label: 'Settings', path: '/settings', icon: Settings },
     { label: 'Help Center', path: '/oracle', icon: HelpCircle },
     { label: 'Account Security', path: '/settings', icon: Shield },
@@ -63,7 +70,7 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
               return (
                 <button
                   key={app.name}
-                  onClick={() => handleNavigate(app.path)}
+                  onClick={() => handleNavigate(app.path, app.external)}
                   className={`p-4 rounded-2xl border text-left flex flex-col gap-2 transition-all hover:scale-102 active:scale-98 ${app.color}`}
                 >
                   <Icon size={24} />
@@ -89,7 +96,7 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
               return (
                 <button
                   key={link.label}
-                  onClick={() => handleNavigate(link.path)}
+                  onClick={() => handleNavigate(link.path, link.external)}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-warm-700 dark:text-warm-350 hover:bg-warm-50 dark:hover:bg-warm-800 transition-colors text-left"
                 >
                   <Icon size={16} className="text-warm-500" />

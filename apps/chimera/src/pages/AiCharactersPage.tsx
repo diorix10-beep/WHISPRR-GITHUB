@@ -374,7 +374,7 @@ export default function AiCharactersPage() {
           </div>
           
           <button
-            onClick={() => navigate('/chimera/create')}
+            onClick={() => navigate('/create')}
             className="flex items-center gap-2 bg-red-650 hover:bg-red-700 text-white font-semibold px-5 py-3 rounded-2xl shadow-lg shadow-red-500/10 transition-all hover:scale-102 active:scale-98 duration-200 text-sm mt-2"
           >
             <Plus size={18} />
@@ -631,7 +631,7 @@ export default function AiCharactersPage() {
             Your Spirit couldn't find any personas matching your criteria. Try adjusting filters or forge your own companion.
           </p>
           <button
-            onClick={() => navigate('/chimera/create')}
+            onClick={() => navigate('/create')}
             className="flex items-center gap-2 bg-red-650 hover:bg-red-700 text-white font-semibold px-5 py-2.5 rounded-xl shadow transition-all duration-200 text-xs"
           >
             <Plus size={16} />

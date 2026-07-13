@@ -490,7 +490,7 @@ export default function AiCharacterCreator() {
           
           setTimeout(() => {
             showToast('Character published to CHIMERA Nexus!', 'success');
-            navigate('/chimera');
+            navigate('/');
           }, 1500);
 
         } catch (err: any) {

@@ -280,7 +280,7 @@ export default function ChimeraChatsPage() {
             Your Spirit is waiting. Choose a community-created persona from the Nexus to begin your first storyline.
           </p>
           <button
-            onClick={() => navigate('/chimera')}
+            onClick={() => navigate('/')}
             className="mt-6 bg-red-650 hover:bg-red-700 text-white font-semibold py-2 px-5 rounded-xl text-xs shadow-sm transition-all"
           >
             Explore Nexus

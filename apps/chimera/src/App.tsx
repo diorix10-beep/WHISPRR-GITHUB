@@ -7,7 +7,6 @@ import { UnreadMessagesProvider } from './contexts/UnreadMessagesContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { InterestProvider } from './contexts/InterestContext';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
-import { AppLayout } from './components/layout/AppLayout';
 import { ChimeraLayout } from './components/layout/ChimeraLayout';
 import { ChimeraPlaceholderPage } from './components/common/ChimeraPlaceholderPage';
 import { ProtectedRoute } from './components/common/ProtectedRoute';

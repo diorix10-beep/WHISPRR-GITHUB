@@ -59,7 +59,7 @@ export function BottomNav() {
             <NavLink
               key={path}
               to={path}
-              end={path === '/' || path === '/chimera'}
+              end={path === '/'}
               className={({ isActive }) =>
                 `flex flex-col items-center justify-center py-3 px-2 relative
                 transition-all duration-200 flex-1

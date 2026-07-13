@@ -42,16 +42,16 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
   }, []);
 
   const chimeraNavItems = [
-    { path: '/chimera', icon: Compass, label: 'Explore Nexus' },
-    { path: '/chimera?tab=my-creations', icon: Users, label: 'My Personas' },
-    { path: '/chimera/create', icon: Plus, label: 'CHIMERA Forge' },
-    { path: '/chimera/chats', icon: MessageSquare, label: 'CHIMERA Chats', badge: true },
-    { path: '/chimera/creator-profiles', icon: User, label: 'Creator Profiles' },
-    { path: '/chimera/lorebooks', icon: BookOpen, label: 'CHIMERA Lorebooks' },
-    { path: '/chimera/worlds', icon: Globe, label: 'CHIMERA Worlds' },
-    { path: '/chimera/plots', icon: PenTool, label: 'CHIMERA Plots' },
-    { path: '/chimera/models', icon: Cpu, label: 'CHIMERA Core Models' },
-    { path: '/chimera/collections', icon: Layers, label: 'CHIMERA Collections' },
+    { path: '/', icon: Compass, label: 'Explore Nexus' },
+    { path: '/?tab=my-creations', icon: Users, label: 'My Personas' },
+    { path: '/create', icon: Plus, label: 'CHIMERA Forge' },
+    { path: '/chats', icon: MessageSquare, label: 'CHIMERA Chats', badge: true },
+    { path: '/creator-profiles', icon: User, label: 'Creator Profiles' },
+    { path: '/lorebooks', icon: BookOpen, label: 'CHIMERA Lorebooks' },
+    { path: '/worlds', icon: Globe, label: 'CHIMERA Worlds' },
+    { path: '/plots', icon: PenTool, label: 'CHIMERA Plots' },
+    { path: '/models', icon: Cpu, label: 'CHIMERA Core Models' },
+    { path: '/collections', icon: Layers, label: 'CHIMERA Collections' },
   ];
 
   const content = (
@@ -90,7 +90,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
                 <NavLink
                   key={path}
                   to={path}
-                  end={path === '/chimera'}
+                  end={path === '/'}
                   className={({ isActive }) =>
                     `flex items-center justify-between px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
                       isActive
@@ -223,7 +223,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
                         <NavLink
                           key={path}
                           to={path}
-                          end={path === '/chimera'}
+                          end={path === '/'}
                           onClick={() => setIsMenuOpen(false)}
                           className={({ isActive }) =>
                             `flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
