@@ -3,9 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, MessageCircle, Users, Shield, ScrollText,
   Image as ImageIcon, Loader2, X, Settings, Trash2,
-  BarChart2, AlertTriangle
+  BarChart2, AlertTriangle, Calendar, Briefcase, Trophy,
+  Globe, Sparkles, Compass, Plus, BookOpen, Check
 } from 'lucide-react';
-import type { Community, CommunityMember, Profile, Whisper, Reaction } from '../types';
+import type { 
+  Community, CommunityMember, Profile, Whisper, Reaction,
+  CommunityCollaboration, CommunityFeatured, CommunityEvent 
+} from '../types';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useInterests } from '../contexts/InterestContext';
@@ -35,7 +39,7 @@ const getContextualBadges = (baseBadges: string[] = [], memberRole?: string) => 
   return list;
 };
 
-type TabType = 'posts' | 'members' | 'rules' | 'about' | 'manage';
+type TabType = 'feed' | 'collaborations' | 'featured' | 'events' | 'members' | 'rules' | 'manage';
 
 export default function CommunityDetailPage() {
   const { communityId } = useParams<{ communityId: string }>();
@@ -47,9 +51,13 @@ export default function CommunityDetailPage() {
   const [community, setCommunity] = useState<Community | null>(null);
   const [members, setMembers] = useState<CommunityMemberWithProfile[]>([]);
   const [whispers, setWhispers] = useState<WhisperWithRelations[]>([]);
+  const [collaborations, setCollaborations] = useState<CommunityCollaboration[]>([]);
+  const [featured, setFeatured] = useState<CommunityFeatured[]>([]);
+  const [events, setEvents] = useState<CommunityEvent[]>([]);
+  
   const [isUserMember, setIsUserMember] = useState(false);
   const [userRole, setUserRole] = useState<'owner' | 'admin' | 'moderator' | 'member' | null>(null);
-  const [activeTab, setActiveTab] = useState<TabType>('posts');
+  const [activeTab, setActiveTab] = useState<TabType>('feed');
   const [isLoading, setIsLoading] = useState(true);
   const [isJoining, setIsJoining] = useState(false);
   const [showCompose, setShowCompose] = useState(false);
@@ -61,6 +69,33 @@ export default function CommunityDetailPage() {
   const [editingRules, setEditingRules] = useState(false);
   const [rulesText, setRulesText] = useState('');
   const [savingRules, setSavingRules] = useState(false);
+
+  // Collaboration form state
+  const [showAddCollab, setShowAddCollab] = useState(false);
+  const [collabForm, setCollabForm] = useState({
+    role_needed: 'writer' as any,
+    title: '',
+    description: '',
+  });
+
+  // Featured form state
+  const [showAddFeatured, setShowAddFeatured] = useState(false);
+  const [featuredForm, setFeaturedForm] = useState({
+    asset_type: 'character' as any,
+    title: '',
+    description: '',
+    asset_id: '',
+  });
+
+  // Event form state
+  const [showAddEvent, setShowAddEvent] = useState(false);
+  const [eventForm, setEventForm] = useState({
+    title: '',
+    description: '',
+    event_type: 'writing_challenge' as any,
+    start_date: '',
+    end_date: '',
+  });
 
   const isAdmin = userRole === 'owner' || userRole === 'admin';
   const moderators = members.filter(m => ['owner', 'admin', 'moderator'].includes(m.role));
@@ -110,15 +145,63 @@ export default function CommunityDetailPage() {
     }
   }, [communityId]);
 
+  const loadCollaborations = useCallback(async () => {
+    if (!communityId) return;
+    const { data } = await supabase
+      .from('community_collaborations')
+      .select('*, profiles(*)')
+      .eq('community_id', communityId)
+      .order('created_at', { ascending: false });
+    if (data) setCollaborations(data as any[]);
+  }, [communityId]);
+
+  const loadFeatured = useCallback(async () => {
+    if (!communityId) return;
+    const { data } = await supabase
+      .from('community_featured')
+      .select('*, profiles(*)')
+      .eq('community_id', communityId)
+      .order('created_at', { ascending: false });
+    if (data) setFeatured(data as any[]);
+  }, [communityId]);
+
+  const loadEvents = useCallback(async () => {
+    if (!communityId) return;
+    const { data } = await supabase
+      .from('community_events')
+      .select('*, profiles(*)')
+      .eq('community_id', communityId)
+      .order('start_date', { ascending: true });
+    if (data) setEvents(data as any[]);
+  }, [communityId]);
+
   useEffect(() => {
     if (!communityId) return;
     const load = async () => {
       setIsLoading(true);
-      await Promise.all([loadCommunity(), checkMembership(), loadMembers(), loadWhispers()]);
+      await Promise.all([
+        loadCommunity(),
+        checkMembership(),
+        loadMembers(),
+        loadWhispers(),
+        loadCollaborations(),
+        loadFeatured(),
+        loadEvents()
+      ]);
       setIsLoading(false);
     };
     load();
-  }, [communityId, loadCommunity, checkMembership, loadMembers, loadWhispers]);
+  }, [communityId, loadCommunity, checkMembership, loadMembers, loadWhispers, loadCollaborations, loadFeatured, loadEvents]);
+
+  // Reload active tab specific contents dynamically
+  useEffect(() => {
+    if (!communityId) return;
+    if (activeTab === 'feed') loadWhispers();
+    if (activeTab === 'collaborations') loadCollaborations();
+    if (activeTab === 'featured') loadFeatured();
+    if (activeTab === 'events') loadEvents();
+    if (activeTab === 'members') loadMembers();
+  }, [activeTab, communityId, loadWhispers, loadCollaborations, loadFeatured, loadEvents, loadMembers]);
 
   useEffect(() => {
     if (!community || !communityId) return;
@@ -157,6 +240,72 @@ export default function CommunityDetailPage() {
       await loadMembers();
     } else {
       showToast('Failed to remove member', 'error');
+    }
+  };
+
+  const handleAddCollaboration = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !communityId) return;
+    try {
+      const { error } = await supabase.from('community_collaborations').insert({
+        community_id: communityId,
+        user_id: user.id,
+        role_needed: collabForm.role_needed,
+        title: collabForm.title,
+        description: collabForm.description,
+      });
+      if (error) throw error;
+      showToast('Collaboration posting created!', 'success');
+      setShowAddCollab(false);
+      setCollabForm({ role_needed: 'writer', title: '', description: '' });
+      loadCollaborations();
+    } catch {
+      showToast('Failed to create collaboration posting', 'error');
+    }
+  };
+
+  const handleAddFeatured = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !communityId) return;
+    try {
+      const { error } = await supabase.from('community_featured').insert({
+        community_id: communityId,
+        user_id: user.id,
+        asset_type: featuredForm.asset_type,
+        asset_id: featuredForm.asset_id || '00000000-0000-0000-0000-000000000000',
+        title: featuredForm.title,
+        description: featuredForm.description,
+      });
+      if (error) throw error;
+      showToast('Creation featured!', 'success');
+      setShowAddFeatured(false);
+      setFeaturedForm({ asset_type: 'character', title: '', description: '', asset_id: '' });
+      loadFeatured();
+    } catch (e: any) {
+      showToast('Failed to feature creation: ' + e.message, 'error');
+    }
+  };
+
+  const handleAddEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !communityId) return;
+    try {
+      const { error } = await supabase.from('community_events').insert({
+        community_id: communityId,
+        title: eventForm.title,
+        description: eventForm.description,
+        event_type: eventForm.event_type,
+        start_date: new Date(eventForm.start_date).toISOString(),
+        end_date: new Date(eventForm.end_date).toISOString(),
+        created_by: user.id,
+      });
+      if (error) throw error;
+      showToast('Community event created!', 'success');
+      setShowAddEvent(false);
+      setEventForm({ title: '', description: '', event_type: 'writing_challenge', start_date: '', end_date: '' });
+      loadEvents();
+    } catch {
+      showToast('Failed to create event', 'error');
     }
   };
 
@@ -343,10 +492,12 @@ export default function CommunityDetailPage() {
       {/* Tabs */}
       <div className="flex gap-1 mb-6 border-b border-warm-200 dark:border-warm-700 overflow-x-auto -mx-4 px-4">
         {([
-          { key: 'posts' as TabType, label: 'Posts', icon: MessageCircle },
+          { key: 'feed' as TabType, label: 'Feed', icon: MessageCircle },
+          { key: 'collaborations' as TabType, label: 'Collaboration Hub', icon: Briefcase },
+          { key: 'featured' as TabType, label: 'Featured Creations', icon: Globe },
+          { key: 'events' as TabType, label: 'Events', icon: Calendar },
           { key: 'members' as TabType, label: 'Members', icon: Users },
           { key: 'rules' as TabType, label: 'Rules', icon: ScrollText },
-          { key: 'about' as TabType, label: 'About', icon: Shield },
           ...(isAdmin ? [{ key: 'manage' as TabType, label: 'Manage', icon: Settings }] : []),
         ]).map(tab => (
           <button
@@ -364,8 +515,8 @@ export default function CommunityDetailPage() {
         ))}
       </div>
 
-      {/* Posts Tab */}
-      {activeTab === 'posts' && (
+      {/* Feed Tab */}
+      {activeTab === 'feed' && (
         <div>
           {isUserMember && (
             <button onClick={() => setShowCompose(true)} className="btn-primary mb-6 w-full sm:w-auto">
@@ -391,6 +542,313 @@ export default function CommunityDetailPage() {
                   communityOwnerId={community?.owner_id}
                   communityModerators={moderators.map(m => m.user_id)}
                 />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Collaboration Hub Tab */}
+      {activeTab === 'collaborations' && (
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="font-serif text-lg font-bold text-warm-900 dark:text-white">Collaboration Hub</h3>
+              <p className="text-xs text-warm-500">Recruit partners or request help for your creative projects</p>
+            </div>
+            {isUserMember && (
+              <button onClick={() => setShowAddCollab(!showAddCollab)} className="btn-primary flex items-center gap-1 text-xs py-1.5 px-3">
+                <Plus size={14} /> Recruit Collaborators
+              </button>
+            )}
+          </div>
+
+          {showAddCollab && (
+            <form onSubmit={handleAddCollaboration} className="mb-6 p-5 bg-warm-50 dark:bg-warm-900/60 rounded-2xl border border-warm-200 dark:border-warm-800 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-warm-700 dark:text-warm-300 uppercase mb-2">Role Needed</label>
+                <select
+                  value={collabForm.role_needed}
+                  onChange={e => setCollabForm(prev => ({ ...prev, role_needed: e.target.value as any }))}
+                  className="input-field"
+                >
+                  <option value="writer">Writer</option>
+                  <option value="editor">Editor</option>
+                  <option value="prompt_engineer">Prompt Engineer</option>
+                  <option value="voice_actor">Voice Actor</option>
+                  <option value="collaborator">General Collaborator</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-warm-700 dark:text-warm-300 uppercase mb-2">Project Title</label>
+                <input
+                  type="text"
+                  required
+                  value={collabForm.title}
+                  onChange={e => setCollabForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="e.g. Fantasy Novel co-writing"
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-warm-700 dark:text-warm-300 uppercase mb-2">Description & Requirements</label>
+                <textarea
+                  required
+                  value={collabForm.description}
+                  onChange={e => setCollabForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Describe your project, style, and what you are looking for..."
+                  rows={4}
+                  className="input-field resize-none"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setShowAddCollab(false)} className="btn-ghost flex-1 py-2 text-xs">Cancel</button>
+                <button type="submit" className="btn-primary flex-1 py-2 text-xs">Post Recruitment</button>
+              </div>
+            </form>
+          )}
+
+          {collaborations.length === 0 ? (
+            <div className="text-center py-12 bg-white dark:bg-warm-800 rounded-2xl border border-warm-150 dark:border-warm-850">
+              <Briefcase size={36} className="mx-auto text-warm-300 dark:text-warm-650 mb-2" />
+              <p className="text-warm-500 text-sm">No active collaboration recruitments yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {collaborations.map(collab => (
+                <div key={collab.id} className="p-5 bg-white dark:bg-warm-850 rounded-2xl border border-warm-150 dark:border-warm-800 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs bg-primary-100 dark:bg-primary-950/50 text-primary-700 dark:text-primary-300 px-3 py-1 rounded-full font-bold uppercase tracking-wider">
+                        🔍 {collab.role_needed.replace('_', ' ')}
+                      </span>
+                      <span className="text-xs text-warm-400">{new Date(collab.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <h4 className="font-bold text-warm-900 dark:text-white mb-2">{collab.title}</h4>
+                    <p className="text-sm text-warm-650 dark:text-warm-350 line-clamp-3 leading-relaxed mb-4">{collab.description}</p>
+                  </div>
+                  <div className="flex items-center justify-between pt-3 border-t border-warm-100 dark:border-warm-800">
+                    <div className="flex items-center gap-2">
+                      <Avatar emoji={collab.profiles?.avatar_emoji || '👤'} photoUrl={collab.profiles?.photo_url} size="xs" />
+                      <span className="text-xs text-warm-500">by @{collab.profiles?.username}</span>
+                    </div>
+                    <button
+                      onClick={() => navigate(`/profile/${collab.profiles?.username}`)}
+                      className="text-xs btn-primary py-1 px-3"
+                    >
+                      Connect
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Featured Creations Tab */}
+      {activeTab === 'featured' && (
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="font-serif text-lg font-bold text-warm-900 dark:text-white">Featured Creations</h3>
+              <p className="text-xs text-warm-500">Showcase creations shared by community members</p>
+            </div>
+            {isUserMember && (
+              <button onClick={() => setShowAddFeatured(!showAddFeatured)} className="btn-primary flex items-center gap-1 text-xs py-1.5 px-3">
+                <Plus size={14} /> Feature Creation
+              </button>
+            )}
+          </div>
+
+          {showAddFeatured && (
+            <form onSubmit={handleAddFeatured} className="mb-6 p-5 bg-warm-50 dark:bg-warm-900/60 rounded-2xl border border-warm-200 dark:border-warm-800 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-warm-700 dark:text-warm-300 uppercase mb-2">Asset Type</label>
+                <select
+                  value={featuredForm.asset_type}
+                  onChange={e => setFeaturedForm(prev => ({ ...prev, asset_type: e.target.value as any }))}
+                  className="input-field"
+                >
+                  <option value="character">AI Character</option>
+                  <option value="story">Story</option>
+                  <option value="world">World</option>
+                  <option value="lorebook">Lorebook</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-warm-700 dark:text-warm-300 uppercase mb-2">Creation Title</label>
+                <input
+                  type="text"
+                  required
+                  value={featuredForm.title}
+                  onChange={e => setFeaturedForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="e.g. Elena the Archivist"
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-warm-700 dark:text-warm-300 uppercase mb-2">Asset ID (Optional UUID from CHIMERA)</label>
+                <input
+                  type="text"
+                  value={featuredForm.asset_id}
+                  onChange={e => setFeaturedForm(prev => ({ ...prev, asset_id: e.target.value }))}
+                  placeholder="e.g. 00000000-0000-0000-0000-000000000000"
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-warm-700 dark:text-warm-300 uppercase mb-2">Showcase Teaser/Description</label>
+                <textarea
+                  required
+                  value={featuredForm.description}
+                  onChange={e => setFeaturedForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Tell us what makes this creation unique..."
+                  rows={3}
+                  className="input-field resize-none"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setShowAddFeatured(false)} className="btn-ghost flex-1 py-2 text-xs">Cancel</button>
+                <button type="submit" className="btn-primary flex-1 py-2 text-xs">Feature Item</button>
+              </div>
+            </form>
+          )}
+
+          {featured.length === 0 ? (
+            <div className="text-center py-12 bg-white dark:bg-warm-800 rounded-2xl border border-warm-150 dark:border-warm-850">
+              <Globe size={36} className="mx-auto text-warm-300 dark:text-warm-650 mb-2" />
+              <p className="text-warm-500 text-sm">No member creations featured yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {featured.map(item => (
+                <div key={item.id} className="p-5 bg-white dark:bg-warm-850 rounded-2xl border border-warm-150 dark:border-warm-800 shadow-sm flex gap-4 items-start">
+                  <div className="w-10 h-10 rounded-xl bg-warm-100 dark:bg-warm-800 flex items-center justify-center text-xl flex-shrink-0">
+                    {item.asset_type === 'character' ? '🎭' :
+                     item.asset_type === 'story' ? '📖' :
+                     item.asset_type === 'world' ? '🗺️' : '📚'}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-warm-900 dark:text-white text-sm mb-1">{item.title}</h4>
+                    <p className="text-xs text-primary-500 font-semibold mb-2 capitalize">{item.asset_type}</p>
+                    <p className="text-xs text-warm-650 dark:text-warm-350 line-clamp-2 leading-relaxed mb-3">{item.description}</p>
+                    <div className="flex items-center gap-2 pt-2 border-t border-warm-100 dark:border-warm-800">
+                      <Avatar emoji={item.profiles?.avatar_emoji || '👤'} photoUrl={item.profiles?.photo_url} size="xs" />
+                      <span className="text-xs text-warm-450">Featured by @{item.profiles?.username}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Community Events Tab */}
+      {activeTab === 'events' && (
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="font-serif text-lg font-bold text-warm-900 dark:text-white">Community Events</h3>
+              <p className="text-xs text-warm-500">Moderator organized contests, writing weeks, and challenges</p>
+            </div>
+            {isAdmin && (
+              <button onClick={() => setShowAddEvent(!showAddEvent)} className="btn-primary flex items-center gap-1 text-xs py-1.5 px-3">
+                <Plus size={14} /> Schedule Event
+              </button>
+            )}
+          </div>
+
+          {showAddEvent && (
+            <form onSubmit={handleAddEvent} className="mb-6 p-5 bg-warm-50 dark:bg-warm-900/60 rounded-2xl border border-warm-200 dark:border-warm-800 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-warm-700 dark:text-warm-300 uppercase mb-2">Event Type</label>
+                <select
+                  value={eventForm.event_type}
+                  onChange={e => setEventForm(prev => ({ ...prev, event_type: e.target.value as any }))}
+                  className="input-field"
+                >
+                  <option value="writing_challenge">Writing Challenge</option>
+                  <option value="creator_event">Creator Showcase</option>
+                  <option value="contest">Contest / Competition</option>
+                  <option value="collaboration_week">Collaboration Week</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-warm-700 dark:text-warm-300 uppercase mb-2">Event Title</label>
+                <input
+                  type="text"
+                  required
+                  value={eventForm.title}
+                  onChange={e => setEventForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="e.g. Midsummer Lore Contest"
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-warm-700 dark:text-warm-300 uppercase mb-2">Event Teaser/Rules</label>
+                <textarea
+                  required
+                  value={eventForm.description}
+                  onChange={e => setEventForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Describe the rules, objectives, and awards..."
+                  rows={3}
+                  className="input-field resize-none"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-warm-700 dark:text-warm-300 uppercase mb-2">Start Date</label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={eventForm.start_date}
+                    onChange={e => setEventForm(prev => ({ ...prev, start_date: e.target.value }))}
+                    className="input-field"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-warm-700 dark:text-warm-300 uppercase mb-2">End Date</label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={eventForm.end_date}
+                    onChange={e => setEventForm(prev => ({ ...prev, end_date: e.target.value }))}
+                    className="input-field"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setShowAddEvent(false)} className="btn-ghost flex-1 py-2 text-xs">Cancel</button>
+                <button type="submit" className="btn-primary flex-1 py-2 text-xs">Create Event</button>
+              </div>
+            </form>
+          )}
+
+          {events.length === 0 ? (
+            <div className="text-center py-12 bg-white dark:bg-warm-800 rounded-2xl border border-warm-150 dark:border-warm-850">
+              <Calendar size={36} className="mx-auto text-warm-300 dark:text-warm-650 mb-2" />
+              <p className="text-warm-500 text-sm">No scheduled events or contests.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {events.map(event => (
+                <div key={event.id} className="p-5 bg-white dark:bg-warm-850 rounded-2xl border border-warm-150 dark:border-warm-800 shadow-sm flex gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-secondary-50 text-secondary-500 border border-secondary-100 flex items-center justify-center text-xl flex-shrink-0">
+                    🏆
+                  </div>
+                  <div>
+                    <span className="text-xs bg-secondary-150 text-secondary-700 font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+                      {event.event_type.replace('_', ' ')}
+                    </span>
+                    <h4 className="font-bold text-warm-900 dark:text-white text-base mt-2 mb-1">{event.title}</h4>
+                    <p className="text-xs text-warm-500 mb-3">
+                      📅 {new Date(event.start_date).toLocaleString()} — {new Date(event.end_date).toLocaleString()}
+                    </p>
+                    <p className="text-sm text-warm-650 dark:text-warm-350 leading-relaxed mb-1">{event.description}</p>
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -469,72 +927,6 @@ export default function CommunityDetailPage() {
                   <p className="text-sm text-warm-800 dark:text-warm-200 pt-0.5">{rule}</p>
                 </div>
               ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* About Tab */}
-      {activeTab === 'about' && (
-        <div className="space-y-4">
-          <div className="p-4 rounded-xl bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700">
-            <h3 className="font-semibold text-warm-900 dark:text-warm-50 text-sm mb-2">About</h3>
-            <p className="text-sm text-warm-600 dark:text-warm-400">{community.description || 'No description provided.'}</p>
-          </div>
-
-          <div className="p-4 rounded-xl bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700">
-            <h3 className="font-semibold text-warm-900 dark:text-warm-50 text-sm mb-3">Details</h3>
-            <dl className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-warm-500">Category</dt>
-                <dd className="text-warm-900 dark:text-warm-100 font-medium">{community.category}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-warm-500">Interest</dt>
-                <dd className="text-warm-900 dark:text-warm-100 font-medium">{community.interest}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-warm-500">Members</dt>
-                <dd className="text-warm-900 dark:text-warm-100 font-medium">{members.length}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-warm-500">Posts</dt>
-                <dd className="text-warm-900 dark:text-warm-100 font-medium">{community.post_count || 0}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-warm-500">Created</dt>
-                <dd className="text-warm-900 dark:text-warm-100 font-medium">{new Date(community.created_at).toLocaleDateString()}</dd>
-              </div>
-            </dl>
-          </div>
-
-          {moderators.length > 0 && (
-            <div className="p-4 rounded-xl bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700">
-              <h3 className="font-semibold text-warm-900 dark:text-warm-50 text-sm mb-3">Moderation Team</h3>
-              <div className="space-y-2">
-                {moderators.map(m => (
-                  <button
-                    key={m.id}
-                    onClick={() => navigate(`/profile/${m.profiles.username}`)}
-                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-warm-50 dark:hover:bg-warm-700 transition-colors text-left"
-                  >
-                    <Avatar emoji={m.profiles.avatar_emoji} photoUrl={m.profiles.photo_url} size="sm" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-warm-900 dark:text-warm-50 truncate flex items-center">
-                        {m.profiles.display_name}
-                        <UserBadges 
-                          badges={getContextualBadges((m.profiles as any).badges, m.role)} 
-                          role={(m.profiles as any).role} 
-                          size="sm" 
-                        />
-                      </p>
-                    </div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${roleLabel(m.role).color}`}>
-                      {roleLabel(m.role).emoji} {m.role.charAt(0).toUpperCase() + m.role.slice(1)}
-                    </span>
-                  </button>
-                ))}
-              </div>
             </div>
           )}
         </div>

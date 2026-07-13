@@ -43,6 +43,9 @@ export interface Profile {
   pronouns?: string | null;
   languages?: string[];
   social_links?: Record<string, string>;
+  currently_building?: string | null;
+  creator_role_1?: string | null;
+  creator_role_2?: string | null;
   personality_badges?: string[];
   pinned_whisper_id?: string | null;
   featured_communities?: string[];
@@ -258,3 +261,40 @@ export const LOOKING_FOR_OPTIONS = [
 ] as const;
 
 export type LookingForOption = typeof LOOKING_FOR_OPTIONS[number];
+
+export interface CommunityCollaboration {
+  id: string;
+  community_id: string;
+  user_id: string;
+  role_needed: 'writer' | 'editor' | 'prompt_engineer' | 'voice_actor' | 'collaborator';
+  title: string;
+  description: string;
+  created_at: string;
+  profiles?: Profile;
+}
+
+export interface CommunityFeatured {
+  id: string;
+  community_id: string;
+  user_id: string;
+  asset_type: 'character' | 'story' | 'world' | 'lorebook';
+  asset_id: string;
+  title: string;
+  description: string;
+  created_at: string;
+  profiles?: Profile;
+}
+
+export interface CommunityEvent {
+  id: string;
+  community_id: string;
+  title: string;
+  description: string;
+  event_type: 'writing_challenge' | 'creator_event' | 'contest' | 'collaboration_week';
+  start_date: string;
+  end_date: string;
+  created_by: string;
+  created_at: string;
+  profiles?: Profile;
+}
+

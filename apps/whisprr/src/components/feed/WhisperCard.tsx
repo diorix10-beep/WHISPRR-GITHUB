@@ -172,6 +172,112 @@ export const WhisperCard = memo(function WhisperCard({
     return list;
   };
 
+  const renderRichContent = (content: string) => {
+    // 1. Check for Poll Code: [Poll: Question? | Option 1 | Option 2]
+    const pollRegex = /\[Poll:\s*([^|]+)\s*\|\s*([^\]]+)\]/i;
+    const pollMatch = content.match(pollRegex);
+    if (pollMatch) {
+      const question = pollMatch[1].trim();
+      const options = pollMatch[2].split('|').map(o => o.trim());
+      return (
+        <div className="mb-4 p-5 bg-warm-50 dark:bg-warm-900/60 rounded-2xl border border-warm-150 dark:border-warm-800">
+          <h4 className="text-sm font-bold text-warm-900 dark:text-white mb-3 flex items-center gap-1.5">
+            📊 Community Poll: {question}
+          </h4>
+          <div className="space-y-2">
+            {options.map((opt, idx) => (
+              <button
+                key={idx}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  alert(`Voted for: ${opt}`);
+                }}
+                className="w-full text-left p-3 rounded-xl bg-white dark:bg-warm-800 border border-warm-250/50 hover:bg-primary-50 dark:hover:bg-primary-950/20 hover:border-primary-300 transition-all text-sm font-medium"
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // 2. Check for Character: [Character: Name | Description | Greeting]
+    const charRegex = /\[Character:\s*([^|]+)\s*\|\s*([^|]+)\s*\|\s*([^\]]+)\]/i;
+    const charMatch = content.match(charRegex);
+    if (charMatch) {
+      const name = charMatch[1].trim();
+      const desc = charMatch[2].trim();
+      const greeting = charMatch[3].trim();
+      return (
+        <div className="mb-4 p-5 bg-gradient-to-tr from-primary-500/5 to-secondary-500/5 dark:from-primary-950/10 dark:to-secondary-950/10 rounded-2xl border border-primary-100/50 dark:border-primary-900/30 flex gap-4">
+          <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/40 text-primary-500 flex items-center justify-center text-xl flex-shrink-0">
+            🎭
+          </div>
+          <div>
+            <h4 className="text-base font-bold text-warm-900 dark:text-white mb-0.5">{name}</h4>
+            <p className="text-xs text-warm-500 mb-2">Character Card Embed</p>
+            <p className="text-sm text-warm-700 dark:text-warm-300 font-medium italic mb-2">"{greeting}"</p>
+            <p className="text-xs text-warm-600 dark:text-warm-400">{desc}</p>
+          </div>
+        </div>
+      );
+    }
+
+    // 3. Check for Story: [Story: Title | Summary | CoverURL]
+    const storyRegex = /\[Story:\s*([^|]+)\s*\|\s*([^|]+)\s*(?:\|\s*([^\]]+))?\]/i;
+    const storyMatch = content.match(storyRegex);
+    if (storyMatch) {
+      const title = storyMatch[1].trim();
+      const summary = storyMatch[2].trim();
+      const coverUrl = storyMatch[3] ? storyMatch[3].trim() : null;
+      return (
+        <div className="mb-4 p-5 bg-white dark:bg-warm-850 rounded-2xl border border-warm-100 dark:border-warm-800 shadow-sm">
+          {coverUrl && (
+            <img src={coverUrl} alt={title} className="w-full h-32 object-cover rounded-xl mb-4" />
+          )}
+          <h4 className="font-serif text-lg font-bold text-warm-900 dark:text-white mb-2 flex items-center gap-1.5">
+            📖 Story Preview: {title}
+          </h4>
+          <p className="text-sm text-warm-650 dark:text-warm-350 leading-relaxed font-serif">{summary}</p>
+        </div>
+      );
+    }
+
+    // 4. Check for Prompt Card
+    if (content.includes('```')) {
+      const codeRegex = /```(?:prompt)?([\s\S]*?)```/;
+      const match = content.match(codeRegex);
+      if (match) {
+        const promptText = match[1].trim();
+        return (
+          <div className="mb-4 p-5 bg-warm-950 dark:bg-black rounded-2xl border border-warm-850 relative group">
+            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(promptText);
+                  alert('Prompt copied!');
+                }}
+                className="px-2.5 py-1 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white rounded border border-white/10"
+              >
+                Copy
+              </button>
+            </div>
+            <div className="text-xs font-bold text-primary-400 uppercase tracking-widest mb-2">⚡ System Prompt</div>
+            <pre className="text-sm font-mono text-warm-200 whitespace-pre-wrap leading-relaxed">{promptText}</pre>
+          </div>
+        );
+      }
+    }
+
+    return (
+      <p className="font-serif text-base leading-relaxed text-warm-800 dark:text-warm-100 whitespace-pre-wrap break-words">
+        {content}
+      </p>
+    );
+  };
+
   return (
     <div className="card mb-4">
       {/* Header */}
@@ -229,9 +335,7 @@ export const WhisperCard = memo(function WhisperCard({
         onClick={handleWhisperClick}
         className="mb-4 cursor-pointer"
       >
-        <p className="font-serif text-base leading-relaxed text-warm-800 dark:text-warm-100 whitespace-pre-wrap break-words">
-          {whisper.content}
-        </p>
+        {renderRichContent(whisper.content)}
       </div>
 
       {/* Reactions */}

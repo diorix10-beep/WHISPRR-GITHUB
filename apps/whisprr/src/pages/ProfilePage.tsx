@@ -52,9 +52,10 @@ export default function ProfilePage() {
   const [searchParams] = useSearchParams();
   const [isEditMode, setIsEditMode] = useState(false);
 
-  type ProfileTab = 'posts' | 'replies' | 'media' | 'saved';
-  const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
+  type ProfileTab = 'stories' | 'characters' | 'worlds' | 'lorebooks';
+  const [activeTab, setActiveTab] = useState<ProfileTab>('stories');
   const [tabLoading, setTabLoading] = useState(false);
+  const [tabItems, setTabItems] = useState<any[]>([]);
 
   // Edit form state
   const [editForm, setEditForm] = useState({
@@ -72,6 +73,9 @@ export default function ProfilePage() {
     personality_badges: [] as string[],
     personal_values: [] as string[],
     looking_for: [] as string[],
+    currently_building: '',
+    creator_role_1: '',
+    creator_role_2: '',
     // Favorites
     fav_artist: '',
     fav_song: '',
@@ -172,6 +176,9 @@ export default function ProfilePage() {
           personality_badges: profileData.personality_badges || [],
           personal_values: profileData.personal_values || [],
           looking_for: profileData.looking_for || [],
+          currently_building: profileData.currently_building || '',
+          creator_role_1: profileData.creator_role_1 || '',
+          creator_role_2: profileData.creator_role_2 || '',
           // Favorites
           fav_artist: favorites.artist || '',
           fav_song: favorites.song || '',
@@ -312,51 +319,37 @@ export default function ProfilePage() {
     const fetchTabContent = async () => {
       setTabLoading(true);
       try {
-        let query = supabase
-          .from('whispers')
-          .select(`
-            *,
-            profiles:user_id(
-              id, user_id, display_name, username, avatar_emoji, photo_url, bio, mood, badges
-            ),
-            reactions(id, whisper_id, user_id, type, created_at)
-          `)
-          .eq('user_id', profile.user_id)
-          .order('created_at', { ascending: false });
-
-        if (activeTab === 'posts') {
-          query = query.is('parent_id', null);
-        } else if (activeTab === 'replies') {
-          query = query.not('parent_id', 'is', null);
-        } else if (activeTab === 'media') {
-          // Placeholder for when we add media attachments
-          query = query.eq('id', '00000000-0000-0000-0000-000000000000'); // Always empty for now
-        } else if (activeTab === 'saved' && isOwnProfile) {
-          // Will query bookmarks table later, empty for now
-          query = query.eq('id', '00000000-0000-0000-0000-000000000000'); 
+        let items: any[] = [];
+        if (activeTab === 'stories') {
+          const { data } = await supabase
+            .from('stories')
+            .select('*')
+            .eq('user_id', profile.user_id)
+            .order('created_at', { ascending: false });
+          items = data || [];
+        } else if (activeTab === 'characters') {
+          const { data } = await supabase
+            .from('ai_characters')
+            .select('*')
+            .eq('creator_id', profile.user_id)
+            .order('created_at', { ascending: false });
+          items = data || [];
+        } else if (activeTab === 'worlds') {
+          const { data } = await supabase
+            .from('worlds')
+            .select('*')
+            .eq('user_id', profile.user_id)
+            .order('created_at', { ascending: false });
+          items = data || [];
+        } else if (activeTab === 'lorebooks') {
+          const { data } = await supabase
+            .from('lorebooks')
+            .select('*')
+            .eq('user_id', profile.user_id)
+            .order('created_at', { ascending: false });
+          items = data || [];
         }
-
-        const { data: whispersData } = await query;
-        if (whispersData) {
-          const { data: commentData } = await supabase
-            .from('comments')
-            .select('whisper_id')
-            .in('whisper_id', whispersData.map(w => w.id));
-
-          const commentMap = new Map<string, number>();
-          commentData?.forEach(comment => {
-            commentMap.set(comment.whisper_id, (commentMap.get(comment.whisper_id) || 0) + 1);
-          });
-
-          const whispersWithCounts = whispersData.map((whisper: any) => ({
-            ...whisper,
-            comment_count: commentMap.get(whisper.id) || 0,
-          }));
-
-          setWhispers(whispersWithCounts);
-        } else {
-           setWhispers([]);
-        }
+        setTabItems(items);
       } catch (err) {
         console.error('Error fetching tab content:', err);
       } finally {
@@ -441,6 +434,9 @@ export default function ProfilePage() {
         personal_values: editForm.personal_values,
         looking_for: editForm.looking_for,
         favorites,
+        currently_building: editForm.currently_building,
+        creator_role_1: editForm.creator_role_1,
+        creator_role_2: editForm.creator_role_2,
       };
 
       await updateProfile(updates);
@@ -448,7 +444,7 @@ export default function ProfilePage() {
       setProfile({
         ...profile,
         ...updates,
-      });
+      } as any);
 
       setIsEditMode(false);
     } catch (error: any) {
@@ -828,6 +824,40 @@ export default function ProfilePage() {
               <div className="text-right text-xs text-warm-500 mt-1">{editForm.bio.length}/1000</div>
             </div>
 
+            {/* Creator Identity & Projects */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 pb-4 border-b border-warm-100 dark:border-warm-800">
+              <div>
+                <label className="block text-sm font-semibold text-warm-900 dark:text-warm-50 mb-2">Creator Label 1</label>
+                <input
+                  type="text"
+                  value={editForm.creator_role_1}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, creator_role_1: e.target.value }))}
+                  className="input-field"
+                  placeholder="e.g. AI Roleplay Creator"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-warm-900 dark:text-warm-50 mb-2">Creator Label 2</label>
+                <input
+                  type="text"
+                  value={editForm.creator_role_2}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, creator_role_2: e.target.value }))}
+                  className="input-field"
+                  placeholder="e.g. Worldbuilder"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-warm-900 dark:text-warm-50 mb-2">Currently Building</label>
+                <input
+                  type="text"
+                  value={editForm.currently_building}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, currently_building: e.target.value }))}
+                  className="input-field"
+                  placeholder="e.g. The Kingdom of Asteria"
+                />
+              </div>
+            </div>
+
             {/* Mood Edit */}
             <div>
               <label className="block text-sm font-semibold text-warm-900 dark:text-warm-50 mb-2">
@@ -1172,6 +1202,20 @@ export default function ProfilePage() {
                       </span>
                     )}
                   </div>
+                  {(profile.creator_role_1 || profile.creator_role_2) && (
+                    <div className="flex flex-wrap gap-1.5 items-center mt-2 text-xs font-semibold tracking-wide text-primary-600 dark:text-primary-400">
+                      {profile.creator_role_1 && (
+                        <span className="bg-primary-50 dark:bg-primary-950/40 px-2.5 py-0.5 rounded-full border border-primary-100/50 dark:border-primary-900/30">
+                          ✨ {profile.creator_role_1}
+                        </span>
+                      )}
+                      {profile.creator_role_2 && (
+                        <span className="bg-primary-50 dark:bg-primary-950/40 px-2.5 py-0.5 rounded-full border border-primary-100/50 dark:border-primary-900/30">
+                          🗺️ {profile.creator_role_2}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   <div className="flex gap-4 text-sm text-warm-500 dark:text-warm-400 mt-2">
                     <button onClick={() => setFollowModal({ isOpen: true, type: 'followers' })} className="hover:underline text-left">
                       <span className="font-bold text-warm-800 dark:text-warm-250">{followerCount}</span> followers
@@ -1201,6 +1245,20 @@ export default function ProfilePage() {
                 )}
               </div>
             </div>
+
+             {/* Currently Building section */}
+            {profile.currently_building && (
+              <div className="mb-6 p-5 bg-gradient-to-r from-primary-500/10 to-warm-500/10 dark:from-primary-950/20 dark:to-warm-900/15 rounded-3xl border border-primary-100/50 dark:border-primary-900/30 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-bold text-primary-600 dark:text-primary-400 uppercase tracking-widest mb-1">
+                    🚀 Currently Building
+                  </h3>
+                  <p className="text-lg font-serif font-bold text-warm-900 dark:text-white leading-tight">
+                    {profile.currently_building}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Optional feeling/mood update */}
             {profile.mood && (
@@ -1466,81 +1524,125 @@ export default function ProfilePage() {
           <div>
             <div className="flex items-center gap-4 border-b border-warm-100 dark:border-warm-800 mb-6 px-2 overflow-x-auto">
               <button
-                onClick={() => setActiveTab('posts')}
+                onClick={() => setActiveTab('stories')}
                 className={`py-3 px-2 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${
-                  activeTab === 'posts' 
+                  activeTab === 'stories' 
                     ? 'border-primary-500 text-primary-600 dark:text-primary-400' 
                     : 'border-transparent text-warm-500 hover:text-warm-700 dark:hover:text-warm-300'
                 }`}
               >
-                Posts
+                Stories
               </button>
               <button
-                onClick={() => setActiveTab('replies')}
+                onClick={() => setActiveTab('characters')}
                 className={`py-3 px-2 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${
-                  activeTab === 'replies' 
+                  activeTab === 'characters' 
                     ? 'border-primary-500 text-primary-600 dark:text-primary-400' 
                     : 'border-transparent text-warm-500 hover:text-warm-700 dark:hover:text-warm-300'
                 }`}
               >
-                Replies
+                Characters
               </button>
               <button
-                onClick={() => setActiveTab('media')}
+                onClick={() => setActiveTab('worlds')}
                 className={`py-3 px-2 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${
-                  activeTab === 'media' 
+                  activeTab === 'worlds' 
                     ? 'border-primary-500 text-primary-600 dark:text-primary-400' 
                     : 'border-transparent text-warm-500 hover:text-warm-700 dark:hover:text-warm-300'
                 }`}
               >
-                Media
+                Worlds
               </button>
-              {isOwnProfile && (
-                <button
-                  onClick={() => setActiveTab('saved')}
-                  className={`py-3 px-2 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${
-                    activeTab === 'saved' 
-                      ? 'border-primary-500 text-primary-600 dark:text-primary-400' 
-                      : 'border-transparent text-warm-500 hover:text-warm-700 dark:hover:text-warm-300'
-                  }`}
-                >
-                  Saved
-                </button>
-              )}
+              <button
+                onClick={() => setActiveTab('lorebooks')}
+                className={`py-3 px-2 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${
+                  activeTab === 'lorebooks' 
+                    ? 'border-primary-500 text-primary-600 dark:text-primary-400' 
+                    : 'border-transparent text-warm-500 hover:text-warm-700 dark:hover:text-warm-300'
+                }`}
+              >
+                Lorebooks
+              </button>
             </div>
             {tabLoading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-300 border-t-primary-500" />
               </div>
-            ) : whispers.length === 0 ? (
+            ) : tabItems.length === 0 ? (
               <div className="mt-8">
                 <EmptyState
-                  icon={MessageSquare}
-                  title={
-                    activeTab === 'posts' ? 'No whispers yet' :
-                    activeTab === 'replies' ? 'No replies yet' :
-                    activeTab === 'media' ? 'No media yet' :
-                    'No saved whispers yet'
+                  icon={
+                    activeTab === 'stories' ? Globe :
+                    activeTab === 'characters' ? Sparkles :
+                    activeTab === 'worlds' ? Compass :
+                    HelpCircle
                   }
-                  description={isOwnProfile ? "Share your first whisper to see it here." : "Check back later!"}
+                  title={
+                    activeTab === 'stories' ? 'No stories published' :
+                    activeTab === 'characters' ? 'No characters published' :
+                    activeTab === 'worlds' ? 'No worlds published' :
+                    'No lorebooks published'
+                  }
+                  description={
+                    isOwnProfile 
+                      ? `Create and publish your ${activeTab.slice(0, -1)} inside CHIMERA to showcase it here!` 
+                      : `This creator hasn't published any ${activeTab} yet.`
+                  }
                 />
               </div>
             ) : (
-              <div className="space-y-4">
-                {whispers.filter(w => w.id !== profile.pinned_whisper_id).map((whisper: any) => (
-                  <div key={whisper.id} className="relative group">
-                    {isOwnProfile && activeTab === 'posts' && (
-                      <div className="absolute top-4 right-4 z-10">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handlePinWhisper(whisper.id); }} 
-                          className="p-2 text-warm-300 hover:text-primary-500 transition-colors opacity-0 group-hover:opacity-100 md:opacity-100 bg-white/50 dark:bg-warm-800/50 rounded-full backdrop-blur"
-                          title="Pin to profile"
-                        >
-                          <Pin size={16} className={whisper.id === profile.pinned_whisper_id ? "fill-primary-500 text-primary-500" : ""} />
-                        </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {activeTab === 'stories' && tabItems.map((story) => (
+                  <div key={story.id} className="p-5 bg-white dark:bg-warm-850 rounded-2xl border border-warm-100 dark:border-warm-800 shadow-sm flex flex-col justify-between">
+                    <div>
+                      {story.cover_url && (
+                        <img src={story.cover_url} alt={story.title} className="w-full h-32 object-cover rounded-xl mb-4" />
+                      )}
+                      <h3 className="font-serif text-lg font-bold text-warm-900 dark:text-white mb-1.5">{story.title}</h3>
+                      <p className="text-sm text-warm-600 dark:text-warm-300 line-clamp-3 leading-relaxed mb-4">{story.summary}</p>
+                    </div>
+                    <span className="text-xs text-warm-400">Published {new Date(story.created_at).toLocaleDateString()}</span>
+                  </div>
+                ))}
+
+                {activeTab === 'characters' && tabItems.map((char) => (
+                  <div key={char.id} className="p-5 bg-white dark:bg-warm-850 rounded-2xl border border-warm-100 dark:border-warm-800 shadow-sm flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-950/40 text-primary-500 flex items-center justify-center font-bold text-lg flex-shrink-0">
+                      🎭
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-warm-900 dark:text-white mb-1">{char.short_description || 'Unnamed Character'}</h3>
+                      <p className="text-xs text-warm-500 mb-2">Category: {char.category || 'General'}</p>
+                      <p className="text-sm text-warm-650 dark:text-warm-350 line-clamp-2 leading-relaxed mb-3">{char.long_description || char.greeting}</p>
+                      <div className="flex gap-4 text-xs font-semibold text-warm-500">
+                        <span>💬 {char.chats_count || 0} chats</span>
+                        <span>❤️ {char.likes_count || 0} likes</span>
                       </div>
-                    )}
-                    <WhisperCard whisper={whisper} />
+                    </div>
+                  </div>
+                ))}
+
+                {activeTab === 'worlds' && tabItems.map((world) => (
+                  <div key={world.id} className="p-5 bg-white dark:bg-warm-850 rounded-2xl border border-warm-100 dark:border-warm-800 shadow-sm flex flex-col justify-between">
+                    <div>
+                      <div className="text-2xl mb-2">🗺️</div>
+                      <h3 className="font-serif text-base font-bold text-warm-900 dark:text-white mb-1">{world.name}</h3>
+                      <p className="text-sm text-warm-650 dark:text-warm-350 line-clamp-3 leading-relaxed mb-3">{world.description}</p>
+                    </div>
+                    <span className="text-xs text-warm-400">Created {new Date(world.created_at).toLocaleDateString()}</span>
+                  </div>
+                ))}
+
+                {activeTab === 'lorebooks' && tabItems.map((lore) => (
+                  <div key={lore.id} className="p-5 bg-white dark:bg-warm-850 rounded-2xl border border-warm-100 dark:border-warm-800 shadow-sm flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-warm-100 dark:bg-warm-800 text-warm-500 flex items-center justify-center text-xl flex-shrink-0">
+                      📖
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-warm-900 dark:text-white mb-1">{lore.title}</h3>
+                      <p className="text-sm text-warm-650 dark:text-warm-350 line-clamp-2 leading-relaxed mb-2">{lore.description}</p>
+                      <span className="text-xs bg-warm-100 dark:bg-warm-850 text-warm-500 px-2.5 py-0.5 rounded-full font-semibold border border-warm-200/50 dark:border-warm-750">{lore.entry_count || 0} entries</span>
+                    </div>
                   </div>
                 ))}
               </div>
