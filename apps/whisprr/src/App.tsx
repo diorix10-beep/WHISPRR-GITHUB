@@ -159,7 +159,7 @@ function AppLoader() {
         <Route element={<ProtectedRoute />}>
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/legal-acceptance" element={<LegalAcceptancePage />} />
-          <Route path="/welcome" element={<WelcomePage />} />
+          <Route path="/welcome" element={<Navigate to="/feed" replace />} />
           <Route path="/moderation-notice" element={<ModerationNoticePage />} />
           <Route path="/suspended" element={<SuspendedPage />} />
 
