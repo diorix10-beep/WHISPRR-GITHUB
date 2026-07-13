@@ -1023,3 +1023,11 @@ All platform messages should reflect our philosophy.
 **Key Distinction:**
 > CHIMERA empowers creators to build AI roleplay experiences. WHISPRR empowers those experiences to find a community.
 
+## Decoupled Architecture Package Rule
+As the decoupling progresses, no business logic or application-specific feature logic should ever be moved into the shared packages. Shared packages are reserved strictly for reusable ecosystem infrastructure:
+- **`packages/ui`**: Atomic and layout visual components only (no features or app business logic).
+- **`packages/types`**: TypeScript database and model interfaces representing Supabase tables.
+- **`packages/auth`**: Authentication helpers and the shared Supabase client setup.
+- **`packages/utils`**: Core generic helper logic (e.g. date formatting, string trimmers).
+
+All application-specific features (e.g., Communities inside WHISPRR, Character/World Studio inside CHIMERA) must remain contained within their respective apps. Avoid coupling business features together in shared modules.
