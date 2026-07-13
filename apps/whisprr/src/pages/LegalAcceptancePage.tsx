@@ -13,7 +13,7 @@ export default function LegalAcceptancePage() {
 
   useEffect(() => {
     if (profile && profile.legal_accepted_version === CURRENT_LEGAL_VERSION) {
-      navigate('/welcome');
+      navigate('/feed');
     }
   }, [profile, navigate]);
 
@@ -23,7 +23,7 @@ export default function LegalAcceptancePage() {
     setError(null);
     try {
       await acceptLegalTerms(CURRENT_LEGAL_VERSION);
-      navigate('/welcome');
+      navigate('/feed');
     } catch (err: any) {
       console.error(err);
       setError(err?.message || err?.details || JSON.stringify(err) || 'Failed to save acceptance. Please check your connection.');

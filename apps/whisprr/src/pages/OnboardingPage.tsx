@@ -181,7 +181,7 @@ export default function OnboardingPage() {
       // Clear cached referrer after successful consumption
       localStorage.removeItem('whisprr_referrer');
 
-      navigate('/welcome');
+      navigate('/feed');
     } catch (err: any) {
       console.error('Onboarding submission failed:', err);
       const errorMessage = err?.message || (typeof err === 'string' ? err : 'Unknown database error');
