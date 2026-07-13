@@ -3,9 +3,11 @@ import {
   Home, Compass, Users, MessageCircle, Bell, Menu 
 } from 'lucide-react';
 import { useNotifications } from '../../contexts/NotificationsContext';
+import { useWellness } from '../../contexts/WellnessContext';
 
 export function BottomNav() {
   const { unreadCount, unreadMessageCount } = useNotifications();
+  const { isQuietHoursActive } = useWellness();
 
   const items = [
     { path: '/feed', icon: Home, label: 'Feed' },
@@ -76,10 +78,12 @@ export function BottomNav() {
                 {badgeCount > 0 && (
                   <span
                     className={`absolute -top-1.5 -right-1.5 flex items-center justify-center
-                      w-4 h-4 text-white text-[10px] font-bold rounded-full bg-primary-500`}
+                      w-4 h-4 text-white text-[10px] font-bold rounded-full ${
+                        isQuietHoursActive ? 'bg-warm-400 dark:bg-warm-600' : 'bg-primary-500'
+                      }`}
                     aria-hidden="true"
                   >
-                    {badgeCount > 9 ? '9+' : badgeCount}
+                    {isQuietHoursActive ? '🌙' : (badgeCount > 9 ? '9+' : badgeCount)}
                   </span>
                 )}
               </div>

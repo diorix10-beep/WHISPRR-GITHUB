@@ -10,6 +10,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Avatar } from '../common/Avatar';
 import { Logo } from '../common/Logo';
+import { useWellness } from '../../contexts/WellnessContext';
 
 const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
 const chimeraUrl = isLocalhost ? 'http://localhost:5174' : 'https://chimera.whisprr.xyz';
@@ -28,6 +29,7 @@ export function SideNav() {
   const { unreadCount, unreadMessageCount } = useNotifications();
   const { profile, signOut } = useAuth();
   const { preference, setPreference } = useTheme();
+  const { isQuietHoursActive } = useWellness();
 
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -90,18 +92,24 @@ export function SideNav() {
                 <Icon size={20} strokeWidth={1.8} />
                 {badgeCount > 0 && (
                   <span
-                    className="absolute -top-1 -right-1 flex items-center justify-center
-                      w-3.5 h-3.5 bg-primary-500 text-white text-[8px] font-bold rounded-full"
+                    className={`absolute -top-1 -right-1 flex items-center justify-center
+                      w-3.5 h-3.5 text-white text-[8px] font-bold rounded-full ${
+                        isQuietHoursActive ? 'bg-warm-400 dark:bg-warm-600' : 'bg-primary-500'
+                      }`}
                     aria-hidden="true"
                   >
-                    {badgeCount > 9 ? '9+' : badgeCount}
+                    {isQuietHoursActive ? '🌙' : (badgeCount > 9 ? '9+' : badgeCount)}
                   </span>
                 )}
               </div>
               <span>{label}</span>
               {badgeCount > 0 && (
-                <span className="ml-auto bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400 text-xs font-semibold px-2 py-0.5 rounded-full">
-                  {badgeCount}
+                <span className={`ml-auto text-xs font-semibold px-2 py-0.5 rounded-full ${
+                  isQuietHoursActive
+                    ? 'bg-warm-100 dark:bg-warm-850 text-warm-500 border border-warm-200/50 dark:border-warm-750'
+                    : 'bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400'
+                }`}>
+                  {isQuietHoursActive ? '🌙' : badgeCount}
                 </span>
               )}
             </>

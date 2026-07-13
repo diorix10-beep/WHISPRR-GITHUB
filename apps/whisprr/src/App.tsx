@@ -6,6 +6,7 @@ import { NotificationsProvider } from './contexts/NotificationsContext';
 import { UnreadMessagesProvider } from './contexts/UnreadMessagesContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { InterestProvider } from './contexts/InterestContext';
+import { WellnessProvider } from './contexts/WellnessContext';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { AppLayout } from './components/layout/AppLayout';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
@@ -169,7 +170,7 @@ function AppLoader() {
             <Route path="/feed" element={<FeedPage />} />
             <Route path="/messages" element={<MessagesPage />} />
             <Route path="/messages/:conversationId" element={<ConversationPage />} />
-            <Route path="/group-chat" element={<GroupChatPage />} />
+            <Route path="/group-chat" element={<Navigate to="/messages" replace />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/profile/:username" element={<ProfilePage />} />
             <Route path="/settings" element={<SettingsPage />} />
@@ -179,8 +180,8 @@ function AppLoader() {
             <Route path="/community-program" element={<CommunityProgramPage />} />
             <Route path="/careers" element={<CareersPage />} />
             <Route path="/whisper/:id" element={<WhisperDetailPage />} />
-            <Route path="/voice-rooms" element={<VoiceRoomsPage />} />
-            <Route path="/voice-rooms/:roomId" element={<VoiceRoomsPage />} />
+            <Route path="/voice-rooms" element={<Navigate to="/feed" replace />} />
+            <Route path="/voice-rooms/:roomId" element={<Navigate to="/feed" replace />} />
             <Route path="/feedback" element={<FeedbackDashboard />} />
             {profile?.role === 'founder' && (
               <Route path="/founder" element={<FounderPanel />} />
@@ -202,16 +203,18 @@ function App() {
         <ThemeProvider>
           <ToastProvider>
             <AuthProvider>
-              <NotificationsProvider>
-                <UnreadMessagesProvider>
-                  <InterestProvider>
-                    <ReloadPrompt />
-                    <DevPreviewWrapper>
-                      <AppLoader />
-                    </DevPreviewWrapper>
-                  </InterestProvider>
-                </UnreadMessagesProvider>
-              </NotificationsProvider>
+              <WellnessProvider>
+                <NotificationsProvider>
+                  <UnreadMessagesProvider>
+                    <InterestProvider>
+                      <ReloadPrompt />
+                      <DevPreviewWrapper>
+                        <AppLoader />
+                      </DevPreviewWrapper>
+                    </InterestProvider>
+                  </UnreadMessagesProvider>
+                </NotificationsProvider>
+              </WellnessProvider>
             </AuthProvider>
           </ToastProvider>
         </ThemeProvider>

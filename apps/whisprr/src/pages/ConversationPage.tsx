@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import {
   ArrowLeft, Send, Phone, Video, Loader2, Trash2,
-  Image as ImageIcon, X, Settings, UserPlus, UserMinus, LogOut, Pencil, Smile, Search
+  Image as ImageIcon, X, Settings, UserPlus, UserMinus, LogOut, Pencil, Smile, Search, ExternalLink
 } from 'lucide-react';
 import type { Conversation, Message, Profile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -460,6 +460,142 @@ export default function ConversationPage() {
     return `${names.join(', ')} are typing...`;
   };
 
+  const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+  const chimeraUrl = isLocalhost ? 'http://localhost:5174' : 'https://chimera.whisprr.xyz';
+
+  const renderRichContent = (content: string) => {
+    // 1. Check for Character: [Character: Name | Description | Greeting | Id]
+    const charRegex = /\[Character:\s*([^|]+)\s*\|\s*([^|]+)\s*\|\s*([^|\]]+)(?:\s*\|\s*([^\]]+))?\]/i;
+    const charMatch = content.match(charRegex);
+    if (charMatch) {
+      const name = charMatch[1].trim();
+      const desc = charMatch[2].trim();
+      const greeting = charMatch[3].trim();
+      const charId = charMatch[4] ? charMatch[4].trim() : null;
+      return (
+        <div className="p-3 my-2 bg-gradient-to-tr from-primary-500/10 to-accent-505/10 dark:from-primary-950/20 dark:to-accent-950/20 rounded-xl border border-primary-100/30 dark:border-primary-900/20 text-warm-900 dark:text-warm-50 text-left min-w-[200px]">
+          <div className="font-bold text-xs">🎭 {name}</div>
+          <p className="text-xs text-warm-500 italic mt-1 font-serif">"{greeting}"</p>
+          <p className="text-[10px] text-warm-600 dark:text-warm-400 mt-1 line-clamp-2">{desc}</p>
+          <a
+            href={charId ? `${chimeraUrl}/chat/${charId}` : `${chimeraUrl}/`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[10px] font-bold text-primary-500 hover:underline mt-2"
+          >
+            Chat in CHIMERA <ExternalLink size={10} />
+          </a>
+        </div>
+      );
+    }
+
+    // 2. Check for Story: [Story: Title | Summary | CoverURL]
+    const storyRegex = /\[Story:\s*([^|]+)\s*\|\s*([^|]+)\s*(?:\|\s*([^\]]+))?\]/i;
+    const storyMatch = content.match(storyRegex);
+    if (storyMatch) {
+      const title = storyMatch[1].trim();
+      const summary = storyMatch[2].trim();
+      return (
+        <div className="p-3 my-2 bg-white dark:bg-warm-800 rounded-xl border border-warm-200 dark:border-warm-700 text-warm-900 dark:text-warm-50 text-left min-w-[200px]">
+          <div className="font-serif font-bold text-xs">📖 {title}</div>
+          <p className="text-[10px] text-warm-650 dark:text-warm-350 mt-1 line-clamp-3 leading-normal">{summary}</p>
+          <a
+            href={`${chimeraUrl}/plots`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[10px] font-bold text-primary-500 hover:underline mt-2"
+          >
+            Read in CHIMERA <ExternalLink size={10} />
+          </a>
+        </div>
+      );
+    }
+
+    // 3. Check for World: [World: Name | Description]
+    const worldRegex = /\[World:\s*([^|]+)\s*\|\s*([^\]]+)\]/i;
+    const worldMatch = content.match(worldRegex);
+    if (worldMatch) {
+      const name = worldMatch[1].trim();
+      const desc = worldMatch[2].trim();
+      return (
+        <div className="p-3 my-2 bg-white dark:bg-warm-800 rounded-xl border border-warm-200 dark:border-warm-700 text-warm-900 dark:text-warm-50 text-left min-w-[200px]">
+          <div className="font-serif font-bold text-xs">🗺️ {name}</div>
+          <p className="text-[10px] text-warm-650 dark:text-warm-350 mt-1 line-clamp-2">{desc}</p>
+          <a
+            href={`${chimeraUrl}/worlds`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[10px] font-bold text-primary-500 hover:underline mt-2"
+          >
+            Explore in CHIMERA <ExternalLink size={10} />
+          </a>
+        </div>
+      );
+    }
+
+    // 4. Check for Lorebook: [Lorebook: Title | Description | EntryCount]
+    const lorebookRegex = /\[Lorebook:\s*([^|]+)\s*\|\s*([^|]+)\s*\|\s*([^\]]+)\]/i;
+    const lorebookMatch = content.match(lorebookRegex);
+    if (lorebookMatch) {
+      const title = lorebookMatch[1].trim();
+      const desc = lorebookMatch[2].trim();
+      const entryCount = lorebookMatch[3].trim();
+      return (
+        <div className="p-3 my-2 bg-white dark:bg-warm-800 rounded-xl border border-warm-200 dark:border-warm-700 text-warm-900 dark:text-warm-50 text-left min-w-[200px]">
+          <div className="font-serif font-bold text-xs">📚 {title}</div>
+          <p className="text-[10px] text-warm-655 dark:text-warm-350 mt-1 line-clamp-2">{desc}</p>
+          <a
+            href={`${chimeraUrl}/lorebooks`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[10px] font-bold text-primary-500 hover:underline mt-2"
+          >
+            Manage in CHIMERA <ExternalLink size={10} />
+          </a>
+        </div>
+      );
+    }
+
+    // 5. Check for Collaboration: [Collaboration: ...]
+    const collabRegex = /\[Collaboration:\s*([^|]+)\s*\|\s*([^|]+)\s*\|\s*([^|\]]+)(?:\s*\|\s*([^|\]]+))?(?:\s*\|\s*([^\]]+))?\]/i;
+    const collabMatch = content.match(collabRegex);
+    if (collabMatch) {
+      const role = collabMatch[1].trim();
+      const title = collabMatch[2].trim();
+      const desc = collabMatch[3].trim();
+      return (
+        <div className="p-3 my-2 bg-white dark:bg-warm-800 rounded-xl border border-warm-200 dark:border-warm-700 text-warm-900 dark:text-warm-50 text-left min-w-[200px]">
+          <div className="text-[10px] bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded font-bold uppercase w-max mb-1">🔍 {role.replace('_', ' ')}</div>
+          <div className="font-bold text-xs">{title}</div>
+          <p className="text-[10px] text-warm-655 dark:text-warm-350 mt-1 line-clamp-2">{desc}</p>
+        </div>
+      );
+    }
+
+    // 6. Check for Progress: [Progress: ...]
+    const progressRegex = /\[Progress:\s*([^|]+)\s*\|\s*([^|%\]]+)%?\s*\|\s*([^\]]+)\]/i;
+    const progressMatch = content.match(progressRegex);
+    if (progressMatch) {
+      const projectName = progressMatch[1].trim();
+      const percentage = Math.min(Math.max(parseInt(progressMatch[2].trim()) || 0, 0), 100);
+      const notes = progressMatch[3].trim();
+      return (
+        <div className="p-3 my-2 bg-white dark:bg-warm-800 rounded-xl border border-warm-200 dark:border-warm-700 text-warm-900 dark:text-warm-50 text-left min-w-[200px]">
+          <div className="flex justify-between text-[10px] font-bold text-warm-500 mb-1">
+            <span>📈 {projectName}</span>
+            <span className="text-primary-500">{percentage}%</span>
+          </div>
+          <div className="w-full bg-warm-100 dark:bg-warm-900 h-1.5 rounded-full overflow-hidden mb-2">
+            <div className="bg-primary-500 h-full rounded-full" style={{ width: `${percentage}%` }} />
+          </div>
+          <p className="text-[10px] text-warm-600 dark:text-warm-450 leading-relaxed font-semibold italic">"{notes}"</p>
+        </div>
+      );
+    }
+
+    return <p className="text-sm">{content}</p>;
+  };
+
   const isGroupAdmin = conversation?.type === 'group' && conversation?.created_by === user?.id;
 
   if (loading) {
@@ -563,7 +699,7 @@ export default function ConversationPage() {
                     )}
 
                     {message.content && message.content !== 'Sent an image' && (
-                      <p className="text-sm">{message.content}</p>
+                      renderRichContent(message.content)
                     )}
 
                     <p className={`text-xs mt-1 ${isOwn ? 'text-primary-100' : 'text-warm-500'}`}>

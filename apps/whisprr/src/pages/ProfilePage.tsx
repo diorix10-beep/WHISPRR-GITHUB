@@ -5,8 +5,9 @@ import {
   Heart, Award, Pin, Globe, Twitter, Instagram, Github, 
   Linkedin, MessageSquare, Youtube, Music, Tv, Gamepad, Chrome, 
   Sparkles, Plus, Search, ArrowUp, ArrowDown, Trash2, HeartHandshake,
-  Compass, HelpCircle
+  Compass, HelpCircle, MoreVertical, ShieldAlert, UserMinus, VolumeX
 } from 'lucide-react';
+import { ModerationModal } from '../components/modals/ModerationModal';
 import type { Profile, Whisper, Reaction } from '../types';
 import { MOODS, INTERESTS, PERSONALITY_BADGES, PERSONAL_VALUES, LOOKING_FOR_OPTIONS } from '../types';
 import { supabase } from '../lib/supabase';
@@ -36,6 +37,9 @@ export default function ProfilePage() {
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [showModerationDropdown, setShowModerationDropdown] = useState(false);
+  const [showModerationModal, setShowModerationModal] = useState(false);
+  const [moderationType, setModerationType] = useState<'user' | 'whisper' | 'comment'>('user');
   const [loading, setLoading] = useState(true);
   const [whispers, setWhispers] = useState<WhisperWithProfile[]>([]);
   const [pinnedWhisper, setPinnedWhisper] = useState<WhisperWithProfile | null>(null);
@@ -1241,6 +1245,41 @@ export default function ProfilePage() {
                       <MessageCircle size={16} />
                       Message
                     </button>
+                    <div className="relative">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowModerationDropdown(!showModerationDropdown); }}
+                        className="py-2 px-3 text-sm btn-secondary flex items-center justify-center rounded-xl"
+                        title="More options"
+                      >
+                        <MoreVertical size={16} />
+                      </button>
+
+                      {showModerationDropdown && (
+                        <div 
+                          className="absolute right-0 top-10 w-48 bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-2xl shadow-lg py-2 z-30 animate-scale-in"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            onClick={() => { setShowModerationDropdown(false); setModerationType('user'); setShowModerationModal(true); }}
+                            className="w-full text-left px-4 py-2 text-xs font-semibold text-warm-750 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-750 transition-colors flex items-center gap-2"
+                          >
+                            <ShieldAlert size={14} /> Report Profile
+                          </button>
+                          <button
+                            onClick={() => { setShowModerationDropdown(false); setModerationType('user'); setShowModerationModal(true); }}
+                            className="w-full text-left px-4 py-2 text-xs font-semibold text-warm-750 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-750 transition-colors flex items-center gap-2"
+                          >
+                            <VolumeX size={14} /> Mute User
+                          </button>
+                          <button
+                            onClick={() => { setShowModerationDropdown(false); setModerationType('user'); setShowModerationModal(true); }}
+                            className="w-full text-left px-4 py-2 text-xs font-semibold text-red-650 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/10 transition-colors flex items-center gap-2"
+                          >
+                            <UserMinus size={14} /> Block User
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1670,6 +1709,19 @@ export default function ProfilePage() {
         currentBannerUrl={profile.banner_url || null}
         onBannerUpdated={handleBannerUpdated}
       />
+      {showModerationModal && (
+        <ModerationModal
+          onClose={() => setShowModerationModal(false)}
+          targetUserId={profile.user_id}
+          targetUsername={profile.username || 'unknown'}
+          contentType={moderationType}
+          onSuccess={() => {
+            if (moderationType === 'user') {
+              navigate('/feed');
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

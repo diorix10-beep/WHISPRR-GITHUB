@@ -4,7 +4,8 @@ import {
   Search, X, TrendingUp, Users, ChevronRight, Sparkles,
   Music, Gamepad2, Monitor, Dumbbell, Plane, Bike, Film,
   Trophy, Briefcase, Video, Hash, Loader2, RefreshCw,
-  VolumeX, Trash2, Heart, MessageSquare, Compass, EyeOff
+  VolumeX, Trash2, Heart, MessageSquare, Compass, EyeOff,
+  ExternalLink, BookOpen, Book, Globe
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useInterests } from '../contexts/InterestContext';
@@ -18,7 +19,7 @@ import { WhisperCard } from '../components/feed/WhisperCard';
 import { EmptyState } from '../components/common/EmptyState';
 import { LoadingSkeleton, WhisperSkeleton } from '../components/common/LoadingSkeleton';
 
-type SearchTab = 'users' | 'communities' | 'interests';
+type SearchTab = 'users' | 'communities' | 'interests' | 'stories' | 'characters' | 'worlds' | 'lorebooks';
 
 interface CommunityWithCount extends Community {
   member_count?: number;
@@ -58,6 +59,10 @@ export default function DiscoverPage() {
   const [userResults, setUserResults] = useState<Profile[]>([]);
   const [communityResults, setCommunityResults] = useState<CommunityWithCount[]>([]);
   const [interestResults, setInterestResults] = useState<string[]>([]);
+  const [storyResults, setStoryResults] = useState<any[]>([]);
+  const [characterResults, setCharacterResults] = useState<any[]>([]);
+  const [worldResults, setWorldResults] = useState<any[]>([]);
+  const [lorebookResults, setLorebookResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -68,6 +73,12 @@ export default function DiscoverPage() {
   const [newVoices, setNewVoices] = useState<Profile[]>([]);
   const [recentlyActive, setRecentlyActive] = useState<Profile[]>([]);
   const [personalizedWhispers, setPersonalizedWhispers] = useState<WhisperWithRelations[]>([]);
+  
+  // Recent creations state
+  const [recentStories, setRecentStories] = useState<any[]>([]);
+  const [recentCharacters, setRecentCharacters] = useState<any[]>([]);
+  const [recentWorlds, setRecentWorlds] = useState<any[]>([]);
+  const [recentLorebooks, setRecentLorebooks] = useState<any[]>([]);
   
   const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
@@ -309,6 +320,24 @@ export default function DiscoverPage() {
     }
   }, [user]);
 
+  // Recent creations loader
+  const loadRecentCreations = useCallback(async () => {
+    try {
+      const [st, ch, wd, lb] = await Promise.all([
+        supabase.from('stories').select('*').order('created_at', { ascending: false }).limit(6),
+        supabase.from('ai_characters').select('*').order('created_at', { ascending: false }).limit(6),
+        supabase.from('worlds').select('*').order('created_at', { ascending: false }).limit(6),
+        supabase.from('lorebooks').select('*').order('created_at', { ascending: false }).limit(6),
+      ]);
+      if (st.data) setRecentStories(st.data);
+      if (ch.data) setRecentCharacters(ch.data);
+      if (wd.data) setRecentWorlds(wd.data);
+      if (lb.data) setRecentLorebooks(lb.data);
+    } catch (err) {
+      console.error('Error loading recent creations:', err);
+    }
+  }, []);
+
   const loadAllDiscoveryData = useCallback(async () => {
     setLoading(true);
     await Promise.all([
@@ -317,7 +346,8 @@ export default function DiscoverPage() {
       loadTrendingDiscussions(),
       loadNewVoices(),
       loadRecentlyActive(),
-      loadPersonalizedFeed()
+      loadPersonalizedFeed(),
+      loadRecentCreations()
     ]);
     setLoading(false);
   }, [
@@ -326,7 +356,8 @@ export default function DiscoverPage() {
     loadTrendingDiscussions,
     loadNewVoices,
     loadRecentlyActive,
-    loadPersonalizedFeed
+    loadPersonalizedFeed,
+    loadRecentCreations
   ]);
 
   useEffect(() => {
@@ -418,7 +449,7 @@ export default function DiscoverPage() {
     setSearchLoading(true);
     const q = query.trim().toLowerCase();
 
-    const [usersRes, communitiesRes] = await Promise.all([
+    const [usersRes, communitiesRes, storiesRes, charactersRes, worldsRes, lorebooksRes] = await Promise.all([
       supabase
         .from('profiles')
         .select('*')
@@ -429,6 +460,26 @@ export default function DiscoverPage() {
         .from('communities')
         .select('*, community_members(count)')
         .or(`name.ilike.%${q}%,description.ilike.%${q}%,interest.ilike.%${q}%`)
+        .limit(10),
+      supabase
+        .from('stories')
+        .select('*')
+        .or(`title.ilike.%${q}%,summary.ilike.%${q}%`)
+        .limit(10),
+      supabase
+        .from('ai_characters')
+        .select('*')
+        .or(`short_description.ilike.%${q}%,greeting.ilike.%${q}%`)
+        .limit(10),
+      supabase
+        .from('worlds')
+        .select('*')
+        .or(`name.ilike.%${q}%,description.ilike.%${q}%`)
+        .limit(10),
+      supabase
+        .from('lorebooks')
+        .select('*')
+        .or(`title.ilike.%${q}%,description.ilike.%${q}%`)
         .limit(10),
     ]);
 
@@ -448,6 +499,11 @@ export default function DiscoverPage() {
       })));
     }
 
+    if (storiesRes.data) setStoryResults(storiesRes.data);
+    if (charactersRes.data) setCharacterResults(charactersRes.data);
+    if (worldsRes.data) setWorldResults(worldsRes.data);
+    if (lorebooksRes.data) setLorebookResults(lorebooksRes.data);
+
     track({
       eventType: 'search',
       targetType: 'search_term',
@@ -463,6 +519,10 @@ export default function DiscoverPage() {
       setUserResults([]);
       setCommunityResults([]);
       setInterestResults([]);
+      setStoryResults([]);
+      setCharacterResults([]);
+      setWorldResults([]);
+      setLorebookResults([]);
       setIsSearchActive(false);
       return;
     }
@@ -580,11 +640,15 @@ export default function DiscoverPage() {
       {/* Search Results Render */}
       {isSearchActive ? (
         <div className="space-y-4">
-          <div className="flex gap-1 bg-warm-100 dark:bg-warm-800 p-1 rounded-xl">
+          <div className="flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-1 p-1 bg-warm-100 dark:bg-warm-850 rounded-xl">
             {([
               { key: 'users' as SearchTab, label: 'Users', count: userResults.length },
               { key: 'communities' as SearchTab, label: 'Communities', count: communityResults.length },
               { key: 'interests' as SearchTab, label: 'Interests', count: interestResults.length },
+              { key: 'stories' as SearchTab, label: 'Stories', count: storyResults.length },
+              { key: 'characters' as SearchTab, label: 'Characters', count: characterResults.length },
+              { key: 'worlds' as SearchTab, label: 'Worlds', count: worldResults.length },
+              { key: 'lorebooks' as SearchTab, label: 'Lorebooks', count: lorebookResults.length },
             ]).map(tab => (
               <button
                 key={tab.key}
@@ -627,6 +691,70 @@ export default function DiscoverPage() {
               {communityResults.map(c => (
                 <CommunityRow key={c.id} community={c} onClick={() => navigate(`/communities/${c.id}`)} />
               ))}
+            </div>
+          ) : searchTab === 'stories' ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {storyResults.map(s => (
+                <div key={s.id} className="p-4 bg-white dark:bg-warm-850 rounded-2xl border border-warm-200 dark:border-warm-750 flex flex-col justify-between">
+                  <div>
+                    <h4 className="font-serif font-bold text-warm-900 dark:text-white mb-1">📖 {s.title}</h4>
+                    <p className="text-xs font-medium text-warm-500 mb-2">Story</p>
+                    <p className="text-sm text-warm-650 dark:text-warm-350 line-clamp-3 leading-relaxed mb-4">{s.summary}</p>
+                  </div>
+                  <a href={`${chimeraUrl}/plots`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary-500 hover:underline inline-flex items-center gap-1">
+                    Read Story <ExternalLink size={12} />
+                  </a>
+                </div>
+              ))}
+              {storyResults.length === 0 && <div className="text-center py-8 text-warm-500 col-span-2">No matching stories found.</div>}
+            </div>
+          ) : searchTab === 'characters' ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {characterResults.map(c => (
+                <div key={c.id} className="p-4 bg-white dark:bg-warm-850 rounded-2xl border border-warm-200 dark:border-warm-750 flex flex-col justify-between">
+                  <div>
+                    <h4 className="font-bold text-warm-900 dark:text-white mb-1">🎭 {c.short_description || 'Unnamed Character'}</h4>
+                    <p className="text-xs font-medium text-warm-500 mb-2">AI Character</p>
+                    <p className="text-sm text-warm-650 dark:text-warm-350 line-clamp-3 leading-relaxed mb-4">{c.greeting}</p>
+                  </div>
+                  <a href={`${chimeraUrl}/chat/${c.id}`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary-500 hover:underline inline-flex items-center gap-1">
+                    Chat in CHIMERA <ExternalLink size={12} />
+                  </a>
+                </div>
+              ))}
+              {characterResults.length === 0 && <div className="text-center py-8 text-warm-500 col-span-2">No matching characters found.</div>}
+            </div>
+          ) : searchTab === 'worlds' ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {worldResults.map(w => (
+                <div key={w.id} className="p-4 bg-white dark:bg-warm-850 rounded-2xl border border-warm-200 dark:border-warm-750 flex flex-col justify-between">
+                  <div>
+                    <h4 className="font-serif font-bold text-warm-900 dark:text-white mb-1">🗺️ {w.name}</h4>
+                    <p className="text-xs font-medium text-warm-500 mb-2">World</p>
+                    <p className="text-sm text-warm-650 dark:text-warm-350 line-clamp-3 leading-relaxed mb-4">{w.description}</p>
+                  </div>
+                  <a href={`${chimeraUrl}/worlds`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary-500 hover:underline inline-flex items-center gap-1">
+                    Explore World <ExternalLink size={12} />
+                  </a>
+                </div>
+              ))}
+              {worldResults.length === 0 && <div className="text-center py-8 text-warm-500 col-span-2">No matching worlds found.</div>}
+            </div>
+          ) : searchTab === 'lorebooks' ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {lorebookResults.map(l => (
+                <div key={l.id} className="p-4 bg-white dark:bg-warm-850 rounded-2xl border border-warm-200 dark:border-warm-750 flex flex-col justify-between">
+                  <div>
+                    <h4 className="font-serif font-bold text-warm-900 dark:text-white mb-1">📚 {l.title}</h4>
+                    <p className="text-xs font-medium text-warm-500 mb-2">Lorebook &bull; {l.entry_count || 0} entries</p>
+                    <p className="text-sm text-warm-650 dark:text-warm-350 line-clamp-3 leading-relaxed mb-4">{l.description}</p>
+                  </div>
+                  <a href={`${chimeraUrl}/lorebooks`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary-500 hover:underline inline-flex items-center gap-1">
+                    Manage Lorebook <ExternalLink size={12} />
+                  </a>
+                </div>
+              ))}
+              {lorebookResults.length === 0 && <div className="text-center py-8 text-warm-500 col-span-2">No matching lorebooks found.</div>}
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -692,6 +820,110 @@ export default function DiscoverPage() {
                   <CommunityRow key={c.id} community={c} onClick={() => navigate(`/communities/${c.id}`)} />
                 ))}
               </div>
+            </section>
+          )}
+
+          {/* Popular Characters */}
+          {recentCharacters.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles size={16} className="text-primary-500" />
+                <h2 className="text-sm font-bold text-warm-900 dark:text-warm-50 uppercase tracking-wider">
+                  Popular AI Characters
+                </h2>
+              </div>
+              <div className="flex gap-3 overflow-x-auto -mx-4 px-4 pb-3 snap-x snap-mandatory">
+                {recentCharacters.map(c => (
+                  <div key={c.id} className="w-64 flex-shrink-0 snap-start bg-white dark:bg-warm-800 p-4 rounded-2xl border border-warm-250 dark:border-warm-700 hover:shadow-md transition-shadow flex flex-col justify-between min-h-[140px]">
+                    <div>
+                      <span className="text-[10px] bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">🎭 Character</span>
+                      <h4 className="font-bold text-warm-900 dark:text-white mt-2 mb-1 truncate">{c.short_description || 'Unnamed Character'}</h4>
+                      <p className="text-xs text-warm-500 line-clamp-2 italic">"{c.greeting}"</p>
+                    </div>
+                    <a href={`${chimeraUrl}/chat/${c.id}`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary-500 hover:underline inline-flex items-center gap-1 mt-3">
+                      Chat in CHIMERA <ExternalLink size={10} />
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Recent Stories */}
+          {recentStories.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <BookOpen size={16} className="text-primary-500" />
+                <h2 className="text-sm font-bold text-warm-900 dark:text-warm-50 uppercase tracking-wider">
+                  Featured Stories
+                </h2>
+              </div>
+              <div className="flex gap-3 overflow-x-auto -mx-4 px-4 pb-3 snap-x snap-mandatory">
+                {recentStories.map(s => (
+                  <div key={s.id} className="w-64 flex-shrink-0 snap-start bg-white dark:bg-warm-800 p-4 rounded-2xl border border-warm-250 dark:border-warm-700 hover:shadow-md transition-shadow flex flex-col justify-between min-h-[140px]">
+                    <div>
+                      <span className="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">📖 Story</span>
+                      <h4 className="font-serif font-bold text-warm-900 dark:text-white mt-2 mb-1 truncate">{s.title}</h4>
+                      <p className="text-xs text-warm-500 line-clamp-2">{s.summary}</p>
+                    </div>
+                    <a href={`${chimeraUrl}/plots`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary-500 hover:underline inline-flex items-center gap-1 mt-3">
+                      Read Story <ExternalLink size={10} />
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Worlds and Lorebooks */}
+          {(recentWorlds.length > 0 || recentLorebooks.length > 0) && (
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {recentWorlds.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Globe size={16} className="text-emerald-500" />
+                    <h2 className="text-xs font-bold text-warm-500 dark:text-warm-400 uppercase tracking-wider">
+                      Active Worlds
+                    </h2>
+                  </div>
+                  <div className="space-y-2">
+                    {recentWorlds.slice(0, 3).map(w => (
+                      <div key={w.id} className="p-3 bg-white dark:bg-warm-800 rounded-xl border border-warm-200/60 dark:border-warm-700/60 flex items-center justify-between">
+                        <div className="truncate pr-2">
+                          <h4 className="text-sm font-serif font-bold text-warm-900 dark:text-white truncate">{w.name}</h4>
+                          <p className="text-xs text-warm-500 truncate">{w.description}</p>
+                        </div>
+                        <a href={`${chimeraUrl}/worlds`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary-500 hover:underline flex-shrink-0 flex items-center gap-1">
+                          Explore <ExternalLink size={10} />
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {recentLorebooks.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Book size={16} className="text-amber-500" />
+                    <h2 className="text-xs font-bold text-warm-500 dark:text-warm-400 uppercase tracking-wider">
+                      Popular Lorebooks
+                    </h2>
+                  </div>
+                  <div className="space-y-2">
+                    {recentLorebooks.slice(0, 3).map(l => (
+                      <div key={l.id} className="p-3 bg-white dark:bg-warm-800 rounded-xl border border-warm-200/60 dark:border-warm-700/60 flex items-center justify-between">
+                        <div className="truncate pr-2">
+                          <h4 className="text-sm font-serif font-bold text-warm-900 dark:text-white truncate">{l.title}</h4>
+                          <p className="text-xs text-warm-500 truncate">{l.description}</p>
+                        </div>
+                        <a href={`${chimeraUrl}/lorebooks`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary-500 hover:underline flex-shrink-0 flex items-center gap-1">
+                          Manage <ExternalLink size={10} />
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </section>
           )}
 

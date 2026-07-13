@@ -243,6 +243,78 @@ export default function CommunityDetailPage() {
     }
   };
 
+  const handleApplyCollaboration = async (role: string, title: string, creatorId: string, creatorUsername: string) => {
+    if (!user) return;
+    if (user.id === creatorId) {
+      showToast("You cannot apply to your own recruitment request.", "info");
+      return;
+    }
+
+    try {
+      const { data: existingParticipant } = await supabase
+        .from('conversation_participants')
+        .select('conversation_id')
+        .eq('user_id', user.id);
+
+      let existingConvId = null;
+      if (existingParticipant && existingParticipant.length > 0) {
+        const convIds = existingParticipant.map(p => p.conversation_id);
+        const { data: commonPart } = await supabase
+          .from('conversation_participants')
+          .select('conversation_id')
+          .in('conversation_id', convIds)
+          .eq('user_id', creatorId);
+        if (commonPart && commonPart.length > 0) {
+          const { data: conv } = await supabase
+            .from('conversations')
+            .select('id')
+            .eq('id', commonPart[0].conversation_id)
+            .eq('type', 'dm')
+            .maybeSingle();
+          if (conv) {
+            existingConvId = conv.id;
+          }
+        }
+      }
+
+      let convId = existingConvId;
+      if (!convId) {
+        const { data: newConv, error: newConvError } = await supabase
+          .from('conversations')
+          .insert({ type: 'dm' })
+          .select('id')
+          .single();
+
+        if (newConvError) throw newConvError;
+        convId = newConv.id;
+
+        await supabase.from('conversation_participants').insert([
+          { conversation_id: convId, user_id: user.id },
+          { conversation_id: convId, user_id: creatorId }
+        ]);
+      }
+
+      const appMsg = `Hi! I'd like to apply to your collaboration recruitment posting for "${role}" on the project "${title}".`;
+      await supabase.from('messages').insert({
+        conversation_id: convId,
+        content: appMsg
+      });
+
+      await supabase.from('notifications').insert({
+        user_id: creatorId,
+        actor_id: user.id,
+        type: 'collaboration_application',
+        reference_id: communityId || null
+      });
+
+      showToast("Successfully applied! A message has been sent to the creator.", "success");
+      navigate(`/messages/${convId}`);
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to apply to collaboration.", "error");
+    }
+  };
+
   const handleAddCollaboration = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !communityId) return;
@@ -575,6 +647,9 @@ export default function CommunityDetailPage() {
                   <option value="writer">Writer</option>
                   <option value="editor">Editor</option>
                   <option value="prompt_engineer">Prompt Engineer</option>
+                  <option value="character_designer">Character Designer</option>
+                  <option value="worldbuilder">Worldbuilder</option>
+                  <option value="lore_writer">Lore Writer</option>
                   <option value="voice_actor">Voice Actor</option>
                   <option value="collaborator">General Collaborator</option>
                 </select>
@@ -632,12 +707,16 @@ export default function CommunityDetailPage() {
                       <Avatar emoji={collab.profiles?.avatar_emoji || '👤'} photoUrl={collab.profiles?.photo_url} size="xs" />
                       <span className="text-xs text-warm-500">by @{collab.profiles?.username}</span>
                     </div>
-                    <button
-                      onClick={() => navigate(`/profile/${collab.profiles?.username}`)}
-                      className="text-xs btn-primary py-1 px-3"
-                    >
-                      Connect
-                    </button>
+                    {collab.user_id !== user?.id ? (
+                      <button
+                        onClick={() => handleApplyCollaboration(collab.role_needed, collab.title, collab.user_id, collab.profiles?.username)}
+                        className="text-xs btn-primary py-1 px-3"
+                      >
+                        Apply
+                      </button>
+                    ) : (
+                      <span className="text-xs text-warm-400 font-semibold italic">My Posting</span>
+                    )}
                   </div>
                 </div>
               ))}

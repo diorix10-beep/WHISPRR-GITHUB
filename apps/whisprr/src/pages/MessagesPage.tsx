@@ -288,18 +288,11 @@ export default function MessagesPage() {
         <h1 className="section-title">Messages</h1>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => navigate('/group-chat')}
-            className="btn-primary flex items-center gap-2 py-2 px-3"
-            title="Create group chat"
-          >
-            <Users size={18} />
-          </button>
-          <button
             onClick={() => setShowNewMessageModal(true)}
             className="btn-primary flex items-center gap-2 py-2 px-4"
           >
             <Plus size={18} />
-            New
+            New Message
           </button>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Moon, Sun, Lock, MessageSquare, User, Shield, Info, ExternalLink, Trash2, Download, Monitor } from 'lucide-react';
+import { LogOut, Moon, Sun, Lock, MessageSquare, User, Shield, Info, ExternalLink, Trash2, Download, Monitor, Heart } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
@@ -34,6 +34,14 @@ export default function SettingsPage() {
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
 
+  const [wellnessSettings, setWellnessSettings] = useState({
+    wellness_break_reminders_enabled: false,
+    wellness_break_frequency_minutes: 60,
+    wellness_quiet_hours_enabled: false,
+    wellness_quiet_hours_start: '22:00',
+    wellness_quiet_hours_end: '08:00',
+  });
+
   useEffect(() => {
     const savedSettings = {
       email_notifications: localStorage.getItem('email_notifications') !== 'false',
@@ -53,8 +61,41 @@ export default function SettingsPage() {
         read_receipts_enabled: profile.read_receipts_enabled,
         who_can_message: profile.who_can_message,
       });
+      setWellnessSettings({
+        wellness_break_reminders_enabled: (profile as any).wellness_break_reminders_enabled ?? false,
+        wellness_break_frequency_minutes: (profile as any).wellness_break_frequency_minutes ?? 60,
+        wellness_quiet_hours_enabled: (profile as any).wellness_quiet_hours_enabled ?? false,
+        wellness_quiet_hours_start: (profile as any).wellness_quiet_hours_start ?? '22:00',
+        wellness_quiet_hours_end: (profile as any).wellness_quiet_hours_end ?? '08:00',
+      });
     }
   }, [profile]);
+
+  const handleWellnessToggle = async (key: 'wellness_break_reminders_enabled' | 'wellness_quiet_hours_enabled') => {
+    const newVal = !wellnessSettings[key];
+    setWellnessSettings(prev => ({ ...prev, [key]: newVal }));
+
+    try {
+      await updateProfile({ [key]: newVal } as any);
+      showToast('Wellness setting updated', 'success');
+    } catch (error) {
+      setWellnessSettings(prev => ({ ...prev, [key]: !newVal }));
+      showToast('Failed to update setting. Please try again.', 'error');
+    }
+  };
+
+  const handleWellnessChange = async (key: 'wellness_break_frequency_minutes' | 'wellness_quiet_hours_start' | 'wellness_quiet_hours_end', value: any) => {
+    const prevVal = wellnessSettings[key];
+    setWellnessSettings(prev => ({ ...prev, [key]: value }));
+
+    try {
+      await updateProfile({ [key]: value } as any);
+      showToast('Wellness preference saved', 'success');
+    } catch (error) {
+      setWellnessSettings(prev => ({ ...prev, [key]: prevVal }));
+      showToast('Failed to save setting', 'error');
+    }
+  };
 
   const handleNotificationToggle = (key: keyof typeof notificationSettings) => {
     const newSettings = { ...notificationSettings, [key]: !notificationSettings[key] };
@@ -316,6 +357,84 @@ export default function SettingsPage() {
               <option value="no_one">No One</option>
             </select>
           </div>
+        </div>
+      </section>
+
+      {/* Creator Wellness Section */}
+      <section className="mb-8" aria-labelledby="wellness-heading">
+        <div className="flex items-center gap-2 mb-4">
+          <Heart size={20} className="text-primary-500" />
+          <h2 id="wellness-heading" className="text-lg font-semibold text-warm-900 dark:text-warm-50">
+            Creator Wellness
+          </h2>
+        </div>
+
+        <div className="space-y-3 bg-warm-50 dark:bg-warm-800 p-4 rounded-2xl">
+          <p className="text-xs text-warm-600 dark:text-warm-400 mb-2">
+            Taking care of yourself keeps the creative spark alive. Customize your settings to work healthily and prevent burnout.
+          </p>
+
+          <ToggleRow
+            label="Break Reminders"
+            description="Remind me to take a brief stretch and hydration pause"
+            checked={wellnessSettings.wellness_break_reminders_enabled}
+            onChange={() => handleWellnessToggle('wellness_break_reminders_enabled')}
+          />
+
+          {wellnessSettings.wellness_break_reminders_enabled && (
+            <div className="pl-4 pt-2 pb-3 space-y-2 border-l-2 border-primary-200 dark:border-primary-850">
+              <label htmlFor="break-frequency" className="block text-xs font-semibold text-warm-700 dark:text-warm-300">
+                Reminder Frequency
+              </label>
+              <select
+                id="break-frequency"
+                value={wellnessSettings.wellness_break_frequency_minutes}
+                onChange={(e) => handleWellnessChange('wellness_break_frequency_minutes', parseInt(e.target.value))}
+                className="input-field"
+              >
+                <option value="30">Every 30 minutes</option>
+                <option value="60">Every hour</option>
+                <option value="90">Every 90 minutes</option>
+              </select>
+            </div>
+          )}
+
+          <ToggleRow
+            label="Quiet Hours"
+            description="Mute notification badges and alerts during selected times to focus on rest"
+            checked={wellnessSettings.wellness_quiet_hours_enabled}
+            onChange={() => handleWellnessToggle('wellness_quiet_hours_enabled')}
+            border
+          />
+
+          {wellnessSettings.wellness_quiet_hours_enabled && (
+            <div className="pl-4 pt-3 pb-2 grid grid-cols-2 gap-3 border-l-2 border-primary-200 dark:border-primary-850">
+              <div>
+                <label htmlFor="quiet-start" className="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">
+                  Start Time
+                </label>
+                <input
+                  id="quiet-start"
+                  type="time"
+                  value={wellnessSettings.wellness_quiet_hours_start}
+                  onChange={(e) => handleWellnessChange('wellness_quiet_hours_start', e.target.value)}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <label htmlFor="quiet-end" className="block text-xs font-semibold text-warm-700 dark:text-warm-300 mb-1">
+                  End Time
+                </label>
+                <input
+                  id="quiet-end"
+                  type="time"
+                  value={wellnessSettings.wellness_quiet_hours_end}
+                  onChange={(e) => handleWellnessChange('wellness_quiet_hours_end', e.target.value)}
+                  className="input-field"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
