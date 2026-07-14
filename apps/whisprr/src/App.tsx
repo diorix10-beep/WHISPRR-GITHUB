@@ -39,6 +39,7 @@ const CommunityProgramPage = lazy(() => import('./pages/CommunityProgramPage'));
 const CareersPage        = lazy(() => import('./pages/CareersPage'));
 const RestrictedPage     = lazy(() => import('./pages/RestrictedPage'));
 const NotFoundPage       = lazy(() => import('./pages/NotFoundPage'));
+const ResetPasswordPage  = lazy(() => import('./pages/ResetPasswordPage'));
 // Legal & Policy Pages
 const TermsPage                = lazy(() => import('./pages/legal/TermsPage'));
 const PrivacyPage              = lazy(() => import('./pages/legal/PrivacyPage'));
@@ -112,11 +113,12 @@ function AppLoader() {
         return (
           <Suspense fallback={<PageLoader />}>
             <Routes>
-              <Route path="/auth"    element={<AuthPage />} />
-              <Route path="/privacy" element={<PrivacyPage />} />
-              <Route path="/terms"   element={<TermsPage />} />
-              <Route path="/trust"   element={<TrustPage />} />
-              <Route path="*"        element={<Navigate to="/auth" replace />} />
+              <Route path="/auth"            element={<AuthPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/privacy"         element={<PrivacyPage />} />
+              <Route path="/terms"           element={<TermsPage />} />
+              <Route path="/trust"           element={<TrustPage />} />
+              <Route path="*"               element={<Navigate to="/auth" replace />} />
             </Routes>
           </Suspense>
         );
@@ -150,6 +152,9 @@ function AppLoader() {
         <Route path="/cookie-policy" element={<CookiePolicyPage />} />
         <Route path="/building" element={<BuildingPage />} />
         <Route path="/restricted" element={<RestrictedPage />} />
+
+        {/* Password Reset — must be public AND accessible while logged out */}
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Public Only (Login/Signup) */}
         <Route element={<PublicOnlyRoute />}>
