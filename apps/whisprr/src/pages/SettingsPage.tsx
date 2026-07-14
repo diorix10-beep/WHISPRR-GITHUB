@@ -1,16 +1,20 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { LogOut, Moon, Sun, Lock, MessageSquare, User, Shield, Info, ExternalLink, Trash2, Download, Monitor, Heart } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { LogOut, Moon, Sun, Lock, MessageSquare, User, Shield, Info, ExternalLink, Trash2, Download, Monitor, Heart, Hash, VolumeX, EyeOff, Loader2, Sliders } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
+import { INTERESTS } from '../types';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, profile, updateProfile, signOut } = useAuth();
   const { preference, setPreference } = useTheme();
   const { showToast } = useToast();
+  const discoveryRef = useRef<HTMLElement>(null);
+  const [resettingAlgorithm, setResettingAlgorithm] = useState(false);
 
   const [notificationSettings, setNotificationSettings] = useState({
     email_notifications: true,
@@ -167,6 +171,74 @@ export default function SettingsPage() {
       showToast('Failed to sign out. Please try again.', 'error');
     }
   };
+
+  // Discovery Preferences handlers
+  const handleResetFeedAlgorithm = async () => {
+    if (!user) return;
+    setResettingAlgorithm(true);
+    try {
+      const { error } = await supabase.rpc('reset_user_interests', { p_user_id: user.id });
+      if (error) throw error;
+      showToast('Feed algorithm reset successfully!', 'success');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to reset algorithm. Please try again.', 'error');
+    } finally {
+      setResettingAlgorithm(false);
+    }
+  };
+
+  const handleInterestToggle = async (interest: string) => {
+    if (!profile) return;
+    const current = profile.interests || [];
+    const updated = current.includes(interest)
+      ? current.filter(i => i !== interest)
+      : [...current, interest];
+    try {
+      await updateProfile({ interests: updated });
+      showToast(`${interest} ${current.includes(interest) ? 'removed' : 'added'}`, 'success');
+    } catch {
+      showToast('Failed to update interest', 'error');
+    }
+  };
+
+  const handleMuteInterest = async (interest: string) => {
+    if (!profile) return;
+    const current = profile.muted_interests || [];
+    const updated = current.includes(interest)
+      ? current.filter(i => i !== interest)
+      : [...current, interest];
+    let updatedFollowed = profile.interests || [];
+    if (!current.includes(interest)) {
+      updatedFollowed = updatedFollowed.filter(i => i !== interest);
+    }
+    try {
+      await updateProfile({ muted_interests: updated, interests: updatedFollowed });
+      showToast(`${interest} ${current.includes(interest) ? 'unmuted' : 'muted'}`, 'success');
+    } catch {
+      showToast('Failed to update muted topics', 'error');
+    }
+  };
+
+  const handleUnmuteCommunity = async (commId: string) => {
+    if (!profile) return;
+    const updated = (profile.muted_communities || []).filter(id => id !== commId);
+    try {
+      await updateProfile({ muted_communities: updated });
+      showToast('Community unmuted', 'success');
+    } catch {
+      showToast('Failed to unmute community', 'error');
+    }
+  };
+
+  // Scroll to discovery section if ?section=discovery
+  useEffect(() => {
+    if (searchParams.get('section') === 'discovery' && discoveryRef.current) {
+      setTimeout(() => {
+        discoveryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 200);
+    }
+  }, [searchParams]);
 
   const handleRequestDataExport = () => {
     showToast('Data export request received. We will email you within 30 days.', 'success');
@@ -435,6 +507,120 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Discovery Preferences Section */}
+      <section className="mb-8" aria-labelledby="discovery-heading" ref={discoveryRef}>
+        <div className="flex items-center gap-2 mb-4">
+          <Sliders size={20} className="text-primary-500" />
+          <h2 id="discovery-heading" className="text-lg font-semibold text-warm-900 dark:text-warm-50">
+            Feed &amp; Discovery
+          </h2>
+        </div>
+        <div className="space-y-4">
+          <p className="text-xs text-warm-500">
+            Control how WHISPRR personalizes your feed and Discover page. These settings affect what content is recommended to you.
+          </p>
+
+          {/* Reset Algorithm */}
+          <div className="bg-warm-50 dark:bg-warm-800 p-4 rounded-2xl space-y-3">
+            <div className="flex items-center gap-2">
+              <Trash2 size={16} className="text-red-500" />
+              <p className="font-semibold text-warm-900 dark:text-warm-50">Reset Feed Algorithm</p>
+            </div>
+            <p className="text-sm text-warm-600 dark:text-warm-400 leading-relaxed">
+              Clears your cached interest scores, search history, and engagement signals. Your feed will revert to a general chronological base until new signals are learned.
+            </p>
+            <button
+              onClick={handleResetFeedAlgorithm}
+              disabled={resettingAlgorithm}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors disabled:opacity-60"
+            >
+              {resettingAlgorithm ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+              {resettingAlgorithm ? 'Resetting...' : 'Reset My Feed'}
+            </button>
+          </div>
+
+          {/* Followed Topics */}
+          <div className="bg-warm-50 dark:bg-warm-800 p-4 rounded-2xl space-y-3">
+            <div className="flex items-center gap-2">
+              <Hash size={16} className="text-primary-500" />
+              <p className="font-semibold text-warm-900 dark:text-warm-50">Followed Topics</p>
+            </div>
+            <p className="text-xs text-warm-500">Topics selected here are prioritized in your feed recommendations.</p>
+            <div className="flex flex-wrap gap-2">
+              {INTERESTS.map(topic => {
+                const isFollowing = (profile?.interests || []).includes(topic);
+                return (
+                  <button
+                    key={topic}
+                    onClick={() => handleInterestToggle(topic)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                      isFollowing
+                        ? 'bg-primary-500 text-white border-primary-500'
+                        : 'bg-white dark:bg-warm-700 text-warm-700 dark:text-warm-300 border-warm-200 dark:border-warm-600 hover:bg-warm-100 dark:hover:bg-warm-600'
+                    }`}
+                  >
+                    {topic}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Muted Topics */}
+          <div className="bg-warm-50 dark:bg-warm-800 p-4 rounded-2xl space-y-3">
+            <div className="flex items-center gap-2">
+              <VolumeX size={16} className="text-amber-500" />
+              <p className="font-semibold text-warm-900 dark:text-warm-50">Muted Topics</p>
+            </div>
+            <p className="text-xs text-warm-500">Posts matching muted topics are hidden from your Discover page and feed.</p>
+            <div className="flex flex-wrap gap-2">
+              {INTERESTS.map(topic => {
+                const isMuted = (profile?.muted_interests || []).includes(topic);
+                return (
+                  <button
+                    key={topic}
+                    onClick={() => handleMuteInterest(topic)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                      isMuted
+                        ? 'bg-red-500 text-white border-red-500'
+                        : 'bg-white dark:bg-warm-700 text-warm-700 dark:text-warm-300 border-warm-200 dark:border-warm-600 hover:bg-red-50 dark:hover:bg-red-950/20'
+                    }`}
+                  >
+                    {isMuted ? '🔇 ' : ''}{topic}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Muted Communities */}
+          <div className="bg-warm-50 dark:bg-warm-800 p-4 rounded-2xl space-y-3">
+            <div className="flex items-center gap-2">
+              <EyeOff size={16} className="text-amber-500" />
+              <p className="font-semibold text-warm-900 dark:text-warm-50">Muted Communities</p>
+            </div>
+            <p className="text-xs text-warm-500">Muted communities are hidden from your recommendations. Click to unmute.</p>
+            {(profile?.muted_communities || []).length === 0 ? (
+              <p className="text-sm text-warm-400 italic">No communities muted.</p>
+            ) : (
+              <div className="space-y-2">
+                {(profile?.muted_communities || []).map(cid => (
+                  <div key={cid} className="flex items-center justify-between p-3 bg-white dark:bg-warm-700 rounded-xl text-sm">
+                    <span className="font-mono text-xs text-warm-600 dark:text-warm-300 truncate">{cid}</span>
+                    <button
+                      onClick={() => handleUnmuteCommunity(cid)}
+                      className="text-xs font-semibold text-primary-500 hover:text-primary-600 transition-colors ml-3 flex-shrink-0"
+                    >
+                      Unmute
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
