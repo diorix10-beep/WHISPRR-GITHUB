@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { ModerationModal } from '../components/modals/ModerationModal';
 import type { Profile, Whisper, Reaction } from '../types';
-import { MOODS, INTERESTS, PERSONALITY_BADGES, PERSONAL_VALUES, LOOKING_FOR_OPTIONS } from '../types';
+import { INTERESTS, PERSONALITY_BADGES, PERSONAL_VALUES, LOOKING_FOR_OPTIONS } from '../types';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useInterests } from '../contexts/InterestContext';
@@ -66,7 +66,6 @@ export default function ProfilePage() {
     username: '',
     display_name: '',
     bio: '',
-    mood: '',
     interests: [] as string[],
     location: '',
     website: '',
@@ -157,7 +156,6 @@ export default function ProfilePage() {
             targetType: 'profile',
             targetId: profileData.user_id,
             interests: profileData.interests || [],
-            mood: profileData.mood || undefined,
           });
         }
 
@@ -169,7 +167,6 @@ export default function ProfilePage() {
           username: profileData.username || '',
           display_name: profileData.display_name || '',
           bio: profileData.bio || '',
-          mood: profileData.mood || '',
           interests: profileData.interests || [],
           location: profileData.location || '',
           website: profileData.website || '',
@@ -259,7 +256,7 @@ export default function ProfilePage() {
           .select(`
             *,
             profiles:user_id(
-              id, user_id, display_name, username, avatar_emoji, photo_url, bio, mood, badges
+              id, user_id, display_name, username, avatar_emoji, photo_url, bio, badges
             ),
             reactions(id, whisper_id, user_id, type, created_at)
           `)
@@ -425,7 +422,6 @@ export default function ProfilePage() {
         username: editForm.username,
         display_name: editForm.display_name,
         bio: editForm.bio,
-        mood: editForm.mood,
         interests: editForm.interests,
         location: editForm.location,
         website: editForm.website,
@@ -862,24 +858,6 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Mood Edit */}
-            <div>
-              <label className="block text-sm font-semibold text-warm-900 dark:text-warm-50 mb-2">
-                Current Mood
-              </label>
-              <select
-                value={editForm.mood}
-                onChange={(e) => setEditForm(prev => ({ ...prev, mood: e.target.value }))}
-                className="input-field"
-              >
-                <option value="">Select a mood...</option>
-                {MOODS.map(mood => (
-                  <option key={mood} value={mood}>
-                    {mood}
-                  </option>
-                ))}
-              </select>
-            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Location Edit */}
@@ -1181,11 +1159,6 @@ export default function ProfilePage() {
                 <div className="pb-2">
                   <h1 className="font-serif text-3xl font-bold text-warm-900 dark:text-warm-50 flex items-center gap-2">
                     {profile.display_name}
-                    {profile.username === 'oracle' && (
-                      <span className="flex items-center justify-center bg-emerald-500 text-white rounded-full p-1 w-6 h-6 shadow-sm" title="Verified System Oracle">
-                        <Check size={14} strokeWidth={3} />
-                      </span>
-                    )}
                     <UserBadges badges={profile.badges} role={profile.role} size="lg" />
                   </h1>
                   <div className="flex flex-wrap items-center gap-3 text-warm-600 dark:text-warm-400 mt-1">
@@ -1299,17 +1272,6 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Optional feeling/mood update */}
-            {profile.mood && (
-              <div className="mb-6 p-4 bg-primary-50/50 dark:bg-primary-950/20 rounded-2xl border border-primary-100/50 dark:border-primary-900/30 flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <Sparkles size={16} className="text-primary-500 animate-pulse" />
-                  <span className="text-warm-600 dark:text-warm-400">Currently feeling</span>
-                  <span className="font-semibold text-primary-700 dark:text-primary-300">{profile.mood}</span>
-                </div>
-                <span className="text-xs text-warm-500">Updated {formatLastUpdated(profile.updated_at)}</span>
-              </div>
-            )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
               {/* Left Column: Bio, Badges, Values, Looking For */}

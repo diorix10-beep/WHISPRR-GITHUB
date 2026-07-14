@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Plus, RefreshCw, Sparkles, Users, MessageSquare } from 'lucide-react';
 import type { Whisper, Profile, Reaction } from '../types';
-import { MOODS, type Mood } from '../types';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { WhisperCard } from '../components/feed/WhisperCard';
@@ -26,12 +25,10 @@ export default function FeedPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [feedMode, setFeedMode] = useState<FeedMode>('for_you');
-  const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const [showCompose, setShowCompose] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [followedIds, setFollowedIds] = useState<string[]>([]);
   const [hasInterestData, setHasInterestData] = useState(false);
-  const moodScrollRef = useRef<HTMLDivElement>(null);
 
   // Fetch followed user IDs once
   useEffect(() => {
@@ -60,7 +57,7 @@ export default function FeedPage() {
   }, [user]);
 
   // Load personalized feed using the Postgres function
-  const loadPersonalizedFeed = useCallback(async (filterMood: Mood | null) => {
+  const loadPersonalizedFeed = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -70,14 +67,13 @@ export default function FeedPage() {
       const { data: feedIds, error: feedError } = await supabase.rpc('get_personalized_feed', {
         p_user_id: user.id,
         p_limit: 50,
-        p_mood_filter: filterMood || null,
       });
 
       if (feedError) throw feedError;
 
       if (!feedIds || feedIds.length === 0) {
         // Fall back to chronological if no personalized results
-        return loadChronologicalFeed(filterMood, 'for_you');
+        return loadChronologicalFeed('for_you');
       }
 
       const whisperIds = feedIds.map((f: any) => f.whisper_id);
@@ -88,7 +84,7 @@ export default function FeedPage() {
         .from('whispers')
         .select(`
           *,
-          profiles:user_id(id, user_id, display_name, username, avatar_emoji, photo_url, bio, mood, badges),
+          profiles:user_id(id, user_id, display_name, username, avatar_emoji, photo_url, bio, badges),
           reactions(id, whisper_id, user_id, type, created_at)
         `)
         .in('id', whisperIds);
@@ -130,7 +126,7 @@ export default function FeedPage() {
     } catch (err) {
       console.error('Error loading personalized feed:', err);
       // Fall back to chronological
-      await loadChronologicalFeed(filterMood, 'for_you');
+      await loadChronologicalFeed('for_you');
     }
   }, [user]);
 
@@ -142,7 +138,7 @@ export default function FeedPage() {
   });
 
   // Load chronological feed (fallback for "For You" or used for "Following")
-  const loadChronologicalFeed = useCallback(async (filterMood: Mood | null, mode: FeedMode, pageNum: number = 0, isAppend = false) => {
+  const loadChronologicalFeed = useCallback(async (mode: FeedMode, pageNum: number = 0, isAppend = false) => {
     try {
       setError(null);
       const limit = 20;
@@ -150,14 +146,12 @@ export default function FeedPage() {
         .from('whispers')
         .select(`
           *,
-          profiles:user_id(id, user_id, display_name, username, avatar_emoji, photo_url, bio, mood, badges),
+          profiles:user_id(id, user_id, display_name, username, avatar_emoji, photo_url, bio, badges),
           reactions(id, whisper_id, user_id, type, created_at)
         `)
         .is('parent_id', null)
         .order('created_at', { ascending: false })
         .range(pageNum * limit, (pageNum + 1) * limit - 1);
-
-      if (filterMood) query = query.eq('mood', filterMood);
 
       if (mode === 'following' && user) {
         const ids = [...followedIds, user.id];
@@ -209,18 +203,18 @@ export default function FeedPage() {
     }
   }, [user, followedIds]);
 
-  const loadWhispers = useCallback(async (filterMood: Mood | null, mode: FeedMode, pageNum: number = 0, isAppend = false) => {
+  const loadWhispers = useCallback(async (mode: FeedMode, pageNum: number = 0, isAppend = false) => {
     if (mode === 'for_you' && hasInterestData && pageNum === 0) {
-      await loadPersonalizedFeed(filterMood);
+      await loadPersonalizedFeed();
       // We don't have pagination for personalized feed yet, so we'll just stop here
       // To properly paginate, we'd fall back to chronological for page > 0, but for simplicity
       // we'll just set hasMore to false for personalized for now, or fetch chronological if they scroll.
       // Actually, let's fetch chronological if pageNum > 0:
       if (pageNum > 0) {
-        await loadChronologicalFeed(filterMood, mode, pageNum, isAppend);
+        await loadChronologicalFeed(mode, pageNum, isAppend);
       }
     } else {
-      await loadChronologicalFeed(filterMood, mode, pageNum, isAppend);
+      await loadChronologicalFeed(mode, pageNum, isAppend);
     }
     setIsLoading(false);
     setIsRefreshing(false);
@@ -231,7 +225,7 @@ export default function FeedPage() {
     setPage(0);
     setHasMore(true);
     setIsLoading(true);
-    loadWhispers(selectedMood, feedMode, 0, false);
+    loadWhispers(feedMode, 0, false);
 
     const channel = supabase
       .channel('feed-whispers')
@@ -239,21 +233,21 @@ export default function FeedPage() {
         // Option to show a "New posts available" button instead of auto-refresh
         // For now, auto-refresh page 0
         setPage(0);
-        loadWhispers(selectedMood, feedMode, 0, false);
+        loadWhispers(feedMode, 0, false);
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [selectedMood, feedMode, loadWhispers]);
+  }, [feedMode, loadWhispers]);
 
   useEffect(() => {
     if (inView && hasMore && !isLoading && !isFetchingMore) {
       setIsFetchingMore(true);
       const nextPage = page + 1;
       setPage(nextPage);
-      loadWhispers(selectedMood, feedMode, nextPage, true);
+      loadWhispers(feedMode, nextPage, true);
     }
-  }, [inView, hasMore, isLoading, isFetchingMore, page, selectedMood, feedMode, loadWhispers]);
+  }, [inView, hasMore, isLoading, isFetchingMore, page, feedMode, loadWhispers]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -265,11 +259,11 @@ export default function FeedPage() {
         .eq('user_id', user.id);
       setHasInterestData((count || 0) > 0);
     }
-    await loadWhispers(selectedMood, feedMode);
+    await loadWhispers(feedMode);
   };
 
-  const handleWhisperDeleted = () => loadWhispers(selectedMood, feedMode);
-  const handleReactionChange = () => loadWhispers(selectedMood, feedMode);
+  const handleWhisperDeleted = () => loadWhispers(feedMode);
+  const handleReactionChange = () => loadWhispers(feedMode);
 
   return (
     <div className="page-container">
@@ -323,36 +317,7 @@ export default function FeedPage() {
         </div>
       )}
 
-      {/* Mood Filter Bar */}
-      <div className="mb-6">
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4" ref={moodScrollRef}>
-          <button
-            onClick={() => setSelectedMood(null)}
-            aria-pressed={selectedMood === null}
-            className={`flex-shrink-0 px-4 py-2 rounded-full font-medium transition-all duration-200 whitespace-nowrap ${
-              selectedMood === null
-                ? 'bg-primary-500 text-white shadow-soft'
-                : 'bg-warm-100 text-warm-700 dark:bg-warm-700 dark:text-warm-200'
-            }`}
-          >
-            All
-          </button>
-          {MOODS.map((mood) => (
-            <button
-              key={mood}
-              onClick={() => setSelectedMood(mood)}
-              aria-pressed={selectedMood === mood}
-              className={`flex-shrink-0 px-4 py-2 rounded-full font-medium transition-all duration-200 whitespace-nowrap ${
-                selectedMood === mood
-                  ? 'bg-primary-500 text-white shadow-soft'
-                  : 'bg-warm-100 text-warm-700 dark:bg-warm-700 dark:text-warm-200'
-              }`}
-            >
-              {mood}
-            </button>
-          ))}
-        </div>
-      </div>
+
 
       {/* Error State */}
       {error && (
@@ -378,9 +343,7 @@ export default function FeedPage() {
             description={
               feedMode === 'following'
                 ? 'Follow people from the Discover page to see their whispers here.'
-                : selectedMood
-                  ? `No whispers with the "${selectedMood}" mood. Try a different filter or share one!`
-                  : 'Be the first to share your thoughts!'
+                : 'Be the first to share your thoughts!'
             }
             actionLabel={feedMode === 'following' ? undefined : 'Share a Whisper'}
             onAction={feedMode === 'following' ? undefined : () => setShowCompose(true)}
@@ -442,7 +405,7 @@ export default function FeedPage() {
           onClose={() => setShowCompose(false)}
           onWhisperCreated={() => {
             setShowCompose(false);
-            loadWhispers(selectedMood, feedMode);
+            loadWhispers(feedMode);
           }}
         />
       )}

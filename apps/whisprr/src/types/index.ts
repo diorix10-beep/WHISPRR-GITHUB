@@ -25,7 +25,6 @@ export interface Profile {
   avatar_emoji: string;
   photo_url: string | null;
   bio: string | null;
-  mood: string | null;
   interests: string[];
   badges: BadgeType[];
   location: string | null;
@@ -81,7 +80,6 @@ export interface Whisper {
   id: string;
   user_id: string;
   content: string;
-  mood: string | null;
   community_id: string | null;
   parent_id: string | null;
   created_at: string;
@@ -197,13 +195,6 @@ export interface VoiceRoom {
   created_at: string;
 }
 
-export const MOODS = [
-  'Happy', 'Calm', 'Grateful', 'Hopeful', 'Curious',
-  'Reflective', 'Creative', 'Excited', 'Nostalgic', 'Peaceful',
-  'Adventurous', 'Cozy', 'Dreamy', 'Empowered', 'Joyful',
-  'Sad', 'Anxious', 'Lonely', 'Tired', 'Frustrated',
-] as const;
-
 export const INTERESTS = [
   'Music', 'Movies', 'TV Shows', 'Gaming', 'Technology',
   'Fitness', 'Sports', 'Travel', 'Photography', 'Fashion',
@@ -215,7 +206,6 @@ export const INTERESTS = [
   'Self Improvement', 'Education',
 ] as const;
 
-export type Mood = typeof MOODS[number];
 export type Interest = typeof INTERESTS[number];
 
 export const PERSONALITY_BADGES = [

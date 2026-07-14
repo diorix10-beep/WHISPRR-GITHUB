@@ -218,12 +218,6 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
-  /* Pill mood/tag style */
-  .mood-pill {
-    @apply inline-flex items-center rounded-full font-medium px-3 py-1 text-sm
-      bg-gradient-to-r from-primary-100 to-accent-100
-      text-primary-800 dark:from-primary-800/40 dark:to-accent-800/40 dark:text-primary-200;
-  }
 
   /* Trust / info callout */
   .trust-callout {
@@ -347,14 +341,7 @@ html {
   animation: chimera-spirit-orbit 6s linear infinite;
 }
 
-/* Hide floating Quickchat bubble on the Oracle assistant page */
-body.route-oracle iframe[src*="quickchat.ai"],
-body.route-oracle iframe[src*="5isdyzru54"],
-body.route-oracle #quickchat-iframe {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
+
 
 
 

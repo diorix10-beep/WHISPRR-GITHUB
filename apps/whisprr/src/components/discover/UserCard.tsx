@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import { Users } from 'lucide-react';
 import type { Profile } from '../../types';
 import { Avatar } from '../common/Avatar';
-import { MoodBadge } from '../common/MoodBadge';
 import { UserBadges } from '../common/UserBadges';
 
 interface UserCardProps {
@@ -60,11 +59,6 @@ export function UserCard({
           <p className="text-sm text-warm-600 dark:text-warm-400">
             @{profile.username}
           </p>
-          {profile.mood && (
-            <div className="mt-2">
-              <MoodBadge mood={profile.mood} size="sm" />
-            </div>
-          )}
         </div>
 
         {/* Vibe Match Circle */}

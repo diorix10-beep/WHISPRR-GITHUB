@@ -69,18 +69,9 @@ export default function DiscoverPage() {
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Discovery lists state
-  const [suggestedUsers, setSuggestedUsers] = useState<Profile[]>([]);
   const [recommendedCommunities, setRecommendedCommunities] = useState<CommunityWithCount[]>([]);
   const [trendingDiscussions, setTrendingDiscussions] = useState<WhisperWithRelations[]>([]);
-  const [newVoices, setNewVoices] = useState<Profile[]>([]);
-  const [recentlyActive, setRecentlyActive] = useState<Profile[]>([]);
   const [personalizedWhispers, setPersonalizedWhispers] = useState<WhisperWithRelations[]>([]);
-  
-  // Recent creations state
-  const [recentStories, setRecentStories] = useState<any[]>([]);
-  const [recentCharacters, setRecentCharacters] = useState<any[]>([]);
-  const [recentWorlds, setRecentWorlds] = useState<any[]>([]);
-  const [recentLorebooks, setRecentLorebooks] = useState<any[]>([]);
   
   const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
@@ -99,47 +90,6 @@ export default function DiscoverPage() {
       setFollowingMap(prev => ({ ...prev, ...map }));
     }
   }, [user]);
-
-  // Recommended People
-  const loadSuggestedUsers = useCallback(async () => {
-    if (!user || !profile) return;
-    try {
-      let users: Profile[] = [];
-      const userInterests = profile.interests || [];
-      const mutedUsers = profile.muted_interests || [];
-
-      if (userInterests.length > 0) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .neq('user_id', user.id)
-          .overlaps('interests', userInterests)
-          .limit(15);
-        if (data) users = data;
-      }
-
-      if (users.length < 8) {
-        const excludeIds = [user.id, ...users.map(u => u.user_id)];
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .not('user_id', 'in', `(${excludeIds.join(',')})`)
-          .order('created_at', { ascending: false })
-          .limit(15 - users.length);
-        if (data) users = [...users, ...data];
-      }
-
-      // Filter out profiles with only muted interests (if applicable)
-      const filtered = users.filter(u => 
-        !u.interests.every(i => mutedUsers.includes(i))
-      );
-
-      setSuggestedUsers(filtered);
-      await fetchFollowingStatus(filtered.map(u => u.user_id));
-    } catch (err) {
-      console.error(err);
-    }
-  }, [user, profile, fetchFollowingStatus]);
 
   // Recommended Communities
   const loadRecommendedCommunities = useCallback(async () => {
@@ -225,37 +175,7 @@ export default function DiscoverPage() {
     }
   }, []);
 
-  // New Voices (Newly registered profiles)
-  const loadNewVoices = useCallback(async () => {
-    if (!user) return;
-    try {
-      const { data, error } = await supabase.rpc('get_new_voices', { p_limit: 8 });
-      if (error) throw error;
-      if (data) {
-        const filtered = data.filter((p: any) => p.user_id !== user.id);
-        setNewVoices(filtered);
-        await fetchFollowingStatus(filtered.map((u: any) => u.user_id));
-      }
-    } catch (err) {
-      console.error('Error loading new voices:', err);
-    }
-  }, [user, fetchFollowingStatus]);
 
-  // Recently Active (Profiles who recently published whispers)
-  const loadRecentlyActive = useCallback(async () => {
-    if (!user) return;
-    try {
-      const { data, error } = await supabase.rpc('get_recently_active_profiles', { p_limit: 8 });
-      if (error) throw error;
-      if (data) {
-        const filtered = data.filter((p: any) => p.user_id !== user.id);
-        setRecentlyActive(filtered);
-        await fetchFollowingStatus(filtered.map((u: any) => u.user_id));
-      }
-    } catch (err) {
-      console.error('Error loading recently active:', err);
-    }
-  }, [user, fetchFollowingStatus]);
 
   // Personalized Feed
   const loadPersonalizedFeed = useCallback(async () => {
@@ -322,44 +242,18 @@ export default function DiscoverPage() {
     }
   }, [user]);
 
-  // Recent creations loader
-  const loadRecentCreations = useCallback(async () => {
-    try {
-      const [st, ch, wd, lb] = await Promise.all([
-        supabase.from('stories').select('*').order('created_at', { ascending: false }).limit(6),
-        supabase.from('ai_characters').select('*').order('created_at', { ascending: false }).limit(6),
-        supabase.from('worlds').select('*').order('created_at', { ascending: false }).limit(6),
-        supabase.from('lorebooks').select('*').order('created_at', { ascending: false }).limit(6),
-      ]);
-      if (st.data) setRecentStories(st.data);
-      if (ch.data) setRecentCharacters(ch.data);
-      if (wd.data) setRecentWorlds(wd.data);
-      if (lb.data) setRecentLorebooks(lb.data);
-    } catch (err) {
-      console.error('Error loading recent creations:', err);
-    }
-  }, []);
-
   const loadAllDiscoveryData = useCallback(async () => {
     setLoading(true);
     await Promise.all([
-      loadSuggestedUsers(),
       loadRecommendedCommunities(),
       loadTrendingDiscussions(),
-      loadNewVoices(),
-      loadRecentlyActive(),
-      loadPersonalizedFeed(),
-      loadRecentCreations()
+      loadPersonalizedFeed()
     ]);
     setLoading(false);
   }, [
-    loadSuggestedUsers,
     loadRecommendedCommunities,
     loadTrendingDiscussions,
-    loadNewVoices,
-    loadRecentlyActive,
-    loadPersonalizedFeed,
-    loadRecentCreations
+    loadPersonalizedFeed
   ]);
 
   useEffect(() => {
@@ -417,7 +311,6 @@ export default function DiscoverPage() {
         interests: updatedFollowed
       });
       showToast(`${interest} ${current.includes(interest) ? 'unmuted' : 'muted'}`, 'success');
-      loadSuggestedUsers();
     } catch {
       showToast('Failed to mute topic', 'error');
     }
@@ -781,256 +674,65 @@ export default function DiscoverPage() {
       ) : activeTab === 'explore' ? (
         // EXPLORE TAB
         <div className="space-y-8">
-          
-          {/* Recommended People */}
-          {suggestedUsers.length > 0 && (
-            <section>
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles size={16} className="text-primary-500" />
-                <h2 className="text-sm font-bold text-warm-900 dark:text-warm-50 uppercase tracking-wider">
-                  Recommended People
-                </h2>
-              </div>
-              <div className="flex gap-3 overflow-x-auto -mx-4 px-4 pb-3 snap-x snap-mandatory">
-                {suggestedUsers.map(p => (
-                  <CompactUserCard
-                    key={p.user_id}
-                    profile={p}
-                    currentInterests={profile.interests || []}
-                    isFollowing={followingMap[p.user_id] || false}
-                    onFollowToggle={() => handleFollowToggle(p.user_id)}
-                    onClick={() => navigate(`/profile/${p.username}`)}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Recommended Communities */}
-          {recommendedCommunities.length > 0 && (
-            <section>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Users size={16} className="text-primary-500" />
-                  <h2 className="text-sm font-bold text-warm-900 dark:text-warm-50 uppercase tracking-wider">
-                    Recommended Communities
-                  </h2>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {recommendedCommunities.slice(0, 6).map(c => (
-                  <CommunityRow key={c.id} community={c} onClick={() => navigate(`/communities/${c.id}`)} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Popular Characters */}
-          {recentCharacters.length > 0 && (
-            <section>
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles size={16} className="text-primary-500" />
-                <h2 className="text-sm font-bold text-warm-900 dark:text-warm-50 uppercase tracking-wider">
-                  Popular AI Characters
-                </h2>
-              </div>
-              <div className="flex gap-3 overflow-x-auto -mx-4 px-4 pb-3 snap-x snap-mandatory">
-                {recentCharacters.map(c => (
-                  <div key={c.id} className="w-64 flex-shrink-0 snap-start bg-white dark:bg-warm-800 p-4 rounded-2xl border border-warm-250 dark:border-warm-700 hover:shadow-md transition-shadow flex flex-col justify-between min-h-[140px]">
-                    <div>
-                      <span className="text-[10px] bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">🎭 Character</span>
-                      <h4 className="font-bold text-warm-900 dark:text-white mt-2 mb-1 truncate">{c.short_description || 'Unnamed Character'}</h4>
-                      <p className="text-xs text-warm-500 line-clamp-2 italic">"{c.greeting}"</p>
+          {recommendedCommunities.length === 0 && trendingDiscussions.length === 0 ? (
+            <EmptyState
+              icon={Users}
+              title="Welcome to the Creator Hub!"
+              description="Join a community or start a trending discussion to connect with other creators."
+            />
+          ) : (
+            <>
+              {/* Recommended Communities */}
+              {recommendedCommunities.length > 0 && (
+                <section>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Users size={16} className="text-primary-500" />
+                      <h2 className="text-sm font-bold text-warm-900 dark:text-warm-50 uppercase tracking-wider">
+                        Recommended Communities
+                      </h2>
                     </div>
-                    <a href={`${chimeraUrl}/chat/${c.id}`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary-500 hover:underline inline-flex items-center gap-1 mt-3">
-                      Chat in CHIMERA <ExternalLink size={10} />
-                    </a>
                   </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Recent Stories */}
-          {recentStories.length > 0 && (
-            <section>
-              <div className="flex items-center gap-2 mb-3">
-                <BookOpen size={16} className="text-primary-500" />
-                <h2 className="text-sm font-bold text-warm-900 dark:text-warm-50 uppercase tracking-wider">
-                  Featured Stories
-                </h2>
-              </div>
-              <div className="flex gap-3 overflow-x-auto -mx-4 px-4 pb-3 snap-x snap-mandatory">
-                {recentStories.map(s => (
-                  <div key={s.id} className="w-64 flex-shrink-0 snap-start bg-white dark:bg-warm-800 p-4 rounded-2xl border border-warm-250 dark:border-warm-700 hover:shadow-md transition-shadow flex flex-col justify-between min-h-[140px]">
-                    <div>
-                      <span className="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">📖 Story</span>
-                      <h4 className="font-serif font-bold text-warm-900 dark:text-white mt-2 mb-1 truncate">{s.title}</h4>
-                      <p className="text-xs text-warm-500 line-clamp-2">{s.summary}</p>
-                    </div>
-                    <a href={`${chimeraUrl}/plots`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary-500 hover:underline inline-flex items-center gap-1 mt-3">
-                      Read Story <ExternalLink size={10} />
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Worlds and Lorebooks */}
-          {(recentWorlds.length > 0 || recentLorebooks.length > 0) && (
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {recentWorlds.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Globe size={16} className="text-emerald-500" />
-                    <h2 className="text-xs font-bold text-warm-500 dark:text-warm-400 uppercase tracking-wider">
-                      Active Worlds
-                    </h2>
-                  </div>
-                  <div className="space-y-2">
-                    {recentWorlds.slice(0, 3).map(w => (
-                      <div key={w.id} className="p-3 bg-white dark:bg-warm-800 rounded-xl border border-warm-200/60 dark:border-warm-700/60 flex items-center justify-between">
-                        <div className="truncate pr-2">
-                          <h4 className="text-sm font-serif font-bold text-warm-900 dark:text-white truncate">{w.name}</h4>
-                          <p className="text-xs text-warm-500 truncate">{w.description}</p>
-                        </div>
-                        <a href={`${chimeraUrl}/worlds`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary-500 hover:underline flex-shrink-0 flex items-center gap-1">
-                          Explore <ExternalLink size={10} />
-                        </a>
-                      </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {recommendedCommunities.slice(0, 6).map(c => (
+                      <CommunityRow key={c.id} community={c} onClick={() => navigate(`/communities/${c.id}`)} />
                     ))}
                   </div>
-                </div>
+                </section>
               )}
-              {recentLorebooks.length > 0 && (
-                <div>
+
+              {/* Trending Discussions */}
+              {trendingDiscussions.length > 0 && (
+                <section>
                   <div className="flex items-center gap-2 mb-3">
-                    <Book size={16} className="text-amber-500" />
-                    <h2 className="text-xs font-bold text-warm-500 dark:text-warm-400 uppercase tracking-wider">
-                      Popular Lorebooks
+                    <TrendingUp size={16} className="text-green-500" />
+                    <h2 className="text-sm font-bold text-warm-900 dark:text-warm-50 uppercase tracking-wider">
+                      Trending Discussions
                     </h2>
                   </div>
-                  <div className="space-y-2">
-                    {recentLorebooks.slice(0, 3).map(l => (
-                      <div key={l.id} className="p-3 bg-white dark:bg-warm-800 rounded-xl border border-warm-200/60 dark:border-warm-700/60 flex items-center justify-between">
-                        <div className="truncate pr-2">
-                          <h4 className="text-sm font-serif font-bold text-warm-900 dark:text-white truncate">{l.title}</h4>
-                          <p className="text-xs text-warm-500 truncate">{l.description}</p>
-                        </div>
-                        <a href={`${chimeraUrl}/lorebooks`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary-500 hover:underline flex-shrink-0 flex items-center gap-1">
-                          Manage <ExternalLink size={10} />
-                        </a>
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     {trendingDiscussions.map(w => (
+                       <div key={w.id} onClick={() => navigate(`/whisper/${w.id}`)} className="cursor-pointer bg-white dark:bg-warm-800 p-4 rounded-3xl border border-warm-200/50 dark:border-warm-700/50 hover:shadow-md transition-shadow relative">
+                         <p className="font-serif text-warm-800 dark:text-warm-100 mb-3 line-clamp-3">
+                           "{w.content}"
+                         </p>
+                         <div className="flex items-center justify-between text-xs text-warm-500">
+                            <div className="flex items-center gap-2">
+                               <Avatar emoji={w.profiles.avatar_emoji} photoUrl={w.profiles.photo_url} size="xs" />
+                               <span className="font-semibold text-warm-700 dark:text-warm-300">@{w.profiles.username}</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                               <span className="flex items-center gap-1"><Heart size={12}/> {w.reactions?.length || 0}</span>
+                               <span className="flex items-center gap-1"><MessageSquare size={12}/> {w.comment_count}</span>
+                            </div>
+                         </div>
+                       </div>
+                     ))}
                   </div>
-                </div>
+                </section>
               )}
-            </section>
+            </>
           )}
-
-          {/* Trending Discussions */}
-          {trendingDiscussions.length > 0 && (
-            <section>
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp size={16} className="text-green-500" />
-                <h2 className="text-sm font-bold text-warm-900 dark:text-warm-50 uppercase tracking-wider">
-                  Trending Discussions
-                </h2>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 {trendingDiscussions.map(w => (
-                   <div key={w.id} onClick={() => navigate(`/whisper/${w.id}`)} className="cursor-pointer bg-white dark:bg-warm-800 p-4 rounded-3xl border border-warm-200/50 dark:border-warm-700/50 hover:shadow-md transition-shadow relative">
-                     <p className="font-serif text-warm-800 dark:text-warm-100 mb-3 line-clamp-3">
-                       "{w.content}"
-                     </p>
-                     <div className="flex items-center justify-between text-xs text-warm-500">
-                        <div className="flex items-center gap-2">
-                           <Avatar emoji={w.profiles.avatar_emoji} photoUrl={w.profiles.photo_url} size="xs" />
-                           <span className="font-semibold text-warm-700 dark:text-warm-300">@{w.profiles.username}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                           <span className="flex items-center gap-1"><Heart size={12}/> {w.reactions?.length || 0}</span>
-                           <span className="flex items-center gap-1"><MessageSquare size={12}/> {w.comment_count}</span>
-                        </div>
-                     </div>
-                   </div>
-                 ))}
-              </div>
-            </section>
-          )}
-
-          {/* New Voices */}
-          {newVoices.length > 0 && (
-            <section>
-              <div className="flex items-center gap-2 mb-3">
-                <Compass size={16} className="text-secondary-500" />
-                <h2 className="text-sm font-bold text-warm-900 dark:text-warm-50 uppercase tracking-wider">
-                  New Voices
-                </h2>
-              </div>
-              <div className="flex gap-3 overflow-x-auto -mx-4 px-4 pb-3 snap-x snap-mandatory">
-                {newVoices.map(p => (
-                  <CompactUserCard
-                    key={p.user_id}
-                    profile={p}
-                    currentInterests={profile.interests || []}
-                    isFollowing={followingMap[p.user_id] || false}
-                    onFollowToggle={() => handleFollowToggle(p.user_id)}
-                    onClick={() => navigate(`/profile/${p.username}`)}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Recently Active */}
-          {recentlyActive.length > 0 && (
-            <section>
-              <div className="flex items-center gap-2 mb-3">
-                <RefreshCw size={16} className="text-primary-500" />
-                <h2 className="text-sm font-bold text-warm-900 dark:text-warm-50 uppercase tracking-wider">
-                  Recently Active
-                </h2>
-              </div>
-              <div className="flex gap-3 overflow-x-auto -mx-4 px-4 pb-3 snap-x snap-mandatory">
-                {recentlyActive.map(p => (
-                  <CompactUserCard
-                    key={p.user_id}
-                    profile={p}
-                    currentInterests={profile.interests || []}
-                    isFollowing={followingMap[p.user_id] || false}
-                    onFollowToggle={() => handleFollowToggle(p.user_id)}
-                    onClick={() => navigate(`/profile/${p.username}`)}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Explore by Interest */}
-          <section>
-            <h2 className="text-sm font-bold text-warm-900 dark:text-warm-50 uppercase tracking-wider mb-3">
-              Explore by Topic
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-              {FEATURED_INTERESTS.map(interest => {
-                const Icon = INTEREST_ICONS[interest] || Hash;
-                return (
-                  <button
-                    key={interest}
-                    onClick={() => { setSearchQuery(interest); setSearchTab('communities'); }}
-                    className="group flex flex-col items-center gap-2 p-4 rounded-2xl bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 hover:border-primary-300 dark:hover:border-primary-700 hover:shadow-md transition-all"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-primary-50 dark:bg-primary-900/40 flex items-center justify-center group-hover:bg-primary-100 dark:group-hover:bg-primary-900 transition-colors">
-                      <Icon size={20} className="text-primary-600 dark:text-primary-400" />
-                    </div>
-                    <span className="text-xs font-medium text-warm-700 dark:text-warm-300 text-center leading-tight">{interest}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
         </div>
       ) : activeTab === 'for_you' ? (
         // PERSONALIZED FEED TAB ("FOR YOU")

@@ -7,7 +7,6 @@ import { ShareCreationModal } from '../modals/ShareCreationModal';
 import { motion } from 'framer-motion';
 import type { Whisper, Profile, Reaction } from '../../types';
 import { Avatar } from '../common/Avatar';
-import { MoodBadge } from '../common/MoodBadge';
 import { UserBadges } from '../common/UserBadges';
 import { useAuth } from '../../contexts/AuthContext';
 import { useInterests } from '../../contexts/InterestContext';
@@ -219,9 +218,7 @@ export const WhisperCard = memo(function WhisperCard({
           eventType: 'reaction',
           targetType: 'whisper',
           targetId: whisper.id,
-          mood: whisper.mood || undefined,
           communityId: whisper.community_id || undefined,
-          interests: whisper.mood ? [whisper.mood] : undefined,
         });
 
         // Create notification for whisper owner
@@ -644,12 +641,6 @@ export const WhisperCard = memo(function WhisperCard({
         </div>
       </div>
 
-      {/* Mood Badge */}
-      {whisper.mood && (
-        <div className="mb-3">
-          <MoodBadge mood={whisper.mood} size="sm" />
-        </div>
-      )}
 
       {/* Content */}
       <div

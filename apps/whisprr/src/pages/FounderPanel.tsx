@@ -161,18 +161,18 @@ export default function FounderPanel() {
   const [schedulerModalOpen, setSchedulerModalOpen] = useState(false);
   const [schedulerContent, setSchedulerContent] = useState('');
   const [schedulerTime, setSchedulerTime] = useState('');
-  const [schedulerAgent, setSchedulerAgent] = useState('oracle');
+  const [schedulerAgent, setSchedulerAgent] = useState('system');
   const [schedulerDraftId, setSchedulerDraftId] = useState<string | null>(null);
   const [mediaAssets, setMediaAssets] = useState<any[]>([
     { name: 'whisprr_banner.png', size: '1.2 MB', type: 'image/png', date: '2026-06-30' },
     { name: 'teaser_video.mp4', size: '14.8 MB', type: 'video/mp4', date: '2026-07-01' },
-    { name: 'oracle_avatar.jpg', size: '240 KB', type: 'image/jpeg', date: '2026-07-02' }
+    { name: 'system_avatar.jpg', size: '240 KB', type: 'image/jpeg', date: '2026-07-02' }
   ]);
 
   // X Settings
   const [xSettings, setXSettings] = useState({
     enabled: false,
-    active_agents: ['oracle'],
+    active_agents: ['system'],
     check_interval_mins: 30,
     search_keywords: ['WHISPRRHQ', 'WHISPRR', 'voice social', 'AI companions'],
     auto_post_roadmap: false,
@@ -188,7 +188,7 @@ export default function FounderPanel() {
 
   // Objectives form states
   const [newObjectiveDesc, setNewObjectiveDesc] = useState('');
-  const [newObjectiveAgent, setNewObjectiveAgent] = useState('oracle');
+  const [newObjectiveAgent, setNewObjectiveAgent] = useState('system');
 
   // Campaigns form states
   const [newCampaignName, setNewCampaignName] = useState('');
@@ -905,7 +905,7 @@ export default function FounderPanel() {
       const { error } = await supabase
         .from('agent_campaigns')
         .insert({
-          agent_id: 'oracle',
+          agent_id: 'system',
           name: newCampaignName.trim(),
           description: newCampaignDesc.trim(),
           goals: newCampaignGoals.trim(),
@@ -2512,16 +2512,10 @@ export default function FounderPanel() {
 
                <form onSubmit={handleScheduleSubmit} className="space-y-4">
                   <div className="space-y-1">
-                     <label className="text-[10px] font-bold text-warm-700 dark:text-warm-300">Select Sibling Representative</label>
-                     <select
-                        value={schedulerAgent}
-                        onChange={(e) => setSchedulerAgent(e.target.value)}
-                        className="w-full text-xs p-2.5 rounded-xl border border-warm-200 dark:border-warm-700 bg-white dark:bg-warm-955 text-warm-900 dark:text-warm-100 focus:outline-none"
-                     >
-                        <option value="oracle">Oracle (Social Media Partner)</option>
-                        <option value="iris">Iris (Community Guide)</option>
-                        <option value="voice_engine">Voice Engine Sibling</option>
-                     </select>
+                     <label className="text-[10px] font-bold text-warm-700 dark:text-warm-300">Representative</label>
+                     <div className="w-full text-xs p-2.5 rounded-xl border border-warm-200 dark:border-warm-700 bg-warm-100 dark:bg-warm-900 text-warm-900 dark:text-warm-100 font-sans">
+                        System Scheduler
+                     </div>
                   </div>
 
                   <div className="space-y-1">

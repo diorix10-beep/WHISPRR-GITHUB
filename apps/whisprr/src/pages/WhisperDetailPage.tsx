@@ -47,7 +47,7 @@ export default function WhisperDetailPage() {
           `
           *,
           profiles:user_id(
-            id, user_id, display_name, username, avatar_emoji, photo_url, bio, badges, mood, badges
+            id, user_id, display_name, username, avatar_emoji, photo_url, bio, badges
           ),
           reactions(id, whisper_id, user_id, type, created_at)
         `
@@ -188,9 +188,7 @@ export default function WhisperDetailPage() {
             eventType: 'comment',
             targetType: 'whisper',
             targetId: whisper.id,
-            mood: whisper.mood || undefined,
             communityId: whisper.community_id || undefined,
-            interests: whisper.mood ? [whisper.mood] : undefined,
           });
         }
 

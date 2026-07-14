@@ -283,3 +283,68 @@ export const LOOKING_FOR_OPTIONS = [
 ] as const;
 
 export type LookingForOption = typeof LOOKING_FOR_OPTIONS[number];
+
+// CHIMERA Writing Platform Types
+export interface Story {
+  id: string;
+  user_id: string;
+  title: string;
+  summary: string;
+  content: string; // Used for single-page compatibility or backward compatibility
+  cover_url?: string | null;
+  visibility: 'public' | 'private' | 'unlisted';
+  genre: string;
+  tags: string[];
+  status: 'ongoing' | 'completed' | 'hiatus';
+  shared_to_whisprr: boolean;
+  whisprr_whisper_id?: string | null;
+  created_at: string;
+  updated_at: string;
+  profiles?: Profile;
+  chapters_count?: number;
+  votes_count?: number;
+  comments_count?: number;
+}
+
+export interface StoryChapter {
+  id: string;
+  story_id: string;
+  title: string;
+  content: string;
+  chapter_number: number;
+  status: 'draft' | 'published';
+  published_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StoryLibrary {
+  id: string;
+  user_id: string;
+  story_id: string;
+  current_chapter_id?: string | null;
+  last_read_at: string;
+  created_at: string;
+  stories?: Story;
+  total_chapters?: number;
+  current_chapter_number?: number;
+}
+
+export interface StoryVote {
+  id: string;
+  user_id: string;
+  story_id: string;
+  created_at: string;
+}
+
+export interface StoryComment {
+  id: string;
+  story_id: string;
+  chapter_id?: string | null;
+  user_id: string;
+  content: string;
+  parent_id?: string | null;
+  created_at: string;
+  profiles?: Profile;
+  replies?: StoryComment[];
+}

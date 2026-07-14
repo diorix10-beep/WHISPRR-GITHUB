@@ -3,18 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Sparkles, MapPin, Upload, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { MOODS, INTERESTS } from '../types';
-import type { Mood, Interest } from '../types';
+import { INTERESTS } from '../types';
+import type { Interest } from '../types';
 import { Avatar } from '../components/common/Avatar';
 import { PhotoUpload } from '../components/common/PhotoUpload';
 
-type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+type Step = 1 | 2 | 3 | 4 | 5 | 6;
 
 interface OnboardingData {
   displayName: string;
   username: string;
   photoUrl: string | null;
-  mood: Mood | null;
   interests: Interest[];
   bio: string;
   country: string;
@@ -50,7 +49,6 @@ export default function OnboardingPage() {
     displayName: profile?.display_name || '',
     username: profile?.username || '',
     photoUrl: profile?.photo_url || null,
-    mood: (profile?.mood as Mood) || null,
     interests: (profile?.interests as Interest[]) || [],
     bio: profile?.bio || '',
     country: (profile as any)?.home_country || 'Senegal',
@@ -101,8 +99,8 @@ export default function OnboardingPage() {
     setError(null);
 
     if (currentStep === 1) {
-      if (!data.displayName.trim()) {
-        setError('Display name is required');
+      if (!data.displayName.trim() || !data.username.trim()) {
+        setError('Display Name and Username are required');
         return;
       }
 
@@ -114,29 +112,23 @@ export default function OnboardingPage() {
       // Photo upload is optional, just proceed
       setCurrentStep(3);
     } else if (currentStep === 3) {
-      if (!data.mood) {
-        setError('Please select a mood');
-        return;
-      }
-      setCurrentStep(4);
-    } else if (currentStep === 4) {
       if (data.interests.length < 2 || data.interests.length > 7) {
         setError('Please select between 2 and 7 interests');
         return;
       }
-      setCurrentStep(5);
-    } else if (currentStep === 5) {
+      setCurrentStep(4);
+    } else if (currentStep === 4) {
       if (data.bio.length > 200) {
         setError('Bio must be 200 characters or less');
         return;
       }
-      setCurrentStep(6);
-    } else if (currentStep === 6) {
+      setCurrentStep(5);
+    } else if (currentStep === 5) {
       if (!data.country.trim()) {
         setError('Country is required');
         return;
       }
-      setCurrentStep(7);
+      setCurrentStep(6);
     }
   }, [currentStep, data, checkUsernameUniqueness]);
 
@@ -170,7 +162,6 @@ export default function OnboardingPage() {
         display_name: data.displayName,
         username: data.username,
         photo_url: data.photoUrl,
-        mood: data.mood,
         interests: data.interests,
         bio: data.bio || null,
         home_country: data.country,
@@ -317,36 +308,8 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Step 3: Mood Selection */}
+          {/* Step 3: Interests Selection */}
           {currentStep === 3 && (
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-serif font-bold text-warm-900 dark:text-warm-50 mb-2 tracking-tight leading-tight">
-                What's Your Current Mood?
-              </h1>
-              <p className="text-warm-600 dark:text-warm-300 mb-8 font-sans">
-                This helps others understand your energy
-              </p>
-
-              <div className="grid grid-cols-2 gap-3">
-                {MOODS.map((mood) => (
-                  <button
-                    key={mood}
-                    className={`btn-primary py-3 px-4 rounded-lg font-sans font-semibold transition-all ${
-                      data.mood === mood
-                        ? 'bg-primary-500 text-white'
-                        : 'bg-warm-100 text-warm-700 hover:bg-warm-200 dark:bg-warm-700 dark:text-warm-200 dark:hover:bg-warm-600'
-                    }`}
-                    onClick={() => setData({ ...data, mood: mood as Mood })}
-                  >
-                    {mood}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Step 4: Interests Selection */}
-          {currentStep === 4 && (
             <div>
               <h1 className="text-3xl sm:text-4xl font-serif font-bold text-warm-900 dark:text-warm-50 mb-2 tracking-tight leading-tight">
                 Pick Your Interests
@@ -391,8 +354,8 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Step 5: Bio */}
-          {currentStep === 5 && (
+          {/* Step 4: Bio */}
+          {currentStep === 4 && (
             <div>
               <h1 className="text-3xl sm:text-4xl font-serif font-bold text-warm-900 dark:text-warm-50 mb-2 tracking-tight leading-tight">
                 Write Your Bio
@@ -417,8 +380,8 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Step 6: Country Selection */}
-          {currentStep === 6 && (
+          {/* Step 5: Country Selection */}
+          {currentStep === 5 && (
             <div>
               <h1 className="text-3xl sm:text-4xl font-serif font-bold text-warm-900 dark:text-warm-50 mb-2 tracking-tight leading-tight">
                 🌍 Where Are You From?
@@ -464,8 +427,8 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Step 7: Review */}
-          {currentStep === 7 && (
+          {/* Step 6: Review */}
+          {currentStep === 6 && (
             <div>
               <h1 className="text-3xl sm:text-4xl font-serif font-bold text-warm-900 dark:text-warm-50 mb-2 tracking-tight leading-tight">
                 Review Your Profile
@@ -490,13 +453,6 @@ export default function OnboardingPage() {
                   <p className="text-warm-600 dark:text-warm-400 font-sans">@{data.username}</p>
                 </div>
 
-                {/* Mood */}
-                <div>
-                  <h3 className="text-sm font-sans font-semibold text-warm-700 dark:text-warm-200 mb-2">
-                    Current Mood
-                  </h3>
-                  <p className="text-warm-600 dark:text-warm-300 font-sans">{data.mood}</p>
-                </div>
 
                 {/* Interests */}
                 <div>
@@ -555,7 +511,7 @@ export default function OnboardingPage() {
             </button>
           )}
 
-          {currentStep < 7 ? (
+          {currentStep < 6 ? (
             <button
               onClick={handleNext}
               disabled={checkingUsername && currentStep === 1}

@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Smile, Paperclip, ArrowLeft, Book, Sparkles, Compass, BookOpen, Briefcase, Activity } from 'lucide-react';
-import { MOODS, type Mood } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { useInterests } from '../../contexts/InterestContext';
 import { supabase } from '../../lib/supabase';
@@ -26,7 +25,6 @@ export function ComposeWhisper({
   const { user, profile } = useAuth();
   const { track } = useInterests();
   const [content, setContent] = useState('');
-  const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const [isPosting, setIsPosting] = useState(false);
   const [error, setError] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -183,7 +181,6 @@ export function ComposeWhisper({
     try {
       const { error: insertError } = await supabase.from('whispers').insert({
         content: content.trim(),
-        mood: selectedMood || null,
         community_id: communityId || null,
       });
 
@@ -195,13 +192,10 @@ export function ComposeWhisper({
       track({
         eventType: 'post',
         targetType: 'whisper',
-        mood: selectedMood || undefined,
         communityId: communityId || undefined,
-        interests: selectedMood ? [selectedMood] : undefined,
       });
 
       setContent('');
-      setSelectedMood(null);
       onWhisperCreated?.();
       onClose();
     } catch (err) {
@@ -460,30 +454,6 @@ export function ComposeWhisper({
               )}
             </div>
           )}
-
-          {/* Mood Selector */}
-          <div>
-            <label className="block text-sm font-medium text-warm-700 dark:text-warm-300 mb-2.5">
-              How are you feeling? <span className="text-warm-400 font-normal">(optional)</span>
-            </label>
-            <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
-              {MOODS.map((mood) => (
-                <button
-                  key={mood}
-                  type="button"
-                  onClick={() => setSelectedMood(selectedMood === mood ? null : mood)}
-                  disabled={isPosting}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-150 border ${
-                    selectedMood === mood
-                      ? 'bg-primary-500 text-white border-primary-500 shadow-warm'
-                      : 'bg-warm-50 dark:bg-warm-700 text-warm-700 dark:text-warm-200 border-warm-200 dark:border-warm-600 hover:border-primary-300 dark:hover:border-primary-600'
-                  }`}
-                >
-                  {mood}
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-2">

@@ -24,6 +24,14 @@ const OnboardingPage     = lazy(() => import('./pages/OnboardingPage'));
 const ConversationPage   = lazy(() => import('./pages/ConversationPage'));
 const AiCharactersPage = lazy(() => import('./pages/AiCharactersPage'));
 
+// CHIMERA Writing Platform Pages
+const ExploreNexusPage = lazy(() => import('./pages/ExploreNexusPage'));
+const LibraryPage = lazy(() => import('./pages/LibraryPage'));
+const WritersDeskPage = lazy(() => import('./pages/WritersDeskPage'));
+const StoryReaderPage = lazy(() => import('./pages/StoryReaderPage'));
+const ChapterReaderPage = lazy(() => import('./pages/ChapterReaderPage'));
+const ChapterEditorPage = lazy(() => import('./pages/ChapterEditorPage'));
+
 // Legal & Policy Pages
 const TermsPage                = lazy(() => import('./pages/legal/TermsPage'));
 const PrivacyPage              = lazy(() => import('./pages/legal/PrivacyPage'));
@@ -157,10 +165,21 @@ function AppLoader() {
 
           {/* CHIMERA Standalone Platform */}
           <Route element={<ChimeraLayout />}>
-            <Route path="/" element={<AiCharactersPage />} />
+            {/* Creator-First Core Pages */}
+            <Route path="/" element={<ExploreNexusPage />} />
+            <Route path="/library" element={<LibraryPage />} />
+            <Route path="/write" element={<WritersDeskPage />} />
+            <Route path="/story/:id" element={<StoryReaderPage />} />
+            <Route path="/story/:storyId/chapter/:chapterNumber" element={<ChapterReaderPage />} />
+            <Route path="/write/story/:storyId/chapter/:chapterId" element={<ChapterEditorPage />} />
+
+            {/* Roleplay Platform (Repositioned) */}
+            <Route path="/roleplay" element={<AiCharactersPage />} />
             <Route path="/create" element={<AiCharacterCreator />} />
             <Route path="/chats" element={<ChimeraChatsPage />} />
             <Route path="/chat/:id" element={<ConversationPage />} />
+
+            {/* Existing Context Pages & Placeholders */}
             <Route path="/oracle" element={<OracleAssistantPage />} />
             <Route path="/help" element={<OracleAssistantPage />} />
             <Route path="/personas" element={<PersonasPage />} />

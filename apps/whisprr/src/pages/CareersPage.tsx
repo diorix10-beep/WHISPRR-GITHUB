@@ -42,7 +42,7 @@ const OPEN_POSITIONS: JobPosition[] = [
     department: 'AI',
     location: 'Remote',
     type: 'Full-time',
-    overview: 'Train, calibrate, and orchestrate the AI Family (Oracle, Iris, Aegis, Atlas, Athena) to collaborate autonomously on background tasks.',
+    overview: 'Design, build, and optimize LLM integrations and agent architectures to assist creators in their creative workflows.',
     responsibilities: [
       'Implement multi-agent prompting techniques and persistent memory states.',
       'Reduce LLM response latencies and optimize token footprints.',
@@ -227,32 +227,7 @@ export default function CareersPage() {
 
       {/* Meet the AI Family Section */}
       <div id="ai-family" className="public-card p-6 md:p-8 space-y-6 shadow-soft relative overflow-hidden">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-1.5 bg-purple-50/50 dark:bg-purple-950/20 text-purple-650 dark:text-purple-400 text-xs font-bold px-3 py-1.5 rounded-full">
-            <Bot size={12} />
-            <span>AI Sibling Collaboration</span>
-          </div>
-          <h3 className="text-xl md:text-2xl font-serif font-bold text-warm-900 dark:text-white">Collaborate with the AI Family</h3>
-          <p className="text-xs md:text-sm text-warm-600 dark:text-warm-400 max-w-2xl">
-            At WHISPRR, candidates don't just build software with human team members — they'll interface and co-develop systems alongside our active AI companion siblings:
-          </p>
-        </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          {[
-            { name: 'Oracle', emoji: '💜', desc: 'Central coordinator' },
-            { name: 'Iris', emoji: '🌸', desc: 'Ops & infrastructure' },
-            { name: 'Atlas', emoji: '🗺️', desc: 'Codebase strategy' },
-            { name: 'Athena', emoji: '📚', desc: 'Research & documents' },
-            { name: 'Aegis', emoji: '🛡️', desc: 'Endpoint security' }
-          ].map((item, i) => (
-            <div key={i} className="p-4 bg-warm-50/50 dark:bg-white/[0.02] border border-warm-200/50 dark:border-white/[0.04] rounded-2xl text-center space-y-1">
-              <span className="text-2xl block">{item.emoji}</span>
-              <h4 className="text-xs font-bold text-warm-900 dark:text-white">{item.name}</h4>
-              <p className="text-[10px] text-warm-600 dark:text-warm-500">{item.desc}</p>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Hiring Pipeline Steps */}
@@ -261,7 +236,7 @@ export default function CareersPage() {
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-center">
           {[
             { step: 'Step 1', title: 'Apply Online', desc: 'Submit application portfolio' },
-            { step: 'Step 2', title: 'AI Matching', desc: 'Context review by Oracle & Athena' },
+            { step: 'Step 2', title: 'Application Review', desc: 'Context review of your experience' },
             { step: 'Step 3', title: 'Team Sync', desc: 'Video interview sessions' },
             { step: 'Step 4', title: 'Join Family', desc: 'Sign contract and receive badges' }
           ].map((item, i) => (

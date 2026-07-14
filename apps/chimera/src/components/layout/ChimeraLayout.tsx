@@ -2,7 +2,8 @@ import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { Outlet, useNavigate, NavLink } from 'react-router-dom';
 import { 
   X, Compass, Plus, MessageSquare, User, BookOpen, 
-  Globe, PenTool, Cpu, Layers, Menu, ArrowLeft, Sun, Moon, Monitor, Users, LayoutGrid
+  Globe, PenTool, Cpu, Layers, Menu, ArrowLeft, Sun, Moon, Monitor, Users, LayoutGrid,
+  Bookmark, Settings, Sparkles
 } from 'lucide-react';
 import { AppLauncherModal } from './AppLauncherModal';
 import { useNotifications } from '../../contexts/NotificationsContext';
@@ -43,15 +44,13 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
   const chimeraNavItems = [
     { path: '/', icon: Compass, label: 'Explore Nexus' },
-    { path: '/?tab=my-creations', icon: Users, label: 'My Personas' },
+    { path: '/library', icon: Bookmark, label: 'My Library' },
+    { path: '/write', icon: PenTool, label: "Writer's Desk" },
+    { path: '/roleplay', icon: Sparkles, label: 'Roleplay Nexus' },
+    { path: '/chats', icon: MessageSquare, label: 'Roleplay Chats', badge: true },
     { path: '/create', icon: Plus, label: 'CHIMERA Forge' },
-    { path: '/chats', icon: MessageSquare, label: 'CHIMERA Chats', badge: true },
-    { path: '/creator-profiles', icon: User, label: 'Creator Profiles' },
     { path: '/lorebooks', icon: BookOpen, label: 'CHIMERA Lorebooks' },
     { path: '/worlds', icon: Globe, label: 'CHIMERA Worlds' },
-    { path: '/plots', icon: PenTool, label: 'CHIMERA Plots' },
-    { path: '/models', icon: Cpu, label: 'CHIMERA Core Models' },
-    { path: '/collections', icon: Layers, label: 'CHIMERA Collections' },
   ];
 
   const content = (
@@ -79,7 +78,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
                   CHIMERA
                 </h1>
                 <p className="text-[10px] uppercase font-bold tracking-wider text-warm-500 dark:text-warm-400">
-                  Roleplay Studio
+                  Creative Platform
                 </p>
               </div>
             </div>
