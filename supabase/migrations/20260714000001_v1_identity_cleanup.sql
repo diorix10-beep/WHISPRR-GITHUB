@@ -1,6 +1,11 @@
 -- Migration: 20260714000001_v1_identity_cleanup.sql
 -- Description: Drop mood columns and indices, redefine feed and discovery functions to remove mood dependencies.
 
+-- Drop functions first to allow changing their return types
+DROP FUNCTION IF EXISTS public.get_personalized_feed(uuid, integer, text);
+DROP FUNCTION IF EXISTS public.get_new_voices(integer);
+DROP FUNCTION IF EXISTS public.get_recently_active_profiles(integer);
+
 -- 1. Redefine get_personalized_feed without mood parameters or checks
 CREATE OR REPLACE FUNCTION get_personalized_feed(
   p_user_id uuid,

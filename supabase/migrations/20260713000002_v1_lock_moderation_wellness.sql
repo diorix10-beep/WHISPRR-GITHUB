@@ -17,12 +17,15 @@ CREATE TABLE IF NOT EXISTS public.user_blocks (
 
 ALTER TABLE public.user_blocks ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "select_own_blocks" ON public.user_blocks;
 CREATE POLICY "select_own_blocks" ON public.user_blocks
   FOR SELECT TO authenticated USING (auth.uid() = blocker_id);
 
+DROP POLICY IF EXISTS "insert_own_blocks" ON public.user_blocks;
 CREATE POLICY "insert_own_blocks" ON public.user_blocks
   FOR INSERT TO authenticated WITH CHECK (auth.uid() = blocker_id);
 
+DROP POLICY IF EXISTS "delete_own_blocks" ON public.user_blocks;
 CREATE POLICY "delete_own_blocks" ON public.user_blocks
   FOR DELETE TO authenticated USING (auth.uid() = blocker_id);
 
@@ -37,12 +40,15 @@ CREATE TABLE IF NOT EXISTS public.user_mutes (
 
 ALTER TABLE public.user_mutes ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "select_own_mutes" ON public.user_mutes;
 CREATE POLICY "select_own_mutes" ON public.user_mutes
   FOR SELECT TO authenticated USING (auth.uid() = muter_id);
 
+DROP POLICY IF EXISTS "insert_own_mutes" ON public.user_mutes;
 CREATE POLICY "insert_own_mutes" ON public.user_mutes
   FOR INSERT TO authenticated WITH CHECK (auth.uid() = muter_id);
 
+DROP POLICY IF EXISTS "delete_own_mutes" ON public.user_mutes;
 CREATE POLICY "delete_own_mutes" ON public.user_mutes
   FOR DELETE TO authenticated USING (auth.uid() = muter_id);
 
@@ -61,9 +67,11 @@ CREATE TABLE IF NOT EXISTS public.reports (
 
 ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "select_own_reports" ON public.reports;
 CREATE POLICY "select_own_reports" ON public.reports
   FOR SELECT TO authenticated USING (auth.uid() = reporter_id);
 
+DROP POLICY IF EXISTS "insert_own_report" ON public.reports;
 CREATE POLICY "insert_own_report" ON public.reports
   FOR INSERT TO authenticated WITH CHECK (auth.uid() = reporter_id);
 

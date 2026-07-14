@@ -19,16 +19,19 @@ CREATE INDEX IF NOT EXISTS idx_nexa_spirits_user ON nexa_spirits(user_id);
 ALTER TABLE nexa_spirits ENABLE ROW LEVEL SECURITY;
 
 -- Users can read their own spirit
+DROP POLICY IF EXISTS "Users can read own spirit" ON nexa_spirits;
 CREATE POLICY "Users can read own spirit"
   ON nexa_spirits FOR SELECT
   USING (auth.uid() = user_id);
 
 -- Users can insert their own spirit (auto-creation on first visit)
+DROP POLICY IF EXISTS "Users can create own spirit" ON nexa_spirits;
 CREATE POLICY "Users can create own spirit"
   ON nexa_spirits FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
 -- Users can update their own spirit (XP, name, stage)
+DROP POLICY IF EXISTS "Users can update own spirit" ON nexa_spirits;
 CREATE POLICY "Users can update own spirit"
   ON nexa_spirits FOR UPDATE
   USING (auth.uid() = user_id)

@@ -31,22 +31,26 @@ ALTER TABLE public.personas ENABLE ROW LEVEL SECURITY;
 
 -- 4. RLS Policies for Personas
 -- Users can see their own personas, plus any public personas
+DROP POLICY IF EXISTS "select_personas" ON public.personas;
 CREATE POLICY "select_personas" ON public.personas 
   FOR SELECT TO authenticated 
   USING (user_id = auth.uid() OR is_public = true);
 
 -- Users can only insert their own personas
+DROP POLICY IF EXISTS "insert_personas" ON public.personas;
 CREATE POLICY "insert_personas" ON public.personas 
   FOR INSERT TO authenticated 
   WITH CHECK (user_id = auth.uid());
 
 -- Users can update their own personas
+DROP POLICY IF EXISTS "update_personas" ON public.personas;
 CREATE POLICY "update_personas" ON public.personas 
   FOR UPDATE TO authenticated 
   USING (user_id = auth.uid()) 
   WITH CHECK (user_id = auth.uid());
 
 -- Users can delete their own personas
+DROP POLICY IF EXISTS "delete_personas" ON public.personas;
 CREATE POLICY "delete_personas" ON public.personas 
   FOR DELETE TO authenticated 
   USING (user_id = auth.uid());

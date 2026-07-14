@@ -35,18 +35,20 @@ CREATE TABLE IF NOT EXISTS public.user_violations (
 -- Index for quick lookups
 CREATE INDEX IF NOT EXISTS idx_user_violations_user_id ON public.user_violations(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_violations_unacknowledged ON public.user_violations(user_id) WHERE acknowledged = false;
-CREATE INDEX IF NOT EXISTS idx_user_violations_active_suspension ON public.user_violations(user_id) WHERE violation_level >= 3 AND (expires_at IS NULL OR expires_at > now());
+CREATE INDEX IF NOT EXISTS idx_user_violations_active_suspension ON public.user_violations(user_id) WHERE violation_level >= 3;
 
 -- Enable RLS
 ALTER TABLE public.user_violations ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can view their own violations
+DROP POLICY IF EXISTS "Users can view their own violations" ON public.user_violations;
 CREATE POLICY "Users can view their own violations" 
   ON public.user_violations FOR SELECT 
   TO authenticated 
   USING (auth.uid() = user_id);
 
 -- Policy: Users can update their own violations ONLY to acknowledge them
+DROP POLICY IF EXISTS "Users can acknowledge their own violations" ON public.user_violations;
 CREATE POLICY "Users can acknowledge their own violations" 
   ON public.user_violations FOR UPDATE 
   TO authenticated 
@@ -57,6 +59,7 @@ CREATE POLICY "Users can acknowledge their own violations"
 -- so we don't need a public INSERT policy for users.
 
 -- Trigger to update `updated_at` on user_violations
+DROP TRIGGER IF EXISTS set_user_violations_updated_at ON public.user_violations;
 CREATE TRIGGER set_user_violations_updated_at
   BEFORE UPDATE ON public.user_violations
   FOR EACH ROW
