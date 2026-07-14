@@ -709,7 +709,7 @@ export default function CommunityDetailPage() {
                     </div>
                     {collab.user_id !== user?.id ? (
                       <button
-                        onClick={() => handleApplyCollaboration(collab.role_needed, collab.title, collab.user_id, collab.profiles?.username)}
+                        onClick={() => handleApplyCollaboration(collab.role_needed, collab.title, collab.user_id, collab.profiles?.username || '')}
                         className="text-xs btn-primary py-1 px-3"
                       >
                         Apply

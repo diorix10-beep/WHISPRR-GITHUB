@@ -18,6 +18,8 @@ import { Avatar } from '../components/common/Avatar';
 import { WhisperCard } from '../components/feed/WhisperCard';
 import { EmptyState } from '../components/common/EmptyState';
 import { LoadingSkeleton, WhisperSkeleton } from '../components/common/LoadingSkeleton';
+const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+const chimeraUrl = isLocalhost ? 'http://localhost:5174' : 'https://chimera.whisprr.xyz';
 
 type SearchTab = 'users' | 'communities' | 'interests' | 'stories' | 'characters' | 'worlds' | 'lorebooks';
 

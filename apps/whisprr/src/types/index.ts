@@ -88,6 +88,10 @@ export interface Whisper {
   profiles?: Profile;
   reactions?: Reaction[];
   comment_count?: number;
+  is_pinned?: boolean;
+  is_removed?: boolean;
+  removed_by?: string | null;
+  removed_at?: string | null;
 }
 
 export interface Reaction {

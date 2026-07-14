@@ -1,7 +1,7 @@
 import { useState, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Heart, Flame, Sparkles, Trash2, Share2, Bookmark, ExternalLink, Briefcase, BookOpen, Globe, Compass, Activity, Pin, EyeOff, MoreVertical } from 'lucide-react';
+import { Heart, Flame, Sparkles, Trash2, Share2, Bookmark, ExternalLink, Briefcase, BookOpen, Globe, Compass, Activity, Pin, EyeOff, MoreVertical, ShieldAlert, VolumeX, UserMinus } from 'lucide-react';
 import { ModerationModal } from '../modals/ModerationModal';
 import { ShareCreationModal } from '../modals/ShareCreationModal';
 import { motion } from 'framer-motion';
@@ -354,16 +354,17 @@ export const WhisperCard = memo(function WhisperCard({
       );
     }
 
-    // 3. Check for Story: [Story: Title | Summary | CoverURL]
-    const storyRegex = /\[Story:\s*([^|]+)\s*\|\s*([^|]+)\s*(?:\|\s*([^\]]+))?\]/i;
+    // 3. Check for Story: [Story: Title | Summary | CoverURL | StoryID]
+    const storyRegex = /\[Story:\s*([^|]+)\s*\|\s*([^|]+)\s*(?:\|\s*([^|]*)\s*(?:\|\s*([^\]]+))?)?\]/i;
     const storyMatch = content.match(storyRegex);
     if (storyMatch) {
       const title = storyMatch[1].trim();
       const summary = storyMatch[2].trim();
       const coverUrl = storyMatch[3] ? storyMatch[3].trim() : null;
+      const storyId = storyMatch[4] ? storyMatch[4].trim() : null;
       return (
         <div className="mb-4 p-5 bg-white dark:bg-warm-850 rounded-2xl border border-warm-100 dark:border-warm-800 shadow-sm">
-          {coverUrl && (
+          {coverUrl && coverUrl !== "" && (
             <img src={coverUrl} alt={title} className="w-full h-32 object-cover rounded-xl mb-4" />
           )}
           <h4 className="font-serif text-lg font-bold text-warm-900 dark:text-white mb-2 flex items-center gap-1.5">
@@ -371,7 +372,7 @@ export const WhisperCard = memo(function WhisperCard({
           </h4>
           <p className="text-sm text-warm-650 dark:text-warm-350 leading-relaxed font-serif mb-3">{summary}</p>
           <a
-            href={`${chimeraUrl}/plots`}
+            href={storyId ? `${chimeraUrl}/story/${storyId}` : `${chimeraUrl}/`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-xs font-bold text-primary-500 hover:underline"
@@ -590,7 +591,7 @@ export const WhisperCard = memo(function WhisperCard({
             >
               {isOwnWhisper ? (
                 <button
-                  onClick={(e) => { setShowDropdown(false); handleDelete(e); }}
+                  onClick={(e) => { setShowDropdown(false); handleDelete(); }}
                   disabled={isDeleting}
                   className="w-full text-left px-4 py-2 text-xs font-semibold text-red-650 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors flex items-center gap-2"
                 >
