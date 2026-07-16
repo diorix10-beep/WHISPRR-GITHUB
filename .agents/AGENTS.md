@@ -1031,3 +1031,15 @@ As the decoupling progresses, no business logic or application-specific feature 
 - **`packages/utils`**: Core generic helper logic (e.g. date formatting, string trimmers).
 
 All application-specific features (e.g., Communities inside WHISPRR, Character/World Studio inside CHIMERA) must remain contained within their respective apps. Avoid coupling business features together in shared modules.
+
+====================================================
+RULE 51 — CENTRALIZED ECOSYSTEM AUTHENTICATION
+====================================================
+
+Authentication is centralized in WHISPRR and shared across the ecosystem via Supabase Auth.
+- Every user account must originate in WHISPRR.
+- WHISPRR is the ecosystem's sole identity provider.
+- A WHISPRR account grants access to both WHISPRR and CHIMERA using the same credentials.
+- CHIMERA must never create standalone user accounts or host registration flows.
+- If a visitor without an account attempts to register from CHIMERA, they must be redirected to the WHISPRR registration flow. Once registration is complete, they can immediately sign in to CHIMERA using the same credentials.
+- There must never be a "CHIMERA-only" account.
