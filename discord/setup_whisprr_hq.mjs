@@ -22,6 +22,15 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import { Client, GatewayIntentBits, PermissionsBitField, ChannelType, EmbedBuilder } from 'discord.js';
+import { dispatchToDiscord } from './webhook_dispatcher.mjs';
+
+// Helper to send message via webhook with proper identity override, falling back to standard channel.send if not configured
+async function sendEmbed(identityKey, channel, embedBuilder) {
+  const res = await dispatchToDiscord(identityKey, { embeds: [embedBuilder] });
+  if (!res.success) {
+    await channel.send({ embeds: [embedBuilder] });
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIGURATION — Set these before running
@@ -83,7 +92,7 @@ const CATEGORIES = [
     channels: [
       { name: '👋│welcome',          type: 'text',   topic: 'Welcome to WHISPRR HQ! Start your journey here.',                     readonly: true },
       { name: '📜│rules',            type: 'text',   topic: 'Community guidelines and server rules.',                               readonly: true },
-      { name: '🎯│get-roles',        type: 'text',   topic: 'Select your roles, country, and interests.',                           readonly: true },
+      { name: '🎯│get-roles',        type: 'text',   topic: 'Select your roles and country spaces.',                                readonly: true },
       { name: '❓│faq',              type: 'text',   topic: 'Frequently asked questions about WHISPRR.',                            readonly: true },
       { name: '🔗│links',            type: 'text',   topic: 'Official WHISPRR links, website, and resources.',                      readonly: true },
     ],
@@ -148,12 +157,13 @@ const CATEGORIES = [
     ],
   },
   {
-    name: '🤖 AI & FUTURE',
+    name: '🤖 CHIMERA CREATION',
     visibility: 'public',
     channels: [
-      { name: '🤖│ai-discussion',    type: 'text',   topic: 'Discuss AI characters, companions, and the future of AI on WHISPRR.',  readonly: false },
-      { name: '🧠│ai-feedback',      type: 'text',   topic: 'Share your feedback on AI features and prototypes.',                   readonly: false },
-      { name: '🔮│future-vision',    type: 'text',   topic: 'What should WHISPRR become? Dream big.',                               readonly: false },
+      { name: '🤖│ai-characters',    type: 'text',   topic: 'Share, discuss, and test your custom AI characters and personas.',     readonly: false },
+      { name: '🗺️│world-studio',     type: 'text',   topic: 'Discuss worldbuilding, lorebooks, and custom maps.',                   readonly: false },
+      { name: '✍️│story-studio',     type: 'text',   topic: 'Brainstorm plots, collaborate on stories, and share prompts.',         readonly: false },
+      { name: '🧠│chimera-feedback',  type: 'text',   topic: 'Share feedback on CHIMERA models, studio tools, and UX.',              readonly: false },
     ],
   },
   {
@@ -239,17 +249,19 @@ const COUNTRY_ROLES = [
 function buildWelcomeEmbed() {
   return new EmbedBuilder()
     .setColor(0xC96059)
-    .setTitle('✨ Welcome to WHISPRR HQ')
+    .setTitle('✨ Welcome to the WHISPRR Ecosystem')
     .setDescription(
-      `**Where connections feel real.**\n\n` +
-      `Welcome to the official community of WHISPRR — the human-centered social platform built in public.\n\n` +
-      `We're building a healthier social web, and you're part of the journey.`
+      `**WHISPRR is the Home of Creators.**\n\n` +
+      `This is the official community hub for the entire WHISPRR and CHIMERA ecosystem.\n\n` +
+      `• **WHISPRR** is where creations live, creators build profiles, and connect with their audience.\n` +
+      `• **CHIMERA** is our AI Creation Studio, where creators build AI characters, worlds, lorebooks, and stories.\n\n` +
+      `One WHISPRR account provides seamless access to both platforms.`
     )
     .addFields(
-      { name: '🚀 Get Started', value: '1. Read the <#RULES> channel\n2. Grab your roles in <#GET_ROLES>\n3. Say hi in <#INTRODUCTIONS>\n4. Explore the roadmap in <#ROADMAP>', inline: false },
-      { name: '🔗 Official Links', value: '[WHISPRR Platform](https://whisprr.xyz) • [Public Website](https://whisprr.xyz) • [GitHub](https://github.com/diorix10-beep/WHISPRR-GITHUB)', inline: false },
+      { name: '🚀 Get Started', value: '1. Read the <#rules> channel\n2. Grab your country roles in <#get-roles>\n3. Say hi in <#introductions>\n4. Explore our roadmap in <#roadmap>', inline: false },
+      { name: '🔗 Official Links', value: '[WHISPRR Platform](https://whisprr.xyz) • [GitHub](https://github.com/diorix10-beep/WHISPRR-GITHUB)', inline: false },
     )
-    .setFooter({ text: 'WHISPRR HQ — Built in public since 2026' })
+    .setFooter({ text: 'WHISPRR & CHIMERA — Built in public since 2026' })
     .setTimestamp();
 }
 
@@ -278,14 +290,14 @@ function buildRulesEmbed() {
 function buildLinksEmbed() {
   return new EmbedBuilder()
     .setColor(0xC96059)
-    .setTitle('🔗 Official WHISPRR Links')
+    .setTitle('🔗 Official Ecosystem Links')
     .setDescription('All official links in one place.')
     .addFields(
-      { name: '🌐 Platform', value: '[whisprr.xyz](https://whisprr.xyz)', inline: true },
-      { name: '🛣️ Roadmap', value: '[Building WHISPRR](https://whisprr.xyz/building)', inline: true },
-      { name: '💻 GitHub', value: '[WHISPRR-GITHUB](https://github.com/diorix10-beep/WHISPRR-GITHUB)', inline: true },
+      { name: '🌐 WHISPRR Social', value: '[whisprr.xyz](https://whisprr.xyz)', inline: true },
+      { name: '🤖 CHIMERA Studio', value: '[chimera.whisprr.xyz](https://chimera.whisprr.xyz)', inline: true },
+      { name: '💻 GitHub Monorepo', value: '[WHISPRR-GITHUB](https://github.com/diorix10-beep/WHISPRR-GITHUB)', inline: true },
     )
-    .setFooter({ text: 'WHISPRR — Where connections feel real.' });
+    .setFooter({ text: 'WHISPRR × CHIMERA — The Ecosystem of Creators' });
 }
 
 function buildFaqEmbed() {
@@ -293,12 +305,13 @@ function buildFaqEmbed() {
     .setColor(0xC96059)
     .setTitle('❓ Frequently Asked Questions')
     .addFields(
-      { name: 'What is WHISPRR?', value: 'WHISPRR is a human-centered social platform designed for genuine conversations and meaningful connections — not engagement farming.', inline: false },
-      { name: 'Is WHISPRR free?', value: 'Yes. WHISPRR is free to use. We don\'t sell ads, track behavior, or monetize your attention.', inline: false },
-      { name: 'How can I join the beta?', value: 'Apply through our Beta Program on the platform, or ask in #beta-feedback.', inline: false },
+      { name: 'What is WHISPRR?', value: 'WHISPRR is the Home of Creators — a premium, secure social platform where creators can build profiles, publish stories, create communities, and connect with their audience.', inline: false },
+      { name: 'What is CHIMERA?', value: 'CHIMERA is the AI Creation Studio of the ecosystem. It houses our AI Character Studio, World Studio, Lore Studio, and Story Studio for writing, AI-assisted roleplay, and collaborative creations.', inline: false },
+      { name: 'How do accounts work across both platforms?', value: 'A single WHISPRR account grants access to both WHISPRR and CHIMERA. CHIMERA does not host standalone platform accounts; WHISPRR remains the central identity provider.', inline: false },
+      { name: 'Is the ecosystem free?', value: 'Yes! The free experience is designed to be fully functional and enjoyable. Advanced creative tools or larger context memories will eventually be offered as premium features via WHISPRR+.', inline: false },
+      { name: 'How can I join the beta?', value: 'Apply through the Beta Program on our platform, or ask in #beta-feedback.', inline: false },
       { name: 'Can I contribute?', value: 'Absolutely! Share ideas in #ideas, report bugs in #bug-reports, or request features in #feature-requests.', inline: false },
-      { name: 'Is WHISPRR open source?', value: 'WHISPRR is built in public. You can follow development on GitHub and here on Discord.', inline: false },
-      { name: 'What are Country Spaces?', value: 'Country Spaces are home-country feeds where you connect with people from your region first, then explore globally.', inline: false },
+      { name: 'What are Country Spaces?', value: 'Country Spaces are Regional hubs on WHISPRR that allow users to connect with creators and friends from their specific region first, then expand globally.', inline: false },
     )
     .setFooter({ text: 'More questions? Ask in #help!' });
 }
@@ -332,7 +345,7 @@ async function setupWhisprrHQ() {
   console.log('━━━ STEP 1: Server Configuration ━━━');
   await guild.edit({
     name: 'WHISPRR HQ',
-    description: 'Official WHISPRR Community ✨ Building a healthier social web. 🌍 Built in public. 💬 Where connections feel real.',
+    description: 'Official WHISPRR Community ✨ WHISPRR is the Home of Creators. 🤖 CHIMERA is the AI Creation Studio. 🌍 Built in public.',
   });
   console.log('  ✅ Server name set to "WHISPRR HQ"');
   console.log('  ✅ Server description updated\n');
@@ -526,19 +539,19 @@ async function setupWhisprrHQ() {
   const linksChannel   = channelMap.get('🔗│links');
 
   if (welcomeChannel) {
-    await welcomeChannel.send({ embeds: [buildWelcomeEmbed()] });
+    await sendEmbed('guide', welcomeChannel, buildWelcomeEmbed());
     console.log('  ✅ Welcome embed posted');
   }
   if (rulesChannel) {
-    await rulesChannel.send({ embeds: [buildRulesEmbed()] });
+    await sendEmbed('guide', rulesChannel, buildRulesEmbed());
     console.log('  ✅ Rules embed posted');
   }
   if (faqChannel) {
-    await faqChannel.send({ embeds: [buildFaqEmbed()] });
+    await sendEmbed('guide', faqChannel, buildFaqEmbed());
     console.log('  ✅ FAQ embed posted');
   }
   if (linksChannel) {
-    await linksChannel.send({ embeds: [buildLinksEmbed()] });
+    await sendEmbed('guide', linksChannel, buildLinksEmbed());
     console.log('  ✅ Links embed posted');
   }
 
@@ -548,17 +561,16 @@ async function setupWhisprrHQ() {
     const roadmapEmbed = new EmbedBuilder()
       .setColor(0xC96059)
       .setTitle('🗺️ WHISPRR Ecosystem Roadmap')
-      .setDescription('Track where WHISPRR is going — from features being built today to the long-term vision.')
+      .setDescription('Track where WHISPRR and CHIMERA are going — from active priorities to future expansion.')
       .addFields(
-        { name: '✅ Released', value: 'Authentication • Profiles • Posts • Communities • DMs • Group Chats • Notifications • Discovery', inline: false },
-        { name: '⏳ In Progress', value: 'Badge System • WHISPRR HQ • Country Spaces • Discovery Algorithm • Public Website • Trust Center • Privacy Center', inline: false },
-        { name: '🧪 Testing', value: 'Founder Mode • Country Recommendations • AI Character Prototype', inline: false },
-        { name: '🔵 Planned', value: 'AI Characters • Character Memory • Voice Spaces • Creator Profiles • Community Events • Translation', inline: false },
-        { name: '✨ Future Vision', value: 'Native iOS & Android • Creator Monetization • Public API & SDK • AI Worlds • Organization Accounts', inline: false },
+        { name: '✅ Core Platform Status', value: 'Authentication • Profiles & Bio • Feed & Posting • Communities (Icon & Image Uploads) • Voice Rooms • Group Chats & DMs • Notifications', inline: false },
+        { name: '🚀 Active Priorities', value: '1. Rebuilding Discovery flow to focus on creator-first recommendations (replacing interest recommendations)\n2. WHISPRR ↔ CHIMERA single identity/SSO integration\n3. Full WHISPRR Brand Redesign (Home of Creators)\n4. Internal operating center (Founder Dashboard)\n5. Rebuilding the Public Website & Founder Journal', inline: false },
+        { name: '🧪 Beta Testing Stage', value: 'Private Beta (staged rollouts for 10 → 25 → 100 creators to test stability & gather creator feedback).', inline: false },
+        { name: '🔵 Postponed / Future Phases', value: 'AI Characters & Memory (CHIMERA Studio) • Voice Spaces • Creator Monetization & Marketplace • Native iOS & Android apps • Public API', inline: false },
       )
-      .setFooter({ text: 'Full roadmap at whisprr.xyz/building' })
+      .setFooter({ text: 'Ecosystem Roadmap — Q3 2026' })
       .setTimestamp();
-    await roadmapChannel.send({ embeds: [roadmapEmbed] });
+    await sendEmbed('roadmap', roadmapChannel, roadmapEmbed);
     console.log('  ✅ Roadmap embed posted');
   }
 
@@ -578,7 +590,7 @@ async function setupWhisprrHQ() {
         '*Staff roles are assigned by administrators.*'
       )
       .setFooter({ text: 'A WHISPRR bot will automate role assignment in the future.' });
-    await getRolesChannel.send({ embeds: [rolesEmbed] });
+    await sendEmbed('guide', getRolesChannel, rolesEmbed);
     console.log('  ✅ Role selection embed posted');
   }
 

@@ -12,7 +12,9 @@
 import fs from 'fs';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
-import { FAMILY_ROSTER, getMemberById } from '../src/core/family-roster.ts';
+import { TwitterApi } from 'twitter-api-v2';
+import { FAMILY_ROSTER, getMemberById } from '../oracle-verity/src/core/family-roster.ts';
+import { dispatchToDiscord } from './webhook_dispatcher.mjs';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. ENVIRONMENT VARIABLES LOADER
@@ -67,6 +69,15 @@ class XClient {
       console.log('⚠️ [X Client] Missing X credentials. Running in SIMULATOR mode.');
       this.isDryRun = true;
     }
+
+    if (this.isConfigured) {
+      this.client = new TwitterApi({
+        appKey: X_API_KEY,
+        appSecret: X_API_KEY_SECRET,
+        accessToken: X_ACCESS_TOKEN,
+        accessSecret: X_ACCESS_TOKEN_SECRET,
+      });
+    }
   }
 
   async postTweet(content) {
@@ -81,10 +92,11 @@ class XClient {
 
     try {
       console.log(`   🚀 [API] Sending HTTP POST request to X API v2 /tweets...`);
-      const mockId = `live_tweet_${Math.floor(Math.random() * 1e12)}`;
-      return { id: mockId, success: true };
+      const response = await this.client.v2.tweet(content);
+      console.log(`   ✅ [API] Tweet posted successfully! ID: ${response.data.id}`);
+      return { id: response.data.id, success: true };
     } catch (err) {
-      console.error('   ❌ [X Client] API Request failed:', err.message);
+      console.error('   ❌ [X Client] API Request failed:', err.message || err);
       throw err;
     }
   }
@@ -99,39 +111,110 @@ class XClient {
       return { id: mockId, success: true };
     }
 
-    return { id: `live_reply_${Math.floor(Math.random() * 1e12)}`, success: true };
+    try {
+      console.log(`   🚀 [API] Sending HTTP POST request to X API v2 /tweets (reply)...`);
+      const response = await this.client.v2.tweet(content, { reply: { in_reply_to_tweet_id: tweetId } });
+      console.log(`   ✅ [API] Reply posted successfully! ID: ${response.data.id}`);
+      return { id: response.data.id, success: true };
+    } catch (err) {
+      console.error('   ❌ [X Client] API Reply Request failed:', err.message || err);
+      throw err;
+    }
   }
 
   async fetchMentions() {
     console.log(`🔍 [X Client] Fetching notifications and mentions...`);
-    // Simulated mentions list (mocking X feed activity)
-    return [
-      {
-        id: 'mention_101',
-        author: '@dev_builder',
-        text: 'What makes @WHISPRRHQ different from other messaging tools? Is it actually secure?',
-        created_at: new Date(Date.now() - 1000 * 60 * 15).toISOString() // 15 mins ago
-      },
-      {
-        id: 'mention_102',
-        author: '@meta_creator',
-        text: 'Just read the journal from Anthony. Loving the vision of the AI Family! Who is in charge of strategic planning?',
-        created_at: new Date(Date.now() - 1000 * 60 * 45).toISOString() // 45 mins ago
+
+    if (this.isDryRun) {
+      return [
+        {
+          id: 'mention_101',
+          author: '@dev_builder',
+          text: 'What makes @WHISPRRHQ different from other messaging tools? Is it actually secure?',
+          created_at: new Date(Date.now() - 1000 * 60 * 15).toISOString()
+        },
+        {
+          id: 'mention_102',
+          author: '@meta_creator',
+          text: 'Just read the journal from Anthony. Loving the vision of the AI Family! Who is in charge of strategic planning?',
+          created_at: new Date(Date.now() - 1000 * 60 * 45).toISOString()
+        }
+      ];
+    }
+
+    try {
+      const me = await this.client.v2.me();
+      const mentions = await this.client.v2.userMentionTimeline(me.data.id, {
+        max_results: 5,
+        'tweet.fields': ['created_at', 'author_id']
+      });
+
+      if (!mentions || !mentions.data) {
+        return [];
       }
-    ];
+
+      return mentions.data.map(t => ({
+        id: t.id,
+        author: `@${t.author_id}`,
+        text: t.text,
+        created_at: t.created_at || new Date().toISOString()
+      }));
+    } catch (err) {
+      console.error('   ⚠️ [X Client] Failed to fetch mentions (falling back to simulator):', err.message || err);
+      // Fall back to simulator mentions so system is still interactive under Free Tier limits
+      return [
+        {
+          id: 'mention_101',
+          author: '@dev_builder',
+          text: 'What makes @WHISPRRHQ different from other messaging tools? Is it actually secure?',
+          created_at: new Date(Date.now() - 1000 * 60 * 15).toISOString()
+        },
+        {
+          id: 'mention_102',
+          author: '@meta_creator',
+          text: 'Just read the journal from Anthony. Loving the vision of the AI Family! Who is in charge of strategic planning?',
+          created_at: new Date(Date.now() - 1000 * 60 * 45).toISOString()
+        }
+      ];
+    }
   }
 
   async searchTweets(query) {
     console.log(`🔍 [X Client] Searching for keyword: "${query}"...`);
-    // Simulated search results
-    return [
-      {
-        id: `search_tweet_${Math.floor(Math.random() * 100000)}`,
-        author: '@tech_pioneer',
-        text: 'Is anyone working on a voice-first social space that actually prioritizes relationship dynamics?',
-        created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString()
+
+    if (this.isDryRun) {
+      return [
+        {
+          id: `search_tweet_${Math.floor(Math.random() * 100000)}`,
+          author: '@tech_pioneer',
+          text: 'Is anyone working on a voice-first social space that actually prioritizes relationship dynamics?',
+          created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString()
+        }
+      ];
+    }
+
+    try {
+      const results = await this.client.v2.search(query, { max_results: 5, 'tweet.fields': ['created_at', 'author_id'] });
+      if (!results || !results.data) {
+        return [];
       }
-    ];
+      return results.data.map(t => ({
+        id: t.id,
+        author: `@${t.author_id}`,
+        text: t.text,
+        created_at: t.created_at || new Date().toISOString()
+      }));
+    } catch (err) {
+      console.error('   ⚠️ [X Client] Failed to search tweets (falling back to simulator):', err.message || err);
+      return [
+        {
+          id: `search_tweet_${Math.floor(Math.random() * 100000)}`,
+          author: '@tech_pioneer',
+          text: 'Is anyone working on a voice-first social space that actually prioritizes relationship dynamics?',
+          created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString()
+        }
+      ];
+    }
   }
 }
 
@@ -155,8 +238,13 @@ ${member.traits.map(t => `- ${t}`).join('\n')}
 
 Role Description: ${roleDescription}
 
-ABOUT WHISPRR:
-WHISPRR is a premium, secure, human-centered social platform built in public. It focuses on genuine community, relationship dynamics, and privacy-first messaging. The platform integrates a family of active AI companions (the Verity Family) who serve as co-founders, guardians, developers, and ambassadors to help the community and platform thrive.
+ABOUT WHISPRR & CHIMERA:
+WHISPRR is the Home of Creators — a premium, secure, creator-first social platform for sharing stories, profiles, and communities.
+CHIMERA is the AI Creation Studio within the ecosystem where creators build AI characters, worlds, lorebooks, and participate in collaborative roleplay.
+Ecosystem Rules:
+1. One WHISPRR account automatically grants access to both WHISPRR and CHIMERA.
+2. CHIMERA does not create independent platform accounts; WHISPRR remains the central identity provider for the entire ecosystem.
+The Verity Family is a roster of active AI companions (Iris, Oracle, Atlas, Athena, Aegis, Whisprr) who serve as co-founders, strategists, researchers, and guardians to help the community and platform thrive.
 
 X BRAND ENGAGEMENT GUIDELINES:
 1. You are NOT an automation bot; you are an AI Human and a key member of WHISPRR. Speak with empathy, warmth, and strategic intelligence.
@@ -331,12 +419,33 @@ async function processApprovedDrafts(supabase, x) {
       console.log(`🚀 Publishing approved draft: "${draft.content}"`);
       
       let postRes;
-      if (draft.ref_type === 'reply' && draft.ref_id) {
-        // Reply to tweet
-        postRes = await x.postReply(draft.ref_id, draft.content);
+      if (draft.platform === 'discord') {
+        // Dispatch to Discord via Webhook
+        let identityKey = 'news';
+        const type = draft.ref_type?.toLowerCase() || '';
+        
+        if (type.includes('changelog') || type.includes('update')) identityKey = 'updates';
+        else if (type.includes('roadmap')) identityKey = 'roadmap';
+        else if (type.includes('journal')) identityKey = 'journal';
+        else if (type.includes('poll')) identityKey = 'polls';
+        else if (type.includes('beta')) identityKey = 'beta';
+        else if (type.includes('guide') || type.includes('welcome') || type.includes('rules')) identityKey = 'guide';
+        
+        console.log(`📡 Dispatching Discord announcement using identity "${identityKey}"...`);
+        const dispatchRes = await dispatchToDiscord(identityKey, { content: draft.content });
+        postRes = {
+          success: dispatchRes.success,
+          id: dispatchRes.success ? 'webhook_post' : null
+        };
       } else {
-        // Original tweet
-        postRes = await x.postTweet(draft.content);
+        // Original X (Twitter) logic
+        if (draft.ref_type === 'reply' && draft.ref_id) {
+          // Reply to tweet
+          postRes = await x.postReply(draft.ref_id, draft.content);
+        } else {
+          // Original tweet
+          postRes = await x.postTweet(draft.content);
+        }
       }
 
       if (postRes.success) {
@@ -349,7 +458,7 @@ async function processApprovedDrafts(supabase, x) {
         // Insert into activity log
         await supabase.from('agent_activity_log').insert({
           agent_id: draft.agent_id,
-          platform: 'x',
+          platform: draft.platform || 'x',
           type: draft.ref_type || 'tweet',
           content: draft.content,
           external_id: postRes.id,
@@ -361,7 +470,7 @@ async function processApprovedDrafts(supabase, x) {
           .from('agent_objectives')
           .update({ status: 'completed' })
           .eq('agent_id', draft.agent_id)
-          .eq('description', `Publish ${draft.ref_type || 'update'} on X`);
+          .eq('description', `Publish ${draft.ref_type || 'update'} on ${draft.platform === 'discord' ? 'Discord' : 'X'}`);
       }
     }
   }
