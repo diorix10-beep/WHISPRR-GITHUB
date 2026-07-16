@@ -407,11 +407,7 @@ export default function ProfilePage() {
       };
 
       const favorites = {
-        ...(editForm.fav_artist ? { artist: editForm.fav_artist } : {}),
-        ...(editForm.fav_song ? { song: editForm.fav_song } : {}),
-        ...(editForm.fav_movie ? { movie: editForm.fav_movie } : {}),
         ...(editForm.fav_book ? { book: editForm.fav_book } : {}),
-        ...(editForm.fav_game ? { game: editForm.fav_game } : {}),
         ...(editForm.fav_quote ? { quote: editForm.fav_quote } : {}),
         ...(editForm.fav_hobby ? { hobby: editForm.fav_hobby } : {}),
       };
@@ -933,36 +929,20 @@ export default function ProfilePage() {
 
             {/* Favorites Edit */}
             <div>
-              <label className="block text-sm font-semibold text-warm-900 dark:text-warm-50 mb-3">Your Favorite Things</label>
+              <label className="block text-sm font-semibold text-warm-900 dark:text-warm-50 mb-3">Creative Favorites</label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <div>
-                   <label className="block text-xs font-semibold text-warm-600 dark:text-warm-400 mb-1">Favorite Artist</label>
-                   <input type="text" value={editForm.fav_artist} onChange={e => setEditForm(prev => ({ ...prev, fav_artist: e.target.value }))} className="input-field" placeholder="Artist or Band" />
+                    <label className="block text-xs font-semibold text-warm-600 dark:text-warm-400 mb-1">Favorite Book or Story</label>
+                    <input type="text" value={editForm.fav_book} onChange={e => setEditForm(prev => ({ ...prev, fav_book: e.target.value }))} className="input-field" placeholder="Book or Story title" />
                  </div>
                  <div>
-                   <label className="block text-xs font-semibold text-warm-600 dark:text-warm-400 mb-1">Favorite Song</label>
-                   <input type="text" value={editForm.fav_song} onChange={e => setEditForm(prev => ({ ...prev, fav_song: e.target.value }))} className="input-field" placeholder="Song Name" />
-                 </div>
-                 <div>
-                   <label className="block text-xs font-semibold text-warm-600 dark:text-warm-400 mb-1">Favorite Movie</label>
-                   <input type="text" value={editForm.fav_movie} onChange={e => setEditForm(prev => ({ ...prev, fav_movie: e.target.value }))} className="input-field" placeholder="Movie Title" />
-                 </div>
-                 <div>
-                   <label className="block text-xs font-semibold text-warm-600 dark:text-warm-400 mb-1">Favorite Book</label>
-                   <input type="text" value={editForm.fav_book} onChange={e => setEditForm(prev => ({ ...prev, fav_book: e.target.value }))} className="input-field" placeholder="Book Title" />
-                 </div>
-                 <div>
-                   <label className="block text-xs font-semibold text-warm-600 dark:text-warm-400 mb-1">Favorite Game</label>
-                   <input type="text" value={editForm.fav_game} onChange={e => setEditForm(prev => ({ ...prev, fav_game: e.target.value }))} className="input-field" placeholder="Game Name" />
-                 </div>
-                 <div>
-                   <label className="block text-xs font-semibold text-warm-600 dark:text-warm-400 mb-1">Favorite Hobby</label>
-                   <input type="text" value={editForm.fav_hobby} onChange={e => setEditForm(prev => ({ ...prev, fav_hobby: e.target.value }))} className="input-field" placeholder="Hobby (e.g. Baking, Photography)" />
+                    <label className="block text-xs font-semibold text-warm-600 dark:text-warm-400 mb-1">Creative Inspiration</label>
+                    <input type="text" value={editForm.fav_hobby} onChange={e => setEditForm(prev => ({ ...prev, fav_hobby: e.target.value }))} className="input-field" placeholder="e.g. Cyberpunk, Mythologies, Ghibli" />
                  </div>
               </div>
               <div className="mt-3">
                  <label className="block text-xs font-semibold text-warm-600 dark:text-warm-400 mb-1">Favorite Quote</label>
-                 <input type="text" value={editForm.fav_quote} onChange={e => setEditForm(prev => ({ ...prev, fav_quote: e.target.value }))} className="input-field" placeholder="A quote that inspires you" />
+                 <input type="text" value={editForm.fav_quote} onChange={e => setEditForm(prev => ({ ...prev, fav_quote: e.target.value }))} className="input-field" placeholder="A quote that inspires your creativity" />
               </div>
             </div>
             
@@ -1333,42 +1313,18 @@ export default function ProfilePage() {
                 {Object.keys(favorites).length > 0 && (
                   <div className="pt-4 border-t border-warm-100 dark:border-warm-800">
                     <h3 className="text-xs font-semibold text-warm-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                      <Heart size={14} /> Favorites
+                      <Heart size={14} /> Creative Favorites
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
-                      {favorites.artist && (
-                        <div className="bg-warm-50/50 dark:bg-warm-900/20 p-3 rounded-xl border border-warm-100/30 dark:border-warm-800/30">
-                          <span className="block text-xs text-warm-500">Favorite Artist</span>
-                          <span className="font-semibold text-warm-800 dark:text-warm-200 text-sm mt-0.5 flex items-center gap-1.5"><Music size={14} className="text-primary-500 shrink-0" /> {favorites.artist}</span>
-                        </div>
-                      )}
-                      {favorites.song && (
-                        <div className="bg-warm-50/50 dark:bg-warm-900/20 p-3 rounded-xl border border-warm-100/30 dark:border-warm-800/30">
-                          <span className="block text-xs text-warm-500">Favorite Song</span>
-                          <span className="font-semibold text-warm-800 dark:text-warm-200 text-sm mt-0.5 flex items-center gap-1.5"><Music size={14} className="text-primary-500 shrink-0" /> {favorites.song}</span>
-                        </div>
-                      )}
-                      {favorites.movie && (
-                        <div className="bg-warm-50/50 dark:bg-warm-900/20 p-3 rounded-xl border border-warm-100/30 dark:border-warm-800/30">
-                          <span className="block text-xs text-warm-500">Favorite Movie</span>
-                          <span className="font-semibold text-warm-800 dark:text-warm-200 text-sm mt-0.5 flex items-center gap-1.5"><Tv size={14} className="text-primary-500 shrink-0" /> {favorites.movie}</span>
-                        </div>
-                      )}
                       {favorites.book && (
                         <div className="bg-warm-50/50 dark:bg-warm-900/20 p-3 rounded-xl border border-warm-100/30 dark:border-warm-800/30">
-                          <span className="block text-xs text-warm-500">Favorite Book</span>
+                          <span className="block text-xs text-warm-500">Favorite Book or Story</span>
                           <span className="font-semibold text-warm-800 dark:text-warm-200 text-sm mt-0.5 flex items-center gap-1.5"><HelpCircle size={14} className="text-primary-500 shrink-0" /> {favorites.book}</span>
-                        </div>
-                      )}
-                      {favorites.game && (
-                        <div className="bg-warm-50/50 dark:bg-warm-900/20 p-3 rounded-xl border border-warm-100/30 dark:border-warm-800/30">
-                          <span className="block text-xs text-warm-500">Favorite Game</span>
-                          <span className="font-semibold text-warm-800 dark:text-warm-200 text-sm mt-0.5 flex items-center gap-1.5"><Gamepad size={14} className="text-primary-500 shrink-0" /> {favorites.game}</span>
                         </div>
                       )}
                       {favorites.hobby && (
                         <div className="bg-warm-50/50 dark:bg-warm-900/20 p-3 rounded-xl border border-warm-100/30 dark:border-warm-800/30">
-                          <span className="block text-xs text-warm-500">Favorite Hobby</span>
+                          <span className="block text-xs text-warm-500">Creative Inspiration</span>
                           <span className="font-semibold text-warm-800 dark:text-warm-200 text-sm mt-0.5 flex items-center gap-1.5"><Sparkles size={14} className="text-primary-500 shrink-0" /> {favorites.hobby}</span>
                         </div>
                       )}

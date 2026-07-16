@@ -196,62 +196,71 @@ export interface VoiceRoom {
 }
 
 export const INTERESTS = [
-  'Music', 'Movies', 'TV Shows', 'Gaming', 'Technology',
-  'Fitness', 'Sports', 'Travel', 'Photography', 'Fashion',
-  'Food', 'Cooking', 'Coffee', 'Art', 'Books',
-  'Writing', 'Animals', 'Nature', 'Cars', 'Motorcycles',
-  'Business', 'Entrepreneurship', 'Content Creation', 'Social Media', 'Dating',
-  'Friendship', 'Nightlife', 'Festivals', 'Anime', 'Comics',
-  'K-Pop', 'Dancing', 'Languages', 'Shopping', 'Beauty',
-  'Self Improvement', 'Education',
+  // What do you create?
+  'Stories',
+  'AI Characters',
+  'Worlds',
+  'Lorebooks',
+  'Human-written fiction',
+  'AI-assisted writing',
+  'Roleplay',
+  'Worldbuilding',
+  // Why are you joining?
+  'Share my creations',
+  'Discover creators',
+  'Join communities',
+  'Find collaborators',
+  'Build friendships',
+  'Follow creative projects',
+  // Collaboration interests
+  'Writer',
+  'Editor',
+  'Worldbuilder (Collab)',
+  'Character Designer',
+  'Prompt Engineer',
+  'Lore Writer'
 ] as const;
 
 export type Interest = typeof INTERESTS[number];
 
 export const PERSONALITY_BADGES = [
-  '🌙 Calm',
-  '✨ Dreamer',
-  '☕ Night Owl',
-  '🎧 Music Lover',
-  '📚 Curious',
-  '🎮 Gamer',
-  '💜 Empathetic',
-  '🌱 Optimistic',
-  '🌊 Introvert',
-  '🌞 Early Bird',
-  '🎨 Creative',
-  '✈️ Explorer',
-  '🧘 Mindful',
-  '💡 Innovator',
-  '🌱 Plant Parent',
-  '🍳 Foodie',
-  '🏋️ Fitness Fanatic',
-  '🎬 Film Buff'
+  '✍️ Writer',
+  '🌍 Worldbuilder',
+  '🎭 AI Roleplay Creator',
+  '📖 Storyteller',
+  '🧙 Character Designer',
+  '📚 Lore Writer',
+  '🎨 Artist',
+  '⚡ Prompt Engineer',
+  '💬 Community Builder',
+  '🦄 Creative Spirit',
+  '🔮 Visionary',
+  '🛠️ Builder'
 ] as const;
 
 export type PersonalityBadge = typeof PERSONALITY_BADGES[number];
 
 export const PERSONAL_VALUES = [
-  'Kindness',
-  'Honesty',
-  'Curiosity',
-  'Growth',
-  'Respect',
-  'Creativity',
-  'Humor',
-  'Adventure'
+  'Originality',
+  'Collaboration',
+  'Inclusivity',
+  'Feedback',
+  'Imagination',
+  'Craftsmanship',
+  'Storytelling',
+  'Ecosystem Sync'
 ] as const;
 
 export type PersonalValue = typeof PERSONAL_VALUES[number];
 
 export const LOOKING_FOR_OPTIONS = [
-  'New Friends',
-  'Meaningful Conversations',
-  'Study Partners',
-  'Language Exchange',
-  'Gaming Friends',
-  'Creative Collaborators',
-  'Networking'
+  'Co-Writers',
+  'Editors',
+  'Beta Readers',
+  'Prompt Engineers',
+  'Worldbuilders',
+  'Character Designers',
+  'Friends & Collaborators'
 ] as const;
 
 export type LookingForOption = typeof LOOKING_FOR_OPTIONS[number];
