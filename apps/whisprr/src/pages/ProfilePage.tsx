@@ -1016,12 +1016,12 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Interests & Topics (Search, Add, Reorder) */}
+            {/* Creative Focus & Specialties (Search, Add, Reorder) */}
             <div>
               <label className="block text-sm font-semibold text-warm-900 dark:text-warm-50 mb-1">
-                Interests & Topics (Organize and Reorder)
+                Creative Focus & Specialties (Organize and Reorder)
               </label>
-              <p className="text-xs text-warm-500 mb-3">Add interests, search categories, and reorder to showcase what matters first.</p>
+              <p className="text-xs text-warm-500 mb-3">Add specialties, search genres, and reorder to showcase what you build first.</p>
               
               {/* Selected Interests list with Reorder & Remove controls */}
               <div className="space-y-2 mb-4 max-h-60 overflow-y-auto p-2 bg-warm-50 dark:bg-warm-900 rounded-xl">
@@ -1061,7 +1061,7 @@ export default function ProfilePage() {
               {/* Add Custom / Predefined Search */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <div>
-                   <label className="block text-xs font-semibold text-warm-600 dark:text-warm-400 mb-1">Search & Select Categories</label>
+                   <label className="block text-xs font-semibold text-warm-600 dark:text-warm-400 mb-1">Search & Select Specialties</label>
                    <div className="relative mb-2">
                      <Search size={16} className="absolute left-3 top-2.5 text-warm-400" />
                      <input 
@@ -1090,14 +1090,14 @@ export default function ProfilePage() {
                  </div>
 
                  <div>
-                   <label className="block text-xs font-semibold text-warm-600 dark:text-warm-400 mb-1">Add Custom Topic</label>
+                   <label className="block text-xs font-semibold text-warm-600 dark:text-warm-400 mb-1">Add Custom Tag</label>
                    <div className="flex gap-2">
                      <input 
                        type="text" 
                        value={customInterest} 
                        onChange={e => setCustomInterest(e.target.value)} 
                        className="input-field py-1.5 text-sm" 
-                       placeholder="e.g. Deep Physics, Indie Games" 
+                       placeholder="e.g. Grimdark, High Fantasy, Sci-Fi" 
                      />
                      <button 
                        onClick={() => handleInterestAdd(customInterest.trim())}
@@ -1337,10 +1337,10 @@ export default function ProfilePage() {
                   </div>
                 )}
 
-                {/* Topics / Interests */}
+                {/* Creative Focus */}
                 {profile.interests.length > 0 && (
                   <div className="pt-2 border-t border-warm-100 dark:border-warm-800">
-                    <h3 className="text-xs font-semibold text-warm-500 uppercase tracking-wider mb-3">Topics I Follow</h3>
+                    <h3 className="text-xs font-semibold text-warm-500 uppercase tracking-wider mb-3">My Creative Focus</h3>
                     <div className="flex flex-wrap gap-2">
                       {profile.interests.map((interest, idx) => (
                         <span key={`${interest}-${idx}`} className="px-3.5 py-1.5 rounded-full text-xs font-medium bg-warm-100 text-warm-750 dark:bg-warm-700 dark:text-warm-200 shadow-sm border border-warm-200/20">

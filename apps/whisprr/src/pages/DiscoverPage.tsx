@@ -8,13 +8,13 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useInterests } from '../contexts/InterestContext';
 import { supabase } from '../lib/supabase';
-import { INTERESTS } from '../types';
 import type { Profile, Community, Whisper, Reaction } from '../types';
 import { UserCard } from '../components/discover/UserCard';
 import { Avatar } from '../components/common/Avatar';
 import { WhisperCard } from '../components/feed/WhisperCard';
 import { EmptyState } from '../components/common/EmptyState';
 import { LoadingSkeleton, WhisperSkeleton } from '../components/common/LoadingSkeleton';
+import { CommunityAvatar } from '../components/communities/CommunityAvatar';
 
 const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
 const chimeraUrl = isLocalhost ? 'http://localhost:5174' : 'https://chimera.whisprr.xyz';
@@ -540,7 +540,6 @@ export default function DiscoverPage() {
                   <CreatorCard
                     key={p.user_id}
                     profile={p}
-                    currentInterests={profile.interests || []}
                     isFollowing={followingMap[p.user_id] || false}
                     onFollowToggle={() => handleFollowToggle(p.user_id)}
                     onClick={() => navigate(`/profile/${p.username}`)}
@@ -556,7 +555,7 @@ export default function DiscoverPage() {
               <SectionHeader
                 icon={<Sparkles size={16} className="text-primary-500" />}
                 title="Recommended For You"
-                subtitle="Creators who share your interests"
+                subtitle="Creators you might enjoy based on your activity"
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {recommendedCreators.map(p => (
@@ -707,18 +706,15 @@ function SectionHeader({
 
 function CreatorCard({
   profile: p,
-  currentInterests,
   isFollowing,
   onFollowToggle,
   onClick,
 }: {
   profile: Profile;
-  currentInterests: string[];
   isFollowing: boolean;
   onFollowToggle: () => void;
   onClick: () => void;
 }) {
-  const sharedCount = (p.interests || []).filter(i => currentInterests.includes(i)).length;
 
   return (
     <div className="flex-shrink-0 w-40 snap-start rounded-2xl bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 overflow-hidden hover:shadow-md hover:border-warm-300 dark:hover:border-warm-600 transition-all">
@@ -728,9 +724,9 @@ function CreatorCard({
           {p.display_name}
         </p>
         <p className="text-xs text-warm-500 truncate w-full text-center">@{p.username}</p>
-        {sharedCount > 0 && (
+        {p.creator_role_1 && (
           <p className="text-xs text-primary-600 dark:text-primary-400 mt-1 font-medium text-center">
-            {sharedCount} shared {sharedCount === 1 ? 'interest' : 'interests'}
+            {p.creator_role_1}
           </p>
         )}
       </div>
@@ -779,7 +775,7 @@ function CommunityRow({ community: c, onClick }: { community: CommunityWithCount
       onClick={onClick}
       className="w-full flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 hover:shadow-md hover:border-warm-300 dark:hover:border-warm-600 transition-all text-left"
     >
-      <span className="text-2xl flex-shrink-0">{c.emoji}</span>
+      <CommunityAvatar emoji={c.emoji} size="sm" />
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-warm-900 dark:text-warm-50 text-sm truncate">{c.name}</p>
         {c.description && <p className="text-xs text-warm-500 line-clamp-1">{c.description}</p>}

@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { LogOut, Moon, Sun, Lock, MessageSquare, User, Shield, Info, ExternalLink, Trash2, Download, Monitor, Heart, Hash, VolumeX, EyeOff, Loader2, Sliders } from 'lucide-react';
+import { LogOut, Moon, Sun, Lock, MessageSquare, User, Shield, Info, ExternalLink, Trash2, Download, Monitor, Heart, EyeOff, Loader2, Sliders } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
-import { INTERESTS } from '../types';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -188,37 +187,7 @@ export default function SettingsPage() {
     }
   };
 
-  const handleInterestToggle = async (interest: string) => {
-    if (!profile) return;
-    const current = profile.interests || [];
-    const updated = current.includes(interest)
-      ? current.filter(i => i !== interest)
-      : [...current, interest];
-    try {
-      await updateProfile({ interests: updated });
-      showToast(`${interest} ${current.includes(interest) ? 'removed' : 'added'}`, 'success');
-    } catch {
-      showToast('Failed to update interest', 'error');
-    }
-  };
 
-  const handleMuteInterest = async (interest: string) => {
-    if (!profile) return;
-    const current = profile.muted_interests || [];
-    const updated = current.includes(interest)
-      ? current.filter(i => i !== interest)
-      : [...current, interest];
-    let updatedFollowed = profile.interests || [];
-    if (!current.includes(interest)) {
-      updatedFollowed = updatedFollowed.filter(i => i !== interest);
-    }
-    try {
-      await updateProfile({ muted_interests: updated, interests: updatedFollowed });
-      showToast(`${interest} ${current.includes(interest) ? 'unmuted' : 'muted'}`, 'success');
-    } catch {
-      showToast('Failed to update muted topics', 'error');
-    }
-  };
 
   const handleUnmuteCommunity = async (commId: string) => {
     if (!profile) return;
@@ -542,59 +511,7 @@ export default function SettingsPage() {
             </button>
           </div>
 
-          {/* Followed Topics */}
-          <div className="bg-warm-50 dark:bg-warm-800 p-4 rounded-2xl space-y-3">
-            <div className="flex items-center gap-2">
-              <Hash size={16} className="text-primary-500" />
-              <p className="font-semibold text-warm-900 dark:text-warm-50">Followed Topics</p>
-            </div>
-            <p className="text-xs text-warm-500">Topics selected here are prioritized in your feed recommendations.</p>
-            <div className="flex flex-wrap gap-2">
-              {INTERESTS.map(topic => {
-                const isFollowing = (profile?.interests || []).includes(topic);
-                return (
-                  <button
-                    key={topic}
-                    onClick={() => handleInterestToggle(topic)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                      isFollowing
-                        ? 'bg-primary-500 text-white border-primary-500'
-                        : 'bg-white dark:bg-warm-700 text-warm-700 dark:text-warm-300 border-warm-200 dark:border-warm-600 hover:bg-warm-100 dark:hover:bg-warm-600'
-                    }`}
-                  >
-                    {topic}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
 
-          {/* Muted Topics */}
-          <div className="bg-warm-50 dark:bg-warm-800 p-4 rounded-2xl space-y-3">
-            <div className="flex items-center gap-2">
-              <VolumeX size={16} className="text-amber-500" />
-              <p className="font-semibold text-warm-900 dark:text-warm-50">Muted Topics</p>
-            </div>
-            <p className="text-xs text-warm-500">Posts matching muted topics are hidden from your Discover page and feed.</p>
-            <div className="flex flex-wrap gap-2">
-              {INTERESTS.map(topic => {
-                const isMuted = (profile?.muted_interests || []).includes(topic);
-                return (
-                  <button
-                    key={topic}
-                    onClick={() => handleMuteInterest(topic)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                      isMuted
-                        ? 'bg-red-500 text-white border-red-500'
-                        : 'bg-white dark:bg-warm-700 text-warm-700 dark:text-warm-300 border-warm-200 dark:border-warm-600 hover:bg-red-50 dark:hover:bg-red-950/20'
-                    }`}
-                  >
-                    {isMuted ? '🔇 ' : ''}{topic}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
 
           {/* Muted Communities */}
           <div className="bg-warm-50 dark:bg-warm-800 p-4 rounded-2xl space-y-3">
