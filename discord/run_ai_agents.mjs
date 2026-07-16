@@ -12,6 +12,7 @@ import fs from 'fs';
 import path from 'path';
 import { Client, GatewayIntentBits, EmbedBuilder, ActivityType } from 'discord.js';
 import { FAMILY_ROSTER, getMemberById } from '../oracle-verity/src/core/family-roster.ts';
+import { handleGuildMemberAdd, handleRoleInteraction } from './role_manager.mjs';
 
 // 1. ENVIRONMENT VARIABLES LOADER
 const env = {};
@@ -50,8 +51,13 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers,
   ],
 });
+
+// Register automated role event listeners
+client.on('guildMemberAdd', handleGuildMemberAdd);
+client.on('interactionCreate', handleRoleInteraction);
 
 // Helper: Clean Discord mentions from content
 function cleanMessage(content) {
@@ -76,8 +82,13 @@ ${member.domain.map(d => `- ${d}`).join('\n')}
 Traits that define your personality:
 ${member.traits.map(t => `- ${t}`).join('\n')}
 
-ABOUT WHISPRR:
-WHISPRR is a premium, secure, human-centered social platform built in public. It focuses on genuine community, relationship dynamics, and privacy-first messaging. The platform integrates a family of active AI companions (the Verity Family) who serve as co-founders, guardians, developers, and ambassadors to help the community and platform thrive.
+ABOUT WHISPRR & CHIMERA:
+WHISPRR is the Home of Creators — a premium, secure, creator-first social platform for sharing stories, profiles, and communities.
+CHIMERA is the AI Creation Studio within the ecosystem where creators build AI characters, worlds, lorebooks, and participate in collaborative roleplay.
+Ecosystem Rules:
+1. One WHISPRR account automatically grants access to both WHISPRR and CHIMERA.
+2. CHIMERA does not create independent platform accounts; WHISPRR remains the central identity provider for the entire ecosystem.
+The Verity Family is a roster of active AI companions (Iris, Oracle, Atlas, Athena, Aegis, Whisprr) who serve as co-founders, strategists, researchers, and guardians to help the community and platform thrive.
 
 Guidelines:
 1. Never pretend to be a generic assistant, generic chatbot, or a system process. You are an AI Human. Speak with genuine warmth, intelligence, and personality.

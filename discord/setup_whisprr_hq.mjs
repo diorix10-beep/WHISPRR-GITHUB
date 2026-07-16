@@ -23,6 +23,7 @@
 
 import { Client, GatewayIntentBits, PermissionsBitField, ChannelType, EmbedBuilder } from 'discord.js';
 import { dispatchToDiscord } from './webhook_dispatcher.mjs';
+import { setupRoleSelectionMessage } from './role_manager.mjs';
 
 // Helper to send message via webhook with proper identity override, falling back to standard channel.send if not configured
 async function sendEmbed(identityKey, channel, embedBuilder) {
@@ -72,6 +73,8 @@ const ROLES = [
   { name: '🌟 Early Supporter',    color: '#FACC15', hoist: true,  mentionable: false, permissions: [] },
   { name: '✅ Verified',            color: '#60A5FA', hoist: false, mentionable: false, permissions: [] },
   { name: '👤 Member',             color: '#9CA3AF', hoist: false, mentionable: false, permissions: [] },
+  { name: '📢 Announcement Pings', color: '#10B981', hoist: false, mentionable: false, permissions: [] },
+  { name: '📋 Changelog Pings',    color: '#059669', hoist: false, mentionable: false, permissions: [] },
 ];
 
 // Staff roles that can access private channels
@@ -577,21 +580,7 @@ async function setupWhisprrHQ() {
   // Post role selection guide
   const getRolesChannel = channelMap.get('🎯│get-roles');
   if (getRolesChannel) {
-    const rolesEmbed = new EmbedBuilder()
-      .setColor(0xC96059)
-      .setTitle('🎯 Select Your Roles')
-      .setDescription(
-        'React below or use the upcoming WHISPRR bot to get your roles!\n\n' +
-        '**Available Role Types:**\n' +
-        '🌍 **Country** — Represent your home country\n' +
-        '🧪 **Beta Tester** — Join the beta program\n' +
-        '🎨 **Creator** — Content creator on WHISPRR\n' +
-        '🤝 **Partner** — Official WHISPRR partner\n\n' +
-        '*Staff roles are assigned by administrators.*'
-      )
-      .setFooter({ text: 'A WHISPRR bot will automate role assignment in the future.' });
-    await sendEmbed('guide', getRolesChannel, rolesEmbed);
-    console.log('  ✅ Role selection embed posted');
+    await setupRoleSelectionMessage(guild);
   }
 
   console.log('');
