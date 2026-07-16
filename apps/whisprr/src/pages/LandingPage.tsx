@@ -485,17 +485,17 @@ export default function LandingPage() {
               Platform Features
             </p>
             <h2 style={{ textAlign: 'center', fontSize: 'clamp(30px, 5vw, 48px)', fontWeight: 800, margin: '0 0 56px', letterSpacing: '-1px' }}>
-              Everything a creator needs to connect.
+              Where creators belong, collaborate, and grow together.
             </h2>
             <div className="lp-fg">
-              <FeatureCard icon="🌊" title="Creator Feed" desc="A beautiful, personalized feed of posts, stories, collaborations, and updates from creators you follow and discover." />
-              <FeatureCard icon="🔭" title="Creator Discovery" desc="Find writers, worldbuilders, and AI creators who share your interests. Search by genre, style, or creative focus." />
-              <FeatureCard icon="👥" title="Creative Communities" desc="Join genre-specific communities for fantasy, sci-fi, romance, horror, and more. Build your creative circle." />
-              <FeatureCard icon="🤝" title="Collaboration Requests" desc="Post and respond to collaboration requests. Find your co-writer, editor, or creative partner." />
-              <FeatureCard icon="📢" title="Share Creations" desc="Share stories from CHIMERA directly to your WHISPRR feed. Let your community discover what you've built." />
-              <FeatureCard icon="💬" title="Direct Messages" desc="Connect privately with other creators. Plan collaborations, build relationships, stay in touch." />
-              <FeatureCard icon="🔔" title="Creator Notifications" desc="Know when someone follows you, reacts to your work, or invites you to collaborate." />
-              <FeatureCard icon="✦" title="One Ecosystem" desc="Your WHISPRR profile connects directly to CHIMERA. One identity, two creative platforms, infinite possibilities." />
+              <FeatureCard icon="🌊" title="Creator Feed" desc="Discover what creators are building today through stories, characters, worlds, lorebooks, progress updates and creative posts." />
+              <FeatureCard icon="🔭" title="Discover" desc="Discover creators, communities, stories, characters, worlds and lorebooks from across the ecosystem." />
+              <FeatureCard icon="👥" title="Communities" desc="Creative communities where creators share ideas, build friendships, discuss anything respectfully and collaborate together." />
+              <FeatureCard icon="🤝" title="Collaboration Hub" desc="Find writers, editors, prompt engineers, worldbuilders, artists and other creators for your projects." />
+              <FeatureCard icon="📢" title="Share Creations" desc="Publish stories, characters, worlds and lorebooks created in CHIMERA directly to your WHISPRR profile and communities." />
+              <FeatureCard icon="💬" title="Private Messages" desc="Chat privately, share creations and coordinate collaborations with other creators." />
+              <FeatureCard icon="👤" title="Creator Profiles" desc="Showcase your stories, characters, worlds, lorebooks, communities and current creative projects." />
+              <FeatureCard icon="✦" title="One Ecosystem" desc="Create in CHIMERA. Connect in WHISPRR. Both applications work together as one creator ecosystem." />
             </div>
           </div>
         </section>
