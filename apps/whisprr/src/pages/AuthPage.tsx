@@ -201,9 +201,18 @@ function AppleIcon() {
   );
 }
 
+// ─── Discord logo SVG ────────────────────────────────────────────────────────
+function DiscordIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.27 4.73a16.14 16.14 0 0 0-3.97-1.23.08.08 0 0 0-.08.04c-.17.3-.37.71-.5 1.02a14.88 14.88 0 0 0-5.44 0c-.13-.31-.33-.72-.5-1.02a.08.08 0 0 0-.08-.04 16.13 16.13 0 0 0-3.97 1.23.08.08 0 0 0-.04.03C1.24 9.94.46 15.02.82 20.03a.08.08 0 0 0 .03.06 16.29 16.29 0 0 0 4.9 2.48.08.08 0 0 0 .09-.03c.38-.52.71-1.07 1-1.65a.08.08 0 0 0-.04-.11 10.66 10.66 0 0 1-1.54-.74.08.08 0 0 1-.01-.13c.1-.08.2-.16.3-.25a.08.08 0 0 1 .08-.01c3.21 1.47 6.69 1.47 9.86 0a.08.08 0 0 1 .08.01c.1.09.2.17.3.25a.08.08 0 0 1-.01.13 10.63 10.63 0 0 1-1.54.74.08.08 0 0 0-.04.11c.29.58.62 1.13.1 1.65a.08.08 0 0 0 .09.03 16.3 16.3 0 0 0 4.9-2.48.08.08 0 0 0 .03-.06c.42-5.7-.73-10.74-3.44-15.27a.08.08 0 0 0-.04-.03zM8.02 15.33c-.95 0-1.74-.88-1.74-1.95s.76-1.96 1.74-1.96c.99 0 1.77.89 1.74 1.96 0 1.07-.75 1.95-1.74 1.95zm7.96 0c-.95 0-1.74-.88-1.74-1.95s.76-1.96 1.74-1.96c.99 0 1.77.89 1.74 1.96 0 1.07-.75 1.95-1.74 1.95z"/>
+    </svg>
+  );
+}
+
 // ─── AuthPage ─────────────────────────────────────────────────────────────────
 export default function AuthPage() {
-  const { signIn, signUp, signInWithGoogle, resetPassword, loading } = useAuth();
+  const { signIn, signUp, signInWithGoogle, signInWithDiscord, resetPassword, loading } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -253,6 +262,12 @@ export default function AuthPage() {
     setError(''); setIsLoading(true);
     try { await signInWithGoogle(); }
     catch (err) { setError(err instanceof Error ? err.message : 'Google sign in failed.'); setIsLoading(false); }
+  };
+
+  const handleDiscordSignIn = async () => {
+    setError(''); setIsLoading(true);
+    try { await signInWithDiscord(); }
+    catch (err) { setError(err instanceof Error ? err.message : 'Discord sign in failed.'); setIsLoading(false); }
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -584,6 +599,9 @@ export default function AuthPage() {
                     <button type="button" className="auth-btn-social" onClick={handleGoogleSignIn} disabled={isLoading}>
                       <GoogleIcon /> Continue with Google
                     </button>
+                    <button type="button" className="auth-btn-social" onClick={handleDiscordSignIn} disabled={isLoading}>
+                      <DiscordIcon /> Continue with Discord
+                    </button>
                     <button type="button" className="auth-btn-social" disabled title="Apple Sign In coming soon">
                       <AppleIcon /> Continue with Apple
                       <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 500, marginLeft: 4 }}>Soon</span>
@@ -636,6 +654,9 @@ export default function AuthPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     <button type="button" className="auth-btn-social" onClick={handleGoogleSignIn} disabled={isLoading || !agreedTo18 || !agreedToTerms}>
                       <GoogleIcon /> Continue with Google
+                    </button>
+                    <button type="button" className="auth-btn-social" onClick={handleDiscordSignIn} disabled={isLoading || !agreedTo18 || !agreedToTerms}>
+                      <DiscordIcon /> Continue with Discord
                     </button>
                     <button type="button" className="auth-btn-social" disabled>
                       <AppleIcon /> Continue with Apple
