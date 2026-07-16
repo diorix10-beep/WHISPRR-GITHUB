@@ -156,7 +156,7 @@ export function CreateCommunityModal({ onClose, onCommunityCreated }: CreateComm
 
               {/* Interest */}
               <div>
-                <label className="block text-sm font-medium text-warm-900 dark:text-warm-50 mb-1.5">Primary Interest *</label>
+                <label className="block text-sm font-medium text-warm-900 dark:text-warm-50 mb-1.5">Primary Creative Focus *</label>
                 <select
                   value={selectedInterest}
                   onChange={e => setSelectedInterest(e.target.value)}

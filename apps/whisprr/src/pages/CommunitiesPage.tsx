@@ -170,7 +170,7 @@ export default function CommunitiesPage() {
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-warm-400" size={18} />
         <input
           type="text"
-          placeholder="Search communities by name, topic, or interest..."
+          placeholder="Search communities by name or creative focus..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
           className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm transition-all"
@@ -297,7 +297,7 @@ export default function CommunitiesPage() {
       {viewMode === 'recommended' && recommendedCommunities.length > 0 && (
         <div className="mb-4 flex items-center gap-2 px-3 py-2 bg-primary-50 dark:bg-primary-900/20 rounded-xl">
           <Sparkles size={14} className="text-primary-500 flex-shrink-0" />
-          <p className="text-xs text-primary-700 dark:text-primary-300">Based on your interests and activity</p>
+          <p className="text-xs text-primary-700 dark:text-primary-300">Based on your creative identity, activity, and collaborations</p>
         </div>
       )}
 
@@ -312,8 +312,8 @@ export default function CommunitiesPage() {
               : 'No communities yet'}
           </h2>
           <p className="text-warm-500 text-sm mb-6 max-w-xs">
-            {viewMode === 'my' ? 'Browse and join communities that match your interests.'
-              : viewMode === 'recommended' ? 'Interact with more content to get personalized suggestions.'
+            {viewMode === 'my' ? 'Browse and join communities that match your creative goals.'
+              : viewMode === 'recommended' ? 'Connect with other creators and build projects to get personalized recommendations.'
               : 'Be the first to start a community!'}
           </p>
           {viewMode === 'my' ? (

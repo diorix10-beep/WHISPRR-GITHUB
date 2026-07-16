@@ -170,11 +170,19 @@ export interface Community {
 }
 
 export const COMMUNITY_CATEGORIES = [
-  'General', 'Music', 'Gaming', 'Art & Design', 'Technology',
-  'Sports & Fitness', 'Food & Drink', 'Travel', 'Books & Writing',
-  'Film & TV', 'Photography', 'Fashion & Beauty', 'Science',
-  'Business', 'Education', 'Lifestyle', 'Memes & Humor',
-  'Pets & Animals', 'Health & Wellness', 'Social',
+  'Storytelling',
+  'Worldbuilding',
+  'AI Roleplay',
+  'Human Writing',
+  'AI-Assisted Writing',
+  'Character Creation',
+  'Lorebooks',
+  'Creative Collaboration',
+  'Feedback & Critique',
+  'Publishing',
+  'Writing Challenges',
+  'Creator Support',
+  'Community Events'
 ] as const;
 
 export interface CommunityMember {
