@@ -173,19 +173,38 @@ export function ComposeWhisper({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || isOverLimit || charCount === 0) return;
+
+    if (!user) {
+      setError('You must be signed in to post. Please refresh and try again.');
+      return;
+    }
+    if (charCount === 0) {
+      setError('Please write something before posting.');
+      return;
+    }
+    if (isOverLimit) {
+      setError(`Post is too long. Please shorten it by ${charCount - CHAR_LIMIT} characters.`);
+      return;
+    }
 
     setIsPosting(true);
     setError('');
 
     try {
       const { error: insertError } = await supabase.from('whispers').insert({
+        user_id: user.id,          // ← required for RLS
         content: content.trim(),
         community_id: communityId || null,
       });
 
       if (insertError) {
-        setError(insertError.message);
+        // Surface the exact Supabase error so we never silently fail
+        console.error('Whisper insert error:', insertError);
+        if (insertError.code === '42501' || insertError.message?.includes('row-level security')) {
+          setError('Permission denied. Please sign out and sign back in, then try again.');
+        } else {
+          setError(insertError.message || 'Failed to post. Please try again.');
+        }
         return;
       }
 
@@ -199,7 +218,8 @@ export function ComposeWhisper({
       onWhisperCreated?.();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to post whisper');
+      console.error('Unexpected error posting whisper:', err);
+      setError(err instanceof Error ? err.message : 'Unexpected error. Please try again.');
     } finally {
       setIsPosting(false);
     }
@@ -242,7 +262,7 @@ export function ComposeWhisper({
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Share what's on your mind… (Your voice matters here. Take your time to write. ✨)"
-              className="input-field font-serif leading-relaxed resize-none overflow-y-auto"
+              className="input-field leading-relaxed resize-none overflow-y-auto"
               style={{ minHeight: '8rem', maxHeight: '16rem', height: 'auto' }}
               disabled={isPosting}
             />
