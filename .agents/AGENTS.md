@@ -1043,3 +1043,99 @@ Authentication is centralized in WHISPRR and shared across the ecosystem via Sup
 - CHIMERA must never create standalone user accounts or host registration flows.
 - If a visitor without an account attempts to register from CHIMERA, they must be redirected to the WHISPRR registration flow. Once registration is complete, they can immediately sign in to CHIMERA using the same credentials.
 - There must never be a "CHIMERA-only" account.
+
+====================================================
+WHISPRR DEVELOPMENT PRIORITIES ROADMAP
+====================================================
+
+## PRIORITY 1 — Finish the Core Platform (Highest Priority)
+Stop adding new features for now. Focus on making WHISPRR completely usable from beginning to end. Complete and polish:
+- Authentication
+- Email Verification
+- Password Reset
+- Session Persistence
+- Google Sign In
+- Apple Sign In
+- Feed
+- Post Creation
+- Comments
+- Likes
+- Creator Profiles
+- Communities
+- Messaging
+- Notifications
+Goal: A new user should be able to register, verify their email, create posts, join communities, send messages, receive notifications, and use the entire platform without encountering any bugs.
+
+## PRIORITY 2 — Remove Every Remaining Part of the Old WHISPRR
+WHISPRR is no longer based on interests or topics. Remove every remaining feature related to the old recommendation system. Delete everywhere in the project:
+- Interests
+- Topics
+- Followed Topics
+- Muted Topics
+- Topic Categories
+- Topic Recommendations
+- Topic Filters
+- Topic Search
+- Topic Chips
+- Interest Selection during onboarding
+Replace the old philosophy with the new creator-first philosophy. Users should control their recommendations through their behavior and settings, not by selecting topics.
+
+## PRIORITY 3 — Replace All Old Branding
+Update the entire project to match the new WHISPRR identity. Replace:
+- Old logo
+- Old authentication artwork
+- Old screenshots
+- Old landing page
+- Old colors where necessary
+- Old slogan
+Use: WHISPRR - The Home of Creators. Ensure branding is consistent across every page.
+
+## PRIORITY 4 — Finalize WHISPRR ↔ CHIMERA Architecture
+The authentication flow must follow these rules:
+- WHISPRR Account grants access to both WHISPRR and CHIMERA.
+- CHIMERA Account cannot access WHISPRR.
+- Every WHISPRR account automatically has access to CHIMERA.
+- CHIMERA does not create independent platform accounts.
+- Users without a WHISPRR account must create one before using CHIMERA.
+- WHISPRR remains the central identity provider for the ecosystem.
+
+## PRIORITY 5 — Founder Dashboard
+Finish the Founder Dashboard after the core platform is stable. The dashboard should become the internal operating center for WHISPRR.
+
+## PRIORITY 6 — Rebuild the Public Website
+Delete and redesign the existing public website. It still reflects the previous vision of WHISPRR. Rebuild it around the new identity:
+- New landing page
+- New philosophy
+- New creator-focused messaging
+- Updated features
+- Updated roadmap
+- Beta information
+- Founder Journal
+Everything should communicate that WHISPRR is the Home of Creators.
+
+## PRIORITY 7 — Private Beta
+Launch carefully. Start with approximately 10 testers. Fix bugs. Expand to around 25 testers. Fix bugs again. Expand to around 100 testers. Continue improving before considering a public launch.
+
+## Features to Postpone
+Do NOT prioritize these until after the core platform and beta are complete:
+- AI Companion
+- Character Memory
+- AI Roleplay
+- Voice Spaces
+- Translation System
+- Community Marketplace
+- Community Events
+- Creator Economy
+- AI Characters Preview
+The platform should first become stable before expanding into advanced features.
+
+## Overall Execution Order
+1. Finish the core platform.
+2. Remove every remaining part of the old WHISPRR.
+3. Apply the new branding everywhere.
+4. Finalize the WHISPRR and CHIMERA architecture.
+5. Complete the Founder Dashboard.
+6. Rebuild the public website.
+7. Launch the private beta.
+8. Collect feedback.
+9. Build advanced creator and AI features.
