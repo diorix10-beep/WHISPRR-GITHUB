@@ -1,13 +1,26 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
-import type { Profile, UserViolation } from '../types';
+import type { ChimeraProfile } from '../types';
+
+interface UserViolation {
+  id: string;
+  user_id: string;
+  rule_violated: string;
+  violated_section_link: string;
+  violation_level: number;
+  description: string;
+  acknowledged: boolean;
+  expires_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
 import { supabase } from '../lib/supabase';
 
 interface AuthState {
   user: User | null;
   session: Session | null;
-  profile: Profile | null;
+  profile: ChimeraProfile | null;
   violations: UserViolation[];
   loading: boolean;
 }
@@ -17,10 +30,11 @@ interface AuthContextType extends AuthState {
   signUp: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signInWithApple: () => Promise<void>;
+  signInWithDiscord: () => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
-  updateProfile: (updates: Partial<Profile>) => Promise<void>;
+  updateProfile: (updates: Partial<ChimeraProfile>) => Promise<void>;
   systemSettings: any;
   fetchSystemSettings: () => Promise<void>;
   updateSystemSettings: (updates: any) => Promise<void>;
@@ -44,12 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const [systemSettings, setSystemSettings] = useState<any>(() => {
     try {
-      const local = localStorage.getItem('whisprr_system_settings');
+      const local = localStorage.getItem('chimera_system_settings');
       if (local) return JSON.parse(local);
     } catch {}
     return {
       enabled: false,
-      message: "We're currently improving WHISPRR to bring you a better experience. Thank you for your patience. ❤️",
+      message: "We're currently improving CHIMERA to bring you a better experience. Thank you for your patience. ❤️",
       reopen_at: null,
       bypass_founder: true,
       bypass_admin: true,
@@ -74,14 +88,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
+  const fetchProfile = useCallback(async (userId: string): Promise<ChimeraProfile | null> => {
     try {
       const { data } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
         .maybeSingle();
-      return data as Profile | null;
+      return data as ChimeraProfile | null;
     } catch {
       return null;
     }
@@ -97,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [state.user, fetchProfile, fetchViolations]);
 
-  const updateProfile = useCallback(async (updates: Partial<Profile>) => {
+  const updateProfile = useCallback(async (updates: Partial<ChimeraProfile>) => {
     if (!state.user) return;
     const { error } = await supabase
       .from('profiles')
@@ -108,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setState(prev => ({
       ...prev,
-      profile: prev.profile ? { ...prev.profile, ...updates } : { user_id: state.user!.id, ...updates } as Profile,
+      profile: prev.profile ? { ...prev.profile, ...updates } : { user_id: state.user!.id, ...updates } as ChimeraProfile,
     }));
   }, [state.user]);
 
@@ -119,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (res && res.ok) {
         const value = await res.json();
         setSystemSettings(value);
-        localStorage.setItem('whisprr_system_settings', JSON.stringify(value));
+        localStorage.setItem('chimera_system_settings', JSON.stringify(value));
         return;
       }
 
@@ -130,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
       if (!error && data) {
         setSystemSettings(data.value);
-        localStorage.setItem('whisprr_system_settings', JSON.stringify(data.value));
+        localStorage.setItem('chimera_system_settings', JSON.stringify(data.value));
       }
     } catch (err) {
       console.warn("Could not fetch system settings, relying on local cache:", err);
@@ -141,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Sync local cache first for instant feedback
       setSystemSettings(updates);
-      localStorage.setItem('whisprr_system_settings', JSON.stringify(updates));
+      localStorage.setItem('chimera_system_settings', JSON.stringify(updates));
 
       const { error } = await supabase
         .from('system_settings')
@@ -258,6 +272,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
+  const signInWithDiscord = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'discord',
+      options: { redirectTo: `${window.location.origin}/auth` },
+    });
+    if (error) throw error;
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
@@ -304,6 +326,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       signInWithGoogle,
       signInWithApple,
+      signInWithDiscord,
       signOut,
       resetPassword,
       refreshProfile,

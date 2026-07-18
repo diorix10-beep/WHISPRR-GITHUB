@@ -2,10 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { NotificationsProvider } from './contexts/NotificationsContext';
-import { UnreadMessagesProvider } from './contexts/UnreadMessagesContext';
 import { ToastProvider } from './contexts/ToastContext';
-import { InterestProvider } from './contexts/InterestContext';
+import { ProjectProvider } from './contexts/ProjectContext';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { ChimeraLayout } from './components/layout/ChimeraLayout';
 import { ChimeraPlaceholderPage } from './components/common/ChimeraPlaceholderPage';
@@ -14,27 +12,17 @@ import { PublicOnlyRoute } from './components/common/PublicOnlyRoute';
 import { Logo } from './components/common/Logo';
 import { ReloadPrompt } from './components/common/ReloadPrompt';
 
-const OracleAssistantPage = lazy(() => import('./pages/OracleAssistantPage'));
+// ── Auth & Onboarding ──────────────────────────────────────
+const AuthPage          = lazy(() => import('./pages/AuthPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
+const OnboardingPage    = lazy(() => import('./pages/OnboardingPage'));
 
-const ChimeraChatsPage       = lazy(() => import('./pages/ChimeraChatsPage'));
-
-const AuthPage           = lazy(() => import('./pages/AuthPage'));
-const ResetPasswordPage  = lazy(() => import('./pages/ResetPasswordPage'));
-const OnboardingPage     = lazy(() => import('./pages/OnboardingPage'));
-const ConversationPage   = lazy(() => import('./pages/ConversationPage'));
-const AiCharactersPage = lazy(() => import('./pages/AiCharactersPage'));
-
-// CHIMERA Writing Platform Pages
-const ExploreNexusPage = lazy(() => import('./pages/ExploreNexusPage'));
-const LibraryPage = lazy(() => import('./pages/LibraryPage'));
-const WritersDeskPage = lazy(() => import('./pages/WritersDeskPage'));
-const StoryReaderPage = lazy(() => import('./pages/StoryReaderPage'));
-const ChapterReaderPage = lazy(() => import('./pages/ChapterReaderPage'));
-const ChapterEditorPage = lazy(() => import('./pages/ChapterEditorPage'));
-
-// Legal & Policy Pages
-const TermsPage                = lazy(() => import('./pages/legal/TermsPage'));
-const PrivacyPage              = lazy(() => import('./pages/legal/PrivacyPage'));
+// ── Legal & Moderation ─────────────────────────────────────
+const LegalAcceptancePage  = lazy(() => import('./pages/LegalAcceptancePage'));
+const ModerationNoticePage = lazy(() => import('./pages/ModerationNoticePage'));
+const SuspendedPage        = lazy(() => import('./pages/SuspendedPage'));
+const TermsPage            = lazy(() => import('./pages/legal/TermsPage'));
+const PrivacyPage          = lazy(() => import('./pages/legal/PrivacyPage'));
 const AiSafetyPolicyPage       = lazy(() => import('./pages/legal/AiSafetyPolicyPage'));
 const ResponsibleAiPolicyPage  = lazy(() => import('./pages/legal/ResponsibleAiPolicyPage'));
 const PersonaPolicyPage        = lazy(() => import('./pages/legal/PersonaPolicyPage'));
@@ -43,25 +31,45 @@ const ModelUsagePolicyPage     = lazy(() => import('./pages/legal/ModelUsagePoli
 const PromptPolicyPage         = lazy(() => import('./pages/legal/PromptPolicyPage'));
 const MemoryPolicyPage         = lazy(() => import('./pages/legal/MemoryPolicyPage'));
 const CookiePolicyPage         = lazy(() => import('./pages/legal/CookiePolicyPage'));
+const TrustPage                = lazy(() => import('./pages/TrustPage'));
 
-// Moderation & Flow Pages
-const LegalAcceptancePage   = lazy(() => import('./pages/LegalAcceptancePage'));
-const ModerationNoticePage  = lazy(() => import('./pages/ModerationNoticePage'));
-const SuspendedPage         = lazy(() => import('./pages/SuspendedPage'));
+// ── Dashboard ──────────────────────────────────────────────
+const CreatorDashboardPage = lazy(() => import('./pages/CreatorDashboardPage'));
 
-
-const TrustPage             = lazy(() => import('./pages/TrustPage'));
+// ── Characters Module ──────────────────────────────────────
+const AiCharactersPage   = lazy(() => import('./pages/AiCharactersPage'));
 const AiCharacterCreator = lazy(() => import('./pages/AiCharacterCreator'));
-const PersonasPage = lazy(() => import('./pages/PersonasPage'));
+
+// ── Stories Module ─────────────────────────────────────────
+const WritersDeskPage   = lazy(() => import('./pages/WritersDeskPage'));
+const StoryReaderPage   = lazy(() => import('./pages/StoryReaderPage'));
+const ChapterReaderPage = lazy(() => import('./pages/ChapterReaderPage'));
+const ChapterEditorPage = lazy(() => import('./pages/ChapterEditorPage'));
+
+// ── Conversations Module ───────────────────────────────────
+const ChimeraChatsPage  = lazy(() => import('./pages/ChimeraChatsPage'));
+const ConversationPage  = lazy(() => import('./pages/ConversationPage'));
+
+// ── Personas ───────────────────────────────────────────────
+const PersonasPage      = lazy(() => import('./pages/PersonasPage'));
 const PersonaEditorPage = lazy(() => import('./pages/PersonaEditorPage'));
-const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+
+// ── Profile & Settings ─────────────────────────────────────
+const ProfilePage  = lazy(() => import('./pages/ProfilePage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+
+// ── Oracle ─────────────────────────────────────────────────
+const OracleAssistantPage = lazy(() => import('./pages/OracleAssistantPage'));
+
+// ── Not Found ──────────────────────────────────────────────
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+
 
 function PageLoader() {
   return (
     <div className="h-screen flex items-center justify-center bg-warm-50 dark:bg-warm-900">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-300 border-t-primary-500 mx-auto mb-3" />
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-red-300 border-t-red-500 mx-auto mb-3" />
         <p className="text-warm-500 text-sm">Loading…</p>
       </div>
     </div>
@@ -78,66 +86,53 @@ function AppLoader() {
       <div className="h-screen flex items-center justify-center bg-warm-50 dark:bg-warm-900">
         <div className="text-center flex flex-col items-center gap-4">
           <Logo size={56} className="animate-pulse" />
-          <p className="text-warm-600 dark:text-warm-400 font-serif text-lg">WHISPRR</p>
+          <p className="text-warm-600 dark:text-warm-400 font-serif text-lg">CHIMERA</p>
         </div>
       </div>
     );
   }
 
-  // Maintenance Bypass check
+  // Maintenance mode
   if (isMaintenanceActive) {
     const role = profile?.role || 'user';
     const isFounderBypass = role === 'founder' && systemSettings?.bypass_founder !== false;
     const isAdminBypass = role === 'admin' && systemSettings?.bypass_admin !== false;
-    const isBetaBypass = role === 'moderator' && systemSettings?.bypass_beta === true; // moderators as beta testers
+    const isBetaBypass = role === 'moderator' && systemSettings?.bypass_beta === true;
     const isUserBypass = profile?.username === 'nyny59';
     const isBypass = isFounderBypass || isAdminBypass || isBetaBypass || isUserBypass;
 
     if (!isBypass) {
       const path = window.location.pathname;
-      const isAuthRoute = path === '/auth';
-      const isResetPasswordRoute = path === '/reset-password';
-      const isPublicRoute = ['/', '/about', '/building', '/privacy', '/terms', '/trust'].includes(path);
+      const isAuthRoute = path === '/auth' || path === '/reset-password';
 
-      const allowAuth = systemSettings?.allow_auth !== false;
-      const allowPublic = systemSettings?.allow_public !== false;
-
-      // Allow auth route if permitted
-      if ((isAuthRoute || isResetPasswordRoute) && allowAuth) {
+      if (isAuthRoute && systemSettings?.allow_auth !== false) {
         return (
           <Suspense fallback={<PageLoader />}>
             <Routes>
-              <Route path="/auth"    element={<AuthPage />} />
+              <Route path="/auth" element={<AuthPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
-              <Route path="/terms"   element={<TermsPage />} />
-              <Route path="/trust"   element={<TrustPage />} />
-              <Route path="*"        element={<Navigate to="/auth" replace />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/trust" element={<TrustPage />} />
+              <Route path="*" element={<Navigate to="/auth" replace />} />
             </Routes>
           </Suspense>
         );
       }
 
-      // Allow public pages if permitted
-      if (isPublicRoute && allowPublic) {
-        // Continue to normal rendering flow (will render LandingPage or BuildingPage below)
-      } else {
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <div className="min-h-screen flex items-center justify-center bg-warm-950 text-white flex-col text-center p-8">
-              <h1 className="text-3xl font-bold mb-4">Under Maintenance</h1>
-              <p className="text-warm-400">CHIMERA is currently undergoing scheduled maintenance. Please check back soon.</p>
-            </div>
-          </Suspense>
-        );
-      }
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-warm-950 text-white flex-col text-center p-8">
+          <h1 className="text-3xl font-bold mb-4">Under Maintenance</h1>
+          <p className="text-warm-400">CHIMERA is currently undergoing scheduled maintenance. Please check back soon.</p>
+        </div>
+      );
     }
   }
 
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
-        {/* Public Routes */}
+        {/* ── Public Routes ─────────────────────────────────── */}
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/trust" element={<TrustPage />} />
@@ -150,53 +145,91 @@ function AppLoader() {
         <Route path="/memory-policy" element={<MemoryPolicyPage />} />
         <Route path="/cookie-policy" element={<CookiePolicyPage />} />
 
-        {/* Public Only (Login/Signup) */}
+        {/* ── Auth (Public Only) ────────────────────────────── */}
         <Route element={<PublicOnlyRoute />}>
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Route>
 
-        {/* Protected Routes */}
+        {/* ── Protected Platform ────────────────────────────── */}
         <Route element={<ProtectedRoute />}>
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/legal-acceptance" element={<LegalAcceptancePage />} />
           <Route path="/moderation-notice" element={<ModerationNoticePage />} />
           <Route path="/suspended" element={<SuspendedPage />} />
 
-          {/* CHIMERA Standalone Platform */}
+          {/* ── CHIMERA Platform (with Layout) ────────────── */}
           <Route element={<ChimeraLayout />}>
-            {/* Creator-First Core Pages */}
-            <Route path="/" element={<ExploreNexusPage />} />
-            <Route path="/library" element={<LibraryPage />} />
-            <Route path="/write" element={<WritersDeskPage />} />
-            <Route path="/story/:id" element={<StoryReaderPage />} />
-            <Route path="/story/:storyId/chapter/:chapterNumber" element={<ChapterReaderPage />} />
-            <Route path="/write/story/:storyId/chapter/:chapterId" element={<ChapterEditorPage />} />
 
-            {/* Roleplay Platform (Repositioned) */}
-            <Route path="/roleplay" element={<AiCharactersPage />} />
-            <Route path="/create" element={<AiCharacterCreator />} />
-            <Route path="/chats" element={<ChimeraChatsPage />} />
-            <Route path="/chat/:id" element={<ConversationPage />} />
+            {/* Dashboard */}
+            <Route path="/" element={<CreatorDashboardPage />} />
 
-            {/* Existing Context Pages & Placeholders */}
-            <Route path="/oracle" element={<OracleAssistantPage />} />
-            <Route path="/help" element={<OracleAssistantPage />} />
+            {/* Characters Module */}
+            <Route path="/characters" element={<AiCharactersPage />} />
+            <Route path="/characters/new" element={<AiCharacterCreator />} />
+            <Route path="/characters/:id" element={<AiCharacterCreator />} />
+            <Route path="/characters/:id/edit" element={<AiCharacterCreator />} />
+
+            {/* Worlds Module */}
+            <Route path="/worlds" element={<ChimeraPlaceholderPage title="Worlds" description="Build rich fictional universes with locations, factions, timelines, and interconnected lore." />} />
+            <Route path="/worlds/new" element={<ChimeraPlaceholderPage title="World Builder" description="Create a new world with locations, factions, and timelines." />} />
+            <Route path="/worlds/:id" element={<ChimeraPlaceholderPage title="World Detail" description="View and edit your world." />} />
+
+            {/* Stories Module */}
+            <Route path="/stories" element={<WritersDeskPage />} />
+            <Route path="/stories/new" element={<WritersDeskPage />} />
+            <Route path="/stories/:id" element={<StoryReaderPage />} />
+            <Route path="/stories/:storyId/chapter/:chapterNumber" element={<ChapterReaderPage />} />
+            <Route path="/stories/:storyId/edit/chapter/:chapterId" element={<ChapterEditorPage />} />
+
+            {/* AI Models Module */}
+            <Route path="/models" element={<ChimeraPlaceholderPage title="AI Models" description="Choose and configure the AI model powering your characters. Supports Gemini, Claude, GPT, DeepSeek, and future providers." />} />
+
+            {/* Conversations Module */}
+            <Route path="/conversations" element={<ChimeraChatsPage />} />
+            <Route path="/conversations/:id" element={<ConversationPage />} />
+            {/* Legacy routes redirect */}
+            <Route path="/chats" element={<Navigate to="/conversations" replace />} />
+            <Route path="/chat/:id" element={<Navigate to="/conversations/:id" replace />} />
+
+            {/* Memory Module */}
+            <Route path="/memory" element={<ChimeraPlaceholderPage title="Memory Manager" description="Persistent memory management. Configure long-term, short-term, personality, relationship, and lore memories." />} />
+
+            {/* Voices Module */}
+            <Route path="/voices" element={<ChimeraPlaceholderPage title="Voice Library" description="Browse, preview, and assign voices to your characters. Configure narration and dialogue voices." />} />
+
+            {/* Media / Image Studio */}
+            <Route path="/media" element={<ChimeraPlaceholderPage title="Image Studio" description="Generate avatars, expressions, outfits, scenes, and location art for your characters and worlds." />} />
+
+            {/* Lorebooks */}
+            <Route path="/lorebooks" element={<ChimeraPlaceholderPage title="Lorebooks" description="Create and manage knowledge books with keyword-triggered entries for context injection into AI conversations." />} />
+
+            {/* Creator Studio (unified workspace) */}
+            <Route path="/studio" element={<ChimeraPlaceholderPage title="Creator Studio" description="One unified workspace containing every creation tool: Character Builder, World Builder, Voice Config, Prompt Editor, Memory Editor, Image Studio, AI Model Configuration." />} />
+
+            {/* Personas */}
             <Route path="/personas" element={<PersonasPage />} />
             <Route path="/personas/new" element={<PersonaEditorPage />} />
             <Route path="/personas/:id/edit" element={<PersonaEditorPage />} />
             <Route path="/personas/:id" element={<PersonaEditorPage />} />
+
+            {/* Profile & Settings */}
             <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/worlds" element={<ChimeraPlaceholderPage title="My Worlds" description="Create and manage rich lore-filled environments, cities, and maps." />} />
-            <Route path="/plots" element={<ChimeraPlaceholderPage title="Create Plot" description="Define structured plotlines, story beats, and branching scenarios." />} />
-            <Route path="/lorebooks" element={<ChimeraPlaceholderPage title="Lorebooks" description="Upload, edit, and organize custom knowledge books for context injections." />} />
-            <Route path="/models" element={<ChimeraPlaceholderPage title="AI Models" description="Select from specialized roleplay fine-tunes and toggle parameters." />} />
-            <Route path="/creator-profiles" element={<ChimeraPlaceholderPage title="Creator Profiles" description="Browse top CHIMERA authors, follow creators, and check stats." />} />
-            <Route path="/collections" element={<ChimeraPlaceholderPage title="Collections" description="Gather matching characters, plots, and worlds into public collections." />} />
+            <Route path="/settings" element={<SettingsPage />} />
+
+            {/* Oracle Assistant */}
+            <Route path="/oracle" element={<OracleAssistantPage />} />
+            <Route path="/help" element={<OracleAssistantPage />} />
+
+            {/* Legacy routes redirect */}
+            <Route path="/roleplay" element={<Navigate to="/characters" replace />} />
+            <Route path="/create" element={<Navigate to="/characters/new" replace />} />
+            <Route path="/write" element={<Navigate to="/stories" replace />} />
+            <Route path="/library" element={<Navigate to="/stories" replace />} />
           </Route>
         </Route>
 
-        {/* Catch-all 404 Route */}
+        {/* ── Catch-all 404 ────────────────────────────────── */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
@@ -210,14 +243,10 @@ function App() {
         <ThemeProvider>
           <ToastProvider>
             <AuthProvider>
-              <NotificationsProvider>
-                <UnreadMessagesProvider>
-                  <InterestProvider>
-                    <ReloadPrompt />
-                    <AppLoader />
-                  </InterestProvider>
-                </UnreadMessagesProvider>
-              </NotificationsProvider>
+              <ProjectProvider>
+                <ReloadPrompt />
+                <AppLoader />
+              </ProjectProvider>
             </AuthProvider>
           </ToastProvider>
         </ThemeProvider>

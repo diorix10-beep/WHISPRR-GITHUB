@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { AuthHero } from '../components/auth/AuthHero';
 import { SignInForm } from '../components/auth/SignInForm';
-import { SignUpForm } from '../components/auth/SignUpForm';
 import { ForgotPasswordForm } from '../components/auth/ForgotPasswordForm';
 import { AuthProviders } from '../components/auth/AuthProviders';
 import { brand } from '../brand/brandConfig';
 
-type ViewType = 'providers' | 'signin' | 'signup' | 'forgot';
+const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+const whisprrUrl = isLocalhost ? 'http://localhost:5173' : 'https://whisprr.xyz';
+
+type ViewType = 'providers' | 'signin' | 'forgot';
 
 export default function AuthPage() {
   const { loading } = useAuth();
@@ -76,12 +78,12 @@ export default function AuthPage() {
                   .
                 </p>
                 <div className="text-center mt-2">
-                  <button
-                    onClick={() => setView('signup')}
+                  <a
+                    href={`${whisprrUrl}/auth?tab=signup`}
                     className="text-warm-400 hover:text-white text-sm font-medium transition-colors"
                   >
-                    New here? Create an account
-                  </button>
+                    New here? Create an account on WHISPRR
+                  </a>
                 </div>
               </div>
             )}
@@ -101,20 +103,7 @@ export default function AuthPage() {
               </div>
             )}
 
-            {view === 'signup' && (
-              <div className="flex flex-col gap-5">
-                <div className="flex items-center gap-2 mb-1">
-                  <button
-                    onClick={() => setView('providers')}
-                    className="text-warm-400 hover:text-white text-sm font-medium transition-colors flex items-center gap-1.5"
-                  >
-                    <span className="text-base">←</span> Back
-                  </button>
-                </div>
-                <h2 className="text-xl font-semibold text-white">Create your account</h2>
-                <SignUpForm />
-              </div>
-            )}
+
 
             {isForgot && (
               <ForgotPasswordForm onBack={() => setView('signin')} />
