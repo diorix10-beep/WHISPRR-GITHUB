@@ -89,30 +89,31 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
   const navSections: NavSection[] = [
     {
-      title: 'Create',
+      title: 'Platform',
       items: [
-        { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
-        { path: '/characters', icon: Users, label: 'Characters' },
-        { path: '/worlds', icon: Globe, label: 'Worlds' },
+        { path: '/', icon: LayoutDashboard, label: 'Home' },
+        { path: '/discover', icon: Sparkles, label: 'Discover', comingSoon: true },
+        { path: '/conversations', icon: MessageSquare, label: 'Chats' },
+      ],
+    },
+    {
+      title: 'My Studio',
+      items: [
+        { path: '/studio', icon: Palette, label: 'Creator Studio' },
+        { path: '/characters', icon: Users, label: 'My Characters' },
+        { path: '/personas', icon: User, label: 'My Personas' },
+        { path: '/worlds', icon: Globe, label: 'World Studio' },
         { path: '/stories', icon: PenTool, label: 'Stories' },
-        { path: '/studio', icon: Palette, label: 'Creator Studio', comingSoon: true },
       ],
     },
     {
-      title: 'AI',
+      title: 'Assets & Tools',
       items: [
-        { path: '/models', icon: Cpu, label: 'AI Models' },
-        { path: '/conversations', icon: MessageSquare, label: 'Conversations' },
-        { path: '/memory', icon: Brain, label: 'Memory', comingSoon: true },
-      ],
-    },
-    {
-      title: 'Tools',
-      items: [
-        { path: '/voices', icon: Mic, label: 'Voices', comingSoon: true },
-        { path: '/media', icon: Image, label: 'Image Studio', comingSoon: true },
         { path: '/lorebooks', icon: BookOpen, label: 'Lorebooks' },
-        { path: '/personas', icon: User, label: 'Personas' },
+        { path: '/media', icon: Image, label: 'Media Library', comingSoon: true },
+        { path: '/voices', icon: Mic, label: 'Voices', comingSoon: true },
+        { path: '/models', icon: Cpu, label: 'AI Models' },
+        { path: '/memory', icon: Brain, label: 'Memory', comingSoon: true },
       ],
     },
   ];
