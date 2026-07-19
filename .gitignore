@@ -22,3 +22,5 @@ dist-ssr
 *.sw?
 .env
 .vercel
+node_modules
+scratch/

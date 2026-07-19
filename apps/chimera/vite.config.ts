@@ -9,9 +9,9 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'CHIMERA — AI Creation Studio',
+        name: 'CHIMERA — Where Stories Come to Life',
         short_name: 'CHIMERA',
-        description: 'Create characters. Build worlds. Tell stories. A complete AI creation platform for storytellers and world builders.',
+        description: 'A complete creation platform for storytellers and world builders. Build characters, craft worlds, write stories — your way.',
         theme_color: '#E84C3D',
         background_color: '#0F0F0E',
         display: 'standalone',

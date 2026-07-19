@@ -44,7 +44,7 @@ export default function AuthScreen() {
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
           <Text style={styles.title}>WHISPRR</Text>
-          <Text style={styles.subtitle}>Where connections feel real</Text>
+          <Text style={styles.subtitle}>The Home of Creators</Text>
 
           <Text style={styles.tabTitle}>{isLogin ? 'Login to your account' : 'Create new account'}</Text>
 

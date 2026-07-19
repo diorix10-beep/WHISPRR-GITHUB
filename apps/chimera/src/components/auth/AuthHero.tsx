@@ -108,14 +108,14 @@ export function AuthHero() {
       <div className="absolute inset-0 flex flex-col justify-end p-10 xl:p-14 pointer-events-none">
         <div className="max-w-md">
           <p className="auth-text-rise auth-text-rise-delay-3 font-serif text-2xl xl:text-3xl text-white/95 leading-snug drop-shadow-lg">
-            Every conversation becomes
+            Every story begins
             <br />
-            a story worth remembering.
+            with a spark of imagination.
           </p>
           <div className="auth-text-rise auth-text-rise-delay-4 mt-4 flex items-center gap-2">
             <div className="h-px w-10 bg-primary-400/60" />
             <span className="text-xs uppercase tracking-[0.2em] text-white/50 font-medium">
-              CHIMER.AI
+              CHIMERA
             </span>
           </div>
         </div>

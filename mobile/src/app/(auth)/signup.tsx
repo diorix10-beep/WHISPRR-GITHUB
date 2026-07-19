@@ -60,7 +60,7 @@ export default function SignupScreen() {
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         <View style={[styles.card, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
           <Text style={[styles.title, { color: colors.primary }]}>WHISPRR</Text>
-          <Text style={styles.subtitle}>Where connections feel real</Text>
+          <Text style={styles.subtitle}>The Home of Creators</Text>
 
           <Text style={[styles.tabTitle, { color: colors.text }]}>Create new account</Text>
 

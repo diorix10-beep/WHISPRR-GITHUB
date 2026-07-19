@@ -36,9 +36,20 @@ const TrustPage                = lazy(() => import('./pages/TrustPage'));
 // ── Dashboard ──────────────────────────────────────────────
 const CreatorDashboardPage = lazy(() => import('./pages/CreatorDashboardPage'));
 
+// ── Creator Studio ─────────────────────────────────────────
+const CreatorStudioPage = lazy(() => import('./pages/CreatorStudioPage'));
+
 // ── Characters Module ──────────────────────────────────────
-const AiCharactersPage   = lazy(() => import('./pages/AiCharactersPage'));
+const CharactersPage     = lazy(() => import('./pages/CharactersPage'));
 const AiCharacterCreator = lazy(() => import('./pages/AiCharacterCreator'));
+
+// ── Worlds Module ──────────────────────────────────────────
+const WorldsPage        = lazy(() => import('./pages/WorldsPage'));
+const WorldBuilderPage  = lazy(() => import('./pages/WorldBuilderPage'));
+
+// ── Lorebooks Module ───────────────────────────────────────
+const LorebooksPage       = lazy(() => import('./pages/LorebooksPage'));
+const LorebookEditorPage  = lazy(() => import('./pages/LorebookEditorPage'));
 
 // ── Stories Module ─────────────────────────────────────────
 const WritersDeskPage   = lazy(() => import('./pages/WritersDeskPage'));
@@ -165,15 +176,19 @@ function AppLoader() {
             <Route path="/" element={<CreatorDashboardPage />} />
 
             {/* Characters Module */}
-            <Route path="/characters" element={<AiCharactersPage />} />
+            <Route path="/characters" element={<CharactersPage />} />
             <Route path="/characters/new" element={<AiCharacterCreator />} />
             <Route path="/characters/:id" element={<AiCharacterCreator />} />
             <Route path="/characters/:id/edit" element={<AiCharacterCreator />} />
 
             {/* Worlds Module */}
-            <Route path="/worlds" element={<ChimeraPlaceholderPage title="Worlds" description="Build rich fictional universes with locations, factions, timelines, and interconnected lore." />} />
-            <Route path="/worlds/new" element={<ChimeraPlaceholderPage title="World Builder" description="Create a new world with locations, factions, and timelines." />} />
-            <Route path="/worlds/:id" element={<ChimeraPlaceholderPage title="World Detail" description="View and edit your world." />} />
+            <Route path="/worlds" element={<WorldsPage />} />
+            <Route path="/worlds/new" element={<WorldsPage />} />
+            <Route path="/worlds/:id" element={<WorldBuilderPage />} />
+
+            {/* Lorebooks Module */}
+            <Route path="/lorebooks" element={<LorebooksPage />} />
+            <Route path="/lorebooks/:id" element={<LorebookEditorPage />} />
 
             {/* Stories Module */}
             <Route path="/stories" element={<WritersDeskPage />} />
@@ -201,11 +216,8 @@ function AppLoader() {
             {/* Media / Image Studio */}
             <Route path="/media" element={<ChimeraPlaceholderPage title="Image Studio" description="Generate avatars, expressions, outfits, scenes, and location art for your characters and worlds." />} />
 
-            {/* Lorebooks */}
-            <Route path="/lorebooks" element={<ChimeraPlaceholderPage title="Lorebooks" description="Create and manage knowledge books with keyword-triggered entries for context injection into AI conversations." />} />
-
             {/* Creator Studio (unified workspace) */}
-            <Route path="/studio" element={<ChimeraPlaceholderPage title="Creator Studio" description="One unified workspace containing every creation tool: Character Builder, World Builder, Voice Config, Prompt Editor, Memory Editor, Image Studio, AI Model Configuration." />} />
+            <Route path="/studio" element={<CreatorStudioPage />} />
 
             {/* Personas */}
             <Route path="/personas" element={<PersonasPage />} />

@@ -33,11 +33,37 @@ async function sendEmbed(identityKey, channel, embedBuilder) {
   }
 }
 
+import fs from 'fs';
+import path from 'path';
+
+const env = {};
+function loadEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) return;
+  const lines = fs.readFileSync(filePath, 'utf-8').split('\n');
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const idx = trimmed.indexOf('=');
+    if (idx === -1) continue;
+    const key = trimmed.substring(0, idx).trim();
+    let val = trimmed.substring(idx + 1).trim();
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+      val = val.substring(1, val.length - 1);
+    }
+    env[key] = val;
+  }
+}
+
+const workspaceDir = path.resolve();
+loadEnvFile(path.join(workspaceDir, '.env'));
+loadEnvFile(path.join(workspaceDir, '.env.production.local'));
+Object.assign(env, process.env);
+
 // ─────────────────────────────────────────────────────────────────────────────
-// CONFIGURATION — Set these before running
+// CONFIGURATION
 // ─────────────────────────────────────────────────────────────────────────────
-const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || 'YOUR_BOT_TOKEN_HERE';
-const DISCORD_GUILD_ID  = process.env.DISCORD_GUILD_ID  || 'YOUR_GUILD_ID_HERE';
+const DISCORD_BOT_TOKEN = env.DISCORD_BOT_TOKEN || 'YOUR_BOT_TOKEN_HERE';
+const DISCORD_GUILD_ID  = env.DISCORD_GUILD_ID  || env.DISCORD_GUILD_ID || '1148719266157834310';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ROLE DEFINITIONS — Ordered from HIGHEST to LOWEST
@@ -339,7 +365,20 @@ async function setupWhisprrHQ() {
   await client.login(DISCORD_BOT_TOKEN);
   console.log(`✅ Bot logged in as ${client.user.tag}\n`);
 
-  const guild = await client.guilds.fetch(DISCORD_GUILD_ID);
+  let guild;
+  try {
+    if (DISCORD_GUILD_ID && DISCORD_GUILD_ID !== 'YOUR_GUILD_ID_HERE') {
+      guild = await client.guilds.fetch(DISCORD_GUILD_ID);
+    }
+  } catch (e) {}
+
+  if (!guild) {
+    guild = client.guilds.cache.first();
+  }
+
+  if (!guild) {
+    throw new Error('Bot is not connected to any guild. Please invite the bot first.');
+  }
   console.log(`✅ Connected to server: ${guild.name} (${guild.id})\n`);
 
   // ═══════════════════════════════════════════════════════════════════════════

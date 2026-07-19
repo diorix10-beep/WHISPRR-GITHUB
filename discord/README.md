@@ -41,7 +41,7 @@ This script uses the Discord API (via `discord.js`) to create the entire server 
 | 🌍 COUNTRY SPACES | 🟢 Public | global-chat + 9 country channels |
 | 🎨 CREATORS | 🟢 Public | creator-lounge, showcase, creator-tips, creator-voice |
 | 🛠 SUPPORT | 🟢 Public | bug-reports (forum), feature-requests (forum), help, guides |
-| 🤖 AI & FUTURE | 🟢 Public | ai-discussion, ai-feedback, future-vision |
+| 🤖 CHIMERA CREATION | 🟢 Public | ai-characters, world-studio, story-studio, chimera-feedback |
 | 🧪 BETA PROGRAM | 🟢 Public | beta-announcements, beta-feedback, beta-bugs |
 | 🎉 EVENTS | 🟢 Public | event-announcements, ama-stage, game-nights |
 | 🔐 STAFF | 🟡 Staff only | staff-general, staff-tasks, moderation-log, staff-analytics, staff-voice |
