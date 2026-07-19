@@ -13,11 +13,18 @@ interface ChimeraLayoutProps {
   children?: ReactNode;
 }
 
-const TOP_LINKS = [
+const ROLEPLAY_LINKS = [
   { path: '/', label: 'Home' },
-  { path: '/discover', label: 'Discover', comingSoon: true },
-  { path: '/studio', label: 'Creator Studio' },
+  { path: '/characters', label: 'Characters' },
   { path: '/conversations', label: 'Chats' },
+  { path: '/studio', label: 'Creator Studio' },
+];
+
+const STORYTELLING_LINKS = [
+  { path: '/', label: 'Home' },
+  { path: '/stories', label: 'Stories' },
+  { path: '/worlds', label: 'Worlds' },
+  { path: '/studio', label: 'Creator Studio' },
 ];
 
 export function ChimeraLayout({ children }: ChimeraLayoutProps) {
@@ -31,6 +38,16 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [showAppLauncher, setShowAppLauncher] = useState(false);
+
+  const [creativeMode, setCreativeMode] = useState<'roleplay' | 'storytelling'>(() => {
+    return (localStorage.getItem('chimera_creative_mode') as 'roleplay' | 'storytelling') || 'roleplay';
+  });
+
+  const toggleCreativeMode = () => {
+    const newMode = creativeMode === 'roleplay' ? 'storytelling' : 'roleplay';
+    setCreativeMode(newMode);
+    localStorage.setItem('chimera_creative_mode', newMode);
+  };
 
   const themeMenuRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -83,7 +100,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
   const renderNavLinks = (isMobile = false) => (
     <>
-      {TOP_LINKS.map(link => (
+      {(creativeMode === 'roleplay' ? ROLEPLAY_LINKS : STORYTELLING_LINKS).map(link => (
         <NavLink
           key={link.path}
           to={link.comingSoon ? '#' : link.path}
@@ -124,8 +141,8 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
       <header className="sticky top-0 z-40 w-full bg-white/90 dark:bg-warm-850/90 backdrop-blur-md border-b border-warm-200 dark:border-warm-800 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
           
-          {/* Left: Brand & Mobile Menu */}
-          <div className="flex items-center gap-4">
+          {/* Left: Brand */}
+          <div className="flex items-center gap-4 flex-shrink-0">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="lg:hidden p-2 -ml-2 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
@@ -133,7 +150,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               <Menu size={20} />
             </button>
             
-            <Link to="/" className="flex items-center gap-2.5 flex-shrink-0 group">
+            <Link to="/" className="flex items-center gap-2.5 group">
               <img
                 src="/nexy_mascot.png"
                 alt="CHIMERA"
@@ -143,11 +160,38 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
                 CHIMERA
               </span>
             </Link>
+          </div>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-1 ml-6 h-full">
+          {/* Center: Dynamic Links & Global Mode Switch */}
+          <div className="hidden lg:flex flex-1 items-center justify-between mx-8">
+            {/* Navigation Links */}
+            <nav className="flex items-center gap-1">
               {renderNavLinks()}
             </nav>
+
+            {/* Global Creative Mode Switch */}
+            <div className="flex items-center bg-warm-100 dark:bg-warm-800 p-1 rounded-xl shadow-inner border border-warm-200 dark:border-warm-750">
+              <button
+                onClick={() => creativeMode !== 'roleplay' && toggleCreativeMode()}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                  creativeMode === 'roleplay' 
+                    ? 'bg-white dark:bg-warm-900 text-red-600 dark:text-red-400 shadow-sm' 
+                    : 'text-warm-500 hover:text-warm-700 dark:hover:text-warm-300'
+                }`}
+              >
+                <MessageSquare size={14} /> AI Roleplay
+              </button>
+              <button
+                onClick={() => creativeMode !== 'storytelling' && toggleCreativeMode()}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                  creativeMode === 'storytelling' 
+                    ? 'bg-white dark:bg-warm-900 text-purple-600 dark:text-purple-400 shadow-sm' 
+                    : 'text-warm-500 hover:text-warm-700 dark:hover:text-warm-300'
+                }`}
+              >
+                <PenTool size={14} /> Storytelling
+              </button>
+            </div>
           </div>
 
           {/* Right: Actions */}
@@ -244,6 +288,30 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
                 <span className="font-serif text-lg font-bold text-red-600 dark:text-red-500">Menu</span>
                 <button onClick={() => setIsMenuOpen(false)} className="text-warm-500"><X size={20} /></button>
               </div>
+
+              {/* Mobile Mode Toggle */}
+              <div className="p-4 border-b border-warm-100 dark:border-warm-800 bg-warm-50 dark:bg-warm-900/50">
+                <div className="text-[10px] uppercase font-bold tracking-widest text-warm-400 mb-2">Creative Mode</div>
+                <div className="flex bg-warm-200 dark:bg-warm-800 p-1 rounded-xl">
+                  <button
+                    onClick={() => creativeMode !== 'roleplay' && toggleCreativeMode()}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all ${
+                      creativeMode === 'roleplay' ? 'bg-white dark:bg-warm-900 text-red-600 dark:text-red-400 shadow-sm' : 'text-warm-500'
+                    }`}
+                  >
+                    <MessageSquare size={14} /> Roleplay
+                  </button>
+                  <button
+                    onClick={() => creativeMode !== 'storytelling' && toggleCreativeMode()}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all ${
+                      creativeMode === 'storytelling' ? 'bg-white dark:bg-warm-900 text-purple-600 dark:text-purple-400 shadow-sm' : 'text-warm-500'
+                    }`}
+                  >
+                    <PenTool size={14} /> Story
+                  </button>
+                </div>
+              </div>
+
               <nav className="flex-1 overflow-y-auto p-4 space-y-1">
                 {renderNavLinks(true)}
                 
