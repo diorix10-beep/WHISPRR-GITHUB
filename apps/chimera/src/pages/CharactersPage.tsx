@@ -8,6 +8,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
+import { CharacterCard } from '../components/chimera/CharacterCard';
 
 interface CharacterItem {
   id: string;
@@ -67,7 +68,7 @@ export default function CharactersPage() {
       setLoading(true);
       let query = supabase
         .from('ai_characters')
-        .select('*, bot_profile:profiles!ai_characters_user_id_fkey(display_name, username, avatar_emoji, photo_url)');
+        .select('*, bot_profile:profiles!ai_characters_user_id_fkey(display_name, username, avatar_emoji, photo_url), creator:profiles!ai_characters_creator_id_fkey(username, display_name)');
 
       if (tab === 'mine') {
         query = query.eq('creator_id', profile.user_id);
@@ -317,60 +318,31 @@ export default function CharactersPage() {
         /* Grid View */
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {characters.map(c => (
-            <div
+            <CharacterCard
               key={c.id}
-              className="group relative rounded-2xl bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-750 overflow-hidden hover:border-red-300 dark:hover:border-red-700 hover:shadow-lg hover:shadow-red-500/5 transition-all cursor-pointer"
+              character={c}
               onClick={() => navigate(`/characters/${c.id}/edit`)}
-            >
-              {/* Avatar */}
-              <div className="h-32 bg-gradient-to-br from-red-100 to-warm-100 dark:from-red-900/30 dark:to-warm-800 flex items-center justify-center relative">
-                {c.bot_profile?.photo_url ? (
-                  <img src={c.bot_profile.photo_url} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-4xl">{c.bot_profile?.avatar_emoji || '🎭'}</span>
-                )}
-                {/* Visibility badge */}
-                <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-lg bg-black/40 backdrop-blur-sm text-white text-[10px]">
-                  {visibilityIcon(c.visibility)}
-                  <span className="capitalize">{c.visibility}</span>
-                </div>
-              </div>
-
-              {/* Info */}
-              <div className="p-3 space-y-1.5">
-                <h3 className="font-semibold text-sm text-warm-900 dark:text-warm-50 truncate">
-                  {c.bot_profile?.display_name || 'Unnamed'}
-                </h3>
-                <p className="text-xs text-warm-500 dark:text-warm-400 line-clamp-2 leading-relaxed">
-                  {c.short_description || 'No description'}
-                </p>
-                <div className="flex items-center justify-between pt-1">
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-warm-100 dark:bg-warm-750 text-warm-500 dark:text-warm-400 font-medium">
-                    {c.category}
-                  </span>
-                  <span className="text-[10px] text-warm-400">{c.chats_count} chats</span>
-                </div>
-              </div>
-
-              {/* Action menu */}
-              <button
-                onClick={e => { e.stopPropagation(); setActionMenuId(actionMenuId === c.id ? null : c.id); }}
-                className="absolute top-2 left-2 p-1.5 rounded-lg bg-black/40 backdrop-blur-sm text-white opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <MoreHorizontal size={14} />
-              </button>
-
-              {actionMenuId === c.id && (
-                <div className="absolute top-10 left-2 z-10 bg-white dark:bg-warm-800 rounded-xl shadow-xl border border-warm-200 dark:border-warm-700 py-1 min-w-[140px]" onClick={e => e.stopPropagation()}>
-                  <button onClick={() => handleDuplicate(c.id)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-750">
-                    <Copy size={12} /> Duplicate
+              actionMenu={
+                <div className="relative group/menu">
+                  <button
+                    onClick={e => { e.stopPropagation(); setActionMenuId(actionMenuId === c.id ? null : c.id); }}
+                    className="p-1.5 rounded-lg bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 transition-colors"
+                  >
+                    <MoreHorizontal size={14} />
                   </button>
-                  <button onClick={() => handleExport(c.id)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-750">
-                    <Download size={12} /> Export JSON
-                  </button>
+                  {actionMenuId === c.id && (
+                    <div className="absolute top-8 right-0 z-10 bg-white dark:bg-warm-800 rounded-xl shadow-xl border border-warm-200 dark:border-warm-700 py-1 min-w-[140px]" onClick={e => e.stopPropagation()}>
+                      <button onClick={() => handleDuplicate(c.id)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-750">
+                        <Copy size={12} /> Duplicate
+                      </button>
+                      <button onClick={() => handleExport(c.id)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-750">
+                        <Download size={12} /> Export JSON
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              }
+            />
           ))}
         </div>
       ) : (
