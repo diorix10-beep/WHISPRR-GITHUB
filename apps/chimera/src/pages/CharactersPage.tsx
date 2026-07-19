@@ -78,9 +78,6 @@ export default function CharactersPage() {
       if (selectedCategory !== 'All') {
         query = query.eq('category', selectedCategory);
       }
-      if (searchQuery.trim()) {
-        query = query.or(`bot_profile.display_name.ilike.%${searchQuery}%,short_description.ilike.%${searchQuery}%,category.ilike.%${searchQuery}%`);
-      }
 
       // Sort
       switch (sortBy) {
@@ -92,9 +89,23 @@ export default function CharactersPage() {
 
       const { data, error } = await query.limit(100);
       if (error) throw error;
-      setCharacters(data || []);
+
+      // Client-side search filter (can't filter on joined columns in PostgREST)
+      let results = data || [];
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        results = results.filter(c =>
+          (c.bot_profile as any)?.display_name?.toLowerCase().includes(q) ||
+          c.short_description?.toLowerCase().includes(q) ||
+          c.category?.toLowerCase().includes(q)
+        );
+      }
+
+      setCharacters(results);
     } catch (err: any) {
-      showToast(err.message || 'Error loading characters', 'error');
+      console.error('Error loading characters:', err);
+      // Show empty state instead of error for graceful degradation
+      setCharacters([]);
     } finally {
       setLoading(false);
     }

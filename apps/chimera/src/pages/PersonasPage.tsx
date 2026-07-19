@@ -29,11 +29,18 @@ export default function PersonasPage() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
         
-      if (error) throw error;
+      if (error) {
+        // Table doesn't exist or RLS issue — show empty state
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          setPersonas([]);
+          return;
+        }
+        throw error;
+      }
       setPersonas(data || []);
     } catch (err) {
       console.error('Error fetching personas:', err);
-      showToast('Failed to load personas', 'error');
+      setPersonas([]);
     } finally {
       setLoading(false);
     }

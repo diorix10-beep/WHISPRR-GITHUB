@@ -38,7 +38,14 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         .eq('is_archived', false)
         .order('updated_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        // Table doesn't exist yet — gracefully return empty
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          setProjects([]);
+          return;
+        }
+        throw error;
+      }
       setProjects((data as ChimeraProject[]) || []);
     } catch (err) {
       console.error('Error fetching projects:', err);
@@ -56,7 +63,14 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        // Table doesn't exist yet — gracefully return null
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          setStats(null);
+          return;
+        }
+        throw error;
+      }
       setStats(data as CreatorStats | null);
     } catch (err) {
       console.error('Error fetching creator stats:', err);
