@@ -69,9 +69,6 @@ const PersonaEditorPage = lazy(() => import('./pages/PersonaEditorPage'));
 const ProfilePage  = lazy(() => import('./pages/ProfilePage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 
-// ── Oracle ─────────────────────────────────────────────────
-const OracleAssistantPage = lazy(() => import('./pages/OracleAssistantPage'));
-
 // ── Not Found ──────────────────────────────────────────────
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
@@ -228,10 +225,6 @@ function AppLoader() {
             {/* Profile & Settings */}
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<SettingsPage />} />
-
-            {/* Oracle Assistant */}
-            <Route path="/oracle" element={<OracleAssistantPage />} />
-            <Route path="/help" element={<OracleAssistantPage />} />
 
             {/* Legacy routes redirect */}
             <Route path="/roleplay" element={<Navigate to="/characters" replace />} />

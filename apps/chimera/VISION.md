@@ -1,143 +1,154 @@
-# CHIMERA Product Vision
+# CHIMERA AI — Product Vision & Development Roadmap
 
-After researching the AI roleplay community, reading feedback from Character.AI, JanitorAI, Zeta, and similar platforms, and thinking more deeply about CHIMERA's long-term direction, I want to refine our product vision.
-
-This is not a change of roadmap.
-
-It is a refinement of what CHIMERA is meant to become.
-
-This is not about copying competitors.
-
-It is about understanding what creators consistently ask for and building a platform that solves those problems in our own way.
+This document summarizes the complete vision for CHIMERA. The goal is not to copy any existing platform, but to build the best creative platform for AI Roleplay and Human Storytelling.
 
 ---
 
-# CHIMERA's Mission
+# Core Identity
 
-CHIMERA is not simply an AI chatbot.
+CHIMERA is NOT just a chatbot.
 
-CHIMERA is a creative platform built for roleplayers, storytellers, writers, worldbuilders, and creators.
+CHIMERA is an **AI Creation Platform**.
 
-Our objective is simple:
+Everything revolves around creation — not just chatting.
 
-Build the best creative platform for AI roleplay and storytelling.
-
-Not just another chatbot.
-
-WHISPRR remains the social platform.
-
-CHIMERA remains the creative platform.
+Users create:
+- Characters
+- Worlds
+- Stories
+- Communities
+- Lore
+- Memories
+- Series
+- Creator Profiles
 
 ---
 
 # Two Creative Experiences
 
-CHIMERA should support two major creative experiences.
+CHIMERA supports two major creative modes:
 
-## 1. AI Roleplay
+## AI Roleplay
+"I want to **live** the story."
 
-Users can:
+Focused on:
+- Characters
+- Conversations
+- Immersion
+- Relationships
+- Long-term Memory
+- Persistent Worlds
+- Group Chats
+- Dynamic Events
 
-- Create AI characters
-- Build worlds
-- Create scenarios
-- Roleplay with AI
-- Group conversations
-- Persistent memory
-- Long-term character development
+## Storytelling / Human Writing
+"I want to **write** the story."
 
-This remains one of CHIMERA's core experiences.
+Focused on:
+- Stories & Novels
+- Chapters & Scenes
+- Screenplays & Dialogue
+- Worldbuilding
+- Writing Assistance
+- Human-first creativity with optional AI
 
----
+## Shared Universe
 
-## 2. Storytelling
+The two modes are NOT independent. They share the exact same universe:
 
-CHIMERA should also become a platform where creators can write actual fiction.
+World → Characters → Lore → Timeline → Relationships → Memories
 
-Examples:
+From there, creators choose:
+- **AI Roleplay** → Interactive conversations
+- **Storytelling** → Novel writing
 
-- Novels
-- Short stories
-- Series
-- Fanfiction
-- Original fiction
-- Interactive stories
+The creator never has to rebuild their universe.
 
-Think of this as giving creators a complete writing environment while remaining entirely separate from the roleplay experience.
+## Instant Switching
 
----
+- Roleplay for two hours → Click "Continue as Story" → Chapter editor opens
+- Finish Chapter 12 → Click "Continue in Roleplay" → Story becomes conversation
 
-# Community Research
-
-After reviewing discussions from Character.AI, JanitorAI, Zeta, and other AI roleplay communities, several recurring themes appear across almost every platform.
-
-People consistently ask for:
-
-- Better memory
-- Better worldbuilding
-- More character customization
-- Multiple AI models
-- Group conversations
-- More proactive AI characters
-- More creator control
-- Better long-term storytelling
-- Better writing tools
-- More freedom to customize their experience
-
-These community requests validate many of the features we already planned.
+This seamless transition is one of CHIMERA's defining features.
 
 ---
 
-# Creator Control
+# Platform Principles
 
-One major lesson is that users want choice.
+## Mobile & Desktop
+- Desktop = professional creator workspace
+- Mobile = creator companion
+- Same philosophy, adapted to each device
 
-Instead of forcing one experience, CHIMERA should allow creators to configure how they want to create.
+## No Oracle Guide / Onboarding Helper
+- No floating helper
+- No "Oracle Guide"
+- No tutorial cards
+- No coaching panels
+- Clean, professional interface
+- People should immediately start creating
 
-Examples:
-
-- AI Model
-- Creativity
-- Memory
-- Response Length
-- Initiative
-- Narrative Style
-- Writing Style
-- Personality Settings
-- Voice
-- World Rules
-
-Creators should feel that they are building their own creative experience.
+## Consistency
+Everything shares:
+- One design language
+- One spacing system
+- One typography system
+- One animation system
+- One card system
+- One interaction philosophy
 
 ---
 
-# AI Initiative
+# Character Management
 
-One complaint appears constantly.
+Each character card displays:
+- Image, Name, Visibility, Model, Status
+- Chats, Favorites, Views, Last updated
 
-Users feel that AI characters have become passive.
+Actions:
+- Edit, Duplicate, Analytics, Publish, Archive, Delete
 
-Instead of driving the story, they simply wait for the user.
+---
 
-I want CHIMERA to expose configurable behavior settings such as:
+# Personas (Reusable)
 
-- Initiative
-- Curiosity
-- Proactiveness
-- Emotional Depth
-- Story Progression
-- Conversation Style
+A Persona defines:
+- Writing style
+- Personality
+- Tone & Vocabulary
+- Emotional behavior
+- Narrative style
+- Formatting preferences
 
-Characters should be capable of naturally moving stories forward when appropriate.
+Multiple characters can inherit the same Persona.
+
+---
+
+# Behaviors (replaces Scripts)
+
+Intuitive creator-defined logic:
+- Events & Conditions
+- Memory triggers
+- Automatic reactions
+- Dynamic behaviors
+- Character logic
+
+---
+
+# Worlds (First-Class Citizens)
+
+Worlds are just as important as Characters. They contain:
+- Lore & Locations
+- Timeline & History
+- Relationships & Factions
+- Rules
+- The AI understands all of this automatically
 
 ---
 
 # Memory
 
-Memory should become one of CHIMERA's strongest features.
-
-Support systems such as:
-
+Memory is one of CHIMERA's strongest features:
 - Short-term Memory
 - Long-term Memory
 - Personality Memory
@@ -145,301 +156,172 @@ Support systems such as:
 - Lore Memory
 - World Memory
 
-Everything should work together to maintain consistency across long conversations.
+Everything works together for consistency across long conversations.
 
 ---
 
-# Worldbuilding
+# AI Initiative
 
-Continue expanding the World Builder.
-
-Support:
-
-- Lorebooks
-- Locations
-- Factions
-- Timelines
-- Relationships
-- Shared Knowledge
-- World Rules
-
-Characters should naturally integrate with worlds.
-
----
-
-# AI Writing Assistant
-
-The AI writing assistant remains completely optional.
-
-CHIMERA is built for storytellers and writers.
-
-Some creators enjoy AI collaboration.
-
-Others prefer writing entirely on their own.
-
-Support both.
-
-Writing Modes:
-
-- Manual Writing
-- AI Assisted Writing
-
-Users should be able to enable or disable AI assistance whenever they choose.
-
-The creator always remains in control.
-
-The assistant exists to help creators—not replace them.
-
-It is not designed for roleplay.
-
-It is designed to support human writing.
+Characters should NOT be passive. Configurable settings:
+- Initiative & Curiosity
+- Proactiveness
+- Emotional Depth
+- Story Progression
+- Conversation Style
 
 ---
 
 # Content Preferences
 
-Many users ask for more control over their experience.
-
-Rather than forcing a single experience, CHIMERA should allow creators to configure the type of experience they want within the platform's supported policies.
-
-Examples:
-
-Content Preferences
-
-- Family Friendly
-- Balanced
-- Mature
-
-Conversation Style
-
-- Safe
-- Balanced
-- Mature
-
-The goal is to maximize creator choice while maintaining a responsible platform.
+- Family Friendly / Balanced / Mature
+- Safe / Balanced / Mature conversation style
+- Maximize creator choice while maintaining a responsible platform
 
 ---
 
-# Creator Collaboration
+# Creator Collaboration (via WHISPRR)
 
-This will be implemented in a later phase.
-
-The collaboration system should not live directly inside CHIMERA.
-
-Instead:
-
-WHISPRR becomes the place where creators discover each other, communicate, exchange ideas, and send collaboration requests.
-
-Creators should be able to:
-
-- Discover other creators
-- Chat together
-- Exchange ideas
-- Send collaboration requests
-- Build creative teams
-
-When a collaboration request is accepted, a shared creative project should automatically be created inside CHIMERA.
-
-The creative work happens inside CHIMERA.
-
-The social interaction happens inside WHISPRR.
+- WHISPRR = discover creators, chat, exchange ideas, send collaboration requests
+- When accepted → shared creative project created inside CHIMERA
+- Creative work happens in CHIMERA
+- Social interaction happens in WHISPRR
 
 ---
 
 # Long-Term Ecosystem
 
-WHISPRR
+**WHISPRR** (Social Platform)
+- Discovery, Communities, Messages
+- Collaboration Requests, Creator Networking
 
-- Social Platform
-- Discovery
-- Communities
-- Messages
-- Collaboration Requests
-- Creator Networking
-
-↓
-
-CHIMERA
-
-- AI Models
-- Characters
-- Worlds
-- Story Projects
-- Roleplay
-- Story Writing
-- Creator Studio
-- AI Tools
-- Publishing
-
-This separation gives each platform a clear identity while allowing them to work together seamlessly.
+**CHIMERA** (Creative Platform)
+- AI Models, Characters, Worlds
+- Story Projects, Roleplay, Story Writing
+- Creator Studio, AI Tools, Publishing
 
 ---
 
 # What We Will NOT Build
 
-We are not trying to become another Character.AI.
+- Not another Character.AI
+- Not marketed as "100% uncensored"
+- Not competing by removing safeguards
 
-We are not trying to market CHIMERA as "100% uncensored."
-
-We are not trying to compete by removing every safeguard.
-
-Instead, we compete through:
-
-- Better creation tools
-- Better storytelling
-- Better roleplay
-- Better customization
-- Better memory
-- Better worldbuilding
-- Better creator experience
-- Better architecture
+We compete through:
+- Better creation tools & storytelling
+- Better roleplay & customization
+- Better memory & worldbuilding
+- Better creator experience & architecture
 
 ---
 
-# CHIMERA Roadmap
+# Development Roadmap
 
 ## Phase 1 — Foundation ✅
+Build a polished, stable, creator-first platform.
 
-Build the technical foundation.
-
-- Finalize database architecture
-- Authentication
-- Projects
-- User Profiles
-- Creator Dashboard
-- Design System
-- Navigation
-- Settings
-- Storage
-- Permissions
-- API Architecture
+- Core Authentication (Login, Register, Forgot Password, Google/Apple)
+- Navigation (Home, Search, Notifications, Messages, Profile)
+- Creator Studio (Character Studio, World Studio, Persona Studio, AI Models)
+- Characters (Create, Edit, Delete, Duplicate, Drafts, Publish, Visibility)
+- Chats (History, Continue, Delete, Search)
+- Profile (Public Profile, Followers, Following, Creator Statistics)
 
 ---
 
-## Phase 2 — Creator Studio ✅
+## Phase 2 — Creator Ecosystem ✅
+Provide creators with everything needed to build immersive universes.
 
-Build the complete creation workspace.
-
-Implement:
-
-- Character Builder
-- Character Library
-- World Builder
-- Lorebooks
-- Timeline Manager
-- Relationship Manager
-- Story Projects
-- Story Editor
-- Memory Manager
+- World Studio (Worlds, Locations, Timeline, Factions, Relationships, Lorebooks)
+- Personas (Reusable Personas, Writing Styles, Personality/Emotional Presets)
+- Behaviors (Events, Triggers, Conditions, Dynamic Behaviors, Character Logic)
+- Assets (Images, Voices, Documents, References)
 
 ---
 
-## Phase 3 — AI Features
+## Phase 3 — Website Experience
+The desktop website should feel like a professional creator platform.
 
-Implement:
+Pages:
+- Home, Discover, My Characters, My Personas
+- World Studio, Creator Studio, Chats
+- Settings, Profile, Media Library
+- Notifications, Search
 
-- AI Models
-- AI Configuration
-- AI Character Conversations
-- Group Conversations
-- Optional AI Writing Assistant
-- Brainstorming
-- Story Organization
-- Continuity Checker
-- Lore Assistant
-- Memory Assistance
-
-Remember:
-
-AI is optional.
-
-Creators who do not want AI assistance should be able to disable it completely.
+Desktop layout prioritizes productivity while remaining clean and modern.
 
 ---
 
-## Phase 4 — Media & Immersion
+## Phase 4 — Mobile Experience
+Redesigned specifically for phones. Not a compressed desktop.
 
-Implement:
-
-- Voice Library
-- Character Voices
-- Image Generation
-- Scene Generation
-- Character Expressions
-- Assets
-- Cover Generator
-- Project Media
+- No Oracle Guide or helper panels
+- Extremely clean character creation flow
+- Simple expandable sections
+- Minimal, fast, modern
 
 ---
 
-## Phase 5 — Publishing
+## Phase 5 — My Studio
+A unified creator workspace.
 
-Implement:
-
-- Story Publishing
-- Character Publishing
-- World Publishing
-- Visibility Settings
-- Drafts
-- Scheduled Publishing
-- Reader Experience
-- Bookmarks
-- Reading Progress
-- Reviews
+- Characters, Personas, Worlds, Stories
+- Collections, Drafts, Published, Analytics
+- Everything accessible from one place
 
 ---
 
-## Phase 6 — WHISPRR Integration
+## Phase 6 — Discover
+Replace topic-based discovery with:
 
-Connect both platforms while keeping them independent.
-
-Creators should be able to:
-
-- Share stories to WHISPRR
-- Share characters to WHISPRR
-- Share worlds to WHISPRR
-
-WHISPRR should generate rich preview cards that link back to CHIMERA.
-
-The complete creation and reading experience always remains inside CHIMERA.
-
-WHISPRR remains the discovery and social platform.
-
-CHIMERA remains the creation platform.
+- Trending Characters, Worlds, Stories
+- Trending Creators, Collections, Communities
+- Algorithm controls in Settings → Discovery Preferences
 
 ---
 
-## Phase 7 — Production & Polish
+## Phase 7 — Roleplay & Storytelling
+CHIMERA's biggest differentiator.
 
-Prepare for public launch.
+- AI Roleplay ↔ Storytelling switch
+- Same account, characters, worlds, memories
+- Two completely different creative experiences
+- Instant switching between both
 
-Focus on:
+---
 
-- Performance
-- Accessibility
-- Security
-- Testing
-- Mobile Responsiveness
-- Animations
-- UX Improvements
-- Documentation
-- Bug Fixes
-- Production Readiness
+## Phase 8 — Community
+Creators grow audiences.
+
+- Creator Profiles, Followers/Following
+- Collections, Series, Published Stories/Worlds
+- Communities, Creator Collaborations, Events
+
+---
+
+## Phase 9 — Advanced Creation
+- Story/Dialogue/Scene/Character/Relationship/World Generators
+- Lore Assistant, Timeline Assistant, Memory Manager
+
+---
+
+## Phase 10 — Professional Creator Tools
+- Creator Analytics, Version History, Draft Recovery
+- Cloud Sync, Collaborative Editing, Creator Teams
+- Scheduled Publishing, Marketplace, Templates
 
 ---
 
 # Final Objective
 
 Build a platform where creators can:
-
-- Build AI characters
-- Create worlds
-- Roleplay
-- Write novels and fiction
+- Create AI characters
+- Build immersive worlds
+- Write human stories
+- Roleplay with AI
+- Organize universes
+- Publish creations
+- Build communities
 - Collaborate with other creators
-- Publish their creations
-- Share them through WHISPRR
 
-Our goal is not to build another chatbot.
-
-Our goal is to build the best creative ecosystem for AI roleplay, storytelling, and worldbuilding.
+**Build the best creative platform for AI Roleplay and Human Storytelling.**

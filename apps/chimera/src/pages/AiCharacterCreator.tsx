@@ -7,7 +7,6 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
-import { ContextualOracle } from '../components/chimera/ContextualOracle';
 
 const CATEGORY_OPTIONS = [
   'Romance', 'Fantasy', 'Sci-Fi', 'Horror', 'Mystery', 'Action', 
@@ -1354,13 +1353,6 @@ export default function AiCharacterCreator() {
       )}
 
     </div>
-    
-      <ContextualOracle 
-        context={{ 
-          page: 'Character Creator', 
-          details: `User is in ${creationMode} mode.` 
-        }} 
-      />
     </>
   );
 }
