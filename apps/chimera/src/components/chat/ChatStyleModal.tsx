@@ -12,7 +12,8 @@ const STYLES: { id: ChatStyleColor; label: string; bgClass: string; borderClass:
   { id: 'default', label: 'Default', bgClass: 'bg-warm-900', borderClass: 'border-warm-700' },
   { id: 'crimson', label: 'Crimson', bgClass: 'bg-red-950', borderClass: 'border-red-900' },
   { id: 'midnight', label: 'Midnight', bgClass: 'bg-slate-950', borderClass: 'border-slate-800' },
-  { id: 'royal', label: 'Royal', bgClass: 'bg-indigo-950', borderClass: 'border-indigo-900' }
+  { id: 'royal', label: 'Royal', bgClass: 'bg-indigo-950', borderClass: 'border-indigo-900' },
+  { id: 'imessage', label: 'iMessage', bgClass: 'bg-blue-600', borderClass: 'border-blue-500' }
 ];
 
 export function ChatStyleModal({ isOpen, onClose, currentStyle, onSelect }: ChatStyleModalProps) {

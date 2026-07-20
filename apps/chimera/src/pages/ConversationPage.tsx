@@ -548,13 +548,22 @@ export default function ConversationPage() {
       case 'crimson': return 'theme-crimson';
       case 'midnight': return 'theme-midnight';
       case 'royal': return 'theme-royal';
+      case 'imessage': return 'theme-imessage';
       default: return '';
     }
   };
 
+  const isPhoneLayout = aesthetics.layoutStyle === 'phone';
+  const isModernLayout = aesthetics.layoutStyle === 'modern' || isPhoneLayout;
+
   return (
-    <div className={`h-screen flex flex-col bg-white dark:bg-warm-950 font-sans ${getStyleClasses()}`}>
+    <div className={`h-screen flex flex-col font-sans ${getStyleClasses()} ${isPhoneLayout ? 'bg-warm-100 dark:bg-black items-center justify-center p-0 sm:p-4' : 'bg-white dark:bg-warm-950'}`}>
       
+      {/* Phone Wrapper (only active on larger screens if phone layout is selected) */}
+      <div className={`w-full h-full flex flex-col relative overflow-hidden bg-white dark:bg-warm-950 transition-all ${
+        isPhoneLayout ? 'sm:max-w-[400px] sm:h-[850px] sm:max-h-[90vh] sm:rounded-[3rem] sm:border-[12px] sm:border-black sm:shadow-2xl sm:ring-1 sm:ring-warm-800' : ''
+      }`}>
+
       {/* Dynamic Wallpaper */}
       {aesthetics.wallpaperUrl && (
         <div 
@@ -569,20 +578,23 @@ export default function ConversationPage() {
       )}
       
       {/* Header */}
-      <header className="flex-none sticky top-0 z-30 bg-white/90 dark:bg-warm-900/90 backdrop-blur-md border-b border-warm-200 dark:border-warm-800">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
+      <header className={`flex-none sticky top-0 z-30 bg-white/90 dark:bg-warm-900/90 backdrop-blur-md border-b border-warm-200 dark:border-warm-800 ${isPhoneLayout ? 'sm:pt-8' : ''}`}>
+        <div className={`max-w-7xl mx-auto px-4 py-3 flex items-center justify-between ${isPhoneLayout ? 'relative justify-center' : ''}`}>
+          
+          <div className={`flex items-center gap-3 flex-1 min-w-0 ${isPhoneLayout ? 'absolute left-4' : ''}`}>
             <button onClick={() => navigate('/messages')} className="p-2 -ml-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500 transition-colors">
               <ArrowLeft size={24} />
             </button>
+          </div>
 
+          <div className={`flex items-center justify-center min-w-0 ${isPhoneLayout ? 'flex-col gap-1' : 'flex-1 gap-3 ml-3'}`}>
             {conversation?.type === 'dm' && otherUser && (
               <div 
-                className="flex items-center gap-3 min-w-0 cursor-pointer hover:bg-warm-50 dark:hover:bg-warm-800/50 p-1 -ml-1 rounded-xl transition-colors"
+                className={`flex items-center min-w-0 cursor-pointer hover:bg-warm-50 dark:hover:bg-warm-800/50 p-1 -ml-1 rounded-xl transition-colors ${isPhoneLayout ? 'flex-col gap-1' : 'gap-3'}`}
                 onClick={() => setShowSettingsDrawer(true)}
               >
-                <Avatar emoji={otherUser.avatar_emoji} photoUrl={otherUser.photo_url} size="md" />
-                <div className="min-w-0">
+                <Avatar emoji={otherUser.avatar_emoji} photoUrl={otherUser.photo_url} size={isPhoneLayout ? "sm" : "md"} />
+                <div className={`min-w-0 ${isPhoneLayout ? 'text-center' : ''}`}>
                   <h1 className="font-serif font-bold text-lg text-warm-900 dark:text-warm-50 truncate flex items-center">
                     {otherUser.display_name}
                     <UserBadges badges={otherUser.badges} role={otherUser.role} size="sm" />
@@ -669,20 +681,20 @@ export default function ConversationPage() {
                   <div 
                     key={message.id} 
                     className={`group relative flex gap-4 p-2 sm:p-4 rounded-2xl transition-colors
-                      ${aesthetics.layoutStyle === 'modern' && isOwn ? 'flex-row-reverse -mr-2 sm:-mr-4' : '-mx-2 sm:-mx-4'}
-                      ${aesthetics.layoutStyle === 'modern' && isOwn ? '' : 'hover:bg-warm-50 dark:hover:bg-warm-900/30'}
+                      ${isModernLayout && isOwn ? 'flex-row-reverse -mr-2 sm:-mr-4' : '-mx-2 sm:-mx-4'}
+                      ${isModernLayout && isOwn ? '' : 'hover:bg-warm-50 dark:hover:bg-warm-900/30'}
                     `}
                   >
                     {/* Avatar Column */}
-                    {!(aesthetics.layoutStyle === 'modern' && isOwn) && (
+                    {!(isModernLayout && isOwn) && (
                       <div className="flex-shrink-0 mt-1">
                         <Avatar emoji={sender?.avatar_emoji || '?'} photoUrl={sender?.photo_url || null} size="md" />
                       </div>
                     )}
 
                     {/* Content Column */}
-                    <div className={`flex-1 min-w-0 space-y-1.5 ${aesthetics.layoutStyle === 'modern' && isOwn ? 'flex flex-col items-end' : ''}`}>
-                      {!(aesthetics.layoutStyle === 'modern' && isOwn) && (
+                    <div className={`flex-1 min-w-0 space-y-1.5 ${isModernLayout && isOwn ? 'flex flex-col items-end' : ''}`}>
+                      {!(isModernLayout && isOwn) && (
                         <div className="flex items-baseline gap-2">
                           <span className={`font-bold ${isOwn ? 'text-warm-900 dark:text-warm-100' : 'text-primary-600 dark:text-primary-400'}`}>
                             {sender?.display_name || 'Unknown'}
@@ -704,7 +716,11 @@ export default function ConversationPage() {
 
                       {message.content && message.content !== 'Sent an image' && (
                         <div className={`text-[15px] sm:text-base leading-relaxed text-warm-800 dark:text-warm-200 whitespace-pre-wrap font-serif
-                          ${aesthetics.layoutStyle === 'modern' ? `p-3 sm:p-4 rounded-2xl max-w-[85%] ${isOwn ? 'bg-primary-600 text-white rounded-tr-sm' : 'bg-warm-100 dark:bg-warm-900 rounded-tl-sm'}` : ''}
+                          ${isModernLayout ? `px-4 py-2.5 rounded-2xl max-w-[85%] ${
+                            isOwn 
+                              ? (aesthetics.chatStyle === 'imessage' ? 'bg-[#007AFF] text-white rounded-tr-sm' : 'bg-primary-600 text-white rounded-tr-sm') 
+                              : (aesthetics.chatStyle === 'imessage' ? 'bg-[#E5E5EA] text-black dark:bg-[#262628] dark:text-white rounded-tl-sm' : 'bg-warm-100 dark:bg-warm-900 rounded-tl-sm')
+                          }` : ''}
                         `}>
                           {editingMessageId === message.id ? (
                             <div className="mt-1 flex flex-col gap-2">
@@ -1089,6 +1105,10 @@ export default function ConversationPage() {
           </div>
         </div>
       )}
+
+      {/* End Phone Wrapper */}
+      </div>
+
     </div>
   );
 }

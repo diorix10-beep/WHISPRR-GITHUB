@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
-export type ChatLayout = 'classic' | 'modern';
-export type ChatStyleColor = 'default' | 'crimson' | 'midnight' | 'royal';
+export type ChatLayout = 'classic' | 'modern' | 'phone';
+export type ChatStyleColor = 'default' | 'crimson' | 'midnight' | 'royal' | 'imessage';
 
 interface ChatAesthetics {
   wallpaperUrl: string | null;

@@ -73,6 +73,30 @@ export function ChatLayoutModal({ isOpen, onClose, currentLayout, onSelect }: Ch
             </div>
           </button>
 
+          <button
+            onClick={() => { onSelect('phone'); onClose(); }}
+            className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left ${
+              currentLayout === 'phone' ? 'border-primary-500 bg-primary-900/10' : 'border-warm-800 hover:border-warm-600 bg-warm-950/50'
+            }`}
+          >
+            <div className="flex-1 space-y-2">
+              <h3 className="font-bold">Mock Phone (Simulator)</h3>
+              <p className="text-xs text-warm-400">Renders the chat inside an authentic iPhone bezel on your desktop.</p>
+            </div>
+            {/* Visual preview */}
+            <div className="w-16 h-20 rounded-xl border-2 border-warm-700 bg-warm-900 flex flex-col p-1 gap-1 opacity-80 items-center justify-center relative shadow-inner">
+              <div className="w-6 h-1 rounded-full bg-warm-800 absolute top-1" />
+              <div className="w-12 flex flex-col gap-1 mt-2">
+                <div className="flex gap-1 items-start">
+                  <div className="w-8 h-2 bg-warm-700 rounded-md" />
+                </div>
+                <div className="flex gap-1 items-start justify-end w-full">
+                  <div className="w-6 h-2 bg-primary-500 rounded-md" />
+                </div>
+              </div>
+            </div>
+          </button>
+
         </div>
       </div>
     </>
