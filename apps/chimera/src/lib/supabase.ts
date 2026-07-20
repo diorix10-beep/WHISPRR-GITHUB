@@ -7,8 +7,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
-const rootDomain = isLocalhost ? 'localhost' : '.whisprr.xyz';
+const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+const isVercel = hostname.endsWith('.vercel.app');
+
+// Use the current Vercel domain for testing, otherwise use the shared production domain
+const rootDomain = isLocalhost 
+  ? 'localhost' 
+  : isVercel 
+    ? hostname 
+    : '.whisprr.xyz';
 
 const cookieStorage = {
   getItem: (key: string): string | null => {
