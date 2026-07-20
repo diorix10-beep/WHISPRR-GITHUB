@@ -20,18 +20,11 @@ const DYNAMICS = ['Lovers', 'Friends', 'Family', 'Caregiver', 'Mentor', 'Rivals'
 const SETTINGS = ['Modern', 'Medieval', 'School', 'Space', 'Apocalypse', 'Cyberpunk'];
 const MOODS = ['Wholesome', 'Emotional', 'Dark', 'Psychological', 'Comedic', 'Cozy'];
 
-interface ChatMessage {
-  sender: 'oracle' | 'user';
-  text: string;
-}
-
 export default function AiCharacterCreator() {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const { showToast } = useToast();
 
-  // Mode Selection: 'creator' (conversational storytelling) or 'advanced' (technical fields)
-  const [creationMode, setCreationMode] = useState<'creator' | 'advanced'>('creator');
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -48,14 +41,6 @@ export default function AiCharacterCreator() {
     step: 'saving' | 'validating' | 'uploading' | 'publishing' | 'success' | 'failed';
     error?: string;
   }>({ isActive: false, step: 'saving' });
-
-  // Guided Interview State
-  const [interviewStep, setInterviewStep] = useState(0);
-  const [oracleMessages, setOracleMessages] = useState<ChatMessage[]>([
-    { sender: 'oracle', text: "Hello! Let's build someone unforgettable today. What's their name?" }
-  ]);
-  const [interviewInput, setInterviewInput] = useState('');
-  const [isOracleTyping, setIsOracleTyping] = useState(false);
 
   // Playtest State
   const [playtestMode, setPlaytestMode] = useState(false);
@@ -135,7 +120,7 @@ export default function AiCharacterCreator() {
         setSaveStatus('saving');
         localStorage.setItem(
           'chimera-character-creator-draft',
-          JSON.stringify({ formData, currentStep, creationMode, interviewStep })
+          JSON.stringify({ formData, currentStep })
         );
         setTimeout(() => {
           setSaveStatus('saved');
@@ -165,12 +150,10 @@ export default function AiCharacterCreator() {
     const saved = localStorage.getItem('chimera-character-creator-draft');
     if (saved) {
       try {
-        const { formData: savedData, currentStep: savedStep, creationMode: savedMode, interviewStep: savedIS } = JSON.parse(saved);
+        const { formData: savedData, currentStep: savedStep } = JSON.parse(saved);
         setFormData(savedData);
         setCurrentStep(savedStep || 1);
-        setCreationMode(savedMode || 'creator');
-        setInterviewStep(savedIS || 0);
-        showToast('We found your draft and restored it!', 'success');
+                showToast('We found your draft and restored it!', 'success');
       } catch (e) {
         showToast('Failed to restore draft', 'error');
       }
@@ -200,68 +183,6 @@ export default function AiCharacterCreator() {
       return "We couldn't reach the server. Your draft has been safely saved locally and we'll sync when your connection returns.";
     }
     return "Something went wrong while publishing. Please try again in a moment. Your draft has been safely saved.";
-  };
-
-  // Guided Interview Logic
-  const handleSendInterviewMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!interviewInput.trim()) return;
-
-    const userText = interviewInput.trim();
-    const currentMessages = [...oracleMessages, { sender: 'user', text: userText } as ChatMessage];
-    setOracleMessages(currentMessages);
-    setInterviewInput('');
-    setIsOracleTyping(true);
-
-    try {
-      const response = await fetch('/api/oracle-guide', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: currentMessages,
-          formData,
-          interviewStep
-        })
-      });
-
-      if (!response.ok) throw new Error('Failed to reach Oracle');
-      const data = await response.json();
-
-      let nextFormData = { ...formData };
-      
-      // If Oracle extracted structured field data, sync it live to the form state
-      if (data.extractedField && data.extractedValue) {
-        const field = data.extractedField;
-        const val = data.extractedValue;
-        
-        if (field === 'longDescription') {
-          nextFormData.longDescription = val;
-          nextFormData.shortDescription = val.substring(0, 80);
-        } else if (field === 'personality') {
-          nextFormData.personality = val;
-          nextFormData.systemCharacterDefinition = `[Character: ${nextFormData.name || '{{char}}'}]\n[Mind: ${val}]`;
-        } else {
-          // @ts-ignore
-          nextFormData[field] = val;
-        }
-        setFormData(nextFormData);
-      }
-
-      setOracleMessages(prev => [...prev, { sender: 'oracle', text: data.response }]);
-
-      if (data.shouldAdvance) {
-        setInterviewStep(prev => Math.min(prev + 1, 7));
-      }
-
-    } catch (err) {
-      console.error('Oracle guide API error:', err);
-      setOracleMessages(prev => [...prev, { 
-        sender: 'oracle', 
-        text: "I had a brief connection issue, but my digital sensors are back online. Could you tell me more about that?" 
-      }]);
-    } finally {
-      setIsOracleTyping(false);
-    }
   };
 
   // Meet Your Character / Start Playtest Draft
@@ -512,11 +433,6 @@ export default function AiCharacterCreator() {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
-  // Helper for toggle mode terminology
-  const term = (tech: string, creative: string) => {
-    return creationMode === 'creator' ? creative : tech;
-  };
-
   return (
     <>
     <div className="page-container max-w-6xl mx-auto py-6 sm:py-8 flex flex-col min-h-screen relative">
@@ -554,8 +470,8 @@ export default function AiCharacterCreator() {
         <div className="flex items-center gap-2">
           <Bot size={24} className="text-red-500" />
           <div>
-            <h1 className="text-2xl font-serif font-bold text-warm-900 dark:text-warm-50">CHIMERA Forge</h1>
-            <p className="text-xs text-warm-500 dark:text-warm-405">Character Forging Studio</p>
+            <h1 className="text-2xl font-serif font-bold text-warm-900 dark:text-warm-50">Create Character</h1>
+            <p className="text-xs text-warm-500 dark:text-warm-405">Design your AI Roleplay Persona</p>
           </div>
         </div>
 
@@ -567,244 +483,16 @@ export default function AiCharacterCreator() {
             {saveStatus === 'offline' && <span className="text-rose-500">📡 Working offline</span>}
           </div>
 
-          {/* Mode Switcher Toggle */}
-          <div className="flex items-center bg-warm-100 dark:bg-warm-800 p-1 rounded-xl border border-warm-200 dark:border-warm-700">
-            <button
-              onClick={() => setCreationMode('creator')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                creationMode === 'creator'
-                  ? 'bg-red-500 text-white shadow'
-                  : 'text-warm-600 dark:text-warm-400 hover:text-warm-900'
-              }`}
-            >
-              <Sparkles size={12} />
-              Storytelling
-            </button>
-            <button
-              onClick={() => setCreationMode('advanced')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                creationMode === 'advanced'
-                  ? 'bg-red-500 text-white shadow'
-                  : 'text-warm-600 dark:text-warm-400 hover:text-warm-900'
-              }`}
-            >
-              <Settings size={12} />
-              Advanced
-            </button>
-          </div>
         </div>
       </div>
 
       {/* Main Work Area */}
-      {creationMode === 'creator' ? (
-        /* STORYTELLING MODE (Oracle Conversational Interview) */
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* Left: Oracle Conversational Panel */}
-          <div className="lg:col-span-7 flex flex-col bg-white dark:bg-warm-850/50 rounded-3xl border border-warm-200 dark:border-warm-800 shadow-xl overflow-hidden min-h-[600px] max-h-[650px]">
-            {/* Header */}
-            <div className="px-6 py-4 bg-gradient-to-r from-red-500/10 to-transparent border-b border-warm-100 dark:border-warm-800 flex items-center gap-3">
-              <img
-                src="/nexy_mascot.png"
-                alt="Oracle"
-                className="w-8 h-8 rounded-lg object-cover border border-red-500/25 chimera-glow-red"
-              />
-              <div>
-                <h3 className="font-serif font-bold text-sm text-warm-900 dark:text-warm-100">Oracle Guide</h3>
-                <p className="text-[10px] text-warm-500">Guided Storytelling Forge</p>
-              </div>
-            </div>
-
-            {/* Message Log */}
-            <div className="flex-1 p-6 overflow-y-auto space-y-4 no-scrollbar">
-              {oracleMessages.map((msg, idx) => (
-                <div 
-                  key={idx} 
-                  className={`flex gap-3 max-w-[85%] ${
-                    msg.sender === 'user' ? 'ml-auto flex-row-reverse' : ''
-                  }`}
-                >
-                  {msg.sender === 'oracle' && (
-                    <img 
-                      src="/nexy_mascot.png" 
-                      alt="Oracle" 
-                      className="w-6 h-6 rounded-md object-cover border border-red-500/10" 
-                    />
-                  )}
-                  <div className={`p-3 rounded-2xl text-xs leading-relaxed ${
-                    msg.sender === 'user'
-                      ? 'bg-red-500 text-white rounded-tr-none'
-                      : 'bg-warm-100 dark:bg-warm-800 text-warm-800 dark:text-warm-200 rounded-tl-none border border-warm-200/50 dark:border-warm-700/50'
-                  }`}>
-                    {msg.text}
-                  </div>
-                </div>
-              ))}
-
-              {isOracleTyping && (
-                <div className="flex gap-3 max-w-[80%]">
-                  <img src="/nexy_mascot.png" alt="Oracle" className="w-6 h-6 rounded-md object-cover" />
-                  <div className="p-3 bg-warm-100 dark:bg-warm-800 text-warm-400 rounded-2xl rounded-tl-none flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-warm-400 rounded-full animate-bounce" />
-                    <span className="w-1.5 h-1.5 bg-warm-400 rounded-full animate-bounce [animation-delay:0.2s]" />
-                    <span className="w-1.5 h-1.5 bg-warm-400 rounded-full animate-bounce [animation-delay:0.4s]" />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Input Bar */}
-            {interviewStep < 7 ? (
-              <form onSubmit={handleSendInterviewMessage} className="p-4 border-t border-warm-100 dark:border-warm-800 bg-warm-50 dark:bg-warm-850 flex gap-2">
-                <input
-                  type="text"
-                  value={interviewInput}
-                  onChange={(e) => setInterviewInput(e.target.value)}
-                  placeholder="Describe details here..."
-                  className="flex-1 bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-2xl px-4 py-3 text-xs text-warm-900 dark:text-warm-100 focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  className="px-4 py-2.5 bg-red-500 hover:bg-red-650 text-white rounded-2xl text-xs font-bold transition-all shadow"
-                >
-                  Reply
-                </button>
-              </form>
-            ) : (
-              /* Playtest Activation trigger */
-              <div className="p-6 border-t border-warm-100 dark:border-warm-800 bg-warm-50 dark:bg-warm-850 text-center flex flex-col sm:flex-row gap-3 justify-center items-center">
-                {!playtestMode ? (
-                  <button
-                    onClick={handleStartPlaytest}
-                    disabled={loading}
-                    className="flex items-center gap-2 px-6 py-3 bg-red-500 hover:bg-red-650 text-white rounded-2xl text-xs font-bold transition-all shadow-lg hover:scale-102 active:scale-98"
-                  >
-                    {loading ? <RefreshCw size={14} className="animate-spin" /> : <Play size={14} />}
-                    <span>Meet Your Character (Playtest)</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleFinalPublish}
-                    className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-650 text-white rounded-2xl text-xs font-bold transition-all shadow-lg hover:scale-102 active:scale-98"
-                  >
-                    <Check size={14} />
-                    <span>Publish Character</span>
-                  </button>
-                )}
-                <button
-                  onClick={() => setCreationMode('advanced')}
-                  className="px-4 py-3 bg-warm-200 dark:bg-warm-800 hover:bg-warm-300 dark:hover:bg-warm-750 text-warm-700 dark:text-warm-300 rounded-2xl text-xs font-semibold"
-                >
-                  Fine-tune in Advanced Mode
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Right: Live Preview & Playtest Workspace */}
-          <div className="lg:col-span-5 flex flex-col bg-white dark:bg-warm-850/50 rounded-3xl border border-warm-200 dark:border-warm-800 shadow-xl overflow-hidden min-h-[600px] max-h-[650px]">
-            {!playtestMode ? (
-              /* Character Card Preview Visualizer */
-              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-                <div className={`w-28 h-28 rounded-3xl border border-warm-200 dark:border-warm-700 flex items-center justify-center bg-gradient-to-br ${formData.bannerGradient} mb-4 relative overflow-hidden`}>
-                  {formData.avatarUrl ? (
-                    <img src={formData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                  ) : (
-                    <Bot size={48} className="text-red-500/40" />
-                  )}
-                </div>
-                <h3 className="font-serif text-lg font-bold text-warm-900 dark:text-warm-50 truncate max-w-full">
-                  {formData.name || 'Anonymous Draft'}
-                </h3>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 rounded-md mt-2">
-                  {formData.category || 'General'}
-                </span>
-                
-                {formData.tagsString && (
-                  <div className="flex flex-wrap justify-center gap-1.5 mt-3 max-w-full px-4">
-                    {formData.tagsString.split(',').map(t => t.trim()).filter(Boolean).map(tag => (
-                      <span key={tag} className="text-[9px] font-semibold bg-warm-100 dark:bg-warm-800 text-warm-650 dark:text-warm-400 px-2 py-0.5 rounded-full border border-warm-200 dark:border-warm-700">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                <p className="text-xs text-warm-500 dark:text-warm-400 mt-4 max-w-xs leading-normal">
-                  {formData.shortDescription || 'Your character\'s bio will update live as you reply to Oracle.'}
-                </p>
-
-                <div className="mt-8 border-t border-warm-100 dark:border-warm-800 w-full pt-6 flex flex-col gap-2">
-                  <div className="text-[10px] text-left text-warm-400 px-3">Greeting message preview:</div>
-                  <div className="text-[10px] bg-warm-50 dark:bg-warm-800 p-3 rounded-2xl text-warm-600 dark:text-warm-350 border border-warm-200 dark:border-warm-750 text-left mx-3 line-clamp-3 italic">
-                    "{formData.greeting || '...'}"
-                  </div>
-                </div>
-              </div>
-            ) : (
-              /* Inline Playtest Workspace Chat */
-              <div className="flex-1 flex flex-col h-full bg-warm-50 dark:bg-warm-900">
-                <div className="px-4 py-3 bg-white dark:bg-warm-850 border-b border-warm-200 dark:border-warm-800 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-red-500/25 flex items-center justify-center font-bold text-xs text-red-500">
-                      {formData.name.charAt(0) || 'P'}
-                    </div>
-                    <span className="text-xs font-bold text-warm-900 dark:text-warm-100">{formData.name} Playtest</span>
-                  </div>
-                  <span className="text-[9px] uppercase font-bold tracking-wider text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">Private Test</span>
-                </div>
-
-                {/* Chat Stream */}
-                <div className="flex-1 p-4 overflow-y-auto space-y-3 no-scrollbar">
-                  {playtestMessages.map((msg, idx) => (
-                    <div key={idx} className={`flex gap-2 max-w-[85%] ${msg.sender === 'user' ? 'ml-auto flex-row-reverse' : ''}`}>
-                      <div className={`p-2.5 rounded-2xl text-[11px] leading-relaxed ${
-                        msg.sender === 'user'
-                          ? 'bg-red-500 text-white rounded-tr-none'
-                          : 'bg-white dark:bg-warm-800 text-warm-800 dark:text-warm-200 rounded-tl-none border border-warm-200 dark:border-warm-750 shadow-sm'
-                      }`}>
-                        {msg.text}
-                      </div>
-                    </div>
-                  ))}
-
-                  {isPlaytestTyping && (
-                    <div className="flex gap-2 max-w-[80%]">
-                      <div className="p-2.5 bg-white dark:bg-warm-800 text-warm-400 rounded-2xl rounded-tl-none flex items-center gap-1 shadow-sm border border-warm-200 dark:border-warm-750">
-                        <span className="w-1 h-1 bg-warm-400 rounded-full animate-bounce" />
-                        <span className="w-1 h-1 bg-warm-400 rounded-full animate-bounce [animation-delay:0.2s]" />
-                        <span className="w-1 h-1 bg-warm-400 rounded-full animate-bounce [animation-delay:0.4s]" />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Input */}
-                <form onSubmit={handleSendPlaytestMessage} className="p-3 bg-white dark:bg-warm-850 border-t border-warm-200 dark:border-warm-800 flex gap-2">
-                  <input
-                    type="text"
-                    value={playtestInput}
-                    onChange={(e) => setPlaytestInput(e.target.value)}
-                    placeholder="Type testing message..."
-                    className="flex-1 bg-warm-50 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-xl px-3 py-2 text-[11px] focus:outline-none"
-                  />
-                  <button type="submit" className="px-3 py-2 bg-red-500 hover:bg-red-650 text-white rounded-xl text-[10px] font-bold">
-                    Send
-                  </button>
-                </form>
-              </div>
-            )}
-          </div>
-
-        </div>
-      ) : (
-        /* ADVANCED MODE (Form-Based Technical Editor) */
         <div className="space-y-8">
           
           {/* Step Indicators */}
           <div className="mb-6 overflow-x-auto pb-4 no-scrollbar">
             <div className="flex gap-4 min-w-[650px] justify-between">
-              {['Identity', 'Appearance', 'Opening Scene', term('System Prompt', 'Creator Core'), 'Voice Examples', term('Behavioral Rules', 'Character Rules'), term('Lorebook / World Info', 'Universe Library'), 'Review & Publish'].map((step, idx) => {
+              {['Identity', 'Appearance', 'Opening Scene', 'System Prompt', 'Voice Examples', 'Behavioral Rules', 'Lorebook / World Info', 'Review & Publish'].map((step, idx) => {
                 const stepId = idx + 1;
                 const isCompleted = currentStep > stepId;
                 const isActive = currentStep === stepId;
@@ -1068,7 +756,7 @@ export default function AiCharacterCreator() {
             {currentStep === 3 && (
               <div className="space-y-6">
                 <h3 className="text-base font-serif font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-800 pb-3">
-                  {term('Scenario', 'Opening Scene')}
+                  {'Scenario'}
                 </h3>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-warm-750 dark:text-warm-300 mb-2">
@@ -1103,7 +791,7 @@ export default function AiCharacterCreator() {
             {currentStep === 4 && (
               <div className="space-y-6">
                 <h3 className="text-base font-serif font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-800 pb-3">
-                  {term('System Prompt', 'Creator Core')}
+                  {'System Prompt'}
                 </h3>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-warm-750 dark:text-warm-300 mb-2">
@@ -1120,7 +808,7 @@ export default function AiCharacterCreator() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-warm-750 dark:text-warm-300 mb-2">
-                    {term('System Prompt (System Character Definition)', 'Creator Core')}
+                    {'System Character Definition'}
                   </label>
                   <textarea
                     name="systemCharacterDefinition"
@@ -1138,7 +826,7 @@ export default function AiCharacterCreator() {
             {currentStep === 5 && (
               <div className="space-y-6">
                 <h3 className="text-base font-serif font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-800 pb-3">
-                  {term('Example Dialogue', 'Voice Examples')}
+                  {'Example Dialogue'}
                 </h3>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-warm-750 dark:text-warm-300 mb-2">
@@ -1160,11 +848,11 @@ export default function AiCharacterCreator() {
             {currentStep === 6 && (
               <div className="space-y-6">
                 <h3 className="text-base font-serif font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-800 pb-3">
-                  {term('Behavioral Rules', 'Character Rules')}
+                  {'Behavioral Rules'}
                 </h3>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-warm-750 dark:text-warm-300 mb-2">
-                    {term('Behavioral Rules (OOC Instructions & Guidelines)', 'Character Rules')}
+                    {'Behavioral Rules (OOC Instructions & Guidelines)'}
                   </label>
                   <textarea
                     name="systemDefinition"
@@ -1195,11 +883,11 @@ export default function AiCharacterCreator() {
             {currentStep === 7 && (
               <div className="space-y-6">
                 <h3 className="text-base font-serif font-bold text-warm-900 dark:text-warm-50 border-b border-warm-100 dark:border-warm-800 pb-3">
-                  {term('Lorebook / World Info', 'Universe Library')}
+                  {'Lorebook / World Info'}
                 </h3>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-warm-750 dark:text-warm-300 mb-2">
-                    {term('Lorebook / World Knowledge', 'Character Facts')}
+                    {'Lorebook / World Knowledge'}
                   </label>
                   <textarea
                     name="knowledge"
@@ -1232,7 +920,7 @@ export default function AiCharacterCreator() {
                     className="mt-6 flex items-center gap-2 px-5 py-2.5 bg-red-500 hover:bg-red-650 text-white rounded-xl text-xs font-bold transition-all shadow"
                   >
                     <Play size={12} />
-                    <span>Meet Character (Private Playtest)</span>
+                    <span>Test Character</span>
                   </button>
                 </div>
               </div>
@@ -1276,7 +964,6 @@ export default function AiCharacterCreator() {
           </div>
 
         </div>
-      )}
 
       {/* Publishing Pipeline Overlay Screen (Requirement 37.3 / 38) */}
       {publishPipeline.isActive && (

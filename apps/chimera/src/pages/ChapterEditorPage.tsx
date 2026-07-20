@@ -5,13 +5,6 @@ import { supabase } from '../lib/supabase';
 import { Story, StoryChapter } from '../types';
 import { useToast } from '../contexts/ToastContext';
 
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'oracle';
-  content: string;
-  timestamp: Date;
-}
-
 export default function ChapterEditorPage() {
   const { storyId, chapterId } = useParams<{ storyId: string; chapterId: string }>();
   const navigate = useNavigate();
@@ -27,24 +20,11 @@ export default function ChapterEditorPage() {
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
   const [saving, setSaving] = useState(false);
 
-  // Oracle Sidebar states
-  const [showOracle, setShowOracle] = useState(true);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [oracleInput, setOracleInput] = useState('');
-  const [oracleLoading, setOracleLoading] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     if (storyId && chapterId) {
       fetchData();
     }
   }, [storyId, chapterId]);
-
-  useEffect(() => {
-    if (showOracle) {
-      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, oracleLoading, showOracle]);
 
   const fetchData = async () => {
     try {
@@ -70,16 +50,6 @@ export default function ChapterEditorPage() {
       setTitle(chapData.title);
       setContent(chapData.content || '');
       setStatus(chapData.status);
-
-      // Send initial oracle contextual greeting
-      setMessages([
-        {
-          id: 'welcome',
-          role: 'oracle',
-          content: `Welcome to the Oracle Workspace, partner! I'm here quietly in the sidebar to assist your writing. Highlight a paragraph or click one of the brainstorm prompts below whenever you want to discuss ideas or check continuity.`,
-          timestamp: new Date()
-        }
-      ]);
 
     } catch (err: any) {
       showToast(err.message || 'Error loading chapter details', 'error');
@@ -117,65 +87,6 @@ export default function ChapterEditorPage() {
     } finally {
       setSaving(false);
     }
-  };
-
-  // Oracle AI Interaction logic
-  const handleSendToOracle = async (customText?: string) => {
-    const textToSend = customText || oracleInput.trim();
-    if (!textToSend || oracleLoading) return;
-
-    if (!customText) setOracleInput('');
-
-    // Append user message
-    const userMsg: ChatMessage = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      content: textToSend,
-      timestamp: new Date()
-    };
-    setMessages(prev => [...prev, userMsg]);
-    setOracleLoading(true);
-
-    try {
-      // Build prompt request
-      const res = await fetch('/api/oracle-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: textToSend,
-          context_page: 'Writer Desk Chapter Editor',
-          context_details: `The author is writing a story titled "${story?.title || ''}" (Genre: ${story?.genre || ''}). Current Chapter Title: "${title}". Chapter content summary: ${content.slice(0, 1000)}`
-        })
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-
-      // Append Oracle message
-      setMessages(prev => [...prev, {
-        id: `oracle-${Date.now()}`,
-        role: 'oracle',
-        content: data.response,
-        timestamp: new Date()
-      }]);
-
-    } catch (err: any) {
-      showToast(err.message || 'Oracle is sleeping, please try again.', 'error');
-    } finally {
-      setOracleLoading(false);
-    }
-  };
-
-  const triggerBrainstorm = (type: 'outline' | 'pacing' | 'inconsistencies') => {
-    let prompt = '';
-    if (type === 'outline') {
-      prompt = `Review my current draft for Chapter "${title}" and brainstorm 3 possible paths/plot beats for what should happen next. Here is my draft:\n\n${content.slice(0, 2000)}`;
-    } else if (type === 'pacing') {
-      prompt = `Critique the pacing and narrative description in my active chapter draft. Point out any parts that feel rushed or overly descriptive:\n\n${content.slice(0, 2000)}`;
-    } else {
-      prompt = `Check for logical inconsistencies in this chapter draft. Verify if character actions, dialogue, or events seem contradictory:\n\n${content.slice(0, 2000)}`;
-    }
-    handleSendToOracle(prompt);
   };
 
   if (loading) {
@@ -249,17 +160,6 @@ export default function ChapterEditorPage() {
             </>
           )}
 
-          <button
-            onClick={() => setShowOracle(!showOracle)}
-            className={`p-2 rounded-xl border transition-colors ${
-              showOracle
-                ? 'bg-red-50 dark:bg-red-950/20 text-red-650 border-red-200 dark:border-red-900/30'
-                : 'bg-white dark:bg-warm-850 text-warm-500 border-warm-250 dark:border-warm-750 hover:bg-warm-50'
-            }`}
-            title="Toggle Oracle Sidebar"
-          >
-            <Sparkles size={16} />
-          </button>
         </div>
       </header>
 
@@ -288,105 +188,6 @@ export default function ChapterEditorPage() {
             />
           </div>
         </div>
-
-        {/* Right Side: Collapsible Oracle Assistant Sidebar */}
-        {showOracle && (
-          <aside className="w-80 sm:w-96 border-l border-warm-200 dark:border-warm-800 bg-white dark:bg-warm-850 flex flex-col justify-between shadow-lg animate-slide-left z-20">
-            
-            {/* Sidebar Title */}
-            <div className="p-4 border-b border-warm-100 dark:border-warm-800 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-red-650 dark:text-red-400">
-                <Sparkles size={16} />
-                <h3 className="font-serif font-bold text-sm text-warm-900 dark:text-white">Oracle AI Partner</h3>
-              </div>
-              <span className="text-[10px] font-bold text-warm-400 bg-warm-50 dark:bg-warm-800 px-2 py-0.5 rounded-full border border-warm-200/50 dark:border-warm-750">
-                Collaborative
-              </span>
-            </div>
-
-            {/* Conversation Flow */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
-                >
-                  <span className="text-[9px] text-warm-450 mb-1">
-                    {msg.role === 'user' ? 'Author' : 'Oracle'}
-                  </span>
-                  <div
-                    className={`p-3.5 rounded-2xl text-xs leading-relaxed max-w-[85%] font-sans whitespace-pre-line shadow-sm border ${
-                      msg.role === 'user'
-                        ? 'bg-red-650 text-white border-red-600'
-                        : 'bg-warm-50 dark:bg-warm-800 text-warm-800 dark:text-warm-100 border-warm-100 dark:border-warm-750'
-                    }`}
-                  >
-                    {msg.content}
-                  </div>
-                </div>
-              ))}
-              {oracleLoading && (
-                <div className="flex flex-col items-start animate-pulse">
-                  <span className="text-[9px] text-warm-450 mb-1">Oracle</span>
-                  <div className="p-3 bg-warm-50 dark:bg-warm-800 text-warm-450 border border-warm-100 dark:border-warm-750 rounded-2xl text-xs font-semibold">
-                    Oracle is meditating on your draft...
-                  </div>
-                </div>
-              )}
-              <div ref={chatEndRef} />
-            </div>
-
-            {/* Quick Prompts & Input */}
-            <div className="p-3 border-t border-warm-100 dark:border-warm-800 bg-warm-50/50 dark:bg-warm-900/10 space-y-3">
-              {/* Preset Quick Actions */}
-              <div className="flex flex-wrap gap-1.5">
-                <button
-                  onClick={() => triggerBrainstorm('outline')}
-                  className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 hover:border-red-200 hover:text-red-650 transition-colors text-[10px] font-semibold text-warm-650 dark:text-warm-350"
-                >
-                  💡 Next Plot Beats
-                </button>
-                <button
-                  onClick={() => triggerBrainstorm('pacing')}
-                  className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 hover:border-red-200 hover:text-red-650 transition-colors text-[10px] font-semibold text-warm-650 dark:text-warm-350"
-                >
-                  ⏱️ Check Pacing
-                </button>
-                <button
-                  onClick={() => triggerBrainstorm('inconsistencies')}
-                  className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 hover:border-red-200 hover:text-red-650 transition-colors text-[10px] font-semibold text-warm-650 dark:text-warm-350"
-                >
-                  🔍 Find Inconsistencies
-                </button>
-              </div>
-
-              {/* Text Input Row */}
-              <div className="flex gap-2">
-                <textarea
-                  placeholder="Ask the Oracle a question about your characters or scene..."
-                  rows={2}
-                  value={oracleInput}
-                  onChange={(e) => setOracleInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendToOracle();
-                    }
-                  }}
-                  className="flex-1 text-xs p-2.5 rounded-xl border border-warm-200 dark:border-warm-750 bg-white dark:bg-warm-800 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 dark:text-white resize-none"
-                />
-                <button
-                  onClick={() => handleSendToOracle()}
-                  disabled={oracleLoading || !oracleInput.trim()}
-                  className="p-3 bg-red-650 hover:bg-red-700 disabled:opacity-50 text-white rounded-xl flex items-center justify-center shadow-md self-end transition-all"
-                >
-                  <Send size={14} />
-                </button>
-              </div>
-            </div>
-
-          </aside>
-        )}
 
       </div>
     </div>
