@@ -17,6 +17,7 @@ const ROLEPLAY_LINKS = [
   { path: '/', label: 'Home' },
   { path: '/characters', label: 'Characters' },
   { path: '/conversations', label: 'Chats' },
+  { path: '/personas', label: 'Personas' },
   { path: '/studio', label: 'Creator Studio' },
 ];
 
