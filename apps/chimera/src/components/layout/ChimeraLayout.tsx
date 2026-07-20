@@ -14,7 +14,8 @@ interface ChimeraLayoutProps {
 }
 
 const ROLEPLAY_LINKS = [
-  { path: '/', label: 'Home' },
+  { path: '/discover', label: 'Discover' },
+  { path: '/dashboard', label: 'Dashboard' },
   { path: '/characters', label: 'Characters' },
   { path: '/conversations', label: 'Chats' },
   { path: '/personas', label: 'Personas' },

@@ -35,6 +35,7 @@ const TrustPage                = lazy(() => import('./pages/TrustPage'));
 
 // ── Dashboard ──────────────────────────────────────────────
 const CreatorDashboardPage = lazy(() => import('./pages/CreatorDashboardPage'));
+const DiscoverPage = lazy(() => import('./pages/DiscoverPage'));
 
 // ── Creator Studio ─────────────────────────────────────────
 const CreatorStudioPage = lazy(() => import('./pages/CreatorStudioPage'));
@@ -171,7 +172,11 @@ function AppLoader() {
           <Route element={<ChimeraLayout />}>
 
             {/* Dashboard */}
-            <Route path="/" element={<CreatorDashboardPage />} />
+            <Route path="/dashboard" element={<CreatorDashboardPage />} />
+            
+            {/* Discover */}
+            <Route path="/" element={<DiscoverPage />} />
+            <Route path="/discover" element={<DiscoverPage />} />
 
             {/* Characters Module */}
             <Route path="/characters" element={<CharactersPage />} />
