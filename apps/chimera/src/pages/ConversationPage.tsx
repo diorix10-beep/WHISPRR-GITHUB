@@ -98,10 +98,19 @@ export default function ConversationPage() {
       'pulls out phone', 'pull out my phone', 'grabs phone'
     ];
 
+    const closePhoneKeywords = [
+      'put my phone away', 'puts phone away', 'turned off my phone', 'turns off phone',
+      'locked my screen', 'locks screen', 'put the phone back', 'put phone back',
+      'puts phone back', 'pocket the phone', 'slide my phone'
+    ];
+
     const hasPhoneKeyword = phoneKeywords.some(kw => contentLower.includes(kw));
+    const hasCloseKeyword = closePhoneKeywords.some(kw => contentLower.includes(kw));
     
-    if (hasPhoneKeyword && !isPhoneOpen) {
+    if (hasPhoneKeyword && !isPhoneOpen && !hasCloseKeyword) {
       setIsPhoneOpen(true);
+    } else if (hasCloseKeyword && isPhoneOpen) {
+      setIsPhoneOpen(false);
     }
   }, [messages, isPhoneOpen]);
 

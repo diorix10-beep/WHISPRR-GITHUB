@@ -89,8 +89,11 @@ export function MockPhoneModal({
             </button>
             <div className="flex flex-col items-center">
               <Avatar emoji={otherUser?.avatar_emoji || '?'} photoUrl={otherUser?.photo_url || null} size="xs" />
-              <span className="text-[11px] font-medium text-black dark:text-white mt-1">
+              <span className="text-[11px] font-semibold text-black dark:text-white mt-1 leading-tight">
                 {otherUser?.display_name || 'Unknown'}
+              </span>
+              <span className="text-[9px] text-gray-500 font-medium">
+                +1 (555) 019-{otherUser?.id.replace(/[^0-9]/g, '').slice(0, 4).padEnd(4, '0') || '8429'}
               </span>
             </div>
             <div className="w-8" /> {/* Spacer for centering */}
