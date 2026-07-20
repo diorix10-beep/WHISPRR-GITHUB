@@ -5,6 +5,10 @@ import {
 } from 'lucide-react';
 import type { Profile } from '../../types';
 import { Avatar } from '../common/Avatar';
+import { ChatWallpaperModal } from './ChatWallpaperModal';
+import { ChatLayoutModal } from './ChatLayoutModal';
+import { ChatStyleModal } from './ChatStyleModal';
+import type { useChatAesthetics } from '../../hooks/useChatAesthetics';
 
 interface ChatSettingsDrawerProps {
   isOpen: boolean;
@@ -14,6 +18,8 @@ interface ChatSettingsDrawerProps {
   isVoiceEnabled: boolean;
   onToggleVoice: () => void;
   onSelectPersona: () => void;
+  onOpenMemory: () => void;
+  aesthetics: ReturnType<typeof useChatAesthetics>;
 }
 
 export function ChatSettingsDrawer({ 
@@ -23,8 +29,14 @@ export function ChatSettingsDrawer({
   user,
   isVoiceEnabled,
   onToggleVoice,
-  onSelectPersona
+  onSelectPersona,
+  onOpenMemory,
+  aesthetics
 }: ChatSettingsDrawerProps) {
+  const [showWallpaper, setShowWallpaper] = useState(false);
+  const [showLayout, setShowLayout] = useState(false);
+  const [showChatStyle, setShowChatStyle] = useState(false);
+
   if (!isOpen) return null;
 
   return (
@@ -72,7 +84,10 @@ export function ChatSettingsDrawer({
           <div className="grid grid-cols-3 gap-3">
             
             {/* Memory - 1x1 */}
-            <div className="col-span-1 aspect-square bg-warm-900 rounded-2xl p-4 flex flex-col justify-between hover:bg-warm-800 transition-colors cursor-pointer group overflow-hidden relative">
+            <div 
+              onClick={() => { onClose(); onOpenMemory(); }}
+              className="col-span-1 aspect-square bg-warm-900 rounded-2xl p-4 flex flex-col justify-between hover:bg-warm-800 transition-colors cursor-pointer group overflow-hidden relative"
+            >
               <span className="font-bold text-sm z-10">Memory</span>
               <Database size={32} className="text-warm-600 group-hover:text-warm-400 transition-colors z-10 absolute bottom-[-5px] right-[-5px]" />
               {/* Fake visual bar chart in background to match C.AI */}
@@ -111,7 +126,10 @@ export function ChatSettingsDrawer({
             </div>
 
             {/* Layout - 1x1 */}
-            <div className="col-span-1 aspect-square bg-warm-900 rounded-2xl p-4 flex flex-col justify-between hover:bg-warm-800 transition-colors cursor-pointer relative overflow-hidden group">
+            <div 
+              onClick={() => setShowLayout(true)}
+              className="col-span-1 aspect-square bg-warm-900 rounded-2xl p-4 flex flex-col justify-between hover:bg-warm-800 transition-colors cursor-pointer relative overflow-hidden group"
+            >
               <span className="font-bold text-sm z-10">Layout</span>
               <div className="absolute bottom-4 left-4 right-4 flex flex-col gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
                 <div className="h-2 w-3/4 bg-warm-700 rounded-full" />
@@ -123,7 +141,10 @@ export function ChatSettingsDrawer({
             </div>
 
             {/* Wallpaper - 1x1 */}
-            <div className="col-span-1 aspect-square bg-warm-900 rounded-2xl p-4 flex flex-col items-center justify-center hover:bg-warm-800 transition-colors cursor-pointer text-warm-600 relative group">
+            <div 
+              onClick={() => setShowWallpaper(true)}
+              className="col-span-1 aspect-square bg-warm-900 rounded-2xl p-4 flex flex-col items-center justify-center hover:bg-warm-800 transition-colors cursor-pointer text-warm-600 relative group"
+            >
               <span className="font-bold text-sm text-warm-50 absolute top-4 left-4">Wallpaper</span>
               <ImageIcon size={40} strokeWidth={1} className="mt-4 group-hover:scale-110 transition-transform" />
               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -134,7 +155,10 @@ export function ChatSettingsDrawer({
             </div>
 
             {/* Chat style - 1x1 */}
-            <div className="col-span-1 aspect-square bg-warm-900 rounded-2xl p-4 flex flex-col justify-between hover:bg-warm-800 transition-colors cursor-pointer relative overflow-hidden group">
+            <div 
+              onClick={() => setShowChatStyle(true)}
+              className="col-span-1 aspect-square bg-warm-900 rounded-2xl p-4 flex flex-col justify-between hover:bg-warm-800 transition-colors cursor-pointer relative overflow-hidden group"
+            >
               <span className="font-bold text-sm z-10">Chat style</span>
               <Wand2 size={40} className="absolute bottom-2 right-2 text-primary-500 opacity-50 group-hover:opacity-100 group-hover:scale-110 group-hover:rotate-12 transition-all" />
               {/* Prism aesthetic representation */}
@@ -161,6 +185,26 @@ export function ChatSettingsDrawer({
           </div>
         </div>
       </div>
+
+      {/* Aesthetic Modals */}
+      <ChatWallpaperModal
+        isOpen={showWallpaper}
+        onClose={() => setShowWallpaper(false)}
+        currentWallpaper={aesthetics.wallpaperUrl}
+        onSelect={aesthetics.setWallpaper}
+      />
+      <ChatLayoutModal
+        isOpen={showLayout}
+        onClose={() => setShowLayout(false)}
+        currentLayout={aesthetics.layoutStyle}
+        onSelect={aesthetics.setLayout}
+      />
+      <ChatStyleModal
+        isOpen={showChatStyle}
+        onClose={() => setShowChatStyle(false)}
+        currentStyle={aesthetics.chatStyle}
+        onSelect={aesthetics.setChatStyle}
+      />
     </>
   );
 }

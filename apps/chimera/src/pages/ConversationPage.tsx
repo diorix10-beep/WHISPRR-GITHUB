@@ -14,6 +14,7 @@ import { Avatar } from '../components/common/Avatar';
 import { UserBadges } from '../components/common/UserBadges';
 import { EmojiPicker } from '../components/common/EmojiPicker';
 import { ChatSettingsDrawer } from '../components/chat/ChatSettingsDrawer';
+import { useChatAesthetics } from '../hooks/useChatAesthetics';
 import { useVoice } from '../hooks/useVoice';
 import { Paperclip, AudioWaveform } from 'lucide-react';
 
@@ -55,6 +56,7 @@ export default function ConversationPage() {
   const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
 
   const voice = useVoice();
+  const aesthetics = useChatAesthetics(conversationId);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -540,10 +542,34 @@ export default function ConversationPage() {
     );
   }
 
+  // Determine chat style classes
+  const getStyleClasses = () => {
+    switch (aesthetics.chatStyle) {
+      case 'crimson': return 'theme-crimson';
+      case 'midnight': return 'theme-midnight';
+      case 'royal': return 'theme-royal';
+      default: return '';
+    }
+  };
+
   return (
-    <div className="h-screen flex flex-col bg-white dark:bg-warm-950 font-sans">
+    <div className={`h-screen flex flex-col bg-white dark:bg-warm-950 font-sans ${getStyleClasses()}`}>
+      
+      {/* Dynamic Wallpaper */}
+      {aesthetics.wallpaperUrl && (
+        <div 
+          className="fixed inset-0 z-0 opacity-40 pointer-events-none"
+          style={{
+            backgroundImage: `url(${aesthetics.wallpaperUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundAttachment: 'fixed'
+          }}
+        />
+      )}
+      
       {/* Header */}
-      <header className="flex-none sticky top-0 z-30 bg-white dark:bg-warm-900 border-b border-warm-200 dark:border-warm-800">
+      <header className="flex-none sticky top-0 z-30 bg-white/90 dark:bg-warm-900/90 backdrop-blur-md border-b border-warm-200 dark:border-warm-800">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <button onClick={() => navigate('/messages')} className="p-2 -ml-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500 transition-colors">
@@ -615,6 +641,8 @@ export default function ConversationPage() {
           isVoiceEnabled={voice.isEnabled}
           onToggleVoice={voice.toggleVoice}
           onSelectPersona={() => navigate('/personas')}
+          onOpenMemory={() => setShowContextDrawer(true)}
+          aesthetics={aesthetics}
         />
       )}
 
@@ -640,23 +668,30 @@ export default function ConversationPage() {
                 return (
                   <div 
                     key={message.id} 
-                    className="group relative flex gap-4 p-2 sm:p-4 -mx-2 sm:-mx-4 rounded-2xl hover:bg-warm-50 dark:hover:bg-warm-900/30 transition-colors"
+                    className={`group relative flex gap-4 p-2 sm:p-4 rounded-2xl transition-colors
+                      ${aesthetics.layoutStyle === 'modern' && isOwn ? 'flex-row-reverse -mr-2 sm:-mr-4' : '-mx-2 sm:-mx-4'}
+                      ${aesthetics.layoutStyle === 'modern' && isOwn ? '' : 'hover:bg-warm-50 dark:hover:bg-warm-900/30'}
+                    `}
                   >
                     {/* Avatar Column */}
-                    <div className="flex-shrink-0 mt-1">
-                      <Avatar emoji={sender?.avatar_emoji || '?'} photoUrl={sender?.photo_url || null} size="md" />
-                    </div>
+                    {!(aesthetics.layoutStyle === 'modern' && isOwn) && (
+                      <div className="flex-shrink-0 mt-1">
+                        <Avatar emoji={sender?.avatar_emoji || '?'} photoUrl={sender?.photo_url || null} size="md" />
+                      </div>
+                    )}
 
                     {/* Content Column */}
-                    <div className="flex-1 min-w-0 space-y-1.5">
-                      <div className="flex items-baseline gap-2">
-                        <span className={`font-bold ${isOwn ? 'text-warm-900 dark:text-warm-100' : 'text-red-700 dark:text-red-400'}`}>
-                          {sender?.display_name || 'Unknown'}
-                        </span>
-                        <span className="text-xs text-warm-400 dark:text-warm-600 font-medium">
-                          {formatDistanceToNow(new Date(message.created_at), { addSuffix: false })}
-                        </span>
-                      </div>
+                    <div className={`flex-1 min-w-0 space-y-1.5 ${aesthetics.layoutStyle === 'modern' && isOwn ? 'flex flex-col items-end' : ''}`}>
+                      {!(aesthetics.layoutStyle === 'modern' && isOwn) && (
+                        <div className="flex items-baseline gap-2">
+                          <span className={`font-bold ${isOwn ? 'text-warm-900 dark:text-warm-100' : 'text-primary-600 dark:text-primary-400'}`}>
+                            {sender?.display_name || 'Unknown'}
+                          </span>
+                          <span className="text-xs text-warm-400 dark:text-warm-600 font-medium">
+                            {formatDistanceToNow(new Date(message.created_at), { addSuffix: false })}
+                          </span>
+                        </div>
+                      )}
 
                       {message.image_url && (
                         <img
@@ -668,7 +703,9 @@ export default function ConversationPage() {
                       )}
 
                       {message.content && message.content !== 'Sent an image' && (
-                        <div className="text-[15px] sm:text-base leading-relaxed text-warm-800 dark:text-warm-200 whitespace-pre-wrap font-serif">
+                        <div className={`text-[15px] sm:text-base leading-relaxed text-warm-800 dark:text-warm-200 whitespace-pre-wrap font-serif
+                          ${aesthetics.layoutStyle === 'modern' ? `p-3 sm:p-4 rounded-2xl max-w-[85%] ${isOwn ? 'bg-primary-600 text-white rounded-tr-sm' : 'bg-warm-100 dark:bg-warm-900 rounded-tl-sm'}` : ''}
+                        `}>
                           {editingMessageId === message.id ? (
                             <div className="mt-1 flex flex-col gap-2">
                               <textarea
