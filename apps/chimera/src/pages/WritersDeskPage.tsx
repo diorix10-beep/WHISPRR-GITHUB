@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PenTool, Plus, BookOpen, Trash2, Edit, ChevronLeft, Globe, Eye, Settings, Share2 } from 'lucide-react';
+import { PenTool, Plus, BookOpen, Trash2, Edit, ChevronLeft, Globe, Eye, Settings, Share2, FileText, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Story, StoryChapter } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -218,11 +218,9 @@ export default function WritersDeskPage() {
     }
   };
 
-  // Cross-Platform Share to WHISPRR Function
   const handleShareToWhisprr = async (story: Story) => {
     if (!profile?.user_id) return showToast('You must be logged in to share.', 'error');
     try {
-      // 1. Create a Whisper card inside public.whispers
       const embedTag = `[Story: ${story.title} | ${story.summary || 'Read my new work on CHIMERA.'} | ${story.cover_url || ''} | ${story.id}]`;
       const whisperContent = `📖 **New Story Alert!** Just shared my work from CHIMERA!\n\n${embedTag}`;
       
@@ -237,7 +235,6 @@ export default function WritersDeskPage() {
 
       if (whisperError) throw whisperError;
 
-      // 2. Update story table status
       const { error: storyUpdateError } = await supabase
         .from('stories')
         .update({
@@ -258,258 +255,305 @@ export default function WritersDeskPage() {
     }
   };
 
+  if (loading && !selectedStory && !isEditingStory) {
+    return (
+      <div className="min-h-screen bg-warm-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-red-500 border-t-red-750 mx-auto" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-warm-50 dark:bg-warm-900 pb-20 pt-10">
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-screen bg-warm-900 text-warm-100 font-sans pb-24">
+      
+      {/* Top Navbar Header */}
+      <header className="bg-warm-850 border-b border-warm-800 sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h1 className="font-serif text-xl font-bold text-white flex items-center gap-2">
+              <PenTool size={20} className="text-red-500" />
+              My Works
+            </h1>
+          </div>
+          {!isEditingStory && !selectedStory && (
+            <button
+              onClick={handleOpenNewStory}
+              className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg font-bold text-sm shadow-sm transition-all flex items-center gap-2"
+            >
+              <Plus size={16} />
+              New Story
+            </button>
+          )}
+        </div>
+      </header>
+
+      <div className="max-w-6xl mx-auto px-6 py-8">
         
         {/* Story Metadata Editor Modal/View */}
         {isEditingStory ? (
-          <div className="bg-white dark:bg-warm-850 rounded-3xl border border-warm-200/60 dark:border-warm-800 p-6 sm:p-8 shadow-lg">
-            <h2 className="font-serif text-2xl font-bold text-warm-900 dark:text-white mb-6">
-              {selectedStory ? 'Edit Story Details' : 'Create New Story'}
+          <div className="max-w-3xl mx-auto bg-warm-850 rounded-2xl border border-warm-800 p-8 shadow-xl">
+            <h2 className="font-serif text-2xl font-bold text-white mb-8 border-b border-warm-800 pb-4">
+              {selectedStory ? 'Story Details' : 'Create a New Story'}
             </h2>
-            <form onSubmit={handleSaveStory} className="space-y-5">
-              <div>
-                <label className="block text-xs font-bold uppercase text-warm-500 tracking-wider mb-2">Title</label>
-                <input
-                  type="text"
-                  placeholder="Enter story title..."
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-warm-500 tracking-wider mb-2">Summary / Short Pitch</label>
-                <textarea
-                  placeholder="Describe your story's plot, themes, and hooks..."
-                  value={formSummary}
-                  rows={4}
-                  onChange={(e) => setFormSummary(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 dark:text-white resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase text-warm-500 tracking-wider mb-2">Genre</label>
-                  <select
-                    value={formGenre}
-                    onChange={(e) => setFormGenre(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 dark:text-white"
-                  >
-                    <option value="General">General</option>
-                    <option value="Fantasy">Fantasy</option>
-                    <option value="Sci-Fi">Sci-Fi</option>
-                    <option value="Romance">Romance</option>
-                    <option value="Thriller">Thriller</option>
-                    <option value="Mystery">Mystery</option>
-                    <option value="Horror">Horror</option>
-                    <option value="Historical">Historical</option>
-                    <option value="Adventure">Adventure</option>
-                    <option value="Drama">Drama</option>
-                    <option value="Non-Fiction">Non-Fiction</option>
-                  </select>
+            <form onSubmit={handleSaveStory} className="space-y-6">
+              
+              <div className="flex flex-col md:flex-row gap-8">
+                {/* Left: Cover Preview */}
+                <div className="w-full md:w-48 flex flex-col gap-3 flex-shrink-0">
+                  <label className="text-xs font-bold uppercase text-warm-400 tracking-wider">Cover</label>
+                  <div className="w-full aspect-[2/3] bg-warm-900 border-2 border-dashed border-warm-700 rounded-xl overflow-hidden relative group">
+                    {formCoverUrl ? (
+                      <img src={formCoverUrl} alt="Cover" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-warm-600 p-4 text-center">
+                        <ImageIcon size={32} className="mb-2" />
+                        <span className="text-[10px] uppercase font-bold">No Cover</span>
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Cover URL (Optional)"
+                    value={formCoverUrl}
+                    onChange={(e) => setFormCoverUrl(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-red-500 text-sm text-white"
+                  />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold uppercase text-warm-500 tracking-wider mb-2">Status</label>
-                  <select
-                    value={formStatus}
-                    onChange={(e) => setFormStatus(e.target.value as any)}
-                    className="w-full px-4 py-3 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 dark:text-white"
-                  >
-                    <option value="ongoing">Ongoing</option>
-                    <option value="completed">Completed</option>
-                    <option value="hiatus">Hiatus</option>
-                  </select>
+                {/* Right: Metadata */}
+                <div className="flex-1 space-y-5">
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-warm-400 tracking-wider mb-2">Title *</label>
+                    <input
+                      type="text"
+                      placeholder="Untitled Story"
+                      value={formTitle}
+                      onChange={(e) => setFormTitle(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-red-500 text-white font-serif text-lg"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-warm-400 tracking-wider mb-2">Description</label>
+                    <textarea
+                      placeholder="What is your story about?"
+                      value={formSummary}
+                      rows={5}
+                      onChange={(e) => setFormSummary(e.target.value)}
+                      className="w-full px-4 py-3 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-red-500 text-white text-sm resize-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-warm-400 tracking-wider mb-2">Category</label>
+                      <select
+                        value={formGenre}
+                        onChange={(e) => setFormGenre(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-red-500 text-white text-sm"
+                      >
+                        <option value="General">General</option>
+                        <option value="Romance">Romance</option>
+                        <option value="Fantasy">Fantasy</option>
+                        <option value="Sci-Fi">Sci-Fi</option>
+                        <option value="Thriller">Thriller</option>
+                        <option value="Mystery">Mystery</option>
+                        <option value="Horror">Horror</option>
+                        <option value="Fanfiction">Fanfiction</option>
+                        <option value="Poetry">Poetry</option>
+                        <option value="Short Story">Short Story</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-warm-400 tracking-wider mb-2">Language</label>
+                      <select
+                        className="w-full px-4 py-2.5 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-red-500 text-white text-sm opacity-70 cursor-not-allowed"
+                        disabled
+                      >
+                        <option>English</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-warm-400 tracking-wider mb-2">Tags</label>
+                    <input
+                      type="text"
+                      placeholder="romance, action, magic (comma separated)"
+                      value={formTags}
+                      onChange={(e) => setFormTags(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-red-500 text-white text-sm"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-warm-400 tracking-wider mb-2">Copyright</label>
+                      <select
+                        className="w-full px-4 py-2.5 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-red-500 text-white text-sm"
+                      >
+                        <option>All Rights Reserved</option>
+                        <option>Public Domain</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-warm-400 tracking-wider mb-2">Mature</label>
+                      <select
+                        value={formVisibility}
+                        onChange={(e) => setFormVisibility(e.target.value as any)}
+                        className="w-full px-4 py-2.5 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-red-500 text-white text-sm"
+                      >
+                        <option value="public">No (Everyone)</option>
+                        <option value="unlisted">Yes (Mature)</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase text-warm-500 tracking-wider mb-2">Cover Image URL</label>
-                <input
-                  type="text"
-                  placeholder="https://images.unsplash.com/..."
-                  value={formCoverUrl}
-                  onChange={(e) => setFormCoverUrl(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-warm-500 tracking-wider mb-2">Tags (Comma-separated)</label>
-                <input
-                  type="text"
-                  placeholder="fantasy, slowburn, magic, dragons"
-                  value={formTags}
-                  onChange={(e) => setFormTags(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-warm-500 tracking-wider mb-2">Visibility</label>
-                <select
-                  value={formVisibility}
-                  onChange={(e) => setFormVisibility(e.target.value as any)}
-                  className="w-full px-4 py-3 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 dark:text-white"
-                >
-                  <option value="public">Public (Visible to everyone & shareable)</option>
-                  <option value="unlisted">Unlisted (Only accessible via link)</option>
-                  <option value="private">Private (Only visible to you)</option>
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-warm-150 dark:border-warm-800">
+              <div className="flex justify-end gap-3 pt-6 border-t border-warm-800">
                 <button
                   type="button"
                   onClick={() => setIsEditingStory(false)}
-                  className="px-5 py-2.5 rounded-xl border border-warm-250 dark:border-warm-700 text-warm-650 dark:text-warm-300 font-semibold hover:bg-warm-50 dark:hover:bg-warm-800 text-sm transition-all"
+                  className="px-5 py-2.5 rounded-lg text-warm-400 font-bold hover:text-white transition-all text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-red-650 hover:bg-red-700 text-white font-semibold text-sm shadow-md transition-all"
+                  className="px-6 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-md transition-all"
                 >
-                  Save Story
+                  Save Changes
                 </button>
               </div>
             </form>
           </div>
         ) : selectedStory ? (
-          /* Single Story Management Desk */
-          <div>
+          /* Table of Contents (Story Hub) */
+          <div className="max-w-4xl mx-auto">
             <button
               onClick={handleBackToDashboard}
-              className="flex items-center gap-2 text-warm-500 hover:text-warm-900 dark:hover:text-white font-semibold text-sm mb-6 transition-all"
+              className="flex items-center gap-2 text-warm-400 hover:text-white font-bold text-sm mb-6 transition-all"
             >
               <ChevronLeft size={16} />
-              Back to Workspace
+              Back to My Works
             </button>
 
-            {/* Story Details Card */}
-            <div className="bg-white dark:bg-warm-850 rounded-3xl border border-warm-200/60 dark:border-warm-800 p-6 flex flex-col md:flex-row gap-6 shadow-sm mb-8">
-              <div className="w-full md:w-32 h-44 bg-warm-100 dark:bg-warm-800 rounded-2xl overflow-hidden flex-shrink-0">
+            {/* Story Header */}
+            <div className="flex flex-col md:flex-row gap-8 mb-10">
+              <div className="w-full md:w-48 h-[280px] bg-warm-800 rounded-xl overflow-hidden flex-shrink-0 shadow-lg border border-warm-750">
                 {selectedStory.cover_url ? (
                   <img src={selectedStory.cover_url} alt={selectedStory.title} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-red-600/10 to-amber-600/15 flex items-center justify-center">
-                    <BookOpen size={32} className="text-red-500/20" />
+                  <div className="w-full h-full bg-gradient-to-br from-warm-800 to-warm-900 flex items-center justify-center">
+                    <BookOpen size={48} className="text-warm-700" />
                   </div>
                 )}
               </div>
 
-              <div className="flex-1 flex flex-col justify-between">
-                <div>
-                  <div className="flex flex-wrap gap-2 items-center">
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 px-2 py-0.5 rounded-md">
-                      {selectedStory.genre}
-                    </span>
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-warm-600 dark:text-warm-400 bg-warm-100 dark:bg-warm-800 px-2 py-0.5 rounded-md">
-                      {selectedStory.visibility}
-                    </span>
-                  </div>
-                  <h2 className="font-serif text-2xl font-bold text-warm-900 dark:text-white mt-2">
-                    {selectedStory.title}
-                  </h2>
-                  <p className="text-sm text-warm-650 dark:text-warm-350 line-clamp-3 leading-relaxed mt-2">
-                    {selectedStory.summary || 'No summary provided.'}
-                  </p>
+              <div className="flex-1 flex flex-col justify-center">
+                <h2 className="font-serif text-4xl font-bold text-white mb-2 leading-tight">
+                  {selectedStory.title}
+                </h2>
+                
+                <div className="flex items-center gap-3 text-xs font-bold text-warm-400 uppercase tracking-wide mb-6">
+                  <span>{selectedStory.genre}</span>
+                  <span className="w-1 h-1 rounded-full bg-warm-600"></span>
+                  <span className={selectedStory.status === 'completed' ? 'text-green-500' : 'text-amber-500'}>
+                    {selectedStory.status}
+                  </span>
+                  <span className="w-1 h-1 rounded-full bg-warm-600"></span>
+                  <span className="text-red-400">{chapters.length} Parts</span>
                 </div>
 
-                <div className="flex flex-wrap gap-3 mt-6 pt-4 border-t border-warm-100 dark:border-warm-800">
+                <p className="text-sm text-warm-300 line-clamp-4 leading-relaxed mb-6 max-w-2xl">
+                  {selectedStory.summary || 'No description provided.'}
+                </p>
+
+                <div className="flex gap-3">
                   <button
                     onClick={() => handleOpenEditStory(selectedStory)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-warm-750 dark:text-warm-300 border border-warm-200 dark:border-warm-750 rounded-xl hover:bg-warm-50 dark:hover:bg-warm-800 transition-colors"
+                    className="px-4 py-2 bg-warm-800 hover:bg-warm-700 border border-warm-700 text-white rounded-lg text-sm font-bold transition-all flex items-center gap-2"
                   >
-                    <Edit size={14} />
+                    <Edit size={16} />
                     Edit Details
                   </button>
-                  
-                  {/* Share to WHISPRR */}
-                  {selectedStory.visibility === 'public' && (
-                    <button
-                      onClick={() => handleShareToWhisprr(selectedStory)}
-                      disabled={selectedStory.shared_to_whisprr}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl transition-all border ${
-                        selectedStory.shared_to_whisprr
-                          ? 'text-green-600 border-green-200/50 bg-green-50 dark:bg-green-950/10 dark:border-green-900/30'
-                          : 'text-primary-600 border-primary-200 hover:bg-primary-50 dark:text-primary-400 dark:border-primary-900/30 dark:hover:bg-primary-950/20'
-                      }`}
-                    >
-                      <Share2 size={14} />
-                      {selectedStory.shared_to_whisprr ? 'Shared to WHISPRR' : 'Share to WHISPRR'}
-                    </button>
-                  )}
-
                   <button
-                    onClick={() => handleDeleteStory(selectedStory.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-650 border border-red-200/50 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/10 transition-colors ml-auto"
+                    onClick={handleCreateChapter}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-bold shadow-md transition-all flex items-center gap-2"
                   >
-                    <Trash2 size={14} />
-                    Delete Story
+                    <Plus size={16} />
+                    New Part
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Chapters Workspace */}
-            <div className="bg-white dark:bg-warm-850 rounded-3xl border border-warm-200/60 dark:border-warm-800 p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-6 pb-4 border-b border-warm-100 dark:border-warm-800">
-                <h3 className="font-serif text-lg font-bold text-warm-900 dark:text-white">Chapters & Drafts</h3>
-                <button
-                  onClick={handleCreateChapter}
-                  className="flex items-center gap-1.5 bg-red-650 hover:bg-red-700 text-white font-semibold text-xs px-3.5 py-2 rounded-xl shadow-sm transition-all"
-                >
-                  <Plus size={14} />
-                  Add Chapter
-                </button>
+            {/* Table of Contents List */}
+            <div className="bg-warm-850 border border-warm-800 rounded-2xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-warm-800 flex justify-between items-center bg-warm-900/50">
+                <h3 className="font-serif text-lg font-bold text-white">Table of Contents</h3>
+                <span className="text-xs font-bold text-warm-500 uppercase tracking-wider">{chapters.length} Parts</span>
               </div>
-
+              
               {chaptersLoading ? (
-                <div className="space-y-3">
-                  {[1, 2].map(n => (
-                    <div key={n} className="animate-pulse h-16 bg-warm-50 dark:bg-warm-800 rounded-xl border border-warm-200/40" />
-                  ))}
-                </div>
+                <div className="p-8 text-center text-warm-500"><div className="animate-pulse">Loading parts...</div></div>
               ) : chapters.length === 0 ? (
-                <div className="text-center py-12">
-                  <PenTool className="mx-auto text-warm-300 mb-3" size={32} />
-                  <h4 className="text-sm font-semibold text-warm-800 dark:text-white">Write your first chapter</h4>
-                  <p className="text-xs text-warm-500 mt-1">Ready to start? Create a chapter draft to launch the editor.</p>
+                <div className="p-12 text-center flex flex-col items-center border-b border-warm-800 last:border-0">
+                  <FileText size={48} className="text-warm-700 mb-4" />
+                  <p className="text-warm-400 font-medium mb-4">This story has no parts yet.</p>
+                  <button
+                    onClick={handleCreateChapter}
+                    className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-bold shadow-md transition-all"
+                  >
+                    Write the first part
+                  </button>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="divide-y divide-warm-800">
                   {chapters.map((chap) => (
-                    <div
-                      key={chap.id}
+                    <div 
+                      key={chap.id} 
                       onClick={() => navigate(`/write/story/${selectedStory.id}/chapter/${chap.id}`)}
-                      className="group/item flex items-center justify-between p-4 rounded-2xl border border-warm-150 dark:border-warm-800 hover:border-red-200 dark:hover:border-red-950/30 bg-warm-50/50 dark:bg-warm-900/30 hover:bg-white dark:hover:bg-warm-850 transition-all cursor-pointer"
+                      className="px-6 py-4 flex items-center justify-between hover:bg-warm-800/50 cursor-pointer transition-colors group"
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs font-bold text-warm-400 group-hover/item:text-red-500 transition-colors w-6">
-                          #{chap.chapter_number}
-                        </span>
+                      <div className="flex items-center gap-4">
+                        <div className="w-8 h-8 rounded-full bg-warm-800 text-warm-400 flex items-center justify-center font-bold text-xs border border-warm-750">
+                          {chap.chapter_number}
+                        </div>
                         <div>
-                          <h4 className="text-sm font-semibold text-warm-800 dark:text-white line-clamp-1">{chap.title}</h4>
-                          <span className={`text-[10px] uppercase font-bold tracking-wider mt-1 inline-block ${
-                            chap.status === 'published' ? 'text-green-600 dark:text-green-500' : 'text-amber-600 dark:text-amber-500'
-                          }`}>
-                            {chap.status}
-                          </span>
+                          <h4 className="text-white font-bold group-hover:text-red-400 transition-colors">
+                            {chap.title}
+                          </h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded ${
+                              chap.status === 'published' ? 'bg-green-500/10 text-green-400' : 'bg-warm-800 text-warm-400'
+                            }`}>
+                              {chap.status}
+                            </span>
+                            <span className="text-[10px] text-warm-500">
+                              Updated {new Date(chap.updated_at).toLocaleDateString()}
+                            </span>
+                          </div>
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-2">
+                      
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); navigate(`/write/story/${selectedStory.id}/chapter/${chap.id}`); }}
+                          className="p-2 text-warm-400 hover:text-white rounded-lg hover:bg-warm-700 transition-colors"
+                          title="Edit"
+                        >
+                          <Edit size={16} />
+                        </button>
                         <button
                           onClick={(e) => handleDeleteChapter(e, chap.id)}
-                          className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 text-warm-400 hover:text-red-650 transition-colors opacity-0 group-hover/item:opacity-100"
-                          title="Delete Chapter"
+                          className="p-2 text-warm-400 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors"
+                          title="Delete"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </div>
@@ -519,76 +563,56 @@ export default function WritersDeskPage() {
             </div>
           </div>
         ) : (
-          /* Workspace Dashboard */
+          /* Dashboard View (My Works) */
           <div>
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-red-100 dark:bg-red-950/40 text-red-650 dark:text-red-400 rounded-2xl">
-                  <PenTool size={24} />
-                </div>
-                <div>
-                  <h1 className="font-serif text-3xl font-bold text-warm-900 dark:text-white">Writer's Desk</h1>
-                  <p className="text-sm text-warm-500 mt-1">Manage your books, drafts, and edit chapters.</p>
-                </div>
-              </div>
-              <button
-                onClick={handleOpenNewStory}
-                className="flex items-center gap-2 bg-red-650 hover:bg-red-700 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow-md transition-all hover:scale-102 active:scale-98"
-              >
-                <Plus size={18} />
-                New Story
-              </button>
-            </div>
-
-            {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {[1, 2].map((n) => (
-                  <div key={n} className="animate-pulse bg-white dark:bg-warm-850 rounded-2xl h-44 border border-warm-200/50 dark:border-warm-800" />
-                ))}
-              </div>
-            ) : stories.length === 0 ? (
-              <div className="text-center py-16 bg-white dark:bg-warm-850 rounded-2xl border border-warm-200/60 dark:border-warm-800 p-8">
-                <BookOpen className="mx-auto text-warm-300 mb-4" size={48} />
-                <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-white">No stories yet</h3>
-                <p className="text-warm-500 text-sm mt-2 max-w-sm mx-auto">
-                  Create your first story to start writing chapters, building lore, and organizing timelines.
+            {stories.length === 0 ? (
+              <div className="text-center py-20 bg-warm-850 rounded-2xl border border-warm-800">
+                <BookOpen size={48} className="mx-auto text-warm-700 mb-4" />
+                <h3 className="text-xl font-serif font-bold text-white mb-2">You haven't written anything yet.</h3>
+                <p className="text-warm-400 mb-6 max-w-md mx-auto">
+                  Start your journey as an author. Create your first story and share your imagination with the world.
                 </p>
                 <button
                   onClick={handleOpenNewStory}
-                  className="mt-6 bg-red-650 hover:bg-red-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-all shadow-md"
+                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md transition-all inline-flex items-center gap-2"
                 >
-                  Create Story Outline
+                  <Plus size={18} />
+                  Write a Story
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {stories.map((story) => (
-                  <div
-                    key={story.id}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                {stories.map(story => (
+                  <div 
+                    key={story.id} 
                     onClick={() => handleSelectStory(story)}
-                    className="group bg-white dark:bg-warm-850 rounded-2xl border border-warm-200/60 dark:border-warm-800 p-5 flex flex-col justify-between hover:shadow-md hover:border-red-200 dark:hover:border-red-950/20 cursor-pointer transition-all"
+                    className="group cursor-pointer flex flex-col"
                   >
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 px-2 py-0.5 rounded-md">
-                          {story.genre}
-                        </span>
-                        <span className="text-xs text-warm-400">
-                          {story.visibility}
+                    <div className="w-full aspect-[2/3] bg-warm-800 rounded-xl overflow-hidden relative shadow-lg border border-warm-800 group-hover:border-warm-600 transition-colors mb-3">
+                      {story.cover_url ? (
+                        <img src={story.cover_url} alt={story.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-warm-800 to-warm-900 flex items-center justify-center">
+                          <BookOpen size={32} className="text-warm-700" />
+                        </div>
+                      )}
+                      
+                      {/* Status Badge overlay */}
+                      <div className="absolute top-2 left-2 flex gap-1">
+                        <span className={`text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded shadow-sm ${
+                          story.status === 'completed' ? 'bg-green-500 text-white' : 'bg-black/60 text-white backdrop-blur-md'
+                        }`}>
+                          {story.status}
                         </span>
                       </div>
-                      <h3 className="font-serif text-lg font-bold text-warm-900 dark:text-white mt-3 group-hover:text-red-650 transition-colors line-clamp-1">
-                        {story.title}
-                      </h3>
-                      <p className="text-xs text-warm-500 mt-2 line-clamp-2 leading-relaxed">
-                        {story.summary || 'No summary provided.'}
-                      </p>
                     </div>
-
-                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-warm-100 dark:border-warm-800 text-[11px] font-semibold text-warm-400 uppercase tracking-wide">
-                      <span>Status: {story.status}</span>
-                      <span className="text-red-500 group-hover:translate-x-1 transition-transform">Manage Desk &rarr;</span>
-                    </div>
+                    
+                    <h3 className="font-serif font-bold text-white text-base line-clamp-1 group-hover:text-red-400 transition-colors">
+                      {story.title}
+                    </h3>
+                    <p className="text-xs text-warm-400 mt-0.5">
+                      Updated {new Date(story.updated_at).toLocaleDateString()}
+                    </p>
                   </div>
                 ))}
               </div>

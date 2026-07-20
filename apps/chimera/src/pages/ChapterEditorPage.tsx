@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Sparkles, ChevronRight, ChevronLeft, Send, Eye, BookOpen, Globe } from 'lucide-react';
+import { ArrowLeft, Save, Globe, MoreHorizontal, AlignLeft, Bold, Italic, Underline, Link, Image as ImageIcon, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Story, StoryChapter } from '../types';
 import { useToast } from '../contexts/ToastContext';
@@ -19,6 +19,12 @@ export default function ChapterEditorPage() {
   const [content, setContent] = useState('');
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
   const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'offline'>('saved');
+
+  // Word count logic
+  const wordCount = useMemo(() => {
+    return content.trim() ? content.trim().split(/\s+/).length : 0;
+  }, [content]);
 
   useEffect(() => {
     if (storyId && chapterId) {
@@ -30,7 +36,6 @@ export default function ChapterEditorPage() {
     try {
       setLoading(true);
       
-      // Fetch Story Details
       const { data: storyData } = await supabase
         .from('stories')
         .select('*')
@@ -38,7 +43,6 @@ export default function ChapterEditorPage() {
         .single();
       setStory(storyData);
 
-      // Fetch Active Chapter Details
       const { data: chapData, error } = await supabase
         .from('story_chapters')
         .select('*')
@@ -58,10 +62,12 @@ export default function ChapterEditorPage() {
     }
   };
 
-  const handleSaveDraft = async (publishStatus?: 'draft' | 'published') => {
+  const handleSaveDraft = async (publishStatus?: 'draft' | 'published', isAutoSave = false) => {
     const activeStatus = publishStatus || status;
     try {
-      setSaving(true);
+      if (isAutoSave) setSaveStatus('saving');
+      else setSaving(true);
+
       const payload: Partial<StoryChapter> = {
         title,
         content,
@@ -69,7 +75,7 @@ export default function ChapterEditorPage() {
         updated_at: new Date().toISOString()
       };
 
-      if (activeStatus === 'published') {
+      if (activeStatus === 'published' && status !== 'published') {
         payload.published_at = new Date().toISOString();
       }
 
@@ -81,111 +87,148 @@ export default function ChapterEditorPage() {
       if (error) throw error;
       
       setStatus(activeStatus);
-      showToast(activeStatus === 'published' ? 'Chapter Published!' : 'Draft Saved Successfully', 'success');
+      
+      if (isAutoSave) {
+        setSaveStatus('saved');
+      } else {
+        showToast(activeStatus === 'published' ? 'Chapter Published!' : 'Draft Saved Successfully', 'success');
+      }
     } catch (err: any) {
-      showToast(err.message || 'Error saving chapter', 'error');
+      if (!isAutoSave) showToast(err.message || 'Error saving chapter', 'error');
+      setSaveStatus('offline');
     } finally {
-      setSaving(false);
+      if (!isAutoSave) setSaving(false);
     }
   };
 
+  // Auto-save every 10 seconds if content changes
+  useEffect(() => {
+    if (!title && !content) return;
+    const timeoutId = setTimeout(() => {
+      if (status === 'draft') {
+        handleSaveDraft('draft', true);
+      }
+    }, 10000);
+    return () => clearTimeout(timeoutId);
+  }, [title, content, status]);
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-warm-50 dark:bg-warm-900 flex items-center justify-center">
+      <div className="min-h-screen bg-warm-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-2 border-red-500 border-t-red-750 mx-auto" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-warm-50 dark:bg-warm-900 flex flex-col">
+    <div className="min-h-screen bg-warm-900 flex flex-col font-sans">
       
-      {/* Editor Navbar */}
-      <header className="bg-white dark:bg-warm-850 border-b border-warm-200 dark:border-warm-800 px-4 py-3 flex items-center justify-between z-10">
-        <div className="flex items-center gap-3">
+      {/* Editor Navbar - Wattpad Style */}
+      <header className="bg-warm-850 border-b border-warm-800 px-6 h-16 flex items-center justify-between z-10 sticky top-0">
+        <div className="flex items-center gap-4">
           <button
             onClick={() => navigate(`/write`)}
-            className="p-2 rounded-lg hover:bg-warm-100 dark:hover:bg-warm-850 text-warm-650 dark:text-warm-350"
-            title="Exit to Workspace"
+            className="text-warm-400 hover:text-white transition-colors flex items-center gap-2 text-sm font-bold"
           >
-            <ArrowLeft size={16} />
+            <ArrowLeft size={18} />
           </button>
-          <div>
-            <h1 className="text-xs text-warm-500 font-semibold">{story?.title}</h1>
-            <span className="text-[10px] text-warm-400 block">Editing Chapter #{chapter?.chapter_number}</span>
+          <div className="hidden sm:block">
+            <h1 className="text-sm text-white font-bold">{story?.title}</h1>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-warm-500 font-semibold uppercase tracking-wider">Part {chapter?.chapter_number}</span>
+              <span className="text-[10px] text-warm-500 flex items-center gap-1">
+                {saveStatus === 'saving' && <span className="text-yellow-500">Saving...</span>}
+                {saveStatus === 'saved' && <><Check size={10} className="text-green-500" /> Saved</>}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {status === 'draft' ? (
             <>
               <button
                 onClick={() => handleSaveDraft('draft')}
                 disabled={saving}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-warm-250 dark:border-warm-750 text-warm-700 dark:text-warm-300 font-bold text-xs hover:bg-warm-50 dark:hover:bg-warm-800 transition-all"
+                className="text-warm-300 hover:text-white font-bold text-sm transition-all"
               >
-                <Save size={14} />
-                Save Draft
+                Save
               </button>
               <button
                 onClick={() => handleSaveDraft('published')}
                 disabled={saving}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-red-650 hover:bg-red-700 text-white font-bold text-xs shadow-sm transition-all"
+                className="px-5 py-2 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-md transition-all ml-2"
               >
-                <Globe size={14} />
-                Publish Chapter
+                Publish
               </button>
             </>
           ) : (
             <>
-              <span className="text-[10px] uppercase font-bold text-green-600 dark:text-green-500 bg-green-50 dark:bg-green-950/20 px-2 py-1 rounded-md border border-green-200/50 dark:border-green-900/30">
-                Published
-              </span>
-              <button
-                onClick={() => handleSaveDraft('published')}
-                disabled={saving}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-red-650 hover:bg-red-700 text-white font-bold text-xs shadow-sm transition-all"
-              >
-                <Save size={14} />
-                Update Publish
-              </button>
               <button
                 onClick={() => handleSaveDraft('draft')}
                 disabled={saving}
-                className="px-3 py-1.5 text-xs text-warm-500 border border-warm-200 rounded-xl hover:bg-warm-50 dark:hover:bg-warm-800"
+                className="text-warm-400 hover:text-white font-bold text-sm transition-all"
               >
                 Revert to Draft
               </button>
+              <button
+                onClick={() => handleSaveDraft('published')}
+                disabled={saving}
+                className="px-5 py-2 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-md transition-all ml-2"
+              >
+                Update
+              </button>
             </>
           )}
-
+          <button className="text-warm-400 hover:text-white ml-2">
+            <MoreHorizontal size={20} />
+          </button>
         </div>
       </header>
 
-      {/* Editor & Sidebar Layout */}
+      {/* Editor Layout */}
       <div className="flex-1 flex overflow-hidden">
         
-        {/* Left Side: Main Editor Panel */}
-        <div className="flex-1 overflow-y-auto p-6 sm:p-10 flex justify-center bg-warm-50 dark:bg-warm-900">
-          <div className="max-w-2xl w-full flex flex-col h-full space-y-6">
+        {/* Main Editor Panel */}
+        <div className="flex-1 overflow-y-auto bg-[#F7F5F0] dark:bg-[#1A1817] flex justify-center py-12 px-6">
+          <div className="max-w-[700px] w-full flex flex-col h-full relative">
             
+            {/* Mock Rich Text Toolbar (Visual Only) */}
+            <div className="flex items-center gap-1 mb-8 border-b border-[#E5E0D8] dark:border-[#2A2827] pb-3 text-[#8A8580] dark:text-[#6A6867]">
+              <button className="p-1.5 hover:bg-[#E5E0D8] dark:hover:bg-[#2A2827] rounded transition-colors" title="Paragraph"><AlignLeft size={18} /></button>
+              <div className="w-px h-4 bg-[#E5E0D8] dark:bg-[#2A2827] mx-1"></div>
+              <button className="p-1.5 hover:bg-[#E5E0D8] dark:hover:bg-[#2A2827] rounded transition-colors font-serif font-bold text-lg leading-none" title="Bold">B</button>
+              <button className="p-1.5 hover:bg-[#E5E0D8] dark:hover:bg-[#2A2827] rounded transition-colors font-serif italic text-lg leading-none" title="Italic">I</button>
+              <button className="p-1.5 hover:bg-[#E5E0D8] dark:hover:bg-[#2A2827] rounded transition-colors font-serif underline text-lg leading-none" title="Underline">U</button>
+              <div className="w-px h-4 bg-[#E5E0D8] dark:bg-[#2A2827] mx-1"></div>
+              <button className="p-1.5 hover:bg-[#E5E0D8] dark:hover:bg-[#2A2827] rounded transition-colors" title="Link"><Link size={18} /></button>
+              <button className="p-1.5 hover:bg-[#E5E0D8] dark:hover:bg-[#2A2827] rounded transition-colors" title="Image"><ImageIcon size={18} /></button>
+            </div>
+
             {/* Title field */}
             <input
               type="text"
-              placeholder="Chapter Title..."
+              placeholder="Untitled Part"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full text-3xl font-serif font-bold bg-transparent border-0 border-b border-transparent focus:border-warm-250 dark:focus:border-warm-750 focus:ring-0 px-0 pb-2 text-warm-900 dark:text-white"
+              className="w-full text-4xl font-serif font-bold bg-transparent border-0 focus:ring-0 px-0 pb-6 text-[#1A1817] dark:text-[#F7F5F0] placeholder-[#8A8580] dark:placeholder-[#6A6867]"
             />
 
             {/* Content field */}
             <textarea
-              placeholder="Start writing your masterpiece here..."
+              placeholder="Tap here to start writing..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="w-full flex-1 min-h-[500px] text-lg font-serif bg-transparent border-0 focus:ring-0 px-0 text-warm-800 dark:text-warm-100 placeholder-warm-400 resize-none font-medium leading-relaxed"
+              className="w-full flex-1 min-h-[60vh] text-lg font-serif bg-transparent border-0 focus:ring-0 px-0 text-[#2A2827] dark:text-[#E5E0D8] placeholder-[#8A8580] dark:placeholder-[#6A6867] resize-none leading-relaxed"
             />
+            
+            {/* Word Count Footer */}
+            <div className="pt-8 pb-4 text-center">
+              <span className="text-xs font-bold text-[#8A8580] dark:text-[#6A6867] uppercase tracking-widest">
+                {wordCount} {wordCount === 1 ? 'Word' : 'Words'}
+              </span>
+            </div>
           </div>
         </div>
 
