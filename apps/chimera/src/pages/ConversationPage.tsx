@@ -42,6 +42,8 @@ export default function ConversationPage() {
   const [showGroupSettings, setShowGroupSettings] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
   const [showAddMembers, setShowAddMembers] = useState(false);
   const [followedUsers, setFollowedUsers] = useState<Profile[]>([]);
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
@@ -346,14 +348,62 @@ export default function ConversationPage() {
     }
   };
 
-  // Delete message
+  // Soft delete message
   const handleDeleteMessage = async (messageId: string) => {
     try {
-      await supabase.from('messages').delete().eq('id', messageId);
+      await supabase.from('messages').update({ deleted_at: new Date().toISOString() }).eq('id', messageId);
       setMessages(prev => prev.filter(m => m.id !== messageId));
+      showToast('Message deleted', 'success');
     } catch (error) {
       console.error('Error deleting message:', error);
       showToast('Failed to delete message', 'error');
+    }
+  };
+
+  // Edit message
+  const handleSaveEdit = async () => {
+    if (!editingMessageId || !editContent.trim()) return;
+    try {
+      await supabase.from('messages').update({ content: editContent.trim() }).eq('id', editingMessageId);
+      setMessages(prev => prev.map(m => m.id === editingMessageId ? { ...m, content: editContent.trim() } : m));
+      setEditingMessageId(null);
+      showToast('Message updated', 'success');
+    } catch (error) {
+      console.error('Error editing message:', error);
+      showToast('Failed to update message', 'error');
+    }
+  };
+
+  // Regenerate AI Response
+  const handleRegenerateMessage = async (messageId: string) => {
+    if (!conversationId || !otherUser || (otherUser.role as string) !== 'ai_character') return;
+    try {
+      // 1. Soft-delete the AI's last message
+      await supabase.from('messages').update({ deleted_at: new Date().toISOString() }).eq('id', messageId);
+      setMessages(prev => prev.filter(m => m.id !== messageId));
+      
+      // 2. Trigger new AI response
+      setTypingUsers([otherUser.user_id]);
+      const sessionRes = await supabase.auth.getSession();
+      const token = sessionRes.data.session?.access_token;
+      
+      fetch('/api/ai-chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          bot_user_id: otherUser.user_id
+        })
+      }).catch(err => {
+        console.error('Failed to trigger AI response:', err);
+        setTypingUsers([]);
+      });
+    } catch (error) {
+      console.error('Error regenerating message:', error);
+      showToast('Failed to regenerate response', 'error');
     }
   };
 
@@ -575,7 +625,31 @@ export default function ConversationPage() {
 
                       {message.content && message.content !== 'Sent an image' && (
                         <div className="text-[15px] sm:text-base leading-relaxed text-warm-800 dark:text-warm-200 whitespace-pre-wrap font-serif">
-                          {message.content}
+                          {editingMessageId === message.id ? (
+                            <div className="mt-1 flex flex-col gap-2">
+                              <textarea
+                                value={editContent}
+                                onChange={(e) => setEditContent(e.target.value)}
+                                className="w-full bg-white dark:bg-warm-900 border border-warm-300 dark:border-warm-700 rounded-lg p-2 text-sm focus:outline-none focus:border-red-500 min-h-[80px]"
+                              />
+                              <div className="flex justify-end gap-2">
+                                <button 
+                                  onClick={() => setEditingMessageId(null)}
+                                  className="text-xs px-3 py-1.5 rounded-md hover:bg-warm-200 dark:hover:bg-warm-800 text-warm-600 dark:text-warm-300 transition-colors font-medium"
+                                >
+                                  Cancel
+                                </button>
+                                <button 
+                                  onClick={handleSaveEdit}
+                                  className="text-xs px-3 py-1.5 rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors font-medium"
+                                >
+                                  Save
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            message.content
+                          )}
                         </div>
                       )}
                     </div>
@@ -593,6 +667,10 @@ export default function ConversationPage() {
                       {isOwn && (
                         <>
                           <button 
+                            onClick={() => {
+                              setEditingMessageId(message.id);
+                              setEditContent(message.content || '');
+                            }}
                             className="p-1.5 text-warm-500 hover:text-warm-900 dark:hover:text-white rounded-md hover:bg-warm-100 dark:hover:bg-warm-700 transition-colors"
                             title="Edit message"
                           >
@@ -608,13 +686,28 @@ export default function ConversationPage() {
                         </>
                       )}
 
-                      {isAI && index === messages.length - 1 && (
-                        <button 
-                          className="p-1.5 text-warm-500 hover:text-primary-600 dark:hover:text-primary-400 rounded-md hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
-                          title="Regenerate response"
-                        >
-                          <RotateCw size={14} />
-                        </button>
+                      {isAI && (
+                        <>
+                          <button 
+                            onClick={() => {
+                              setEditingMessageId(message.id);
+                              setEditContent(message.content || '');
+                            }}
+                            className="p-1.5 text-warm-500 hover:text-warm-900 dark:hover:text-white rounded-md hover:bg-warm-100 dark:hover:bg-warm-700 transition-colors"
+                            title="Edit AI message"
+                          >
+                            <Edit3 size={14} />
+                          </button>
+                          {index === messages.length - 1 && (
+                            <button 
+                              onClick={() => handleRegenerateMessage(message.id)}
+                              className="p-1.5 text-warm-500 hover:text-primary-600 dark:hover:text-primary-400 rounded-md hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
+                              title="Regenerate response"
+                            >
+                              <RotateCw size={14} />
+                            </button>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
