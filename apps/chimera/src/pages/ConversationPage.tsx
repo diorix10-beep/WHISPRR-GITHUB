@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import {
   ArrowLeft, Send, Phone, Video, Loader2, Trash2,
-  Image as ImageIcon, X, Settings, UserPlus, UserMinus, LogOut, Pencil, Smile, Search
+  Image as ImageIcon, X, Settings, UserPlus, UserMinus, LogOut, Pencil, Smile, Search,
+  PanelRightClose, PanelRightOpen, BookOpen, Copy, RotateCw, Edit3
 } from 'lucide-react';
 import type { Conversation, Message, Profile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -45,6 +46,7 @@ export default function ConversationPage() {
   const [followedUsers, setFollowedUsers] = useState<Profile[]>([]);
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
   const [initiating, setInitiating] = useState(false);
+  const [showContextDrawer, setShowContextDrawer] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -471,12 +473,12 @@ export default function ConversationPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-warm-50 dark:bg-warm-900">
+    <div className="h-screen flex flex-col bg-white dark:bg-warm-950 font-sans">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-white dark:bg-warm-800 border-b border-warm-200 dark:border-warm-700">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+      <header className="flex-none sticky top-0 z-30 bg-white dark:bg-warm-900 border-b border-warm-200 dark:border-warm-800">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <button onClick={() => navigate('/messages')} className="btn-ghost p-2 -ml-2">
+            <button onClick={() => navigate('/messages')} className="p-2 -ml-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500 transition-colors">
               <ArrowLeft size={24} />
             </button>
 
@@ -484,7 +486,7 @@ export default function ConversationPage() {
               <div className="flex items-center gap-3 min-w-0">
                 <Avatar emoji={otherUser.avatar_emoji} photoUrl={otherUser.photo_url} size="md" />
                 <div className="min-w-0">
-                  <h1 className="font-medium text-warm-900 dark:text-warm-100 truncate flex items-center">
+                  <h1 className="font-serif font-bold text-lg text-warm-900 dark:text-warm-50 truncate flex items-center">
                     {otherUser.display_name}
                     <UserBadges badges={otherUser.badges} role={otherUser.role} size="sm" />
                   </h1>
@@ -495,7 +497,7 @@ export default function ConversationPage() {
 
             {conversation?.type === 'group' && (
               <div className="min-w-0">
-                <h1 className="font-medium text-warm-900 dark:text-warm-100 truncate">
+                <h1 className="font-serif font-bold text-lg text-warm-900 dark:text-warm-50 truncate">
                   {conversation.name || 'Group Chat'}
                 </h1>
                 <p className="text-xs text-warm-500">{participants.length} members</p>
@@ -503,19 +505,18 @@ export default function ConversationPage() {
             )}
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             {conversation?.type === 'dm' && (
-              <>
-                <button onClick={() => showToast('Voice calls coming soon!', 'info')} className="btn-ghost p-2">
-                  <Phone size={20} />
-                </button>
-                <button onClick={() => showToast('Video calls coming soon!', 'info')} className="btn-ghost p-2">
-                  <Video size={20} />
-                </button>
-              </>
+              <button 
+                onClick={() => setShowContextDrawer(!showContextDrawer)} 
+                className={`p-2 rounded-xl transition-colors ${showContextDrawer ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400' : 'hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500'}`}
+                title="Toggle Context & Lore"
+              >
+                {showContextDrawer ? <PanelRightClose size={20} /> : <PanelRightOpen size={20} />}
+              </button>
             )}
             {conversation?.type === 'group' && (
-              <button onClick={() => setShowGroupSettings(true)} className="btn-ghost p-2">
+              <button onClick={() => setShowGroupSettings(true)} className="p-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500 transition-colors">
                 <Settings size={20} />
               </button>
             )}
@@ -523,68 +524,103 @@ export default function ConversationPage() {
         </div>
       </header>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto max-w-lg mx-auto w-full px-4 py-4 space-y-3">
-        {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-warm-500">
-            <p>No messages yet. Start the conversation!</p>
-          </div>
-        ) : (
-          messages.map(message => {
-            const isOwn = message.sender_id === user?.id;
-            const sender = message.profiles;
-
-            return (
-              <div key={message.id} className={`group flex gap-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                {!isOwn && conversation?.type === 'group' && (
-                  <Avatar emoji={sender?.avatar_emoji || '?'} photoUrl={sender?.photo_url || null} size="sm" />
-                )}
-
-                <div className="relative max-w-[75%]">
-                  <div className={`px-4 py-2.5 rounded-2xl break-words ${
-                    isOwn
-                      ? 'bg-primary-500 text-white rounded-br-none'
-                      : 'bg-warm-100 dark:bg-warm-700 text-warm-900 dark:text-warm-100 rounded-bl-none'
-                  }`}>
-                    {!isOwn && conversation?.type === 'group' && sender && (
-                      <p className="text-xs font-semibold opacity-75 mb-1 flex items-center gap-0.5">
-                        {sender.display_name}
-                        <UserBadges badges={sender.badges} role={sender.role} size="sm" />
-                      </p>
-                    )}
-
-                    {message.image_url && (
-                      <img
-                        src={message.image_url}
-                        alt="Shared image"
-                        className="rounded-xl max-w-full mb-2 cursor-pointer"
-                        onClick={() => window.open(message.image_url!, '_blank')}
-                      />
-                    )}
-
-                    {message.content && message.content !== 'Sent an image' && (
-                      <p className="text-sm">{message.content}</p>
-                    )}
-
-                    <p className={`text-xs mt-1 ${isOwn ? 'text-primary-100' : 'text-warm-500'}`}>
-                      {formatDistanceToNow(new Date(message.created_at), { addSuffix: false })}
-                    </p>
-                  </div>
-
-                  {isOwn && (
-                    <button
-                      onClick={() => handleDeleteMessage(message.id)}
-                      className="absolute -left-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-warm-200 dark:hover:bg-warm-600"
-                      title="Delete message"
-                    >
-                      <Trash2 size={14} className="text-warm-500" />
-                    </button>
-                  )}
-                </div>
+      {/* Main Layout Area */}
+      <div className="flex-1 overflow-hidden w-full max-w-7xl mx-auto flex relative">
+        
+        {/* Chat Column */}
+        <div className="flex-1 flex flex-col min-w-0 relative">
+          
+          {/* Messages Area */}
+          <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 space-y-6 scroll-smooth">
+            {messages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-warm-500 space-y-3">
+                <BookOpen size={32} className="opacity-20" />
+                <p className="font-serif italic text-lg opacity-60">The story begins...</p>
               </div>
-            );
-          })
-        )}
+            ) : (
+              messages.map((message, index) => {
+                const isOwn = message.sender_id === user?.id;
+                const sender = message.profiles || (isOwn ? user : otherUser);
+                const isAI = sender?.role === 'ai_character';
+
+                return (
+                  <div 
+                    key={message.id} 
+                    className="group relative flex gap-4 p-2 sm:p-4 -mx-2 sm:-mx-4 rounded-2xl hover:bg-warm-50 dark:hover:bg-warm-900/30 transition-colors"
+                  >
+                    {/* Avatar Column */}
+                    <div className="flex-shrink-0 mt-1">
+                      <Avatar emoji={sender?.avatar_emoji || '?'} photoUrl={sender?.photo_url || null} size="md" />
+                    </div>
+
+                    {/* Content Column */}
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                      <div className="flex items-baseline gap-2">
+                        <span className={`font-bold ${isOwn ? 'text-warm-900 dark:text-warm-100' : 'text-red-700 dark:text-red-400'}`}>
+                          {sender?.display_name || 'Unknown'}
+                        </span>
+                        <span className="text-xs text-warm-400 dark:text-warm-600 font-medium">
+                          {formatDistanceToNow(new Date(message.created_at), { addSuffix: false })}
+                        </span>
+                      </div>
+
+                      {message.image_url && (
+                        <img
+                          src={message.image_url}
+                          alt="Shared image"
+                          className="rounded-xl max-w-sm w-full mb-3 cursor-pointer border border-warm-200 dark:border-warm-800 shadow-sm"
+                          onClick={() => window.open(message.image_url!, '_blank')}
+                        />
+                      )}
+
+                      {message.content && message.content !== 'Sent an image' && (
+                        <div className="text-[15px] sm:text-base leading-relaxed text-warm-800 dark:text-warm-200 whitespace-pre-wrap font-serif">
+                          {message.content}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Hover Actions */}
+                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-white/90 dark:bg-warm-800/90 backdrop-blur-sm px-2 py-1 rounded-lg border border-warm-200 dark:border-warm-700 shadow-sm">
+                      <button 
+                        className="p-1.5 text-warm-500 hover:text-warm-900 dark:hover:text-white rounded-md hover:bg-warm-100 dark:hover:bg-warm-700 transition-colors"
+                        title="Copy message"
+                        onClick={() => navigator.clipboard.writeText(message.content || '')}
+                      >
+                        <Copy size={14} />
+                      </button>
+                      
+                      {isOwn && (
+                        <>
+                          <button 
+                            className="p-1.5 text-warm-500 hover:text-warm-900 dark:hover:text-white rounded-md hover:bg-warm-100 dark:hover:bg-warm-700 transition-colors"
+                            title="Edit message"
+                          >
+                            <Edit3 size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMessage(message.id)}
+                            className="p-1.5 text-warm-500 hover:text-red-600 dark:hover:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            title="Delete message"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </>
+                      )}
+
+                      {isAI && index === messages.length - 1 && (
+                        <button 
+                          className="p-1.5 text-warm-500 hover:text-primary-600 dark:hover:text-primary-400 rounded-md hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
+                          title="Regenerate response"
+                        >
+                          <RotateCw size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
 
         {/* Typing indicator */}
         {getTypingDisplay() && (
@@ -598,101 +634,141 @@ export default function ConversationPage() {
           </div>
         )}
 
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Image Preview */}
-      {imagePreview && (
-        <div className="max-w-lg mx-auto w-full px-4 pb-2">
-          <div className="relative inline-block">
-            <img src={imagePreview} alt="Preview" className="h-20 rounded-xl object-cover" />
-            <button
-              onClick={clearImage}
-              className="absolute -top-2 -right-2 bg-warm-800 text-white rounded-full p-1"
-            >
-              <X size={12} />
-            </button>
+            <div ref={messagesEndRef} className="h-4" />
           </div>
-        </div>
-      )}
 
-      {/* Message Input */}
-      <form onSubmit={handleSendMessage} className="sticky bottom-0 bg-white dark:bg-warm-800 border-t border-warm-100 dark:border-warm-700">
-        <div className="max-w-lg mx-auto px-4 py-3 space-y-2">
-          {showEmojiPicker && (
-            <div className="animate-scale-in">
-              <EmojiPicker
-                onSelect={emoji => {
-                  setMessageInput(prev => prev + emoji);
-                  setShowEmojiPicker(false);
-                  msgInputRef.current?.focus();
-                }}
-                onClose={() => setShowEmojiPicker(false)}
-              />
+          {/* Image Preview */}
+          {imagePreview && (
+            <div className="px-4 pb-2">
+              <div className="relative inline-block border border-warm-200 dark:border-warm-700 rounded-xl p-1 bg-white dark:bg-warm-800 shadow-sm">
+                <img src={imagePreview} alt="Preview" className="h-24 rounded-lg object-cover" />
+                <button
+                  onClick={clearImage}
+                  className="absolute -top-3 -right-3 bg-warm-900 dark:bg-white text-white dark:text-warm-900 rounded-full p-1.5 shadow-md hover:scale-110 transition-transform"
+                >
+                  <X size={12} />
+                </button>
+              </div>
             </div>
           )}
-          <div className="flex items-end gap-2">
-            <input type="file" ref={fileInputRef} accept="image/*" onChange={handleImageSelect} className="hidden" />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="btn-ghost p-2 flex-shrink-0 mb-0.5"
-              disabled={sending}
-              aria-label="Attach image"
-            >
-              <ImageIcon size={20} className="text-warm-500" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowEmojiPicker(p => !p)}
-              className="btn-ghost p-2 flex-shrink-0 mb-0.5"
-              disabled={sending}
-              aria-label="Insert emoji"
-            >
-              <Smile size={20} className="text-warm-500" />
-            </button>
-            <textarea
-              ref={msgInputRef}
-              value={messageInput}
-              onChange={e => { handleInputChange(e.target.value); }}
-              onKeyDown={e => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage(e as any);
-                }
-              }}
-              placeholder="Type a message… (Shift+Enter for new line)"
-              className="input-field flex-1 resize-none overflow-y-auto"
-              style={{ minHeight: '2.75rem', maxHeight: '8rem', height: 'auto' }}
-              maxLength={MSG_LIMIT}
-              disabled={sending}
-              rows={1}
-              onInput={e => {
-                const el = e.currentTarget;
-                el.style.height = 'auto';
-                el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
-              }}
-            />
-            <button
-              type="submit"
-              disabled={sending || (!messageInput.trim() && !imageFile)}
-              className="btn-primary flex items-center justify-center gap-2 py-2.5 px-4 disabled:opacity-50 flex-shrink-0 mb-0.5"
-              aria-label="Send message"
-            >
-              {sending || uploadingImage ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : (
-                <Send size={18} />
+
+          {/* Message Input Area */}
+          <div className="flex-none p-4 sm:p-6 bg-white dark:bg-warm-950 border-t border-warm-100 dark:border-warm-800/50">
+            <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto relative">
+              
+              {showEmojiPicker && (
+                <div className="absolute bottom-full mb-4 left-0 animate-scale-in z-50 shadow-2xl rounded-2xl border border-warm-200 dark:border-warm-700">
+                  <EmojiPicker
+                    onSelect={emoji => {
+                      setMessageInput(prev => prev + emoji);
+                      setShowEmojiPicker(false);
+                      msgInputRef.current?.focus();
+                    }}
+                    onClose={() => setShowEmojiPicker(false)}
+                  />
+                </div>
               )}
-            </button>
+
+              <div className="flex items-end gap-3 bg-warm-50 dark:bg-warm-900 border border-warm-200 dark:border-warm-700 rounded-3xl p-2 shadow-sm focus-within:border-red-400 dark:focus-within:border-red-600 focus-within:ring-4 focus-within:ring-red-500/10 transition-all">
+                
+                <div className="flex items-center gap-1 pl-1">
+                  <input type="file" ref={fileInputRef} accept="image/*" onChange={handleImageSelect} className="hidden" />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-2.5 rounded-full hover:bg-warm-200 dark:hover:bg-warm-800 text-warm-500 transition-colors"
+                    disabled={sending}
+                    title="Attach image"
+                  >
+                    <ImageIcon size={20} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowEmojiPicker(p => !p)}
+                    className="p-2.5 rounded-full hover:bg-warm-200 dark:hover:bg-warm-800 text-warm-500 transition-colors"
+                    disabled={sending}
+                    title="Insert emoji"
+                  >
+                    <Smile size={20} />
+                  </button>
+                </div>
+
+                <textarea
+                  ref={msgInputRef}
+                  value={messageInput}
+                  onChange={e => handleInputChange(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage(e as any);
+                    }
+                  }}
+                  placeholder="Type your response... (Shift+Enter for new line)"
+                  className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 resize-none py-3 text-[15px] text-warm-900 dark:text-warm-50 placeholder:text-warm-400 font-serif leading-relaxed"
+                  style={{ minHeight: '3rem', maxHeight: '12rem' }}
+                  maxLength={MSG_LIMIT}
+                  disabled={sending}
+                  rows={1}
+                  onInput={e => {
+                    const el = e.currentTarget;
+                    el.style.height = 'auto';
+                    el.style.height = `${Math.min(el.scrollHeight, 192)}px`;
+                  }}
+                />
+
+                <div className="pr-1 pb-1">
+                  <button
+                    type="submit"
+                    disabled={sending || (!messageInput.trim() && !imageFile)}
+                    className="bg-red-600 hover:bg-red-500 text-white rounded-full p-3 flex items-center justify-center disabled:opacity-50 disabled:hover:bg-red-600 transition-colors shadow-md"
+                    title="Send message"
+                  >
+                    {sending || uploadingImage ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : (
+                      <Send size={18} className="ml-0.5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+              
+              {messageInput.length > MSG_LIMIT * 0.85 && (
+                <p className={`absolute -bottom-5 right-4 text-[10px] font-medium tracking-wide ${messageInput.length > MSG_LIMIT ? 'text-red-500' : 'text-warm-400'}`}>
+                  {messageInput.length} / {MSG_LIMIT}
+                </p>
+              )}
+            </form>
           </div>
-          {messageInput.length > MSG_LIMIT * 0.85 && (
-            <p className={`text-xs text-right tabular-nums ${messageInput.length > MSG_LIMIT ? 'text-error-600' : 'text-warm-400'}`}>
-              {messageInput.length}/{MSG_LIMIT}
-            </p>
-          )}
         </div>
-      </form>
+
+        {/* Right Sidebar: Context Drawer */}
+        {showContextDrawer && conversation?.type === 'dm' && otherUser && (
+          <div className="hidden md:flex flex-col w-80 flex-shrink-0 bg-warm-50 dark:bg-warm-900 border-l border-warm-200 dark:border-warm-800 overflow-y-auto animate-fade-in">
+            <div className="p-6 space-y-6">
+              {/* Character Profile Summary */}
+              <div className="text-center space-y-3">
+                <Avatar emoji={otherUser.avatar_emoji} photoUrl={otherUser.photo_url} size="xl" className="mx-auto shadow-lg" />
+                <div>
+                  <h2 className="font-serif font-bold text-xl text-warm-900 dark:text-warm-50">{otherUser.display_name}</h2>
+                  <p className="text-sm text-warm-500">@{otherUser.username}</p>
+                </div>
+              </div>
+
+              <hr className="border-warm-200 dark:border-warm-800" />
+
+              {/* Memory / Lore Section Placeholder */}
+              <div className="space-y-3">
+                <h3 className="font-bold text-sm text-warm-900 dark:text-warm-100 uppercase tracking-wider flex items-center gap-2">
+                  <BookOpen size={14} className="text-red-500" /> Active Context
+                </h3>
+                <p className="text-xs text-warm-500 leading-relaxed bg-white dark:bg-warm-800 p-3 rounded-xl border border-warm-200 dark:border-warm-700">
+                  This space is reserved for the CHIMERA Memory Manager. Pinned memories, active lorebooks, and dynamic context will appear here.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Group Settings Modal */}
       {showGroupSettings && conversation?.type === 'group' && (
