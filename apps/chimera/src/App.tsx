@@ -60,6 +60,7 @@ const ChapterEditorPage = lazy(() => import('./pages/ChapterEditorPage'));
 // ── Conversations Module ───────────────────────────────────
 const ChimeraChatsPage  = lazy(() => import('./pages/ChimeraChatsPage'));
 const ConversationPage  = lazy(() => import('./pages/ConversationPage'));
+const ModelsPage        = lazy(() => import('./pages/ModelsPage'));
 
 // ── Personas ───────────────────────────────────────────────
 const PersonasPage      = lazy(() => import('./pages/PersonasPage'));
@@ -195,7 +196,7 @@ function AppLoader() {
             <Route path="/stories/:storyId/edit/chapter/:chapterId" element={<ChapterEditorPage />} />
 
             {/* AI Models Module */}
-            <Route path="/models" element={<ChimeraPlaceholderPage title="AI Models" description="Choose and configure the AI model powering your characters. Supports Gemini, Claude, GPT, DeepSeek, and future providers." />} />
+            <Route path="/models" element={<ModelsPage />} />
 
             {/* Conversations Module */}
             <Route path="/conversations" element={<ChimeraChatsPage />} />

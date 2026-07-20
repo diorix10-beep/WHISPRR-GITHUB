@@ -221,39 +221,7 @@ function buildSystemPrompt(
   return sections.join('\n\n---\n\n');
 }
 
-/**
- * Build a lightweight conversation summary for older messages that won't
- * fit in the context window. This keeps long-running roleplays coherent
- * without exceeding token limits.
- */
-function buildHistorySummary(messages: ChatMessage[], botUserId: string, botName: string): string | null {
-  // Only summarize if we have more than 20 messages — otherwise the full
-  // history fits comfortably and a summary adds nothing.
-  if (!messages || messages.length <= 20) return null;
-
-  // Take messages older than the most recent 15 (which are sent as full history)
-  const olderMessages = messages.slice(0, -15);
-  if (olderMessages.length === 0) return null;
-
-  const summaryParts: string[] = [];
-  summaryParts.push(`Earlier in this conversation (${olderMessages.length} messages before the recent exchange):`);
-
-  // Group into rough chunks and summarize key beats
-  let chunkSize = 5;
-  for (let i = 0; i < olderMessages.length; i += chunkSize) {
-    const chunk = olderMessages.slice(i, i + chunkSize);
-    const chunkSummary = chunk.map(m => {
-      const speaker = m.sender_id === botUserId ? botName : 'User';
-      return `${speaker}: ${m.content}`;
-    }).join(' | ');
-    summaryParts.push(chunkSummary);
-  }
-
-  summaryParts.push('');
-  summaryParts.push('Use this context to maintain continuity. Reference these events naturally when relevant, but do not repeat them.');
-
-  return summaryParts.join('\n');
-}
+// Removed history summarizing to unleash full context memory
 
 // ---------------------------------------------------------------------------
 // API Handler
@@ -344,14 +312,14 @@ export default async function handler(req: Request) {
       }
     }
 
-    // 5. Fetch message history — last 30 messages (we summarize older ones)
+    // 5. Fetch message history — increase to 150 messages for Long-Term Memory
     const { data: messages, error: msgError } = await supabase
       .from('messages')
       .select('sender_id, content')
       .eq('conversation_id', conversation_id)
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
-      .limit(30);
+      .limit(150);
 
     if (msgError) {
       return new Response(JSON.stringify({ error: 'Failed to fetch conversation history' }), {
@@ -364,11 +332,9 @@ export default async function handler(req: Request) {
       .filter(m => m.content && m.content.trim() !== '')
       .reverse(); // chronological order (oldest first)
 
-    // 6. Build history summary for older messages
-    const historySummary = buildHistorySummary(allMessages, bot_user_id, botProfile.display_name);
-
-    // 7. Take the most recent 15 messages for full context
-    const recentMessages = allMessages.slice(-15);
+    // 6. Provide full recent history (no more summarizing)
+    const historySummary = null;
+    const recentMessages = allMessages;
 
     // 8. Format history into Gemini API contents structure
     const formattedHistory: Array<{ role: string; parts: Array<{ text: string }> }> = recentMessages
@@ -406,50 +372,79 @@ export default async function handler(req: Request) {
       historySummary,
     );
 
-    // 11. Invoke Google Gemini API
-    const apiKey = process.env.GEMINI_API_KEY_SERVER || process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return new Response(JSON.stringify({ error: 'Gemini API key is not configured' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+    // 11. AI Routing Logic
+    let replyText = '';
+    const aiProvider = character.ai_provider || 'gemini';
+    const aiModel = character.ai_model || 'gemini-2.5-flash';
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-    const geminiRes = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: {
-          parts: [{ text: systemPrompt }]
+    if (aiProvider === 'openrouter') {
+      const openRouterKey = process.env.OPENROUTER_API_KEY;
+      if (!openRouterKey) {
+        return new Response(JSON.stringify({ error: 'OpenRouter API key is not configured' }), { status: 500 });
+      }
+
+      const orMessages = [
+        { role: 'system', content: systemPrompt },
+        ...formattedHistory.map(m => ({
+          role: m.role === 'model' ? 'assistant' : 'user',
+          content: m.parts[0].text
+        }))
+      ];
+
+      const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openRouterKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://chimera.app', // Replace with your actual domain
+          'X-Title': 'CHIMERA AI', 
         },
-        contents: formattedHistory,
-        generationConfig: {
+        body: JSON.stringify({
+          model: aiModel,
+          messages: orMessages,
           temperature: 0.9,
-          topP: 0.95,
-          topK: 40,
-          maxOutputTokens: 2048,
-        }
-      })
-    });
-
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
-      console.error('Gemini error:', errText);
-      return new Response(JSON.stringify({ error: 'Gemini model generated an error', details: errText }), {
-        status: 502,
-        headers: { 'Content-Type': 'application/json' }
+          top_p: 0.95,
+          max_tokens: 2048,
+        })
       });
-    }
 
-    const geminiData = await geminiRes.json();
-    const replyText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (!orRes.ok) {
+        const errText = await orRes.text();
+        return new Response(JSON.stringify({ error: 'OpenRouter error', details: errText }), { status: 502 });
+      }
+
+      const orData = await orRes.json();
+      replyText = orData.choices?.[0]?.message?.content || '';
+
+    } else {
+      // Default to Gemini
+      const apiKey = process.env.GEMINI_API_KEY_SERVER || process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return new Response(JSON.stringify({ error: 'Gemini API key is not configured' }), { status: 500 });
+      }
+
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`;
+      const geminiRes = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          contents: formattedHistory,
+          generationConfig: { temperature: 0.9, topP: 0.95, topK: 40, maxOutputTokens: 2048 }
+        })
+      });
+
+      if (!geminiRes.ok) {
+        const errText = await geminiRes.text();
+        return new Response(JSON.stringify({ error: 'Gemini error', details: errText }), { status: 502 });
+      }
+
+      const geminiData = await geminiRes.json();
+      replyText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    }
 
     if (!replyText) {
-      return new Response(JSON.stringify({ error: 'Received empty text from Gemini model' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return new Response(JSON.stringify({ error: 'Received empty text from AI model' }), { status: 500 });
     }
 
     // 12. Insert the generated reply
