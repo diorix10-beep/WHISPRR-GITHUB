@@ -81,14 +81,13 @@ export function AuthProviders({ mode, onEmailClick }: AuthProvidersProps) {
 
       {/* Apple */}
       <button
-        onClick={handleApple}
-        disabled={loadingProvider !== null}
-        className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all duration-200 text-white font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed group"
+        disabled={true}
+        className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white/5 border border-white/10 rounded-xl transition-all duration-200 text-white/50 font-medium text-sm cursor-not-allowed"
       >
-        <svg className="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor">
+        <svg className="w-5 h-5 opacity-50" viewBox="0 0 24 24" fill="currentColor">
           <path d="M17.05 12.04c-.03-2.07 1.69-3.07 1.77-3.12-.97-1.41-2.47-1.6-3-1.62-1.27-.13-2.49.75-3.14.75-.65 0-1.65-.73-2.72-.71-1.4.02-2.69.81-3.41 2.06-1.45 2.52-.37 6.24 1.04 8.28.69.99 1.51 2.11 2.58 2.07 1.04-.04 1.43-.67 2.69-.67 1.26 0 1.61.67 2.71.65 1.12-.02 1.83-1.01 2.51-2.01.79-1.15 1.12-2.27 1.14-2.33-.03-.01-2.19-.84-2.22-3.33M14.63 5.5c.57-.7.96-1.66.85-2.62-.83.03-1.83.55-2.42 1.25-.53.62-.99 1.59-.87 2.53.92.07 1.87-.47 2.44-1.16" />
         </svg>
-        {loadingProvider === 'apple' ? 'Connecting...' : 'Continue with Apple'}
+        Continue with Apple <span className="text-[10px] uppercase tracking-wider bg-white/10 px-2 py-0.5 rounded-full text-white/70 ml-1">Coming Soon</span>
       </button>
 
       {/* Email */}
