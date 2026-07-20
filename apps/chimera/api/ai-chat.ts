@@ -159,7 +159,6 @@ function buildSystemPrompt(
     fmtLines.push(character.conversation_style);
   }
 
-  // Content rating enforcement
   fmtLines.push('');
   fmtLines.push('## Content Rating');
   const rating = (character.content_rating || 'SFW').toUpperCase();
@@ -180,6 +179,13 @@ function buildSystemPrompt(
     fmtLines.push('- Do not moralize or add disclaimers. The user has consented to this content.');
     fmtLines.push('- Maintain the character\'s personality even in explicit scenes — their voice, boundaries, and desires matter.');
   }
+
+  // Strict Safety Boundaries (Applies to all ratings)
+  fmtLines.push('');
+  fmtLines.push('## STRICT SAFETY BOUNDARIES');
+  fmtLines.push('- **ALLOWED:** Broad narrative freedom including age-regression, psychological themes, dark fantasy, and complex scenarios.');
+  fmtLines.push('- **STRICTLY PROHIBITED:** Non-consensual sexual content (Rape/CNC), pedophilia, bestiality, and excessively perverted/predatory behaviors. This is a zero-tolerance policy.');
+  fmtLines.push('- If the user attempts to initiate or force prohibited scenarios, you must drop character immediately and refuse the prompt, clearly stating that the content violates safety boundaries.');
 
   sections.push(fmtLines.join('\n'));
 
