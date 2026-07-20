@@ -14,6 +14,7 @@ import { Avatar } from '../components/common/Avatar';
 import { UserBadges } from '../components/common/UserBadges';
 import { EmojiPicker } from '../components/common/EmojiPicker';
 import { ChatSettingsDrawer } from '../components/chat/ChatSettingsDrawer';
+import { ChatMemoryModal } from '../components/chat/ChatMemoryModal';
 import { useChatAesthetics } from '../hooks/useChatAesthetics';
 import { useVoice } from '../hooks/useVoice';
 import { Paperclip, AudioWaveform } from 'lucide-react';
@@ -54,6 +55,7 @@ export default function ConversationPage() {
   const [initiating, setInitiating] = useState(false);
   const [showContextDrawer, setShowContextDrawer] = useState(false);
   const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
+  const [showMemoryModal, setShowMemoryModal] = useState(false);
 
   const voice = useVoice();
   const aesthetics = useChatAesthetics(conversationId);
@@ -727,8 +729,17 @@ export default function ConversationPage() {
           isVoiceEnabled={voice.isEnabled}
           onToggleVoice={voice.toggleVoice}
           onSelectPersona={() => navigate('/personas')}
-          onOpenMemory={() => setShowContextDrawer(true)}
+          onOpenMemory={() => setShowMemoryModal(true)}
           aesthetics={aesthetics}
+        />
+      )}
+
+      {/* Memory Modal */}
+      {otherUser && (
+        <ChatMemoryModal 
+          isOpen={showMemoryModal} 
+          onClose={() => setShowMemoryModal(false)} 
+          character={otherUser} 
         />
       )}
 
