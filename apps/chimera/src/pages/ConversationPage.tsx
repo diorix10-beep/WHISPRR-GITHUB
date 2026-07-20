@@ -15,6 +15,7 @@ import { UserBadges } from '../components/common/UserBadges';
 import { EmojiPicker } from '../components/common/EmojiPicker';
 import { ChatSettingsDrawer } from '../components/chat/ChatSettingsDrawer';
 import { ChatMemoryModal } from '../components/chat/ChatMemoryModal';
+import { MockPhoneModal } from '../components/chat/MockPhoneModal';
 import { useChatAesthetics } from '../hooks/useChatAesthetics';
 import { useVoice } from '../hooks/useVoice';
 import { Paperclip, AudioWaveform } from 'lucide-react';
@@ -56,6 +57,7 @@ export default function ConversationPage() {
   const [showContextDrawer, setShowContextDrawer] = useState(false);
   const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
   const [showMemoryModal, setShowMemoryModal] = useState(false);
+  const [isPhoneOpen, setIsPhoneOpen] = useState(false);
 
   const voice = useVoice();
   const aesthetics = useChatAesthetics(conversationId);
@@ -98,11 +100,10 @@ export default function ConversationPage() {
 
     const hasPhoneKeyword = phoneKeywords.some(kw => contentLower.includes(kw));
     
-    if (hasPhoneKeyword && aesthetics.layoutStyle !== 'phone') {
-      aesthetics.setLayout('phone');
-      aesthetics.setChatStyle('imessage');
+    if (hasPhoneKeyword && !isPhoneOpen) {
+      setIsPhoneOpen(true);
     }
-  }, [messages, aesthetics]);
+  }, [messages, isPhoneOpen]);
 
   // Fetch conversation data
   useEffect(() => {
@@ -387,6 +388,45 @@ export default function ConversationPage() {
     } finally {
       setSending(false);
       msgInputRef.current?.focus();
+    }
+  };
+
+  const handlePhoneSendMessage = async (content: string) => {
+    if (!user || !conversationId) return;
+    
+    try {
+      const { error: msgError } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          content: content,
+          read: false,
+        });
+
+      if (msgError) throw msgError;
+
+      await supabase
+        .from('conversations')
+        .update({
+          last_message: content,
+          last_message_at: new Date().toISOString(),
+        })
+        .eq('id', conversationId);
+
+      if (otherUser && (otherUser.role as string) === 'ai_character') {
+        const sessionRes = await supabase.auth.getSession();
+        const token = sessionRes.data.session?.access_token;
+        
+        fetch('/api/ai-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ conversation_id: conversationId, bot_user_id: otherUser.user_id })
+        }).catch(err => console.error(err));
+      }
+    } catch (err: any) {
+      console.error(err);
+      showToast('Failed to send text', 'error');
     }
   };
 
@@ -705,7 +745,11 @@ export default function ConversationPage() {
                 >
                   <AudioWaveform size={20} />
                 </button>
-                <button className="p-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500 transition-colors">
+                <button 
+                  onClick={() => setIsPhoneOpen(true)}
+                  className="p-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500 transition-colors"
+                  title="Open Phone Modal"
+                >
                   <Phone size={20} />
                 </button>
               </>
@@ -742,6 +786,16 @@ export default function ConversationPage() {
           character={otherUser} 
         />
       )}
+
+      {/* Mock Phone Modal */}
+      <MockPhoneModal
+        isOpen={isPhoneOpen}
+        onClose={() => setIsPhoneOpen(false)}
+        messages={messages}
+        onSendMessage={handlePhoneSendMessage}
+        otherUser={otherUser}
+        currentUser={user}
+      />
 
       {/* Main Layout Area */}
       <div className="flex-1 overflow-hidden w-full max-w-7xl mx-auto flex relative">
