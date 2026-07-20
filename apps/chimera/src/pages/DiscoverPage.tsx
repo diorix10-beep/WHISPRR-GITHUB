@@ -26,17 +26,40 @@ export default function DiscoverPage() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'ai_character')
-        .eq('profile_visible', true)
+        .from('ai_characters')
+        .select(`
+          user_id,
+          greeting,
+          short_description,
+          tags,
+          profiles!inner(
+            id,
+            display_name,
+            username,
+            avatar_emoji,
+            photo_url,
+            bio,
+            badges,
+            role,
+            personality_badges
+          )
+        `)
+        .eq('visibility', 'public')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setCharacters(data || []);
-    } catch (err) {
+      
+      // Flatten the response so it matches the expected Profile array format
+      const formattedCharacters = data?.map((char: any) => ({
+        ...char.profiles,
+        user_id: char.user_id, // ensure user_id is the bot's user_id
+        bio: char.short_description || char.profiles.bio,
+      })) || [];
+      
+      setCharacters(formattedCharacters);
+    } catch (err: any) {
       console.error('Error fetching characters:', err);
-      showToast('Failed to load discover feed', 'error');
+      showToast(`Failed to load discover feed: ${err.message || 'Unknown error'}`, 'error');
     } finally {
       setLoading(false);
     }
