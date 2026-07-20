@@ -280,13 +280,43 @@ Replace topic-based discovery with:
 
 ---
 
-## Phase 7 — Roleplay & Storytelling
-CHIMERA's biggest differentiator.
+## Phase 7 — Roleplay & Storytelling (Contextual Workspaces)
+CHIMERA's biggest differentiator. Instead of cluttering the UI with features, the platform uses a global switch to adapt the tools based on the user's current goal.
 
-- AI Roleplay ↔ Storytelling switch
+### The Global Switch
+- AI Roleplay ↔ Storytelling / Human Writing switch
 - Same account, characters, worlds, memories
-- Two completely different creative experiences
-- Instant switching between both
+- Instant switching between both modes
+
+### 📖 The Storytelling Workspace (Wattpad-Inspired)
+Optimized for human writers and social reading. Features are hidden until needed.
+
+**1. The Writing Editor (Focus Mode)**
+- Clean, distraction-free chapter-by-chapter writing environment.
+- *Contextual Tools:* Highlighting text reveals the AI Writing Assistant (rewrite, expand, check tone).
+- *Sidebar:* Quick access to linked Worlds, Lorebooks, and Characters without leaving the editor.
+- *Management:* Drafts, scheduled publishing, story covers, and tags.
+
+**2. Social Reading Experience**
+- *Inline Comments:* Readers can highlight specific paragraphs or sentences to leave a comment, creating real-time social reactions.
+- *Voting:* Readers vote on chapters to support authors and boost rankings.
+- *Reading Lists:* Public and private collections (e.g., "Romance Favorites").
+
+**3. Discovery & Community**
+- *Tags & Rankings:* Deep discoverability via genre tags and dynamic leaderboards.
+- *Author Ecosystem:* Profiles with bios, published stories, follower notifications, and author announcements.
+
+### 🎭 The AI Roleplay Workspace
+Optimized for immersive, interactive AI conversations.
+
+**1. The Chat Interface**
+- Clean chat flow focused purely on the conversation.
+- *Contextual Tools:* Swiping or hovering on a message reveals editing tools (regenerate, edit message, branch conversation).
+- *Inline Swaps:* Mid-conversation Persona switching to change who you are playing as.
+
+**2. Dynamic Context Tools**
+- *The Memory Manager:* Pin memories, update lore, or inject new context dynamically during the chat.
+- *Scenario Branches:* Easily fork a conversation to try a different path.
 
 ---
 

@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Plus, Search, X, Loader2 } from 'lucide-react';
+import { Plus, Search, X, Loader2, MessageSquare } from 'lucide-react';
 import type { Conversation, Profile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -274,20 +274,23 @@ export default function ChimeraChatsPage() {
           <Loader2 size={32} className="animate-spin text-red-500" />
         </div>
       ) : conversations.length === 0 ? (
-        <div className="card flex flex-col items-center justify-center py-12 text-center border-red-500/10 dark:border-red-950/20 bg-warm-950/10">
-          <p className="text-warm-700 dark:text-warm-300 font-semibold mb-2">No active chats in the Nexus yet</p>
-          <p className="text-xs text-warm-550 max-w-xs leading-relaxed">
-            Your Spirit is waiting. Choose a community-created persona from the Nexus to begin your first storyline.
+        <div className="bg-white dark:bg-warm-900 rounded-3xl border border-warm-200 dark:border-warm-800 shadow-sm flex flex-col items-center justify-center py-20 px-4 text-center">
+          <div className="w-20 h-20 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-full flex items-center justify-center mb-6">
+            <MessageSquare size={32} />
+          </div>
+          <h2 className="text-xl font-serif font-bold text-warm-900 dark:text-warm-50 mb-2">No active chats</h2>
+          <p className="text-sm text-warm-500 dark:text-warm-400 max-w-sm mb-8">
+            Your Spirit is waiting. Choose a character from the Nexus or create a new chat to begin your storyline.
           </p>
           <button
-            onClick={() => navigate('/')}
-            className="mt-6 bg-red-650 hover:bg-red-700 text-white font-semibold py-2 px-5 rounded-xl text-xs shadow-sm transition-all"
+            onClick={() => setShowNewChatModal(true)}
+            className="bg-red-600 hover:bg-red-500 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition-all active:scale-95"
           >
-            Explore Nexus
+            Start a New Chat
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="bg-white dark:bg-warm-900 rounded-3xl border border-warm-200 dark:border-warm-800 overflow-hidden shadow-sm">
           {conversations.map(conv => {
             const unreadCount = unreadCounts[conv.id] || 0;
             const otherUser = conv.other_user;
@@ -296,25 +299,32 @@ export default function ChimeraChatsPage() {
               <button
                 key={conv.id}
                 onClick={() => navigate(`/messages/${conv.id}`)}
-                className="card w-full text-left hover:shadow-md transition-all duration-200 flex items-center gap-3 border border-warm-200 dark:border-warm-800 hover:border-red-500/20 dark:hover:border-red-500/10"
+                className="w-full text-left group flex items-center gap-4 p-5 border-b border-warm-100 dark:border-warm-800 last:border-0 hover:bg-warm-50 dark:hover:bg-warm-800/50 transition-colors"
               >
-                {otherUser ? (
-                  <Avatar
-                    emoji={otherUser.avatar_emoji}
-                    photoUrl={otherUser.photo_url}
-                    size="md"
-                  />
-                ) : (
-                  <div className="w-11 h-11 rounded-full bg-warm-200 dark:bg-warm-700 flex-shrink-0" />
-                )}
+                <div className="relative">
+                  {otherUser ? (
+                    <Avatar
+                      emoji={otherUser.avatar_emoji}
+                      photoUrl={otherUser.photo_url}
+                      size="lg"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-full bg-warm-200 dark:bg-warm-800 flex-shrink-0" />
+                  )}
+                  {unreadCount > 0 && (
+                    <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 border-2 border-white dark:border-warm-900">
+                      {unreadCount}
+                    </div>
+                  )}
+                </div>
 
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 pr-4">
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <h3 className="font-semibold text-warm-900 dark:text-warm-100 truncate">
+                    <h3 className="text-base font-bold text-warm-900 dark:text-warm-50 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors truncate">
                       {otherUser?.display_name || 'Unknown Character'}
                     </h3>
                     {conv.last_message_at && (
-                      <span className="text-[10px] text-warm-500 whitespace-nowrap">
+                      <span className="text-xs font-medium text-warm-400 dark:text-warm-500 whitespace-nowrap">
                         {formatDistanceToNow(new Date(conv.last_message_at), {
                           addSuffix: false,
                         })}
@@ -322,18 +332,10 @@ export default function ChimeraChatsPage() {
                     )}
                   </div>
 
-                  <p className="text-xs text-warm-500 truncate">
+                  <p className={`text-sm truncate ${unreadCount > 0 ? 'text-warm-900 dark:text-warm-100 font-semibold' : 'text-warm-500 dark:text-warm-400'}`}>
                     {conv.last_message || 'No messages yet'}
                   </p>
                 </div>
-
-                {unreadCount > 0 && (
-                  <div className="flex-shrink-0">
-                    <div className="bg-red-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                      {unreadCount}
-                    </div>
-                  </div>
-                )}
               </button>
             );
           })}
