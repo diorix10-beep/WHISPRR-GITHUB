@@ -152,7 +152,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             
             <Link to="/" className="flex items-center gap-2.5 group">
               <img
-                src="/nexy_mascot.png"
+                src="/chimera_logo.png"
                 alt="CHIMERA"
                 className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-cover border border-red-500/25 shadow-sm shadow-red-500/10 group-hover:shadow-md transition-shadow"
               />
