@@ -112,11 +112,14 @@ export default function AuthPage() {
 
           {!isForgot && (
             <div className="auth-text-rise auth-text-rise-delay-4 text-center mt-5">
-              <p className="text-warm-500 text-xs leading-relaxed">
-                Already have a <span className="font-semibold text-warm-300">WHISPRR</span> account?
+              <button 
+                onClick={() => setView('signin')}
+                className="text-warm-500 hover:text-warm-300 text-xs leading-relaxed transition-colors focus:outline-none"
+              >
+                Already have a <span className="font-semibold text-warm-300 group-hover:text-white">WHISPRR</span> account?
                 <br />
-                <span className="text-warm-400">Sign in with the same credentials.</span>
-              </p>
+                <span className="text-warm-400 group-hover:text-white">Sign in with the same credentials.</span>
+              </button>
             </div>
           )}
         </div>
