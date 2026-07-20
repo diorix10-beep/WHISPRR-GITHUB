@@ -1,400 +1,170 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  Plus, Users, Globe, PenTool, Cpu, MessageSquare,
-  Sparkles, ArrowRight, Clock, Flame, TrendingUp,
-  BookOpen, Brain, Mic, Image, FolderOpen, ChevronRight
-} from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useOutletContext, useNavigate } from 'react-router-dom';
+import { Flame, Star, Clock, BookOpen, ChevronRight, MessageSquare, TrendingUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { CharacterCard } from '../components/chimera/CharacterCard';
 import { motion } from 'framer-motion';
 
-interface QuickStat {
-  label: string;
-  value: number;
-  icon: typeof Users;
-  color: string;
-  path: string;
-}
-
-interface RecentItem {
-  id: string;
-  name: string;
-  type: 'character' | 'world' | 'story';
-  updated_at: string;
-}
-
 export default function CreatorDashboardPage() {
+  const { creativeMode } = useOutletContext<{ creativeMode: 'roleplay' | 'storytelling' }>();
   const navigate = useNavigate();
-  const { profile } = useAuth();
-  const [recentCharacters, setRecentCharacters] = useState<any[]>([]);
-  const [recentStories, setRecentStories] = useState<any[]>([]);
-  const [recentWorlds, setRecentWorlds] = useState<any[]>([]);
-  const [stats, setStats] = useState({ characters: 0, worlds: 0, stories: 0, conversations: 0 });
+  
+  const [trendingCharacters, setTrendingCharacters] = useState<any[]>([]);
+  const [trendingStories, setTrendingStories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (profile?.user_id) fetchDashboardData();
-  }, [profile]);
+    fetchDiscoveryData();
+  }, [creativeMode]);
 
-  const fetchDashboardData = async () => {
-    if (!profile?.user_id) return;
+  const fetchDiscoveryData = async () => {
     try {
       setLoading(true);
-
-      // Fetch counts in parallel
-      const [charRes, storyRes, worldRes, convRes, recentChars, recentSt, recentW] = await Promise.all([
-        supabase.from('ai_characters').select('id', { count: 'exact', head: true }).eq('creator_id', profile.user_id),
-        supabase.from('stories').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
-        supabase.from('worlds').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
-        supabase.from('conversations').select('id', { count: 'exact', head: true }),
-        supabase.from('ai_characters').select('id, user_id, created_at, updated_at, short_description, profiles!ai_characters_user_id_fkey(display_name, avatar_emoji, photo_url)').eq('creator_id', profile.user_id).order('updated_at', { ascending: false }).limit(4),
-        supabase.from('stories').select('id, title, status, updated_at, cover_url').eq('user_id', profile.user_id).order('updated_at', { ascending: false }).limit(4),
-        supabase.from('worlds').select('id, name, description, updated_at').eq('user_id', profile.user_id).order('updated_at', { ascending: false }).limit(4),
-      ]);
-
-      setStats({
-        characters: charRes.count || 0,
-        worlds: worldRes.count || 0,
-        stories: storyRes.count || 0,
-        conversations: convRes.count || 0,
-      });
-
-      setRecentCharacters(recentChars.data || []);
-      setRecentStories(recentSt.data || []);
-      setRecentWorlds(recentW.data || []);
+      if (creativeMode === 'roleplay') {
+        const { data, error } = await supabase
+          .from('ai_characters')
+          .select('*, creator:profiles!ai_characters_creator_id_fkey(username), profiles!ai_characters_user_id_fkey(display_name, avatar_emoji, photo_url)')
+          .eq('visibility', 'public')
+          .order('updated_at', { ascending: false })
+          .limit(12);
+        
+        if (error) throw error;
+        
+        // Map data to fit CharacterCard structure
+        const mapped = data?.map(c => ({
+          ...c,
+          bot_profile: c.profiles || {},
+          creator: c.creator || { username: 'anonymous' }
+        }));
+        
+        setTrendingCharacters(mapped || []);
+      } else {
+        const { data, error } = await supabase
+          .from('stories')
+          .select('*, author:profiles!stories_user_id_fkey(username, display_name)')
+          .eq('visibility', 'public')
+          .order('updated_at', { ascending: false })
+          .limit(12);
+          
+        if (error) throw error;
+        setTrendingStories(data || []);
+      }
     } catch (err) {
-      console.error('Dashboard data error:', err);
+      console.error('Error fetching discovery data:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const quickStats: QuickStat[] = [
-    { label: 'Characters', value: stats.characters, icon: Users, color: 'text-violet-500 bg-violet-500/10 border-violet-500/20', path: '/characters' },
-    { label: 'Worlds', value: stats.worlds, icon: Globe, color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20', path: '/worlds' },
-    { label: 'Stories', value: stats.stories, icon: PenTool, color: 'text-blue-500 bg-blue-500/10 border-blue-500/20', path: '/stories' },
-    { label: 'Conversations', value: stats.conversations, icon: MessageSquare, color: 'text-amber-500 bg-amber-500/10 border-amber-500/20', path: '/conversations' },
-  ];
-
-  const quickActions = [
-    { label: 'New Character', icon: Users, path: '/characters/new', desc: 'Build an AI character', gradient: 'from-violet-600 to-purple-600' },
-    { label: 'New World', icon: Globe, path: '/worlds/new', desc: 'Design a world', gradient: 'from-emerald-600 to-teal-600' },
-    { label: 'New Story', icon: PenTool, path: '/stories/new', desc: 'Start writing', gradient: 'from-blue-600 to-indigo-600' },
-    { label: 'AI Models', icon: Cpu, path: '/models', desc: 'Configure AI', gradient: 'from-amber-600 to-orange-600' },
-  ];
-
-  const platformModules = [
-    { label: 'Characters', desc: 'Create and manage AI characters', icon: Users, path: '/characters', color: 'text-violet-500' },
-    { label: 'Worlds', desc: 'Build rich fictional universes', icon: Globe, path: '/worlds', color: 'text-emerald-500' },
-    { label: 'Stories', desc: 'Write interactive narratives', icon: PenTool, path: '/stories', color: 'text-blue-500' },
-    { label: 'AI Models', desc: 'Choose and configure AI providers', icon: Cpu, path: '/models', color: 'text-amber-500' },
-    { label: 'Lorebooks', desc: 'Manage world knowledge and lore', icon: BookOpen, path: '/lorebooks', color: 'text-orange-500' },
-    { label: 'Conversations', desc: 'Chat with your characters', icon: MessageSquare, path: '/conversations', color: 'text-pink-500' },
-    { label: 'Memory', desc: 'Persistent memory management', icon: Brain, path: '/memory', color: 'text-cyan-500', comingSoon: true },
-    { label: 'Voices', desc: 'Voice library and configuration', icon: Mic, path: '/voices', color: 'text-rose-500', comingSoon: true },
-    { label: 'Image Studio', desc: 'Generate character art and scenes', icon: Image, path: '/media', color: 'text-indigo-500', comingSoon: true },
-  ];
-
-  const formatTimeAgo = (dateStr: string) => {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
-  };
-
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-      {/* Welcome Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
+    <div className="max-w-7xl mx-auto py-6">
+      
+      {/* Dynamic Header */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="mb-8"
+        key={creativeMode}
+        className="mb-10 text-center sm:text-left px-4 sm:px-0"
       >
-        <h1 className="font-serif text-2xl sm:text-3xl font-bold text-warm-900 dark:text-warm-50">
-          {profile?.display_name ? `Welcome back, ${profile.display_name}` : 'Welcome to CHIMERA'}
+        <h1 className="font-serif text-3xl sm:text-5xl font-bold text-warm-900 dark:text-warm-50 mb-3 tracking-tight">
+          {creativeMode === 'roleplay' ? 'Discover Characters' : 'Discover Stories'}
         </h1>
-        <p className="text-warm-500 dark:text-warm-400 mt-1 text-sm sm:text-base">
-          Your AI creation workspace. Build characters, design worlds, tell stories.
+        <p className="text-warm-500 dark:text-warm-400 text-base sm:text-lg max-w-2xl">
+          {creativeMode === 'roleplay' 
+            ? 'Chat with thousands of user-created AI personalities. Find your next adventure.' 
+            : 'Immerse yourself in original fiction and lore crafted by the community.'}
         </p>
       </motion.div>
 
-      {/* Quick Stats */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.05 }}
-        className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8"
-      >
-        {quickStats.map(stat => (
-          <button
-            key={stat.label}
-            onClick={() => navigate(stat.path)}
-            className={`p-4 rounded-2xl border ${stat.color} hover:scale-[1.02] active:scale-[0.98] transition-all text-left`}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <stat.icon size={16} />
-              <span className="text-xs font-semibold uppercase tracking-wider opacity-80">{stat.label}</span>
-            </div>
-            <p className="text-2xl font-bold">
-              {loading ? '—' : stat.value}
-            </p>
-          </button>
-        ))}
-      </motion.div>
-
-      {/* Quick Create Actions */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        className="mb-10"
-      >
-        <h2 className="text-sm font-bold uppercase tracking-wider text-warm-400 dark:text-warm-500 mb-3 px-1">
-          Quick Create
-        </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {quickActions.map(action => (
-            <button
-              key={action.label}
-              onClick={() => navigate(action.path)}
-              className={`group p-4 rounded-2xl bg-gradient-to-br ${action.gradient} text-white hover:shadow-lg hover:shadow-black/10 dark:hover:shadow-black/30 hover:scale-[1.02] active:scale-[0.98] transition-all text-left`}
-            >
-              <action.icon size={20} className="mb-3 opacity-80 group-hover:opacity-100 transition-opacity" />
-              <p className="font-semibold text-sm">{action.label}</p>
-              <p className="text-[11px] opacity-70 mt-0.5">{action.desc}</p>
-            </button>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-        {/* Recent Characters */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.15 }}
-          className="bg-white dark:bg-warm-850 rounded-2xl border border-warm-200 dark:border-warm-800 overflow-hidden"
-        >
-          <div className="px-4 py-3 border-b border-warm-100 dark:border-warm-800 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-warm-900 dark:text-warm-100 flex items-center gap-2">
-              <Users size={14} className="text-violet-500" />
-              Recent Characters
-            </h3>
-            <button
-              onClick={() => navigate('/characters')}
-              className="text-[11px] font-semibold text-warm-400 hover:text-warm-600 dark:hover:text-warm-300 flex items-center gap-1 transition-colors"
-            >
-              View All <ChevronRight size={12} />
-            </button>
-          </div>
-          <div className="divide-y divide-warm-50 dark:divide-warm-800">
-            {loading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="px-4 py-3 animate-pulse">
-                  <div className="h-4 bg-warm-100 dark:bg-warm-800 rounded w-3/4 mb-1" />
-                  <div className="h-3 bg-warm-50 dark:bg-warm-850 rounded w-1/2" />
-                </div>
-              ))
-            ) : recentCharacters.length > 0 ? (
-              recentCharacters.map(char => (
-                <button
-                  key={char.id}
-                  onClick={() => navigate(`/characters/${char.id || char.user_id}`)}
-                  className="w-full px-4 py-3 text-left hover:bg-warm-50 dark:hover:bg-warm-800 transition-colors"
-                >
-                  <p className="text-sm font-medium text-warm-900 dark:text-warm-100 truncate">
-                    {char.profiles?.display_name || 'Unnamed Character'}
-                  </p>
-                  <p className="text-[11px] text-warm-400 mt-0.5 flex items-center gap-1">
-                    <Clock size={10} />
-                    {formatTimeAgo(char.updated_at)}
-                  </p>
-                </button>
-              ))
-            ) : (
-              <div className="px-4 py-8 text-center">
-                <Users size={24} className="mx-auto mb-2 text-warm-300 dark:text-warm-600" />
-                <p className="text-xs text-warm-400">No characters yet</p>
-                <button
-                  onClick={() => navigate('/characters/new')}
-                  className="mt-2 text-xs font-semibold text-red-500 hover:text-red-600 transition-colors"
-                >
-                  Create your first character →
-                </button>
-              </div>
-            )}
-          </div>
-        </motion.div>
-
-        {/* Recent Stories */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-          className="bg-white dark:bg-warm-850 rounded-2xl border border-warm-200 dark:border-warm-800 overflow-hidden"
-        >
-          <div className="px-4 py-3 border-b border-warm-100 dark:border-warm-800 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-warm-900 dark:text-warm-100 flex items-center gap-2">
-              <PenTool size={14} className="text-blue-500" />
-              Recent Stories
-            </h3>
-            <button
-              onClick={() => navigate('/stories')}
-              className="text-[11px] font-semibold text-warm-400 hover:text-warm-600 dark:hover:text-warm-300 flex items-center gap-1 transition-colors"
-            >
-              View All <ChevronRight size={12} />
-            </button>
-          </div>
-          <div className="divide-y divide-warm-50 dark:divide-warm-800">
-            {loading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="px-4 py-3 animate-pulse">
-                  <div className="h-4 bg-warm-100 dark:bg-warm-800 rounded w-3/4 mb-1" />
-                  <div className="h-3 bg-warm-50 dark:bg-warm-850 rounded w-1/2" />
-                </div>
-              ))
-            ) : recentStories.length > 0 ? (
-              recentStories.map(story => (
-                <button
-                  key={story.id}
-                  onClick={() => navigate(`/stories/${story.id}`)}
-                  className="w-full px-4 py-3 text-left hover:bg-warm-50 dark:hover:bg-warm-800 transition-colors"
-                >
-                  <p className="text-sm font-medium text-warm-900 dark:text-warm-100 truncate">{story.title}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
-                      story.status === 'completed' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400' :
-                      story.status === 'ongoing' ? 'bg-blue-100 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400' :
-                      'bg-warm-100 text-warm-500 dark:bg-warm-800 dark:text-warm-400'
-                    }`}>
-                      {story.status}
-                    </span>
-                    <span className="text-[11px] text-warm-400 flex items-center gap-1">
-                      <Clock size={10} />
-                      {formatTimeAgo(story.updated_at)}
-                    </span>
-                  </div>
-                </button>
-              ))
-            ) : (
-              <div className="px-4 py-8 text-center">
-                <PenTool size={24} className="mx-auto mb-2 text-warm-300 dark:text-warm-600" />
-                <p className="text-xs text-warm-400">No stories yet</p>
-                <button
-                  onClick={() => navigate('/stories/new')}
-                  className="mt-2 text-xs font-semibold text-red-500 hover:text-red-600 transition-colors"
-                >
-                  Start writing →
-                </button>
-              </div>
-            )}
-          </div>
-        </motion.div>
-
-        {/* Recent Worlds */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.25 }}
-          className="bg-white dark:bg-warm-850 rounded-2xl border border-warm-200 dark:border-warm-800 overflow-hidden"
-        >
-          <div className="px-4 py-3 border-b border-warm-100 dark:border-warm-800 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-warm-900 dark:text-warm-100 flex items-center gap-2">
-              <Globe size={14} className="text-emerald-500" />
-              Recent Worlds
-            </h3>
-            <button
-              onClick={() => navigate('/worlds')}
-              className="text-[11px] font-semibold text-warm-400 hover:text-warm-600 dark:hover:text-warm-300 flex items-center gap-1 transition-colors"
-            >
-              View All <ChevronRight size={12} />
-            </button>
-          </div>
-          <div className="divide-y divide-warm-50 dark:divide-warm-800">
-            {loading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="px-4 py-3 animate-pulse">
-                  <div className="h-4 bg-warm-100 dark:bg-warm-800 rounded w-3/4 mb-1" />
-                  <div className="h-3 bg-warm-50 dark:bg-warm-850 rounded w-1/2" />
-                </div>
-              ))
-            ) : recentWorlds.length > 0 ? (
-              recentWorlds.map(world => (
-                <button
-                  key={world.id}
-                  onClick={() => navigate(`/worlds/${world.id}`)}
-                  className="w-full px-4 py-3 text-left hover:bg-warm-50 dark:hover:bg-warm-800 transition-colors"
-                >
-                  <p className="text-sm font-medium text-warm-900 dark:text-warm-100 truncate">{world.name}</p>
-                  <p className="text-[11px] text-warm-400 mt-0.5 flex items-center gap-1">
-                    <Clock size={10} />
-                    {formatTimeAgo(world.updated_at)}
-                  </p>
-                </button>
-              ))
-            ) : (
-              <div className="px-4 py-8 text-center">
-                <Globe size={24} className="mx-auto mb-2 text-warm-300 dark:text-warm-600" />
-                <p className="text-xs text-warm-400">No worlds yet</p>
-                <button
-                  onClick={() => navigate('/worlds/new')}
-                  className="mt-2 text-xs font-semibold text-red-500 hover:text-red-600 transition-colors"
-                >
-                  Build your first world →
-                </button>
-              </div>
-            )}
-          </div>
-        </motion.div>
+      {/* Category Pills */}
+      <div className="flex gap-3 overflow-x-auto pb-4 mb-8 scrollbar-hide px-4 sm:px-0">
+        <button className="px-5 py-2 rounded-full bg-red-600 text-white font-bold text-sm shadow-md whitespace-nowrap">
+          <Flame size={14} className="inline mr-1.5" /> Trending
+        </button>
+        <button className="px-5 py-2 rounded-full bg-white dark:bg-warm-850 text-warm-600 dark:text-warm-300 border border-warm-200 dark:border-warm-750 font-bold text-sm hover:bg-warm-50 dark:hover:bg-warm-800 transition-colors whitespace-nowrap">
+          <Clock size={14} className="inline mr-1.5" /> Latest
+        </button>
+        {creativeMode === 'roleplay' ? (
+          <>
+            <button className="px-5 py-2 rounded-full bg-white dark:bg-warm-850 text-warm-600 dark:text-warm-300 border border-warm-200 dark:border-warm-750 font-bold text-sm hover:bg-warm-50 dark:hover:bg-warm-800 transition-colors whitespace-nowrap">Romance</button>
+            <button className="px-5 py-2 rounded-full bg-white dark:bg-warm-850 text-warm-600 dark:text-warm-300 border border-warm-200 dark:border-warm-750 font-bold text-sm hover:bg-warm-50 dark:hover:bg-warm-800 transition-colors whitespace-nowrap">Fantasy</button>
+            <button className="px-5 py-2 rounded-full bg-white dark:bg-warm-850 text-warm-600 dark:text-warm-300 border border-warm-200 dark:border-warm-750 font-bold text-sm hover:bg-warm-50 dark:hover:bg-warm-800 transition-colors whitespace-nowrap">Sci-Fi</button>
+          </>
+        ) : (
+          <>
+            <button className="px-5 py-2 rounded-full bg-white dark:bg-warm-850 text-warm-600 dark:text-warm-300 border border-warm-200 dark:border-warm-750 font-bold text-sm hover:bg-warm-50 dark:hover:bg-warm-800 transition-colors whitespace-nowrap">Fiction</button>
+            <button className="px-5 py-2 rounded-full bg-white dark:bg-warm-850 text-warm-600 dark:text-warm-300 border border-warm-200 dark:border-warm-750 font-bold text-sm hover:bg-warm-50 dark:hover:bg-warm-800 transition-colors whitespace-nowrap">Fanfic</button>
+            <button className="px-5 py-2 rounded-full bg-white dark:bg-warm-850 text-warm-600 dark:text-warm-300 border border-warm-200 dark:border-warm-750 font-bold text-sm hover:bg-warm-50 dark:hover:bg-warm-800 transition-colors whitespace-nowrap">Poetry</button>
+          </>
+        )}
       </div>
 
-      {/* Platform Modules Overview */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.3 }}
-      >
-        <h2 className="text-sm font-bold uppercase tracking-wider text-warm-400 dark:text-warm-500 mb-3 px-1">
-          Platform Modules
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {platformModules.map(mod => (
-            <button
-              key={mod.label}
-              onClick={() => !mod.comingSoon && navigate(mod.path)}
-              disabled={mod.comingSoon}
-              className={`group p-4 rounded-2xl border text-left transition-all ${
-                mod.comingSoon
-                  ? 'border-warm-100 dark:border-warm-800 opacity-50 cursor-default'
-                  : 'border-warm-200 dark:border-warm-800 bg-white dark:bg-warm-850 hover:border-warm-300 dark:hover:border-warm-700 hover:shadow-sm hover:scale-[1.01] active:scale-[0.99]'
-              }`}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2.5">
-                  <mod.icon size={18} className={mod.color} />
-                  <div>
-                    <p className="font-semibold text-sm text-warm-900 dark:text-warm-100">{mod.label}</p>
-                    <p className="text-[11px] text-warm-400 dark:text-warm-500 mt-0.5">{mod.desc}</p>
-                  </div>
-                </div>
-                {mod.comingSoon ? (
-                  <span className="text-[9px] uppercase tracking-wider font-bold text-warm-400 bg-warm-100 dark:bg-warm-800 px-1.5 py-0.5 rounded-md shrink-0">
-                    Soon
-                  </span>
-                ) : (
-                  <ArrowRight size={14} className="text-warm-300 dark:text-warm-600 group-hover:text-warm-500 transition-colors shrink-0 mt-0.5" />
-                )}
-              </div>
-            </button>
+      {loading ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 md:gap-6 gap-3 px-4 sm:px-0">
+          {[1,2,3,4,5,6,7,8,9,10].map(i => (
+            <div key={i} className="bg-warm-200 dark:bg-warm-800 animate-pulse rounded-2xl aspect-[3/4]" />
           ))}
         </div>
-      </motion.div>
+      ) : creativeMode === 'roleplay' ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 md:gap-6 gap-3 px-4 sm:px-0">
+          {trendingCharacters.length > 0 ? (
+            trendingCharacters.map(char => (
+              <CharacterCard
+                key={char.id}
+                character={char}
+                onClick={() => navigate(`/characters/${char.id}`)}
+              />
+            ))
+          ) : (
+            <div className="col-span-full text-center py-24 bg-warm-50 dark:bg-warm-850 rounded-3xl border border-warm-200 dark:border-warm-800">
+              <MessageSquare size={48} className="mx-auto text-warm-400 dark:text-warm-600 mb-4" />
+              <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-white mb-2">No characters found</h3>
+              <p className="text-warm-500">The community hasn't created any public characters yet.</p>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 md:gap-6 gap-3 px-4 sm:px-0">
+          {trendingStories.length > 0 ? (
+            trendingStories.map(story => (
+              <div 
+                key={story.id} 
+                onClick={() => navigate(`/stories/${story.id}`)}
+                className="group cursor-pointer flex flex-col"
+              >
+                <div className="w-full aspect-[2/3] bg-warm-800 rounded-xl overflow-hidden relative shadow-lg border border-warm-200 dark:border-warm-800 group-hover:border-red-400 dark:group-hover:border-red-600 transition-colors mb-3">
+                  {story.cover_url ? (
+                    <img src={story.cover_url} alt={story.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-warm-100 to-warm-200 dark:from-warm-800 dark:to-warm-900 flex items-center justify-center">
+                      <BookOpen size={32} className="text-warm-400 dark:text-warm-700" />
+                    </div>
+                  )}
+                  
+                  <div className="absolute top-2 left-2 flex gap-1">
+                    <span className="text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded shadow-sm bg-black/60 text-white backdrop-blur-md">
+                      {story.genre}
+                    </span>
+                  </div>
+                </div>
+                
+                <h3 className="font-serif font-bold text-warm-900 dark:text-white text-base line-clamp-1 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+                  {story.title}
+                </h3>
+                <p className="text-xs text-warm-500 dark:text-warm-400 mt-0.5 truncate">
+                  by {story.author?.username || 'Unknown'}
+                </p>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-24 bg-warm-50 dark:bg-warm-850 rounded-3xl border border-warm-200 dark:border-warm-800">
+              <BookOpen size={48} className="mx-auto text-warm-400 dark:text-warm-600 mb-4" />
+              <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-white mb-2">No stories found</h3>
+              <p className="text-warm-500">The community hasn't published any stories yet.</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -24,7 +24,6 @@ const STORYTELLING_LINKS = [
   { path: '/', label: 'Home' },
   { path: '/stories', label: 'Stories' },
   { path: '/worlds', label: 'Worlds' },
-  { path: '/studio', label: 'Creator Studio' },
 ];
 
 export function ChimeraLayout({ children }: ChimeraLayoutProps) {
@@ -339,7 +338,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
       {/* Main Content Area */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-6 sm:py-8 lg:py-10">
-        {children || <Outlet />}
+        {children || <Outlet context={{ creativeMode }} />}
       </main>
 
       {/* Search Overlay (Command Palette) */}
