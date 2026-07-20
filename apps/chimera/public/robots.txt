@@ -1,4 +1,4 @@
-# Robots.txt for WHISPRR
+# Robots.txt for CHIMERA
 User-agent: *
 Allow: /
 
@@ -25,5 +25,5 @@ User-agent: Applebot-Extended
 Allow: /
 
 # Reference sitemaps and AI manifests
-Sitemap: https://whisprr.xyz/sitemap.xml
+Sitemap: https://chimera.whisprr.xyz/sitemap.xml
 Disallow: /oracle-verity/
