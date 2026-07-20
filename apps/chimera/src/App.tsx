@@ -57,6 +57,7 @@ const WritersDeskPage   = lazy(() => import('./pages/WritersDeskPage'));
 const StoryReaderPage   = lazy(() => import('./pages/StoryReaderPage'));
 const ChapterReaderPage = lazy(() => import('./pages/ChapterReaderPage'));
 const ChapterEditorPage = lazy(() => import('./pages/ChapterEditorPage'));
+const MemoryManagerPage = lazy(() => import('./pages/MemoryManagerPage'));
 
 // ── Conversations Module ───────────────────────────────────
 const ChimeraChatsPage  = lazy(() => import('./pages/ChimeraChatsPage'));
@@ -211,7 +212,7 @@ function AppLoader() {
             <Route path="/chat/:id" element={<Navigate to="/conversations/:id" replace />} />
 
             {/* Memory Module */}
-            <Route path="/memory" element={<ChimeraPlaceholderPage title="Memory Manager" description="Persistent memory management. Configure long-term, short-term, personality, relationship, and lore memories." />} />
+            <Route path="/memory" element={<MemoryManagerPage />} />
 
             {/* Voices Module */}
             <Route path="/voices" element={<ChimeraPlaceholderPage title="Voice Library" description="Browse, preview, and assign voices to your characters. Configure narration and dialogue voices." />} />
