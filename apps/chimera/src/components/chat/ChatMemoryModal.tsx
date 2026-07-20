@@ -42,16 +42,12 @@ export function ChatMemoryModal({ isOpen, onClose, character }: ChatMemoryModalP
             
             {/* Progress Bar Mock */}
             <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden mb-3">
-              <div className="w-1/4 h-full bg-white/30 rounded-full" />
+              <div className="w-full h-full bg-[#5E5CE6] rounded-full" />
             </div>
             
-            <p className="text-sm text-white/50 mb-4">
-              Send a message to view usage.
+            <p className="text-sm text-white/70">
+              Infinite Memory is active. The AI will automatically remember important context from your conversations.
             </p>
-            
-            <button className="w-full py-3 px-4 bg-[#5E5CE6] hover:bg-[#5E5CE6]/90 transition-colors rounded-xl font-medium text-center">
-              Unlock better Memory with CHIMERA+
-            </button>
           </div>
 
           {/* Context Chips */}
