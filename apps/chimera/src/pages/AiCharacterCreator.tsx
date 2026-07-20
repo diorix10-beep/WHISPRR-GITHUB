@@ -128,7 +128,7 @@ export default function AiCharacterCreator() {
       }
     }, 5000);
     return () => clearInterval(interval);
-  }, [formData, currentStep, creationMode, interviewStep, isOnline]);
+  }, [formData, currentStep, isOnline]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
