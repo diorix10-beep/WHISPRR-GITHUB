@@ -13,6 +13,9 @@ import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/common/Avatar';
 import { UserBadges } from '../components/common/UserBadges';
 import { EmojiPicker } from '../components/common/EmojiPicker';
+import { ChatSettingsDrawer } from '../components/chat/ChatSettingsDrawer';
+import { useVoice } from '../hooks/useVoice';
+import { Paperclip, AudioWaveform } from 'lucide-react';
 
 interface MessageWithProfile extends Message {
   profiles?: Profile;
@@ -49,6 +52,9 @@ export default function ConversationPage() {
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
   const [initiating, setInitiating] = useState(false);
   const [showContextDrawer, setShowContextDrawer] = useState(false);
+  const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
+
+  const voice = useVoice();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -62,6 +68,14 @@ export default function ConversationPage() {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  const voiceEnabledRef = useRef(voice.isEnabled);
+  const voiceSpeakRef = useRef(voice.speak);
+
+  useEffect(() => {
+    voiceEnabledRef.current = voice.isEnabled;
+    voiceSpeakRef.current = voice.speak;
+  }, [voice.isEnabled, voice.speak]);
 
   useEffect(() => { scrollToBottom(); }, [messages]);
 
@@ -190,6 +204,10 @@ export default function ConversationPage() {
           .maybeSingle();
 
         setMessages(prev => [...prev, { ...newMsg, profiles: senderProfile ?? undefined }]);
+
+        if (senderProfile?.role === 'ai_character' && voiceEnabledRef.current) {
+          voiceSpeakRef.current(newMsg.content);
+        }
 
         if (newMsg.sender_id !== user.id) {
           setTypingUsers(prev => prev.filter(id => id !== newMsg.sender_id));
@@ -533,7 +551,10 @@ export default function ConversationPage() {
             </button>
 
             {conversation?.type === 'dm' && otherUser && (
-              <div className="flex items-center gap-3 min-w-0">
+              <div 
+                className="flex items-center gap-3 min-w-0 cursor-pointer hover:bg-warm-50 dark:hover:bg-warm-800/50 p-1 -ml-1 rounded-xl transition-colors"
+                onClick={() => setShowSettingsDrawer(true)}
+              >
                 <Avatar emoji={otherUser.avatar_emoji} photoUrl={otherUser.photo_url} size="md" />
                 <div className="min-w-0">
                   <h1 className="font-serif font-bold text-lg text-warm-900 dark:text-warm-50 truncate flex items-center">
@@ -546,7 +567,10 @@ export default function ConversationPage() {
             )}
 
             {conversation?.type === 'group' && (
-              <div className="min-w-0">
+              <div 
+                className="min-w-0 cursor-pointer hover:bg-warm-50 dark:hover:bg-warm-800/50 p-1 -ml-1 rounded-xl transition-colors"
+                onClick={() => setShowGroupSettings(true)}
+              >
                 <h1 className="font-serif font-bold text-lg text-warm-900 dark:text-warm-50 truncate">
                   {conversation.name || 'Group Chat'}
                 </h1>
@@ -557,13 +581,20 @@ export default function ConversationPage() {
 
           <div className="flex items-center gap-2">
             {conversation?.type === 'dm' && (
-              <button 
-                onClick={() => setShowContextDrawer(!showContextDrawer)} 
-                className={`p-2 rounded-xl transition-colors ${showContextDrawer ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400' : 'hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500'}`}
-                title="Toggle Context & Lore"
-              >
-                {showContextDrawer ? <PanelRightClose size={20} /> : <PanelRightOpen size={20} />}
-              </button>
+              <>
+                <button className="p-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500 transition-colors">
+                  <Paperclip size={20} />
+                </button>
+                <button 
+                  onClick={voice.toggleVoice} 
+                  className={`p-2 rounded-xl transition-colors ${voice.isEnabled ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500'}`}
+                >
+                  <AudioWaveform size={20} />
+                </button>
+                <button className="p-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500 transition-colors">
+                  <Phone size={20} />
+                </button>
+              </>
             )}
             {conversation?.type === 'group' && (
               <button onClick={() => setShowGroupSettings(true)} className="p-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500 transition-colors">
@@ -573,6 +604,19 @@ export default function ConversationPage() {
           </div>
         </div>
       </header>
+
+      {/* Settings Drawer */}
+      {otherUser && (
+        <ChatSettingsDrawer
+          isOpen={showSettingsDrawer}
+          onClose={() => setShowSettingsDrawer(false)}
+          character={otherUser}
+          user={user}
+          isVoiceEnabled={voice.isEnabled}
+          onToggleVoice={voice.toggleVoice}
+          onSelectPersona={() => navigate('/personas')}
+        />
+      )}
 
       {/* Main Layout Area */}
       <div className="flex-1 overflow-hidden w-full max-w-7xl mx-auto flex relative">
