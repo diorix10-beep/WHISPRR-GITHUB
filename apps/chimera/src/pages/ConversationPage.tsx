@@ -711,9 +711,18 @@ export default function ConversationPage() {
               >
                 <Avatar emoji={otherUser.avatar_emoji} photoUrl={otherUser.photo_url} size={isPhoneLayout ? "sm" : "md"} />
                 <div className={`min-w-0 ${isPhoneLayout ? 'text-center' : ''}`}>
-                  <h1 className="font-serif font-bold text-lg text-warm-900 dark:text-warm-50 truncate flex items-center">
+                  <h1 className="font-serif font-bold text-lg text-warm-900 dark:text-warm-50 truncate flex items-center gap-1.5">
                     {otherUser.display_name}
                     <UserBadges badges={otherUser.badges} role={otherUser.role} size="sm" />
+                    {otherUser.role === 'ai_character' && (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setShowMemoryModal(true); }}
+                        className="text-warm-400 hover:text-primary-500 transition-colors p-1 rounded-md hover:bg-warm-100 dark:hover:bg-warm-800"
+                        title="Memory"
+                      >
+                        <BookOpen size={16} />
+                      </button>
+                    )}
                   </h1>
                   <p className="text-xs text-warm-500">@{otherUser.username}</p>
                 </div>
