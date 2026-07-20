@@ -4,7 +4,7 @@ import { formatDistanceToNow } from 'date-fns';
 import {
   ArrowLeft, Send, Phone, Video, Loader2, Trash2,
   Image as ImageIcon, X, Settings, UserPlus, UserMinus, LogOut, Pencil, Smile, Search,
-  PanelRightClose, PanelRightOpen, BookOpen, Copy, RotateCw, Edit3
+  PanelRightClose, PanelRightOpen, BookOpen, Copy, RotateCw, Edit3, Camera
 } from 'lucide-react';
 import type { Conversation, Message, Profile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -80,6 +80,27 @@ export default function ConversationPage() {
   }, [voice.isEnabled, voice.speak]);
 
   useEffect(() => { scrollToBottom(); }, [messages]);
+
+  // Magic Trigger: Auto-Phone Layout Detection
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const latestMessage = messages[messages.length - 1];
+    if (!latestMessage.content) return;
+    
+    const contentLower = latestMessage.content.toLowerCase();
+    const phoneKeywords = [
+      'open my phone', 'opened my phone', 'took out my phone', 'take out my phone',
+      'look at my phone', 'looks at phone', 'texting', 'unlocked screen', 'unlocks screen',
+      'pulls out phone', 'pull out my phone', 'grabs phone'
+    ];
+
+    const hasPhoneKeyword = phoneKeywords.some(kw => contentLower.includes(kw));
+    
+    if (hasPhoneKeyword && aesthetics.layoutStyle !== 'phone') {
+      aesthetics.setLayout('phone');
+      aesthetics.setChatStyle('imessage');
+    }
+  }, [messages, aesthetics]);
 
   // Fetch conversation data
   useEffect(() => {
@@ -358,13 +379,57 @@ export default function ConversationPage() {
           setTypingUsers([]);
         });
       }
-    } catch (error: any) {
-      console.error('Error sending message:', error);
-      setMessageInput(content);
-      showToast(`Failed to send message: ${error.message || 'Please try again.'}`, 'error');
+    } catch (err: any) {
+      console.error(err);
+      showToast('Failed to send message', 'error');
     } finally {
       setSending(false);
-      setUploadingImage(false);
+      msgInputRef.current?.focus();
+    }
+  };
+
+  // Request Selfie / Image Studio
+  const [requestingImage, setRequestingImage] = useState(false);
+  const handleRequestImage = async () => {
+    if (!user || !conversationId || !otherUser) return;
+    setRequestingImage(true);
+    
+    try {
+      // Create a visual prompt combining the character's name and some aesthetic keywords
+      const characterName = otherUser.display_name;
+      const prompt = `a highly detailed, beautiful selfie photo of ${characterName}, realistic, atmospheric lighting, 8k, photorealistic`;
+      const encodedPrompt = encodeURIComponent(prompt);
+      
+      // Use pollinations.ai for free, instant on-the-fly image generation
+      // We append a random seed so it generates a new image each time
+      const seed = Math.floor(Math.random() * 1000000);
+      const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=1200&nologo=true&seed=${seed}`;
+
+      // Insert the simulated AI response
+      const { error: msgError } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: conversationId,
+          sender_id: otherUser.user_id, // The AI sends it
+          content: `*Sends you a photo*`,
+          image_url: imageUrl,
+          read: true,
+        });
+
+      if (msgError) throw msgError;
+      showToast('Image generated successfully!', 'success');
+      
+      // Also automatically switch to phone layout if they just sent a selfie!
+      if (aesthetics.layoutStyle !== 'phone') {
+        aesthetics.setLayout('phone');
+        aesthetics.setChatStyle('imessage');
+      }
+
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to generate image', 'error');
+    } finally {
+      setRequestingImage(false);
     }
   };
 
@@ -624,8 +689,17 @@ export default function ConversationPage() {
                   <Paperclip size={20} />
                 </button>
                 <button 
+                  onClick={handleRequestImage}
+                  disabled={requestingImage}
+                  className={`p-2 rounded-xl transition-colors ${requestingImage ? 'text-primary-500 animate-pulse' : 'hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500'}`}
+                  title="Request Image/Selfie"
+                >
+                  <Camera size={20} />
+                </button>
+                <button 
                   onClick={voice.toggleVoice} 
                   className={`p-2 rounded-xl transition-colors ${voice.isEnabled ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500'}`}
+                  title="Toggle Voice TTS"
                 >
                   <AudioWaveform size={20} />
                 </button>
