@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PenTool, Plus, BookOpen, Trash2, Edit, ChevronLeft, Globe, Eye, Settings, Share2, FileText, Image as ImageIcon } from 'lucide-react';
+import { PenTool, Plus, BookOpen, Trash2, Edit, ChevronLeft, Globe, Eye, Settings, Share2, FileText, Image as ImageIcon, UploadCloud } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Story, StoryChapter } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import StoryImporterModal from '../components/stories/StoryImporterModal';
 
 export default function WritersDeskPage() {
   const navigate = useNavigate();
@@ -26,6 +27,9 @@ export default function WritersDeskPage() {
   const [formCoverUrl, setFormCoverUrl] = useState('');
   const [formVisibility, setFormVisibility] = useState<'public' | 'private' | 'unlisted'>('public');
   const [formStatus, setFormStatus] = useState<'ongoing' | 'completed' | 'hiatus'>('ongoing');
+
+  // Importer state
+  const [isImporterOpen, setIsImporterOpen] = useState(false);
 
   useEffect(() => {
     if (profile?.user_id) {
@@ -481,6 +485,13 @@ export default function WritersDeskPage() {
                     Edit Details
                   </button>
                   <button
+                    onClick={() => setIsImporterOpen(true)}
+                    className="px-4 py-2 bg-warm-800 hover:bg-warm-700 border border-warm-700 text-white rounded-lg text-sm font-bold transition-all flex items-center gap-2"
+                  >
+                    <UploadCloud size={16} />
+                    Import Chapters
+                  </button>
+                  <button
                     onClick={handleCreateChapter}
                     className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-bold shadow-md transition-all flex items-center gap-2"
                   >
@@ -620,6 +631,17 @@ export default function WritersDeskPage() {
           </div>
         )}
       </div>
+      {/* Story Importer Modal */}
+      {selectedStory && (
+        <StoryImporterModal
+          isOpen={isImporterOpen}
+          onClose={() => setIsImporterOpen(false)}
+          storyId={selectedStory.id}
+          existingChapterCount={chapters.length}
+          onImportComplete={() => fetchChapters(selectedStory.id)}
+        />
+      )}
+
     </div>
   );
 }
