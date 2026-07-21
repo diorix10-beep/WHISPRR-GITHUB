@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Camera } from 'lucide-react';
+import { Camera, User } from 'lucide-react';
 
 type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -84,9 +84,9 @@ export function Avatar({
   return (
     <div className="relative group" onClick={editable ? onPhotoClick : onClick}>
       <div
-        className={`${baseClasses} ${sizeClass} bg-gradient-to-br from-primary-300 to-accent-300 dark:from-primary-700 dark:to-accent-700 shadow-soft`}
+        className={`${baseClasses} ${sizeClass} bg-gradient-to-br from-warm-200 to-warm-300 dark:from-warm-800 dark:to-warm-700 text-warm-600 dark:text-warm-300 shadow-soft overflow-hidden`}
       >
-        {emoji}
+        <User className="w-1/2 h-1/2" />
       </div>
       {uploading && (
         <div className={`absolute inset-0 ${overlaySizeClasses[size]} rounded-full bg-black/40 flex items-center justify-center`}>

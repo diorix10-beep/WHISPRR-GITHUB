@@ -182,6 +182,28 @@ export default function PersonaEditorPage() {
 
             <div className="col-span-1 md:col-span-2">
               <label className="block text-sm font-bold text-warm-700 dark:text-warm-300 mb-2">
+                Profile Picture (Avatar Photo URL)
+              </label>
+              <div className="flex items-center gap-4">
+                {formData.avatar_url ? (
+                  <img src={formData.avatar_url} alt="Persona Avatar" className="w-14 h-14 rounded-full object-cover border border-warm-300 dark:border-warm-700 shadow-sm" />
+                ) : (
+                  <div className="w-14 h-14 rounded-full bg-warm-200 dark:bg-warm-800 flex items-center justify-center text-warm-500">
+                    <User size={24} />
+                  </div>
+                )}
+                <input 
+                  type="url" 
+                  value={formData.avatar_url || ''}
+                  onChange={e => setFormData({...formData, avatar_url: e.target.value})}
+                  placeholder="https://example.com/my-profile-picture.jpg"
+                  className="flex-1 bg-warm-50 dark:bg-warm-950 border border-warm-200 dark:border-warm-800 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow dark:text-warm-50 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="col-span-1 md:col-span-2">
+              <label className="block text-sm font-bold text-warm-700 dark:text-warm-300 mb-2">
                 Short Description
               </label>
               <input 
