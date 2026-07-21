@@ -73,6 +73,25 @@ export default function AiCharacterCreator() {
     };
   }, []);
 
+  // Restore saved draft on mount
+  useEffect(() => {
+    try {
+      const savedDraft = localStorage.getItem('chimera-character-creator-draft');
+      if (savedDraft) {
+        const parsed = JSON.parse(savedDraft);
+        if (parsed.formData) {
+          setFormData(parsed.formData);
+        }
+        if (parsed.archData) {
+          setArchData(parsed.archData);
+        }
+        showToast('Restored your unsaved character draft!', 'info');
+      }
+    } catch (e) {
+      console.error('Failed to load draft:', e);
+    }
+  }, []);
+
   // Background Autosave
   useEffect(() => {
     if (!isOnline) {
@@ -80,20 +99,58 @@ export default function AiCharacterCreator() {
       return;
     }
 
-    const interval = setInterval(() => {
-      if (formData.name || formData.greeting || formData.personality) {
+    const timer = setTimeout(() => {
+      if (formData.name || formData.greeting || formData.personality || Object.keys(archData).length > 0) {
         setSaveStatus('saving');
         localStorage.setItem(
           'chimera-character-creator-draft',
-          JSON.stringify({ formData })
+          JSON.stringify({ formData, archData })
         );
         setTimeout(() => {
           setSaveStatus('saved');
-        }, 800);
+        }, 300);
       }
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [formData, isOnline]);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [formData, archData, isOnline]);
+
+  const handleSaveDraft = () => {
+    localStorage.setItem(
+      'chimera-character-creator-draft',
+      JSON.stringify({ formData, archData })
+    );
+    setSaveStatus('saved');
+    showToast('Draft saved successfully!', 'success');
+  };
+
+  const handleDiscardDraft = () => {
+    localStorage.removeItem('chimera-character-creator-draft');
+    setFormData({
+      name: '',
+      category: 'Romance',
+      visibility: 'public',
+      contentRating: 'SFW',
+      avatarUrl: '',
+      bannerUrl: '',
+      greeting: '',
+      shortDescription: '',
+      longDescription: '',
+      personality: '',
+      scenario: '',
+      exampleDialogues: '',
+      conversationStyle: 'Warm, conversational, structured.',
+      rpDefinition: '',
+      systemDefinition: '',
+      systemCharacterDefinition: '',
+      knowledge: '',
+      creatorNotes: '',
+      exampleConversations: '',
+      tagsString: ''
+    });
+    setArchData({});
+    showToast('Draft discarded', 'info');
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -542,17 +599,34 @@ export default function AiCharacterCreator() {
       {/* FLOATING ACTION BAR */}
       <div className="fixed bottom-0 left-0 right-0 md:left-64 bg-warm-900 border-t border-warm-800 p-4 px-6 flex justify-between items-center z-50">
         <div className="flex items-center gap-4 text-xs text-warm-500">
-          <span className="flex items-center gap-1">
-            <span className={`w-2 h-2 rounded-full ${saveStatus === 'offline' ? 'bg-red-500' : saveStatus === 'saving' ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></span>
-            {saveStatus === 'saved' ? 'Saved' : saveStatus === 'saving' ? 'Saving...' : 'Offline'}
+          <span className="flex items-center gap-1.5">
+            <span className={`w-2 h-2 rounded-full ${saveStatus === 'offline' ? 'bg-red-500' : saveStatus === 'saving' ? 'bg-yellow-500 animate-pulse' : 'bg-emerald-500'}`}></span>
+            <span className="font-semibold text-warm-300">
+              {saveStatus === 'saved' ? 'Draft Auto-Saved' : saveStatus === 'saving' ? 'Auto-Saving Draft...' : 'Offline Mode'}
+            </span>
           </span>
         </div>
-        <button
-          onClick={handleFinalPublish}
-          className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-bold text-sm shadow-lg transition-all"
-        >
-          Create a Character
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleDiscardDraft}
+            className="px-3 py-2 text-xs font-semibold text-warm-400 hover:text-red-400 transition-colors"
+            title="Discard unsaved draft"
+          >
+            Discard Draft
+          </button>
+          <button
+            onClick={handleSaveDraft}
+            className="px-4 py-2 bg-warm-800 hover:bg-warm-750 text-white rounded-lg text-xs font-semibold border border-warm-700 transition-colors"
+          >
+            Save Draft
+          </button>
+          <button
+            onClick={handleFinalPublish}
+            className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg font-bold text-xs shadow-lg transition-all"
+          >
+            Publish Character
+          </button>
+        </div>
       </div>
 
       {/* Publishing Pipeline Overlay Screen */}
