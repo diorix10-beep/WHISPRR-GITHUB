@@ -442,26 +442,21 @@ export default function ConversationPage() {
   // Request Selfie / Image Studio
   const [requestingImage, setRequestingImage] = useState(false);
   const handleRequestImage = async () => {
-    if (!user || !conversationId || !otherUser) return;
+    if (!user || requestingImage || !otherUser) return;
     setRequestingImage(true);
-    
     try {
-      // Create a visual prompt combining the character's name and some aesthetic keywords
       const characterName = otherUser.display_name;
       const prompt = `a highly detailed, beautiful selfie photo of ${characterName}, realistic, atmospheric lighting, 8k, photorealistic`;
       const encodedPrompt = encodeURIComponent(prompt);
       
-      // Use pollinations.ai for free, instant on-the-fly image generation
-      // We append a random seed so it generates a new image each time
       const seed = Math.floor(Math.random() * 1000000);
       const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=1200&nologo=true&seed=${seed}`;
 
-      // Insert the simulated AI response
       const { error: msgError } = await supabase
         .from('messages')
         .insert({
-          conversation_id: conversationId,
-          sender_id: otherUser.user_id, // The AI sends it
+          conversation_id: id,
+          sender_id: otherUser.user_id,
           content: `*Sends you a photo*`,
           image_url: imageUrl,
           read: true,
@@ -470,7 +465,6 @@ export default function ConversationPage() {
       if (msgError) throw msgError;
       showToast('Image generated successfully!', 'success');
       
-      // Also automatically switch to phone layout if they just sent a selfie!
       if (aesthetics.layoutStyle !== 'phone') {
         aesthetics.setLayout('phone');
         aesthetics.setChatStyle('imessage');
@@ -481,6 +475,55 @@ export default function ConversationPage() {
       showToast('Failed to generate image', 'error');
     } finally {
       setRequestingImage(false);
+    }
+  };
+
+  const [convertingToStory, setConvertingToStory] = useState(false);
+  const handleContinueAsStory = async () => {
+    if (!user || messages.length === 0) return;
+    setConvertingToStory(true);
+    try {
+      const activeMsgs = messages.filter(m => !m.deleted_at);
+      const storyText = activeMsgs.map(m => {
+        const senderName = m.profiles?.display_name || (m.user_id === user.id ? 'You' : 'Character');
+        return `**${senderName}**: ${m.content}`;
+      }).join('\n\n');
+
+      const titleName = otherUser?.display_name || 'Roleplay Session';
+
+      const { data: story, error: storyError } = await supabase
+        .from('stories')
+        .insert({
+          user_id: user.id,
+          title: `Story of ${titleName}`,
+          summary: `Converted from interactive roleplay session on ${new Date().toLocaleDateString()}`,
+          visibility: 'private'
+        })
+        .select()
+        .single();
+
+      if (storyError) throw storyError;
+
+      const { data: chapter, error: chapterError } = await supabase
+        .from('story_chapters')
+        .insert({
+          story_id: story.id,
+          chapter_number: 1,
+          title: 'Chapter 1: The Encounter',
+          content: storyText
+        })
+        .select()
+        .single();
+
+      if (chapterError) throw chapterError;
+
+      showToast('Successfully converted roleplay to Story!', 'success');
+      navigate(`/stories/${story.id}/chapters/${chapter.id}/edit`);
+    } catch (err: any) {
+      console.error('Error converting to story:', err);
+      showToast(err.message || 'Failed to convert to story', 'error');
+    } finally {
+      setConvertingToStory(false);
     }
   };
 
@@ -745,6 +788,15 @@ export default function ConversationPage() {
           <div className="flex items-center gap-2">
             {conversation?.type === 'dm' && (
               <>
+                <button 
+                  onClick={handleContinueAsStory}
+                  disabled={convertingToStory}
+                  className="p-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-primary-500 transition-colors flex items-center gap-1 text-xs font-semibold"
+                  title="Continue as Story (Novel Mode)"
+                >
+                  {convertingToStory ? <Loader2 size={18} className="animate-spin" /> : <BookOpen size={18} />}
+                  <span className="hidden sm:inline">Continue as Story</span>
+                </button>
                 <button className="p-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500 transition-colors">
                   <Paperclip size={20} />
                 </button>

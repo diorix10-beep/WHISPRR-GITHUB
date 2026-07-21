@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, BookOpen, ArrowLeft, Sun, Moon, Type } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, ArrowLeft, Sun, Moon, Type, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Story, StoryChapter } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -132,6 +132,45 @@ export default function ChapterReaderPage() {
     xl: 'text-xl sm:text-2xl'
   }[fontSize];
 
+  const [steppingIntoRoleplay, setSteppingIntoRoleplay] = useState(false);
+  const handleStepIntoRoleplay = async () => {
+    if (!profile?.user_id || !story || !chapter) return;
+    setSteppingIntoRoleplay(true);
+    try {
+      const { data: conv, error: convError } = await supabase
+        .from('conversations')
+        .insert({
+          created_by: profile.user_id,
+          type: 'dm',
+          name: `Roleplay: ${story.title}`
+        })
+        .select()
+        .single();
+
+      if (convError) throw convError;
+
+      await supabase.from('conversation_participants').insert({
+        conversation_id: conv.id,
+        user_id: profile.user_id,
+        role: 'member'
+      });
+
+      await supabase.from('messages').insert({
+        conversation_id: conv.id,
+        user_id: profile.user_id,
+        content: `*Scene Context from Chapter ${chapter.chapter_number}: ${chapter.title}*\n\n${chapter.content.slice(0, 300)}...\n\n*Stepping into interactive roleplay mode...*`
+      });
+
+      showToast('Stepped into interactive Roleplay mode!', 'success');
+      navigate(`/conversations/${conv.id}`);
+    } catch (err: any) {
+      console.error('Error stepping into roleplay:', err);
+      showToast(err.message || 'Failed to step into roleplay', 'error');
+    } finally {
+      setSteppingIntoRoleplay(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-warm-50 dark:bg-warm-900 flex items-center justify-center">
@@ -176,6 +215,15 @@ export default function ChapterReaderPage() {
 
           {/* Reader Preferences Bar */}
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleStepIntoRoleplay}
+              disabled={steppingIntoRoleplay}
+              className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-red-650/10 text-red-650 hover:bg-red-650 hover:text-white transition-colors"
+              title="Step into Roleplay Mode"
+            >
+              {steppingIntoRoleplay ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+              <span className="hidden sm:inline">Roleplay Mode</span>
+            </button>
             <button
               onClick={() => setSerifFont(!serifFont)}
               className={`p-2 rounded-lg border transition-colors ${

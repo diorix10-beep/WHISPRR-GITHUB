@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { BookOpen, Bookmark, Heart, MessageSquare, ChevronRight, User, Calendar, CornerDownRight } from 'lucide-react';
+import { BookOpen, Bookmark, Heart, Send, ArrowLeft, Plus, Eye, Share2, Sparkles, MessageSquare, Users } from 'lucide-react';
+import { CollaboratorsModal } from '../components/collaboration/CollaboratorsModal';
 import { supabase } from '../lib/supabase';
 import { Story, StoryChapter, StoryComment } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,6 +15,8 @@ export default function StoryReaderPage() {
 
   const [story, setStory] = useState<Story | null>(null);
   const [chapters, setChapters] = useState<StoryChapter[]>([]);
+  const [author, setAuthor] = useState<any | null>(null);
+  const [isCollabModalOpen, setIsCollabModalOpen] = useState(false);
   const [comments, setComments] = useState<StoryComment[]>([]);
   const [newComment, setNewComment] = useState('');
   
@@ -337,6 +340,16 @@ export default function StoryReaderPage() {
                 <Heart size={20} className={hasVoted ? 'fill-current text-red-500' : ''} />
                 <span className="text-xs font-bold">{story.votes_count || 0}</span>
               </button>
+
+              {/* Co-Creators / Share Collaboration */}
+              <button
+                onClick={() => setIsCollabModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-3 rounded-xl border bg-white dark:bg-warm-800 text-warm-600 dark:text-warm-400 border-warm-250 dark:border-warm-700 hover:bg-warm-50 dark:hover:bg-warm-750 transition-all text-xs font-bold"
+                title="Manage Co-Creators"
+              >
+                <Users size={18} className="text-red-500" />
+                <span>Co-Creators</span>
+              </button>
             </div>
           </div>
         </div>
@@ -446,6 +459,16 @@ export default function StoryReaderPage() {
 
         </div>
       </div>
+      {/* Collaborators Modal */}
+      {story && (
+        <CollaboratorsModal
+          projectId={story.id}
+          projectType="story"
+          projectTitle={story.title}
+          isOpen={isCollabModalOpen}
+          onClose={() => setIsCollabModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
