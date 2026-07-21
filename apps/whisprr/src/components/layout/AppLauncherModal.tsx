@@ -24,7 +24,7 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
 
   const apps = [
     { name: 'WHISPRR', desc: 'Social Network', path: '/feed', icon: Globe, color: 'bg-primary-500/10 text-primary-500 border-primary-500/20 hover:bg-primary-500/20', external: false },
-    { name: 'CHIMERA', desc: 'Roleplay Studio', path: chimeraUrl, icon: Bot, color: 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20', external: true },
+    { name: 'CHIMERA', desc: 'Roleplay & Storytelling', path: chimeraUrl, logoUrl: 'https://chimera.whisprr.xyz/chimera_logo.png', color: 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20', external: true },
   ];
 
   const moreLinks = [
@@ -59,7 +59,7 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
           <h3 className="text-xs font-bold uppercase tracking-wider text-warm-400 mb-3 px-1">Available Apps</h3>
           <div className="grid grid-cols-2 gap-3">
             {apps.map((app) => {
-              const Icon = app.icon;
+              const Icon = 'icon' in app ? app.icon : null;
               const isExternal = 'external' in app && app.external;
               
               return (
@@ -74,7 +74,11 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
                   }}
                   className={`p-4 rounded-2xl border text-left flex flex-col gap-2 transition-all hover:scale-102 active:scale-98 ${app.color}`}
                 >
-                  <Icon size={24} />
+                  {'logoUrl' in app && app.logoUrl ? (
+                    <img src={app.logoUrl} alt={app.name} className="w-6 h-6 rounded-lg object-cover border border-red-500/30 shadow-sm" />
+                  ) : Icon ? (
+                    <Icon size={24} />
+                  ) : null}
                   <div>
                     <h4 className="font-bold text-sm leading-none">{app.name}</h4>
                     <p className="text-[10px] opacity-75 mt-1">{app.desc}</p>
