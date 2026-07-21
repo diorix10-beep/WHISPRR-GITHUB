@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vite'; // Trigger deploy
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
@@ -11,9 +11,9 @@ export default defineConfig({
       manifest: {
         name: 'WHISPRR',
         short_name: 'WHISPRR',
-        description: 'Where connections feel real',
-        theme_color: '#D4736E',
-        background_color: '#FBF8F5',
+        description: 'The social platform where creators connect, share their work, join communities, and build together.',
+        theme_color: '#a855f7',
+        background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
