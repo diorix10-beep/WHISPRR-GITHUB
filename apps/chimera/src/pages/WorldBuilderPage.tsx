@@ -9,11 +9,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import type { World, WorldLocation, WorldFaction, WorldTimelineEvent } from '../types';
+import { WorldCanvasTab } from '../components/world/WorldCanvasTab';
 
-type TabId = 'overview' | 'locations' | 'factions' | 'timeline' | 'characters' | 'lorebooks' | 'settings';
+type TabId = 'overview' | 'canvas' | 'locations' | 'factions' | 'timeline' | 'characters' | 'lorebooks' | 'settings';
 
 const TABS: { id: TabId; label: string; icon: typeof Map }[] = [
   { id: 'overview', label: 'Overview', icon: Map },
+  { id: 'canvas', label: 'Visual Map Canvas', icon: Globe },
   { id: 'locations', label: 'Locations', icon: MapPin },
   { id: 'factions', label: 'Factions', icon: Shield },
   { id: 'timeline', label: 'Timeline', icon: Clock },
@@ -246,6 +248,11 @@ export default function WorldBuilderPage() {
               <p className="text-[10px] text-warm-400 mt-1">Separate with commas</p>
             </div>
           </div>
+        )}
+
+        {/* VISUAL MAP CANVAS */}
+        {activeTab === 'canvas' && (
+          <WorldCanvasTab worldId={id || ''} locations={locations} factions={factions} />
         )}
 
         {/* LOCATIONS */}

@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Globe, MoreHorizontal, AlignLeft, Bold, Italic, Underline, Link, Image as ImageIcon, Check } from 'lucide-react';
+import { ArrowLeft, Save, Globe, MoreHorizontal, AlignLeft, Bold, Italic, Underline, Link, Image as ImageIcon, Check, Sparkles, Download, Maximize2, Feather } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Story, StoryChapter } from '../types';
 import { useToast } from '../contexts/ToastContext';
+import { AiCoPilotDrawer } from '../components/writers/AiCoPilotDrawer';
 
 export default function ChapterEditorPage() {
   const { storyId, chapterId } = useParams<{ storyId: string; chapterId: string }>();
@@ -20,6 +21,11 @@ export default function ChapterEditorPage() {
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'offline'>('saved');
+
+  // Human-First & AI States
+  const [focusMode, setFocusMode] = useState(false);
+  const [isHandcrafted, setIsHandcrafted] = useState(true);
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
 
   // Word count logic
   const wordCount = useMemo(() => {
@@ -181,8 +187,47 @@ export default function ChapterEditorPage() {
               </button>
             </>
           )}
-          <button className="text-warm-400 hover:text-white ml-2">
-            <MoreHorizontal size={20} />
+          {/* Human-First Tools */}
+          <button
+            onClick={() => setFocusMode(!focusMode)}
+            className={`p-2 rounded-xl border transition-all ${
+              focusMode
+                ? 'bg-red-600 text-white border-red-500'
+                : 'text-warm-400 hover:text-white border-warm-800 hover:bg-warm-800'
+            }`}
+            title="Focus Mode (Distraction Free)"
+          >
+            <Maximize2 size={16} />
+          </button>
+
+          <button
+            onClick={() => {
+              setIsHandcrafted(!isHandcrafted);
+              showToast(
+                !isHandcrafted
+                  ? 'Handcrafted by Human Author badge enabled!'
+                  : 'Handcrafted badge disabled',
+                'info'
+              );
+            }}
+            className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 ${
+              isHandcrafted
+                ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                : 'text-warm-400 border-warm-800 hover:text-white'
+            }`}
+            title="Toggle Handcrafted Badge"
+          >
+            <Feather size={14} />
+            <span className="hidden md:inline">{isHandcrafted ? '100% Handcrafted' : 'Badge'}</span>
+          </button>
+
+          <button
+            onClick={() => setAiDrawerOpen(!aiDrawerOpen)}
+            className="p-2 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/30 hover:bg-purple-500/20 transition-all flex items-center gap-1 text-xs font-bold"
+            title="Optional AI Co-Pilot"
+          >
+            <Sparkles size={16} />
+            <span className="hidden md:inline">AI Co-Pilot</span>
           </button>
         </div>
       </header>
@@ -231,8 +276,15 @@ export default function ChapterEditorPage() {
             </div>
           </div>
         </div>
-
       </div>
+
+      {/* Optional AI Assistant Drawer */}
+      <AiCoPilotDrawer
+        isOpen={aiDrawerOpen}
+        onClose={() => setAiDrawerOpen(false)}
+        chapterContent={content}
+        onInsertText={(text) => setContent(prev => prev + '\n\n' + text)}
+      />
     </div>
   );
 }
