@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, MessageSquare, User } from 'lucide-react';
+import { Eye, MessageSquare, User, Share2 } from 'lucide-react';
+import { ShareToWhisprrModal } from './ShareToWhisprrModal';
 
 interface CharacterCardProps {
   character: any;
@@ -8,6 +10,7 @@ interface CharacterCardProps {
 }
 
 export function CharacterCard({ character, onClick, actionMenu }: CharacterCardProps) {
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const profile = character.bot_profile || {};
   const creator = character.creator || {};
   
@@ -72,19 +75,45 @@ export function CharacterCard({ character, onClick, actionMenu }: CharacterCardP
           {description}
         </p>
         
-        {/* Stats */}
-        <div className="flex items-center gap-3 pt-3 mt-1 border-t border-white/10">
-          <div className="flex items-center gap-1.5 text-[11px] font-medium text-warm-300">
-            <MessageSquare size={12} />
-            {chatsCount.toLocaleString()}
-          </div>
-          {viewsCount > 0 && (
+        {/* Stats & Share */}
+        <div className="flex items-center justify-between pt-3 mt-1 border-t border-white/10">
+          <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 text-[11px] font-medium text-warm-300">
-              <Eye size={12} />
-              {viewsCount.toLocaleString()}
+              <MessageSquare size={12} />
+              {chatsCount.toLocaleString()}
             </div>
-          )}
+            {viewsCount > 0 && (
+              <div className="flex items-center gap-1.5 text-[11px] font-medium text-warm-300">
+                <Eye size={12} />
+                {viewsCount.toLocaleString()}
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShareModalOpen(true);
+            }}
+            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+            title="Share to WHISPRR"
+          >
+            <Share2 size={13} />
+          </button>
         </div>
+
+        <ShareToWhisprrModal
+          isOpen={shareModalOpen}
+          onClose={() => setShareModalOpen(false)}
+          character={{
+            id: character.id,
+            name,
+            description,
+            avatarUrl: photoUrl,
+            category
+          }}
+        />
       </div>
     </div>
   );
