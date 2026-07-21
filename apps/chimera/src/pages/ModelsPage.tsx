@@ -33,6 +33,19 @@ const AVAILABLE_MODELS: ModelInfo[] = [
     tier: 'free'
   },
   {
+    id: 'deepseek/deepseek-v3',
+    name: 'PULSAR',
+    codename: '⚡ PULSAR',
+    provider: 'deepseek',
+    company: 'DeepSeek',
+    engineName: 'DeepSeek-V3',
+    description: 'Lightning-fast open architecture model offering highly responsive dialogue and multi-turn persona consistency.',
+    strengths: ['Ultra Fast', 'High Precision', 'Fluid Prose'],
+    context_length: '64K tokens',
+    is_nsfw_allowed: true,
+    tier: 'free'
+  },
+  {
     id: 'anthropic/claude-3.5-sonnet',
     name: 'ECLIPSE',
     codename: '🌓 ECLIPSE',
@@ -43,6 +56,19 @@ const AVAILABLE_MODELS: ModelInfo[] = [
     strengths: ['Emotional Depth', 'Nuance', 'Formatting'],
     context_length: '200K tokens',
     is_nsfw_allowed: true,
+    tier: 'premium'
+  },
+  {
+    id: 'gemini-1.5-pro',
+    name: 'HELIOS',
+    codename: '☀️ HELIOS',
+    provider: 'gemini',
+    company: 'Google',
+    engineName: 'Gemini 1.5 Pro',
+    description: 'Immense analytical power and massive lore memory context. Perfect for complex multi-chapter web novels.',
+    strengths: ['2M Context', 'Complex Lore', 'Analytical Depth'],
+    context_length: '2M tokens',
+    is_nsfw_allowed: false,
     tier: 'premium'
   },
   {
@@ -72,6 +98,19 @@ const AVAILABLE_MODELS: ModelInfo[] = [
     tier: 'premium'
   },
   {
+    id: 'nousresearch/hermes-3-llama-3.1-405b',
+    name: 'HERMES',
+    codename: '📜 HERMES',
+    provider: 'openrouter',
+    company: 'Nous Research',
+    engineName: 'Hermes 3 (405B)',
+    description: 'Colossal 405-billion parameter model fine-tuned for deep roleplay fidelity, complex personas, and uncensored freedom.',
+    strengths: ['405B Parameters', 'Uncensored', 'Persona Fidelity'],
+    context_length: '128K tokens',
+    is_nsfw_allowed: true,
+    tier: 'premium'
+  },
+  {
     id: 'openai/gpt-4o',
     name: 'COSMOS',
     codename: '🌐 COSMOS',
@@ -82,6 +121,19 @@ const AVAILABLE_MODELS: ModelInfo[] = [
     strengths: ['Logic', 'Consistency', 'World Knowledge'],
     context_length: '128K tokens',
     is_nsfw_allowed: false,
+    tier: 'premium'
+  },
+  {
+    id: 'mistralai/mistral-large-2407',
+    name: 'QUANTUM',
+    codename: '🔮 QUANTUM',
+    provider: 'openrouter',
+    company: 'Mistral AI',
+    engineName: 'Mistral Large 2',
+    description: 'European flagship model with multi-lingual prose mastery and sophisticated worldbuilding mechanics.',
+    strengths: ['Multi-lingual', 'Poetic Prose', 'High Precision'],
+    context_length: '128K tokens',
+    is_nsfw_allowed: true,
     tier: 'premium'
   }
 ];
