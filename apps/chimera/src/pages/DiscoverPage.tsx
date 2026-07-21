@@ -32,7 +32,7 @@ export default function DiscoverPage() {
           greeting,
           short_description,
           tags,
-          profiles!inner(
+          profiles:profiles!ai_characters_user_id_fkey!inner(
             id,
             display_name,
             username,
