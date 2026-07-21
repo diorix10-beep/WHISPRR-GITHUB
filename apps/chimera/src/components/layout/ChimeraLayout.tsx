@@ -177,27 +177,27 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               {renderNavLinks()}
             </nav>
 
-            {/* Global Creative Mode Switch */}
-            <div className="flex items-center bg-warm-100 dark:bg-warm-800 p-1 rounded-xl shadow-inner border border-warm-200 dark:border-warm-750">
+            {/* Global Creative Mode Switch (Compact iOS Segmented Selector) */}
+            <div className="flex items-center bg-warm-200/60 dark:bg-warm-800/80 p-0.5 rounded-lg border border-warm-200/80 dark:border-warm-750/80">
               <button
                 onClick={() => creativeMode !== 'roleplay' && toggleCreativeMode()}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all duration-200 ${
                   creativeMode === 'roleplay' 
-                    ? 'bg-white dark:bg-warm-900 text-red-600 dark:text-red-400 shadow-sm' 
+                    ? 'bg-white dark:bg-warm-900 text-red-600 dark:text-red-400 shadow-sm font-semibold' 
                     : 'text-warm-500 hover:text-warm-700 dark:hover:text-warm-300'
                 }`}
               >
-                <MessageSquare size={14} /> AI Roleplay
+                <MessageSquare size={13} /> Roleplay
               </button>
               <button
                 onClick={() => creativeMode !== 'storytelling' && toggleCreativeMode()}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all duration-200 ${
                   creativeMode === 'storytelling' 
-                    ? 'bg-white dark:bg-warm-900 text-purple-600 dark:text-purple-400 shadow-sm' 
+                    ? 'bg-white dark:bg-warm-900 text-purple-600 dark:text-purple-400 shadow-sm font-semibold' 
                     : 'text-warm-500 hover:text-warm-700 dark:hover:text-warm-300'
                 }`}
               >
-                <PenTool size={14} /> Storytelling
+                <PenTool size={13} /> Story
               </button>
             </div>
           </div>
@@ -298,24 +298,24 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               </div>
 
               {/* Mobile Mode Toggle */}
-              <div className="p-4 border-b border-warm-100 dark:border-warm-800 bg-warm-50 dark:bg-warm-900/50">
-                <div className="text-[10px] uppercase font-bold tracking-widest text-warm-400 mb-2">Creative Mode</div>
-                <div className="flex bg-warm-200 dark:bg-warm-800 p-1 rounded-xl">
+              <div className="p-3 border-b border-warm-100 dark:border-warm-800 bg-warm-50 dark:bg-warm-900/50">
+                <div className="text-[10px] uppercase font-bold tracking-widest text-warm-400 mb-1.5">Creative Mode</div>
+                <div className="flex bg-warm-200/70 dark:bg-warm-800/70 p-0.5 rounded-lg">
                   <button
                     onClick={() => creativeMode !== 'roleplay' && toggleCreativeMode()}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all ${
-                      creativeMode === 'roleplay' ? 'bg-white dark:bg-warm-900 text-red-600 dark:text-red-400 shadow-sm' : 'text-warm-500'
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all ${
+                      creativeMode === 'roleplay' ? 'bg-white dark:bg-warm-900 text-red-600 dark:text-red-400 shadow-sm font-semibold' : 'text-warm-500'
                     }`}
                   >
-                    <MessageSquare size={14} /> Roleplay
+                    <MessageSquare size={13} /> Roleplay
                   </button>
                   <button
                     onClick={() => creativeMode !== 'storytelling' && toggleCreativeMode()}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all ${
-                      creativeMode === 'storytelling' ? 'bg-white dark:bg-warm-900 text-purple-600 dark:text-purple-400 shadow-sm' : 'text-warm-500'
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all ${
+                      creativeMode === 'storytelling' ? 'bg-white dark:bg-warm-900 text-purple-600 dark:text-purple-400 shadow-sm font-semibold' : 'text-warm-500'
                     }`}
                   >
-                    <PenTool size={14} /> Story
+                    <PenTool size={13} /> Story
                   </button>
                 </div>
               </div>
