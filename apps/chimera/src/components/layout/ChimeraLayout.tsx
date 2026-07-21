@@ -107,13 +107,13 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
           end={link.path === '/'}
           onClick={link.comingSoon ? (e) => e.preventDefault() : undefined}
           className={({ isActive }) =>
-            `relative px-3 py-2 text-sm font-medium transition-colors ${
+            `relative px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap inline-flex items-center shrink-0 ${
               link.comingSoon
                 ? 'text-warm-400 dark:text-warm-600 cursor-default'
                 : isActive
-                  ? 'text-red-600 dark:text-red-400'
+                  ? 'text-red-600 dark:text-red-400 font-semibold'
                   : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-warm-100'
-            } ${isMobile ? 'block w-full rounded-lg hover:bg-warm-100 dark:hover:bg-warm-800' : ''}`
+            } ${isMobile ? 'flex w-full rounded-lg hover:bg-warm-100 dark:hover:bg-warm-800' : ''}`
           }
         >
           {({ isActive }) => (
@@ -171,9 +171,9 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
           </div>
 
           {/* Center: Dynamic Links & Global Mode Switch */}
-          <div className="hidden lg:flex flex-1 items-center justify-between mx-8">
+          <div className="hidden lg:flex flex-1 items-center justify-between mx-4 xl:mx-6 min-w-0">
             {/* Navigation Links */}
-            <nav className="flex items-center gap-1">
+            <nav className="flex items-center gap-1 shrink-0">
               {renderNavLinks()}
             </nav>
 
