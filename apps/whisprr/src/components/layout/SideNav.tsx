@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   Home, Compass, Users, MessageCircle, Bell, ShieldAlert, Sparkles,
   User, Settings, Shield, HelpCircle, LogOut, ChevronUp, Bot,
-  Monitor, Sun, Moon
+  Monitor, Sun, Moon, LayoutGrid
 } from 'lucide-react';
 import { useNotifications } from '../../contexts/NotificationsContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -21,6 +21,7 @@ const navItems = [
   { path: '/communities', icon: Users, label: 'Communities' },
   { path: '/messages', icon: MessageCircle, label: 'Messages' },
   { path: '/notifications', icon: Bell, label: 'Notifications' },
+  { path: '#app-switcher', icon: LayoutGrid, label: 'App Switcher', isAction: true },
   { path: '#chimera', icon: Bot, label: 'CHIMERA', isChimera: true },
 ];
 
@@ -160,6 +161,11 @@ export function SideNav() {
               key={path}
               to={path}
               onClick={(e) => {
+                if (item.isAction && item.label === 'App Switcher') {
+                  e.preventDefault();
+                  window.dispatchEvent(new CustomEvent('open-app-launcher'));
+                  return;
+                }
                 if (isChimera) {
                   e.preventDefault();
                   window.dispatchEvent(new CustomEvent('open-chimera-promo'));

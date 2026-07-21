@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import { useToast } from './ToastContext';
+import { WellnessBreakModal } from '../components/common/WellnessBreakModal';
 
 interface WellnessContextType {
   isQuietHoursActive: boolean;
@@ -13,10 +13,11 @@ const WellnessContext = createContext<WellnessContextType | undefined>(undefined
 
 export function WellnessProvider({ children }: { children: ReactNode }) {
   const { profile } = useAuth();
-  const { showToast } = useToast();
   
   const [isQuietHoursActive, setIsQuietHoursActive] = useState(false);
   const [activeMinutes, setActiveMinutes] = useState(0);
+  const [isBreakModalOpen, setIsBreakModalOpen] = useState(false);
+  const [currentBreakMessage, setCurrentBreakMessage] = useState('');
   
   const lastActivityRef = useRef<number>(Date.now());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -98,9 +99,10 @@ export function WellnessProvider({ children }: { children: ReactNode }) {
           const isRemindersEnabled = (profile as any).wellness_break_reminders_enabled || false;
           
           if (isRemindersEnabled && next >= frequency) {
-            // Trigger a random positive wellness reminder toast
+            // Trigger a random positive wellness reminder modal
             const randomIndex = Math.floor(Math.random() * WELLNESS_MESSAGES.length);
-            showToast(WELLNESS_MESSAGES[randomIndex], 'info');
+            setCurrentBreakMessage(WELLNESS_MESSAGES[randomIndex]);
+            setIsBreakModalOpen(true);
             return 0; // Reset active minutes
           }
           return next;
@@ -111,7 +113,7 @@ export function WellnessProvider({ children }: { children: ReactNode }) {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [profile, showToast]);
+  }, [profile]);
 
   // Schedule quiet hours check every minute
   useEffect(() => {
@@ -130,6 +132,15 @@ export function WellnessProvider({ children }: { children: ReactNode }) {
   return (
     <WellnessContext.Provider value={{ isQuietHoursActive, activeMinutes, resetActiveMinutes }}>
       {children}
+      <WellnessBreakModal 
+        isOpen={isBreakModalOpen}
+        message={currentBreakMessage}
+        onDismiss={() => setIsBreakModalOpen(false)}
+        onTakeBreak={() => {
+          setIsBreakModalOpen(false);
+          // Optional: we could navigate them to a breathing exercise page or just close
+        }}
+      />
     </WellnessContext.Provider>
   );
 }

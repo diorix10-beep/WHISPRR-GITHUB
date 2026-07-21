@@ -19,9 +19,12 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
     onClose();
   };
 
+  const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+  const chimeraUrl = isLocalhost ? 'http://localhost:5175' : 'https://chimera.whisprr.xyz';
+
   const apps = [
     { name: 'WHISPRR', desc: 'Social Network', path: '/feed', icon: Globe, color: 'bg-primary-500/10 text-primary-500 border-primary-500/20 hover:bg-primary-500/20', external: false },
-    { name: 'CHIMERA', desc: 'Roleplay Studio', path: '#chimera', icon: Bot, color: 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20', isChimera: true },
+    { name: 'CHIMERA', desc: 'Roleplay Studio', path: chimeraUrl, icon: Bot, color: 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20', external: true },
   ];
 
   const moreLinks = [
@@ -58,16 +61,12 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
             {apps.map((app) => {
               const Icon = app.icon;
               const isExternal = 'external' in app && app.external;
-              const isChimera = 'isChimera' in app && app.isChimera;
               
               return (
                 <button
                   key={app.name}
                   onClick={() => {
-                    if (isChimera) {
-                      window.dispatchEvent(new CustomEvent('open-chimera-promo'));
-                      onClose();
-                    } else if (isExternal) {
+                    if (isExternal) {
                       window.location.href = app.path;
                     } else {
                       handleNavigate(app.path);

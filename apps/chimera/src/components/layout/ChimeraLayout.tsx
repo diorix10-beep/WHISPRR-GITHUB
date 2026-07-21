@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { Outlet, useNavigate, NavLink, useLocation, Link } from 'react-router-dom';
 import {
   Menu, Sun, Moon, Monitor, Search, Command, Plus, Sparkles, Grid3X3, Settings, LogOut,
-  Palette, Users, Globe, PenTool, MessageSquare
+  Palette, Users, Globe, PenTool, MessageSquare, LayoutGrid
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -149,6 +149,14 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               className="lg:hidden p-2 -ml-2 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
             >
               <Menu size={20} />
+            </button>
+
+            <button
+              onClick={() => setShowAppLauncher(true)}
+              className="hidden lg:block p-2 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
+              title="App Switcher"
+            >
+              <LayoutGrid size={20} />
             </button>
             
             <Link to="/" className="flex items-center gap-2.5 group">
