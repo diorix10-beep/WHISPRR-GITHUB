@@ -15,7 +15,6 @@ export default function StoryReaderPage() {
 
   const [story, setStory] = useState<Story | null>(null);
   const [chapters, setChapters] = useState<StoryChapter[]>([]);
-  const [author, setAuthor] = useState<any | null>(null);
   const [isCollabModalOpen, setIsCollabModalOpen] = useState(false);
   const [comments, setComments] = useState<StoryComment[]>([]);
   const [newComment, setNewComment] = useState('');
