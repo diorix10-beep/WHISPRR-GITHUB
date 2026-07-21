@@ -77,10 +77,8 @@ export default function ChimeraChatsPage() {
       );
 
       // Only display chats with AI Characters (role: 'ai_character')
-      // Exclude Oracle Family members
       const chimeraChats = conversationsWithProfiles.filter(
-        (c) => c.other_user?.role === 'ai_character' && 
-               !['Oracle', 'Iris', 'Atlas', 'Athena', 'Aegis', 'Whisprr'].includes(c.other_user?.display_name || '')
+        (c) => c.other_user?.role === 'ai_character'
       );
 
       setConversations(chimeraChats);
@@ -146,12 +144,11 @@ export default function ChimeraChatsPage() {
 
     setSearching(true);
     try {
-      // Find public AI Characters to chat with (excluding Oracle Family)
+      // Find public AI Characters to chat with
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('role', 'ai_character')
-        .not('display_name', 'in', '("Oracle","Iris","Atlas","Athena","Aegis","Whisprr")')
         .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
         .limit(10);
 

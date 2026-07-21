@@ -29,7 +29,6 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
   const apps = [
     { name: 'WHISPRR', desc: 'Social Network', path: `${whisprrUrl}/feed`, icon: Globe, color: 'bg-primary-500/10 text-primary-500 border-primary-500/20 hover:bg-primary-500/20', external: true },
     { name: 'CHIMERA', desc: 'Roleplay & Storytelling', path: '/', logoUrl: '/chimera_logo.png', color: 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20' },
-    { name: 'Oracle Help', desc: 'System Oracle', path: '/oracle', icon: HelpCircle, color: 'bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20' },
   ];
 
   const moreLinks = [
@@ -37,7 +36,6 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
     { label: 'Saved & Bookmarks', path: `${whisprrUrl}/discover?tab=bookmarks`, icon: Bookmark, external: true },
     { label: 'CHIMERA Studio / Drafts', path: '/personas', icon: FileText },
     { label: 'Settings', path: '/settings', icon: Settings },
-    { label: 'Help Center', path: '/oracle', icon: HelpCircle },
     { label: 'Account Security', path: '/settings', icon: Shield },
     { label: 'Platform Trust Center', path: '/trust', icon: Layers },
   ];
