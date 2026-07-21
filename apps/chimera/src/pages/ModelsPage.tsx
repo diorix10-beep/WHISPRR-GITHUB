@@ -7,8 +7,10 @@ import { useToast } from '../contexts/ToastContext';
 interface ModelInfo {
   id: string;
   name: string;
+  codename: string;
   provider: 'gemini' | 'openrouter' | 'deepseek';
   company: string;
+  engineName: string;
   description: string;
   strengths: string[];
   context_length: string;
@@ -19,43 +21,51 @@ interface ModelInfo {
 const AVAILABLE_MODELS: ModelInfo[] = [
   {
     id: 'gemini-2.5-flash',
-    name: 'Gemini 2.5 Flash',
+    name: 'SUPERNOVA',
+    codename: '✨ SUPERNOVA',
     provider: 'gemini',
     company: 'Google',
-    description: 'Blazing fast, highly capable model. Great for most roleplay and general conversation.',
-    strengths: ['Speed', 'Creative Writing', 'Reasoning'],
+    engineName: 'Gemini 2.5 Flash',
+    description: 'Blazing fast creative energy with 2M token context. Ideal for swift roleplay and dynamic conversation.',
+    strengths: ['Speed', 'Creative Writing', '2M Context'],
     context_length: '2M tokens',
     is_nsfw_allowed: false,
     tier: 'free'
   },
   {
     id: 'anthropic/claude-3.5-sonnet',
-    name: 'Claude 3.5 Sonnet',
+    name: 'ECLIPSE',
+    codename: '🌓 ECLIPSE',
     provider: 'openrouter',
     company: 'Anthropic',
-    description: 'The industry leader in nuanced roleplay, character voice, and complex storytelling.',
-    strengths: ['Emotional Intelligence', 'Nuance', 'Formatting'],
+    engineName: 'Claude 3.5 Sonnet',
+    description: 'Deep emotional shadow & light storytelling. The gold standard for character voice and narrative nuance.',
+    strengths: ['Emotional Depth', 'Nuance', 'Formatting'],
     context_length: '200K tokens',
     is_nsfw_allowed: true,
     tier: 'premium'
   },
   {
     id: 'deepseek/deepseek-r1',
-    name: 'DeepSeek-R1',
+    name: 'SINGULARITY',
+    codename: '🕳️ SINGULARITY',
     provider: 'deepseek',
     company: 'DeepSeek',
-    description: 'Advanced reasoning model with deep chain-of-thought narrative planning and unconstrained creative roleplay.',
-    strengths: ['Deep Reasoning', 'Complex Plots', 'High Context'],
+    engineName: 'DeepSeek-R1',
+    description: 'Infinite chain-of-thought depth with advanced reasoning and complex multi-layered plot planning.',
+    strengths: ['Deep Reasoning', 'Complex Plots', 'Unconstrained'],
     context_length: '128K tokens',
     is_nsfw_allowed: true,
     tier: 'premium'
   },
   {
     id: 'meta-llama/llama-3-70b-instruct',
-    name: 'Llama 3 (70B)',
+    name: 'NEBULA',
+    codename: '💫 NEBULA',
     provider: 'openrouter',
     company: 'Meta',
-    description: 'A massive open-source model. Fully uncensored and great for intense, unrestricted narratives.',
+    engineName: 'Llama 3 (70B)',
+    description: 'Expansive, open-ended universe building. Fully uncensored for intense and raw roleplay scenarios.',
     strengths: ['Uncensored', 'Directness', 'World-building'],
     context_length: '8K tokens',
     is_nsfw_allowed: true,
@@ -63,11 +73,13 @@ const AVAILABLE_MODELS: ModelInfo[] = [
   },
   {
     id: 'openai/gpt-4o',
-    name: 'GPT-4o',
+    name: 'COSMOS',
+    codename: '🌐 COSMOS',
     provider: 'openrouter',
     company: 'OpenAI',
-    description: 'Powerful, intelligent, and highly logical. Good for complex scenarios and factual worldbuilding.',
-    strengths: ['Logic', 'Consistency', 'World-building'],
+    engineName: 'GPT-4o',
+    description: 'Universal knowledge base with high structural logic, consistency, and precise scene mechanics.',
+    strengths: ['Logic', 'Consistency', 'World Knowledge'],
     context_length: '128K tokens',
     is_nsfw_allowed: false,
     tier: 'premium'
@@ -194,10 +206,12 @@ export default function ModelsPage() {
                   {model.provider === 'gemini' ? <Zap size={24} /> : <Cpu size={24} />}
                 </div>
                 <div>
-                  <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-white">
-                    {model.name}
+                  <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-white flex items-center gap-2">
+                    {model.codename}
                   </h3>
-                  <p className="text-xs text-warm-500 font-medium">{model.company}</p>
+                  <p className="text-xs text-red-600 dark:text-red-400 font-medium tracking-wide mt-0.5">
+                    Powered by {model.company} {model.engineName}
+                  </p>
                 </div>
               </div>
 
