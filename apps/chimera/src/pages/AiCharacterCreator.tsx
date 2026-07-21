@@ -7,13 +7,15 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
+import { StructuredArchitectureForm } from '../components/character/StructuredArchitectureForm';
+import { compileCharacterSystemPrompt, type CharacterArchitecture } from '../lib/promptCompiler';
 
 export default function AiCharacterCreator() {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const { showToast } = useToast();
 
-  const [activeTab, setActiveTab] = useState<'general' | 'definition'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'architecture' | 'definition'>('general');
   const [loading, setLoading] = useState(false);
 
   // Sync / Network States
@@ -50,6 +52,8 @@ export default function AiCharacterCreator() {
     exampleConversations: '',
     tagsString: ''
   });
+
+  const [archData, setArchData] = useState<CharacterArchitecture>({});
 
   // Track online/offline status
   useEffect(() => {
@@ -233,6 +237,17 @@ export default function AiCharacterCreator() {
               General
             </button>
             <button
+              onClick={() => setActiveTab('architecture')}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === 'architecture' 
+                  ? 'bg-warm-800 text-white' 
+                  : 'text-warm-400 hover:bg-warm-800/50 hover:text-white'
+              }`}
+            >
+              <Bot size={16} />
+              16-Section Architecture
+            </button>
+            <button
               onClick={() => setActiveTab('definition')}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === 'definition' 
@@ -241,7 +256,7 @@ export default function AiCharacterCreator() {
               }`}
             >
               <FileText size={16} />
-              Definition
+              Raw Definition
             </button>
           </nav>
         </div>
@@ -413,6 +428,43 @@ export default function AiCharacterCreator() {
                   </div>
 
                 </div>
+              </>
+            ) : activeTab === 'architecture' ? (
+              <>
+                <div className="flex items-center justify-between mb-4 border-b border-warm-800 pb-4">
+                  <div>
+                    <h3 className="text-xl font-serif font-bold text-white">16-Section Persona Architecture</h3>
+                    <p className="text-xs text-warm-400 mt-1">
+                      Fill out dedicated sections to build a bullet-proof, consistent AI character. CHIMERA will automatically compile this into an optimal system prompt.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const compiled = compileCharacterSystemPrompt(archData);
+                      setFormData(prev => ({ ...prev, personality: compiled }));
+                      showToast('Compiled 16-section architecture into System Prompt!', 'success');
+                    }}
+                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center gap-1.5 shrink-0"
+                  >
+                    <Sparkles size={14} />
+                    Compile to System Prompt
+                  </button>
+                </div>
+
+                <StructuredArchitectureForm
+                  value={archData}
+                  onChange={(updated) => {
+                    setArchData(updated);
+                    // Automatically compile and sync personality field
+                    const compiled = compileCharacterSystemPrompt(updated);
+                    setFormData(prev => ({
+                      ...prev,
+                      name: updated.name || prev.name,
+                      personality: compiled
+                    }));
+                  }}
+                />
               </>
             ) : (
               <>
