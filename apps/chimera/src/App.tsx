@@ -172,10 +172,8 @@ function AppLoader() {
           {/* ── CHIMERA Platform (with Layout) ────────────── */}
           <Route element={<ChimeraLayout />}>
 
-            {/* Dashboard */}
-            <Route path="/dashboard" element={<CreatorDashboardPage />} />
-            
-            {/* Discover */}
+            {/* Dashboard redirect & Discover Feed */}
+            <Route path="/dashboard" element={<Navigate to="/discover" replace />} />
             <Route path="/" element={<DiscoverPage />} />
             <Route path="/discover" element={<DiscoverPage />} />
 
