@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Brain, Plus, Search, Filter, Trash2, Edit2, Loader2, Sparkles, BookOpen, Heart, Clock, FileText, Settings, X, Save } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../contexts/AuthContext';
 import type { CharacterMemory, MemoryType } from '../types';
 
 interface AiCharacter {
