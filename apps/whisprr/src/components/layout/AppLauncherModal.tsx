@@ -30,7 +30,7 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
 
   const moreLinks = [
     { label: 'My Profile', path: '/profile', icon: User },
-    { label: 'Saved & Bookmarks', path: '/discover?tab=bookmarks', icon: Bookmark },
+    { label: 'Bookmarks', path: '/bookmarks', icon: Bookmark },
     { label: 'Settings', path: '/settings', icon: Settings },
     { label: 'Account Security', path: '/settings', icon: Shield },
     { label: 'Platform Trust Center', path: '/trust', icon: Layers },

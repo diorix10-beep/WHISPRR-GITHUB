@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   Home, Compass, Users, MessageCircle, Bell, Sparkles,
   User, Settings, Shield, HelpCircle, LogOut, ChevronUp,
-  Monitor, Sun, Moon, LayoutGrid, Crown
+  Monitor, Sun, Moon, LayoutGrid, Crown, Bookmark
 } from 'lucide-react';
 import { useNotifications } from '../../contexts/NotificationsContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -21,6 +21,7 @@ const navItems = [
   { path: '/communities', icon: Users, label: 'Communities' },
   { path: '/messages', icon: MessageCircle, label: 'Messages' },
   { path: '/notifications', icon: Bell, label: 'Notifications' },
+  { path: '/bookmarks', icon: Bookmark, label: 'Bookmarks' },
   { path: '#app-switcher', icon: LayoutGrid, label: 'App Switcher', isAction: true },
 ];
 

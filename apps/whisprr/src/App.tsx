@@ -19,6 +19,7 @@ const AuthPage           = lazy(() => import('./pages/AuthPage'));
 const OnboardingPage     = lazy(() => import('./pages/OnboardingPage'));
 const FeedPage           = lazy(() => import('./pages/FeedPage'));
 const DiscoverPage       = lazy(() => import('./pages/DiscoverPage'));
+const BookmarksPage      = lazy(() => import('./pages/BookmarksPage'));
 const MessagesPage       = lazy(() => import('./pages/MessagesPage'));
 const ConversationPage   = lazy(() => import('./pages/ConversationPage'));
 const ProfilePage        = lazy(() => import('./pages/ProfilePage'));
@@ -172,6 +173,7 @@ function AppLoader() {
           {/* WHISPRR Platform */}
           <Route element={<AppLayout />}>
             <Route path="/discover" element={<DiscoverPage />} />
+            <Route path="/bookmarks" element={<BookmarksPage />} />
             <Route path="/feed" element={<FeedPage />} />
             <Route path="/messages" element={<MessagesPage />} />
             <Route path="/messages/:conversationId" element={<ConversationPage />} />

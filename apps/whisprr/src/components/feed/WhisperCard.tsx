@@ -272,11 +272,49 @@ export const WhisperCard = memo(function WhisperCard({
     setShowShareModal(true);
   }, []);
 
-  const [isBookmarked, setIsBookmarked] = useState(false);
-  const handleBookmark = useCallback(() => {
-    // Optimistic UI update, backend to be implemented in a future PR
-    setIsBookmarked(prev => !prev);
-  }, []);
+  const [isBookmarked, setIsBookmarked] = useState(
+    whisper.bookmarks?.some(b => b.user_id === user?.id) || false
+  );
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
+
+  const handleBookmark = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user || bookmarkLoading) return;
+    
+    setBookmarkLoading(true);
+    try {
+      if (isBookmarked) {
+        setIsBookmarked(false);
+        const { error } = await supabase
+          .from('bookmarks')
+          .delete()
+          .eq('whisper_id', whisper.id)
+          .eq('user_id', user.id);
+        
+        if (error) {
+          setIsBookmarked(true); // Revert on failure
+          throw error;
+        }
+      } else {
+        setIsBookmarked(true);
+        const { error } = await supabase
+          .from('bookmarks')
+          .insert({
+            whisper_id: whisper.id,
+            user_id: user.id
+          });
+          
+        if (error) {
+          setIsBookmarked(false); // Revert on failure
+          throw error;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to toggle bookmark:', err);
+    } finally {
+      setBookmarkLoading(false);
+    }
+  };
 
   const getWhisperBadges = () => {
     const list = [...(whisperProfile?.badges || [])];
@@ -705,10 +743,11 @@ export const WhisperCard = memo(function WhisperCard({
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={handleBookmark}
+          disabled={bookmarkLoading}
           className={`p-2 rounded-full transition-colors ${isBookmarked
             ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/20'
             : 'text-warm-400 hover:text-warm-600 dark:hover:text-warm-200 hover:bg-warm-100 dark:hover:bg-warm-800'
-            }`}
+            } ${bookmarkLoading ? 'opacity-50' : ''}`}
           title="Save Whisper"
         >
           <Bookmark size={16} fill={isBookmarked ? 'currentColor' : 'none'} />

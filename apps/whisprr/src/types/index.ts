@@ -86,6 +86,7 @@ export interface Whisper {
   profiles?: Profile;
   reactions?: Reaction[];
   comment_count?: number;
+  bookmarks?: Bookmark[];
   is_pinned?: boolean;
   is_removed?: boolean;
   removed_by?: string | null;
@@ -97,6 +98,13 @@ export interface Reaction {
   whisper_id: string;
   user_id: string;
   type: 'felt' | 'warmth' | 'spark';
+  created_at: string;
+}
+
+export interface Bookmark {
+  id: string;
+  whisper_id: string;
+  user_id: string;
   created_at: string;
 }
 
