@@ -63,57 +63,8 @@ export function SideNav() {
   return (
     <div className="flex flex-col h-full relative">
       {/* ── Brand header ────────────────────────────────────── */}
-      <div className="px-5 py-5 border-b border-warm-100 dark:border-warm-800">
-        <div className="flex items-center gap-3">
-          {/* W icon-only mark */}
-          <svg
-            width="32"
-            height="32"
-            viewBox="0 0 52 62"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-            style={{ flexShrink: 0 }}
-          >
-            <defs>
-              <linearGradient id="sidenav-wgrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#a855f7" />
-                <stop offset="100%" stopColor="#7c3aed" />
-              </linearGradient>
-            </defs>
-            {/* Bold W lettermark */}
-            <path
-              d="M2 8 L14 50 L26 22 L38 50 L50 8"
-              stroke="url(#sidenav-wgrad)"
-              strokeWidth="10"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
-            {/* Sparkle */}
-            <path
-              d="M46 4 L47.2 7.8 L51 9 L47.2 10.2 L46 14 L44.8 10.2 L41 9 L44.8 7.8 Z"
-              fill="#a855f7"
-              fillOpacity="0.9"
-            />
-          </svg>
-
-          {/* Text lockup */}
-          <div>
-            <p
-              className="font-extrabold tracking-widest text-warm-900 dark:text-white"
-              style={{ fontSize: 16, lineHeight: 1.2, letterSpacing: '0.12em', fontFamily: 'Inter, -apple-system, sans-serif' }}
-            >
-              WHISPRR
-            </p>
-            <p
-              className="text-warm-400 dark:text-warm-500"
-              style={{ fontSize: 10.5, fontWeight: 500, marginTop: 2, letterSpacing: '0.01em' }}
-            >
-              The Home of Creators.
-            </p>
-          </div>
-        </div>
+      <div className="px-5 py-6 border-b border-warm-100 dark:border-warm-800 flex justify-center items-center">
+        <Logo variant="icon-only" size={40} className="shrink-0" />
       </div>
 
       {/* Nav links */}
