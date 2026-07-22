@@ -1,6 +1,6 @@
 // ============================================================
 // CHIMERA — Platform Type Definitions
-// Creative Platform types, separated from WHISPRR social types
+// AI Creation Platform types, separated from WHISPRR social types
 // ============================================================
 
 // ── Core Platform Types ─────────────────────────────────────

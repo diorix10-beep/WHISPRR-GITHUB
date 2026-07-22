@@ -1,4 +1,4 @@
-# CHIMERA — Product Vision & Development Roadmap
+# CHIMERA AI — Product Vision & Development Roadmap
 
 This document summarizes the complete vision for CHIMERA. The goal is not to copy any existing platform, but to build the best creative platform for AI Roleplay and Human Storytelling.
 
@@ -8,7 +8,7 @@ This document summarizes the complete vision for CHIMERA. The goal is not to cop
 
 CHIMERA is NOT just a chatbot.
 
-CHIMERA is a **Creative Platform**.
+CHIMERA is an **AI Creation Platform**.
 
 Everything revolves around creation — not just chatting.
 

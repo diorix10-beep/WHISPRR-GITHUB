@@ -197,7 +197,7 @@ export default function WorldBuilderPage() {
         <button
           onClick={handleSaveOverview}
           disabled={saving}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 disabled:opacity-50 shadow-sm transition-all"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 disabled:opacity-50 shadow-md shadow-purple-600/20 transition-all"
         >
           <Save size={14} />
           {saving ? 'Saving...' : 'Save'}
@@ -214,7 +214,7 @@ export default function WorldBuilderPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                 activeTab === tab.id
-                  ? 'bg-white dark:bg-warm-800 text-warm-900 dark:text-warm-50 shadow-sm border border-warm-200 dark:border-warm-700'
+                  ? 'bg-white dark:bg-warm-800 text-purple-600 dark:text-purple-400 shadow-sm border border-purple-200 dark:border-purple-800/40 font-bold'
                   : 'text-warm-500 hover:text-warm-700 dark:hover:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-850'
               }`}
             >
@@ -232,19 +232,19 @@ export default function WorldBuilderPage() {
           <div className="space-y-5">
             <div>
               <label className="block text-xs font-semibold text-warm-600 dark:text-warm-400 mb-1.5 uppercase tracking-wider">World Name</label>
-              <input value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-warm-50 dark:bg-warm-850 border border-warm-200 dark:border-warm-700 text-sm text-warm-900 dark:text-warm-50 focus:outline-none focus:ring-2 focus:ring-red-500/30" />
+              <input value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-warm-50 dark:bg-warm-850 border border-warm-200 dark:border-warm-700 text-sm text-warm-900 dark:text-warm-50 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-warm-600 dark:text-warm-400 mb-1.5 uppercase tracking-wider">Description</label>
-              <textarea value={description} onChange={e => setDescription(e.target.value)} rows={4} className="w-full px-4 py-3 rounded-xl bg-warm-50 dark:bg-warm-850 border border-warm-200 dark:border-warm-700 text-sm text-warm-900 dark:text-warm-50 focus:outline-none focus:ring-2 focus:ring-red-500/30 resize-none" placeholder="Describe your world..." />
+              <textarea value={description} onChange={e => setDescription(e.target.value)} rows={4} className="w-full px-4 py-3 rounded-xl bg-warm-50 dark:bg-warm-850 border border-warm-200 dark:border-warm-700 text-sm text-warm-900 dark:text-warm-50 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 resize-none" placeholder="Describe your world..." />
             </div>
             <div>
               <label className="block text-xs font-semibold text-warm-600 dark:text-warm-400 mb-1.5 uppercase tracking-wider">Scenario / Setting</label>
-              <textarea value={scenario} onChange={e => setScenario(e.target.value)} rows={3} className="w-full px-4 py-3 rounded-xl bg-warm-50 dark:bg-warm-850 border border-warm-200 dark:border-warm-700 text-sm text-warm-900 dark:text-warm-50 focus:outline-none focus:ring-2 focus:ring-red-500/30 resize-none" placeholder="Set the stage — what era, what rules, what atmosphere?" />
+              <textarea value={scenario} onChange={e => setScenario(e.target.value)} rows={3} className="w-full px-4 py-3 rounded-xl bg-warm-50 dark:bg-warm-850 border border-warm-200 dark:border-warm-700 text-sm text-warm-900 dark:text-warm-50 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 resize-none" placeholder="Set the stage — what era, what rules, what atmosphere?" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-warm-600 dark:text-warm-400 mb-1.5 uppercase tracking-wider">Tags</label>
-              <input value={tags} onChange={e => setTags(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-warm-50 dark:bg-warm-850 border border-warm-200 dark:border-warm-700 text-sm text-warm-900 dark:text-warm-50 focus:outline-none focus:ring-2 focus:ring-red-500/30" placeholder="fantasy, medieval, dragons, magic..." />
+              <input value={tags} onChange={e => setTags(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-warm-50 dark:bg-warm-850 border border-warm-200 dark:border-warm-700 text-sm text-warm-900 dark:text-warm-50 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500" placeholder="fantasy, medieval, dragons, magic..." />
               <p className="text-[10px] text-warm-400 mt-1">Separate with commas</p>
             </div>
           </div>
@@ -260,7 +260,7 @@ export default function WorldBuilderPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm text-warm-500">Define the places that exist in your world.</p>
-              <button onClick={addLocation} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-red-600 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition">
+              <button onClick={addLocation} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition">
                 <Plus size={14} /> Add Location
               </button>
             </div>
@@ -274,18 +274,18 @@ export default function WorldBuilderPage() {
                       <input
                         value={loc.name}
                         onChange={e => updateLocation(loc.id, { name: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 text-sm font-medium text-warm-900 dark:text-warm-50 focus:outline-none focus:ring-2 focus:ring-red-500/30"
+                        className="w-full px-3 py-2 rounded-lg bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 text-sm font-medium text-warm-900 dark:text-warm-50 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500"
                         placeholder="Location name..."
                       />
                       <textarea
                         value={loc.description}
                         onChange={e => updateLocation(loc.id, { description: e.target.value })}
                         rows={2}
-                        className="w-full px-3 py-2 rounded-lg bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 text-xs text-warm-600 dark:text-warm-400 focus:outline-none focus:ring-2 focus:ring-red-500/30 resize-none"
+                        className="w-full px-3 py-2 rounded-lg bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 text-xs text-warm-600 dark:text-warm-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 resize-none"
                         placeholder="Describe this location..."
                       />
                     </div>
-                    <button onClick={() => deleteLocation(loc.id)} className="p-2 rounded-lg text-warm-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 self-start transition">
+                    <button onClick={() => deleteLocation(loc.id)} className="p-2 rounded-lg text-warm-400 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 self-start transition">
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -300,7 +300,7 @@ export default function WorldBuilderPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm text-warm-500">Organizations, groups, governments, and powers.</p>
-              <button onClick={addFaction} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-red-600 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition">
+              <button onClick={addFaction} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition">
                 <Plus size={14} /> Add Faction
               </button>
             </div>
@@ -314,7 +314,7 @@ export default function WorldBuilderPage() {
                       <input
                         value={fac.name}
                         onChange={e => updateFaction(fac.id, { name: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 text-sm font-medium text-warm-900 dark:text-warm-50 focus:outline-none focus:ring-2 focus:ring-red-500/30"
+                        className="w-full px-3 py-2 rounded-lg bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 text-sm font-medium text-warm-900 dark:text-warm-50 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500"
                         placeholder="Faction name..."
                       />
                       <div className="flex gap-2">
@@ -332,11 +332,11 @@ export default function WorldBuilderPage() {
                         value={fac.description}
                         onChange={e => updateFaction(fac.id, { description: e.target.value })}
                         rows={2}
-                        className="w-full px-3 py-2 rounded-lg bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 text-xs text-warm-600 dark:text-warm-400 focus:outline-none focus:ring-2 focus:ring-red-500/30 resize-none"
+                        className="w-full px-3 py-2 rounded-lg bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 text-xs text-warm-600 dark:text-warm-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 resize-none"
                         placeholder="Describe this faction..."
                       />
                     </div>
-                    <button onClick={() => deleteFaction(fac.id)} className="p-2 rounded-lg text-warm-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 self-start transition">
+                    <button onClick={() => deleteFaction(fac.id)} className="p-2 rounded-lg text-warm-400 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 self-start transition">
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -351,7 +351,7 @@ export default function WorldBuilderPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm text-warm-500">Chronological events that shaped your world.</p>
-              <button onClick={addTimelineEvent} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-red-600 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition">
+              <button onClick={addTimelineEvent} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition">
                 <Plus size={14} /> Add Event
               </button>
             </div>
@@ -362,7 +362,7 @@ export default function WorldBuilderPage() {
                 <div className="absolute left-[11px] top-2 bottom-2 w-px bg-warm-200 dark:bg-warm-700" />
                 {timeline.map(ev => (
                   <div key={ev.id} className="relative flex gap-3">
-                    <div className="absolute left-[-17px] top-4 w-3 h-3 rounded-full bg-red-500 border-2 border-white dark:border-warm-800" />
+                    <div className="absolute left-[-17px] top-4 w-3 h-3 rounded-full bg-purple-500 border-2 border-white dark:border-warm-800" />
                     <div className="flex-1 p-4 rounded-xl bg-warm-50 dark:bg-warm-850 border border-warm-200 dark:border-warm-700 space-y-2">
                       <div className="flex gap-2">
                         <input
@@ -386,7 +386,7 @@ export default function WorldBuilderPage() {
                         placeholder="What happened?"
                       />
                     </div>
-                    <button onClick={() => deleteTimelineEvent(ev.id)} className="p-2 rounded-lg text-warm-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 self-start transition">
+                    <button onClick={() => deleteTimelineEvent(ev.id)} className="p-2 rounded-lg text-warm-400 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 self-start transition">
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -406,7 +406,7 @@ export default function WorldBuilderPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {linkedCharacters.map((wc: any) => (
                   <div key={wc.id} className="flex items-center gap-3 p-3 rounded-xl bg-warm-50 dark:bg-warm-850 border border-warm-200 dark:border-warm-700">
-                    <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-lg flex-shrink-0">
+                    <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-lg flex-shrink-0">
                       {wc.character?.bot_profile?.photo_url ? (
                         <img src={wc.character.bot_profile.photo_url} alt="" className="w-full h-full object-cover rounded-lg" />
                       ) : (
@@ -433,8 +433,8 @@ export default function WorldBuilderPage() {
             ) : (
               <div className="space-y-2">
                 {linkedLorebooks.map((ll: any) => (
-                  <div key={ll.id} className="flex items-center gap-3 p-4 rounded-xl bg-warm-50 dark:bg-warm-850 border border-warm-200 dark:border-warm-700 cursor-pointer hover:border-red-300 transition" onClick={() => navigate(`/lorebooks/${ll.lorebook?.id}`)}>
-                    <BookOpen size={16} className="text-warm-400 flex-shrink-0" />
+                  <div key={ll.id} className="flex items-center gap-3 p-4 rounded-xl bg-warm-50 dark:bg-warm-850 border border-warm-200 dark:border-warm-700 cursor-pointer hover:border-purple-400 transition" onClick={() => navigate(`/lorebooks/${ll.lorebook?.id}`)}>
+                    <BookOpen size={16} className="text-purple-400 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-warm-900 dark:text-warm-50 truncate">{ll.lorebook?.title || 'Untitled'}</p>
                       <p className="text-[10px] text-warm-400">{ll.lorebook?.entry_count || 0} entries</p>
@@ -458,7 +458,7 @@ export default function WorldBuilderPage() {
                     onClick={() => setVisibility(v)}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                       visibility === v
-                        ? 'bg-red-500 text-white shadow-sm'
+                        ? 'bg-purple-600 text-white shadow-sm font-bold'
                         : 'bg-warm-100 dark:bg-warm-750 text-warm-600 dark:text-warm-400 hover:bg-warm-200'
                     }`}
                   >
