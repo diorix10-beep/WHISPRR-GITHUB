@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Avatar } from '../common/Avatar';
 import { AppLauncherModal } from './AppLauncherModal';
+import { MobileNavigationDrawer } from './MobileNavigationDrawer';
 
 interface ChimeraLayoutProps {
   children?: ReactNode;
@@ -288,61 +289,14 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
         </div>
 
         {/* Mobile Navigation Drawer */}
-        {isMenuOpen && (
-          <div className="lg:hidden">
-            <div className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)} />
-            <div className="fixed inset-y-0 left-0 w-64 bg-white dark:bg-warm-850 z-50 border-r border-warm-200 dark:border-warm-800 shadow-2xl flex flex-col">
-              <div className="p-4 border-b border-warm-200 dark:border-warm-800 flex justify-between items-center">
-                <span className="font-serif text-lg font-bold text-red-600 dark:text-red-500">Menu</span>
-                <button onClick={() => setIsMenuOpen(false)} className="text-warm-500"><X size={20} /></button>
-              </div>
-
-              {/* Mobile Mode Toggle */}
-              <div className="p-3 border-b border-warm-100 dark:border-warm-800 bg-warm-50 dark:bg-warm-900/50">
-                <div className="text-[10px] uppercase font-bold tracking-widest text-warm-400 mb-1.5">Creative Mode</div>
-                <div className="flex bg-warm-200/70 dark:bg-warm-800/70 p-0.5 rounded-lg">
-                  <button
-                    onClick={() => creativeMode !== 'roleplay' && toggleCreativeMode()}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all ${
-                      creativeMode === 'roleplay' ? 'bg-white dark:bg-warm-900 text-red-600 dark:text-red-400 shadow-sm font-semibold' : 'text-warm-500'
-                    }`}
-                  >
-                    <MessageSquare size={13} /> Roleplay
-                  </button>
-                  <button
-                    onClick={() => creativeMode !== 'storytelling' && toggleCreativeMode()}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-medium transition-all ${
-                      creativeMode === 'storytelling' ? 'bg-white dark:bg-warm-900 text-purple-600 dark:text-purple-400 shadow-sm font-semibold' : 'text-warm-500'
-                    }`}
-                  >
-                    <PenTool size={13} /> Story
-                  </button>
-                </div>
-              </div>
-
-              <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-                {renderNavLinks(true)}
-                
-                <div className="my-4 h-px bg-warm-200 dark:bg-warm-800" />
-                
-                <div className="space-y-1">
-                  <div className="px-3 py-2 text-xs font-bold text-warm-400 uppercase tracking-wider">Theme</div>
-                  <div className="flex gap-2 px-3 pb-2">
-                    {(['light', 'dark', 'system'] as const).map(mode => (
-                      <button
-                        key={mode}
-                        onClick={() => setPreference(mode)}
-                        className={`flex-1 p-2 flex justify-center rounded-lg border ${preference === mode ? 'border-red-500 text-red-600 bg-red-50 dark:bg-red-950' : 'border-warm-200 dark:border-warm-700 text-warm-600 dark:text-warm-400'}`}
-                      >
-                        {mode === 'light' ? <Sun size={16} /> : mode === 'dark' ? <Moon size={16} /> : <Monitor size={16} />}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </nav>
-            </div>
-          </div>
-        )}
+        <MobileNavigationDrawer
+          isOpen={isMenuOpen}
+          onClose={() => setIsMenuOpen(false)}
+          creativeMode={creativeMode}
+          onToggleCreativeMode={toggleCreativeMode}
+          onOpenAppLauncher={() => setShowAppLauncher(true)}
+          onOpenSearch={() => setSearchOpen(true)}
+        />
       </header>
 
       {/* Main Content Area */}
