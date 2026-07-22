@@ -1,24 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
+import { Logo } from '../components/common/Logo';
 
-// ─── Brand Logo ───────────────────────────────────────────────────────────────
-function WhisprLogo({ size = 36 }: { size?: number }) {
-  const id = `wg-lp-${size}`;
-  return (
-    <svg width={size * 2.5} height={size} viewBox="0 0 180 72" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="WHISPRR" role="img">
-      <defs>
-        <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#a855f7" />
-          <stop offset="100%" stopColor="#7c3aed" />
-        </linearGradient>
-      </defs>
-      <path d="M4 10 L16 52 L28 24 L40 52 L52 10" stroke={`url(#${id})`} strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      <path d="M62 8 L63.8 13.5 L69.5 15.3 L63.8 17.1 L62 22.5 L60.2 17.1 L54.5 15.3 L60.2 13.5 Z" fill="#a855f7" fillOpacity="0.95" />
-      <path d="M74 16 L74.9 18.6 L77.5 19.5 L74.9 20.4 L74 23 L73.1 20.4 L70.5 19.5 L73.1 18.6 Z" fill="#c084fc" fillOpacity="0.75" />
-      <text x="88" y="48" fontFamily="'Inter', -apple-system, sans-serif" fontWeight="800" fontSize="28" letterSpacing="1.5" fill="white">WHISPRR</text>
-    </svg>
-  );
-}
+// ─── Brand Logo imported from common components ────────────────────────────────
 
 function Sparkle({ style }: { style: React.CSSProperties }) {
   return (
@@ -228,7 +212,7 @@ export default function LandingPage() {
           transition: 'all 0.3s ease',
         }}>
           <div className="lp-con" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 68 }}>
-            <WhisprLogo size={28} />
+            <Logo variant="icon-only" size={28} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
               <a href="#ecosystem" className="lp-nl">Ecosystem</a>
               <a href="#creators" className="lp-nl">Creators</a>
@@ -610,7 +594,7 @@ export default function LandingPage() {
           <div className="lp-con">
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 40, justifyContent: 'space-between', marginBottom: 40 }}>
               <div style={{ maxWidth: 280 }}>
-                <WhisprLogo size={28} />
+                <Logo variant="icon-only" size={28} />
                 <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13, marginTop: 14, lineHeight: 1.6 }}>
                   The Home of Creators. Where writers, worldbuilders, and AI creators connect and build together.
                 </p>
