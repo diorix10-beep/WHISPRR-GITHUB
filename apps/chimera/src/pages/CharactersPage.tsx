@@ -58,7 +58,7 @@ export default function CharactersPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [tab, setTab] = useState<'mine' | 'all'>('mine');
+  const [tab, setTab] = useState<'mine' | 'drafts' | 'all'>('mine');
   const [sortBy, setSortBy] = useState('updated');
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
 
@@ -71,7 +71,9 @@ export default function CharactersPage() {
         .select('*, bot_profile:profiles!ai_characters_user_id_fkey(display_name, username, avatar_emoji, photo_url), creator:profiles!ai_characters_creator_id_fkey(username, display_name)');
 
       if (tab === 'mine') {
-        query = query.eq('creator_id', profile.user_id);
+        query = query.eq('creator_id', profile.user_id).neq('visibility', 'private');
+      } else if (tab === 'drafts') {
+        query = query.eq('creator_id', profile.user_id).eq('visibility', 'private');
       } else {
         query = query.or(`visibility.eq.public,creator_id.eq.${profile.user_id}`);
       }
@@ -202,7 +204,7 @@ export default function CharactersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         {/* Mine / All tabs */}
         <div className="flex bg-warm-100 dark:bg-warm-800 rounded-xl p-1 gap-1">
-          {(['mine', 'all'] as const).map(t => (
+          {(['mine', 'drafts', 'all'] as const).map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -212,7 +214,7 @@ export default function CharactersPage() {
                   : 'text-warm-500 hover:text-warm-700 dark:hover:text-warm-300'
               }`}
             >
-              {t === 'mine' ? 'My Characters' : 'All Characters'}
+              {t === 'mine' ? 'My Characters' : t === 'drafts' ? 'Drafts 📝' : 'All Characters'}
             </button>
           ))}
         </div>
@@ -321,7 +323,13 @@ export default function CharactersPage() {
             <CharacterCard
               key={c.id}
               character={c}
-              onClick={() => navigate(`/characters/${c.id}/edit`)}
+              onClick={() => {
+                if (c.visibility === 'private') {
+                  navigate(`/create?id=${c.id}`);
+                } else {
+                  navigate(`/create?id=${c.id}`);
+                }
+              }}
               actionMenu={
                 <div className="relative group/menu">
                   <button

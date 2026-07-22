@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   ArrowLeft, Save, Bot, Check, RefreshCw, 
-  Settings, AlertTriangle, User, FileText, UploadCloud, Plus, Sparkles
+  Settings, AlertTriangle, User, FileText, UploadCloud, Plus, Sparkles, Menu
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -13,9 +13,12 @@ import { compileCharacterSystemPrompt, type CharacterArchitecture } from '../lib
 
 export default function AiCharacterCreator() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('id') || searchParams.get('draftId');
   const { profile } = useAuth();
   const { showToast } = useToast();
 
+  const greetingRef = useRef<HTMLTextAreaElement>(null);
   const [activeTab, setActiveTab] = useState<'general' | 'architecture' | 'definition'>('general');
   const [loading, setLoading] = useState(false);
 
@@ -74,24 +77,66 @@ export default function AiCharacterCreator() {
     };
   }, []);
 
-  // Restore saved draft on mount
+  // Restore draft from Cloud or LocalStorage on mount
   useEffect(() => {
-    try {
-      const savedDraft = localStorage.getItem('chimera-character-creator-draft');
-      if (savedDraft) {
-        const parsed = JSON.parse(savedDraft);
-        if (parsed.formData) {
-          setFormData(parsed.formData);
+    async function loadDraft() {
+      if (editId && profile?.user_id) {
+        try {
+          setLoading(true);
+          const { data, error } = await supabase
+            .from('ai_characters')
+            .select('*')
+            .eq('id', editId)
+            .maybeSingle();
+
+          if (data) {
+            setFormData({
+              name: data.display_name || '',
+              category: data.category || 'Romance',
+              visibility: data.visibility || 'private',
+              contentRating: (data.content_rating as any) || 'SFW',
+              avatarUrl: data.photo_url || '',
+              bannerUrl: data.photo_url || '',
+              greeting: data.greeting || '',
+              shortDescription: data.short_description || '',
+              longDescription: data.long_description || '',
+              personality: data.personality || '',
+              scenario: data.scenario || '',
+              exampleDialogues: data.example_dialogues || '',
+              conversationStyle: data.conversation_style || 'Warm, conversational, structured.',
+              rpDefinition: data.rp_definition || '',
+              systemDefinition: data.system_definition || '',
+              systemCharacterDefinition: data.system_character_definition || '',
+              knowledge: data.knowledge || '',
+              creatorNotes: data.creator_notes || '',
+              exampleConversations: data.example_conversations || '',
+              tagsString: (data.tags || []).join(', ')
+            });
+            showToast(`Loaded draft: ${data.display_name || 'Untitled Character'}`, 'info');
+          }
+        } catch (e) {
+          console.error('Failed to load cloud draft:', e);
+        } finally {
+          setLoading(false);
         }
-        if (parsed.archData) {
-          setArchData(parsed.archData);
-        }
-        showToast('Restored your unsaved character draft!', 'info');
+        return;
       }
-    } catch (e) {
-      console.error('Failed to load draft:', e);
+
+      // Local storage fallback
+      try {
+        const savedDraft = localStorage.getItem('chimera-character-creator-draft');
+        if (savedDraft) {
+          const parsed = JSON.parse(savedDraft);
+          if (parsed.formData) setFormData(parsed.formData);
+          if (parsed.archData) setArchData(parsed.archData);
+          showToast('Restored your unsaved character draft!', 'info');
+        }
+      } catch (e) {
+        console.error('Failed to load local draft:', e);
+      }
     }
-  }, []);
+    loadDraft();
+  }, [editId, profile]);
 
   // Background Autosave
   useEffect(() => {
@@ -116,13 +161,50 @@ export default function AiCharacterCreator() {
     return () => clearTimeout(timer);
   }, [formData, archData, isOnline]);
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
     localStorage.setItem(
       'chimera-character-creator-draft',
       JSON.stringify({ formData, archData })
     );
+    setSaveStatus('saving');
+
+    // Cloud sync draft if logged in
+    if (profile?.user_id && formData.name.trim()) {
+      try {
+        const tempUsername = editId ? undefined : `draft_${Math.random().toString(36).substring(2, 10)}`;
+        const tags = formData.tagsString.split(',').map(t => t.trim()).filter(Boolean);
+
+        await supabase.rpc('create_ai_character', {
+          p_name: formData.name.trim(),
+          p_username: tempUsername || `draft_${Math.random().toString(36).substring(2, 8)}`,
+          p_avatar_emoji: '🤖',
+          p_greeting: formData.greeting.trim(),
+          p_short_description: formData.shortDescription.trim(),
+          p_long_description: formData.longDescription.trim(),
+          p_personality: formData.personality.trim(),
+          p_scenario: formData.scenario.trim(),
+          p_example_dialogues: formData.exampleDialogues.trim(),
+          p_conversation_style: formData.conversationStyle.trim(),
+          p_knowledge: formData.knowledge.trim(),
+          p_tags: tags,
+          p_category: formData.category,
+          p_visibility: 'private', // Drafts saved as private
+          p_avatar_url: formData.avatarUrl.trim() || '',
+          p_banner_url: formData.avatarUrl.trim() || '',
+          p_content_rating: formData.contentRating,
+          p_creator_notes: formData.creatorNotes.trim(),
+          p_example_conversations: formData.exampleConversations.trim(),
+          p_rp_definition: formData.rpDefinition.trim(),
+          p_system_definition: formData.systemDefinition.trim(),
+          p_system_character_definition: formData.systemCharacterDefinition.trim()
+        });
+      } catch (e) {
+        console.error('Cloud draft sync error:', e);
+      }
+    }
+
     setSaveStatus('saved');
-    showToast('Draft saved successfully!', 'success');
+    showToast('Draft saved & synced across your devices!', 'success');
   };
 
   const handleDiscardDraft = () => {
@@ -201,8 +283,13 @@ export default function AiCharacterCreator() {
         setPublishPipeline({ 
           isActive: true, 
           step: 'failed', 
-          error: 'A greeting message is required so roleplay can start.' 
+          error: 'First Greeting is required before publishing so roleplay can start!' 
         });
+        setActiveTab('general');
+        setTimeout(() => {
+          greetingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          greetingRef.current?.focus();
+        }, 150);
         return;
       }
 
@@ -555,9 +642,25 @@ export default function AiCharacterCreator() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-warm-400 mb-1">Initial messages (first messages) *</label>
-                    <p className="text-[10px] text-warm-500 mb-2">First message from your character. Provide a lengthy first message to encourage the character to give longer responses.</p>
-                    <div className="bg-warm-800/50 border border-warm-700 rounded-xl overflow-hidden">
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="block text-xs font-bold text-warm-400">
+                        First Message / Greeting <span className="text-red-400">*</span>
+                      </label>
+                      <span className="text-[10px] bg-red-500/20 text-red-400 font-bold px-2 py-0.5 rounded-md border border-red-500/30">
+                        * Required to Publish
+                      </span>
+                    </div>
+
+                    {!formData.greeting.trim() && publishPipeline.step === 'failed' && (
+                      <div className="mb-3 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs font-bold text-red-400 flex items-center gap-2 animate-shake">
+                        <AlertTriangle size={16} />
+                        <span>First Greeting is required so roleplay can start! Type your character's opening message below.</span>
+                      </div>
+                    )}
+
+                    <div className={`bg-warm-800/50 border rounded-xl overflow-hidden transition-all ${
+                      !formData.greeting.trim() && publishPipeline.step === 'failed' ? 'border-red-500 ring-2 ring-red-500/30' : 'border-warm-700'
+                    }`}>
                       <div className="flex bg-warm-800 border-b border-warm-700">
                         <button className="px-4 py-2 text-xs font-bold text-white border-b-2 border-red-500 bg-warm-700/50">Write</button>
                         <button className="px-4 py-2 text-xs font-bold text-warm-400 hover:text-white transition-colors">Preview</button>
@@ -567,11 +670,13 @@ export default function AiCharacterCreator() {
                         <button className="px-3 py-1.5 text-xs font-bold bg-warm-800 border border-warm-700 rounded-lg text-warm-400 hover:text-white"><Plus size={14}/></button>
                       </div>
                       <textarea
+                        ref={greetingRef}
                         name="greeting"
                         value={formData.greeting}
                         onChange={handleChange}
                         rows={6}
-                        className="w-full bg-transparent p-4 text-sm text-white focus:outline-none resize-none"
+                        placeholder="Type your character's first opening message to the user... e.g. *smiles warmly* 'Welcome! How can I assist you today?'"
+                        className="w-full bg-transparent p-4 text-sm text-white focus:outline-none resize-none placeholder:text-warm-500"
                       />
                     </div>
                   </div>

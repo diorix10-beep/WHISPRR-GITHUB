@@ -47,6 +47,11 @@ export function CharacterCard({ character, onClick, actionMenu }: CharacterCardP
           <span className="px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-md text-[10px] font-bold text-warm-200 uppercase tracking-wider border border-white/10">
             {category}
           </span>
+          {character.visibility === 'private' && (
+            <span className="px-2 py-0.5 rounded-full bg-amber-500/80 backdrop-blur-md text-[10px] font-bold text-white uppercase tracking-wider border border-amber-400/50">
+              Draft 📝
+            </span>
+          )}
           {isNSFW && (
             <span className="px-2 py-0.5 rounded-full bg-red-600/80 backdrop-blur-md text-[10px] font-bold text-white uppercase tracking-wider border border-red-500/50">
               NSFW
