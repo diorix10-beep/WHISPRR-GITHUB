@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/common/Avatar';
+import { PhotoUpload } from '../components/common/PhotoUpload';
 import type { Persona } from '../types';
 
 export default function ProfilePage() {
@@ -20,6 +21,7 @@ export default function ProfilePage() {
   });
 
   const [isEditing, setIsEditing] = useState(false);
+  const [showPhotoUpload, setShowPhotoUpload] = useState(false);
   const [editForm, setEditForm] = useState({
     display_name: '',
     bio: '',
@@ -110,7 +112,7 @@ export default function ProfilePage() {
 
       <div className="max-w-4xl mx-auto px-6 sm:px-8 relative z-10">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-16 sm:-mt-20 mb-6">
-          <div className="relative group">
+          <div className="relative group cursor-pointer" onClick={() => setShowPhotoUpload(true)}>
             <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full border-4 border-warm-50 dark:border-warm-950 bg-warm-100 dark:bg-warm-800 shadow-xl overflow-hidden relative">
               {profile?.photo_url ? (
                 <img src={profile.photo_url} alt="Profile" className="w-full h-full object-cover" />
@@ -119,6 +121,11 @@ export default function ProfilePage() {
                   {profile?.avatar_emoji || '💫'}
                 </div>
               )}
+              {/* Camera Hover Overlay */}
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white transition-opacity">
+                <Camera size={24} />
+                <span className="text-[10px] font-bold mt-1">Change Avatar</span>
+              </div>
             </div>
           </div>
           
@@ -258,6 +265,16 @@ export default function ProfilePage() {
         </div>
 
       </div>
+      {/* Photo Upload Modal */}
+      <PhotoUpload
+        isOpen={showPhotoUpload}
+        onClose={() => setShowPhotoUpload(false)}
+        currentPhotoUrl={profile?.photo_url || null}
+        onPhotoUpdated={() => {
+          updateProfile({});
+          showToast('Profile avatar updated across the ecosystem!', 'success');
+        }}
+      />
     </div>
   );
 }
