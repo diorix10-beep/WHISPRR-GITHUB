@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import React, { Component, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   X, Compass, Users, MessageSquare, User, Sparkles, Mic, Sliders, 
   BookOpen, Globe, Settings, LogOut, Sun, Moon, Monitor, Search, Grid3X3,
-  PenTool
+  PenTool, AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -18,7 +18,85 @@ interface MobileNavDrawerProps {
   onOpenAppLauncher: () => void;
 }
 
-export function MobileNavDrawer({
+class DrawerErrorBoundary extends Component<
+  { children: React.ReactNode; onClose: () => void },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; onClose: () => void }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error('MobileNavDrawer local error caught:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="lg:hidden fixed inset-0 z-[9999] flex">
+          <div 
+            className="fixed inset-0 bg-warm-950/60 backdrop-blur-sm"
+            onClick={this.props.onClose}
+          />
+          <div className="relative w-80 max-w-[85vw] bg-white dark:bg-warm-900 h-full p-6 shadow-2xl flex flex-col justify-between z-50">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-warm-200 dark:border-warm-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="font-serif text-lg font-bold text-red-600 dark:text-red-500">CHIMERA</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full">
+                    Nexus
+                  </span>
+                </div>
+                <button onClick={this.props.onClose} className="p-1 text-warm-400">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <div className="px-2 text-[10px] font-bold text-warm-400 uppercase tracking-wider">Navigation</div>
+                {[
+                  { path: '/discover', label: 'Discover' },
+                  { path: '/characters', label: 'Characters' },
+                  { path: '/conversations', label: 'Chats' },
+                  { path: '/personas', label: 'Personas' },
+                  { path: '/studio', label: 'Creator Studio' },
+                  { path: '/voices', label: 'Voice Studio' },
+                  { path: '/models', label: 'AI Brains & API Vault' },
+                  { path: '/stories', label: 'Stories' },
+                  { path: '/worlds', label: 'Worlds' },
+                ].map(item => (
+                  <a
+                    key={item.path}
+                    href={item.path}
+                    onClick={this.props.onClose}
+                    className="block px-3 py-2.5 rounded-xl text-xs font-semibold text-warm-800 dark:text-warm-200 hover:bg-warm-100 dark:hover:bg-warm-800"
+                  >
+                    {item.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={this.props.onClose}
+              className="w-full py-3 bg-red-600 text-white font-bold rounded-xl text-xs shadow-md"
+            >
+              Close Menu
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function MobileNavDrawerContent({
   isOpen,
   onClose,
   creativeMode,
@@ -27,9 +105,28 @@ export function MobileNavDrawer({
   onOpenAppLauncher,
 }: MobileNavDrawerProps) {
   const navigate = useNavigate();
-  const { profile, signOut } = useAuth();
-  const { preference, setPreference } = useTheme();
-  const [drawerError, setDrawerError] = useState(false);
+  
+  // Safe auth context access
+  let profile = null;
+  let signOut = async () => {};
+  try {
+    const auth = useAuth();
+    profile = auth.profile;
+    signOut = auth.signOut;
+  } catch (e) {
+    console.warn('AuthContext inside MobileNavDrawer:', e);
+  }
+
+  // Safe theme context access
+  let preference: 'light' | 'dark' | 'system' = 'dark';
+  let setPreference = (_pref: 'light' | 'dark' | 'system') => {};
+  try {
+    const themeCtx = useTheme();
+    preference = themeCtx.preference;
+    setPreference = themeCtx.setPreference;
+  } catch (e) {
+    console.warn('ThemeContext inside MobileNavDrawer:', e);
+  }
 
   if (!isOpen) return null;
 
@@ -198,7 +295,7 @@ export function MobileNavDrawer({
               onClick={() => { onClose(); navigate('/profile'); }}
               className="flex items-center gap-3 cursor-pointer p-1.5 rounded-2xl hover:bg-warm-200/50 dark:hover:bg-warm-800/50 transition-colors"
             >
-              <Avatar emoji={profile.avatar_emoji} photoUrl={profile.photo_url} size="md" />
+              <Avatar emoji={profile.avatar_emoji || '👤'} photoUrl={profile.photo_url || null} size="md" />
               <div className="overflow-hidden flex-1">
                 <h4 className="text-xs font-bold text-warm-900 dark:text-white truncate">
                   {profile.display_name}
@@ -229,5 +326,13 @@ export function MobileNavDrawer({
 
       </div>
     </div>
+  );
+}
+
+export function MobileNavDrawer(props: MobileNavDrawerProps) {
+  return (
+    <DrawerErrorBoundary onClose={props.onClose}>
+      <MobileNavDrawerContent {...props} />
+    </DrawerErrorBoundary>
   );
 }
