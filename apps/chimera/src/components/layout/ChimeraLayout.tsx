@@ -155,22 +155,22 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
   return (
     <div className="min-h-screen bg-warm-50 dark:bg-warm-900 transition-colors duration-300 flex flex-col font-sans">
-      {/* Top Navigation Header */}
-      <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-warm-850/95 backdrop-blur-md border-b border-warm-200 dark:border-warm-800 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-6">
+      {/* Top Navigation Header — 3 Distinct Groups with Generous Whitespace */}
+      <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-warm-850/95 backdrop-blur-md border-b border-warm-200/70 dark:border-warm-800/70 shadow-sm">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-6 xl:gap-8">
           
-          {/* GROUP 1: LEFT — CHIMERA Logo */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+          {/* GROUP 1: LEFT — CHIMERA Brand Logo */}
+          <div className="flex items-center gap-3.5 flex-shrink-0">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="lg:hidden p-1.5 -ml-1 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
+              className="lg:hidden p-2 -ml-2 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
             >
               <Menu size={20} />
             </button>
 
             <button
               onClick={() => setShowAppLauncher(true)}
-              className="hidden lg:block p-1.5 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
+              className="hidden lg:block p-2 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
               title="App Switcher"
             >
               <LayoutGrid size={20} />
@@ -188,16 +188,17 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             </Link>
           </div>
 
-          {/* GROUP 2: CENTER — Navigation Links (Discover, Characters, Chats, Personas, Creator Studio) */}
-          <div className="hidden lg:flex flex-1 items-center justify-center mx-4 min-w-0">
-            <nav className="flex items-center gap-3 xl:gap-6 shrink-0">
+          {/* GROUP 2: CENTER — CHIMERA Main Navigation Links */}
+          <div className="hidden lg:flex flex-1 items-center justify-center px-4 min-w-0">
+            <nav className="flex items-center gap-6 xl:gap-8 shrink-0">
               {renderNavLinks()}
             </nav>
           </div>
 
-          {/* GROUP 3: RIGHT — Mode Switch + Search + Create + Theme + Profile */}
-          <div className="flex items-center gap-3 flex-shrink-0">
-            {/* Roleplay / Story Switch */}
+          {/* GROUP 3: RIGHT — Workspace Controls (Mode Switch, Search, Create, Theme, Profile) */}
+          <div className="flex items-center gap-3.5 xl:gap-4 flex-shrink-0 pl-4 border-l border-warm-200/60 dark:border-warm-800/60">
+            
+            {/* Workspace Creative Mode Switcher */}
             <div className="hidden sm:flex items-center bg-warm-200/70 dark:bg-warm-800/90 p-0.5 rounded-xl border border-warm-200/90 dark:border-warm-750/90 shadow-inner">
               <button
                 onClick={() => toggleCreativeMode('roleplay')}
@@ -206,7 +207,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
                     ? 'bg-red-600 text-white shadow-md shadow-red-600/30' 
                     : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
-                title="Switch to Interactive AI Roleplay Mode"
+                title="Roleplay Creative Workspace"
               >
                 <MessageSquare size={13} />
                 <span>Roleplay</span>
@@ -218,7 +219,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
                     ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30' 
                     : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
-                title="Switch to Literary Writing & Storytelling Mode"
+                title="Storytelling Creative Workspace"
               >
                 <PenTool size={13} />
                 <span>Storytelling</span>
@@ -228,7 +229,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             {/* Search */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-850 text-warm-500 hover:border-warm-300 dark:hover:border-warm-650 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-850 text-warm-500 hover:border-warm-300 dark:hover:border-warm-650 transition-colors"
             >
               <Search size={16} />
               <span className="hidden xl:block text-xs mr-1">Search...</span>
