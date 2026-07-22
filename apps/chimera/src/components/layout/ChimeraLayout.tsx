@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { Outlet, useNavigate, NavLink, useLocation, Link } from 'react-router-dom';
 import {
   Menu, Sun, Moon, Monitor, Search, Plus, LayoutGrid, Settings, LogOut,
-  PenTool, MessageSquare, BookOpen, Globe, Users, Feather, Bookmark, Compass, Sparkles, UserCheck
+  PenTool, MessageSquare, BookOpen, Globe, Users, Bookmark, Compass, Sparkles, UserCheck
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -21,20 +21,14 @@ interface NavLinkItem {
   comingSoon?: boolean;
 }
 
-const ROLEPLAY_LINKS: NavLinkItem[] = [
+const ALL_NAV_LINKS: NavLinkItem[] = [
   { path: '/discover', label: 'Discover', icon: Compass },
   { path: '/characters', label: 'Characters', icon: Users },
   { path: '/conversations', label: 'Chats', icon: MessageSquare },
   { path: '/personas', label: 'Personas', icon: UserCheck },
   { path: '/studio', label: 'Creator Studio', icon: Sparkles },
-];
-
-const STORYTELLING_LINKS: NavLinkItem[] = [
-  { path: '/', label: 'Home', icon: Compass },
   { path: '/write/desk', label: 'Stories', icon: BookOpen },
   { path: '/worlds', label: 'Worlds', icon: Globe },
-  { path: '/authors', label: 'Authors', icon: Feather, comingSoon: true },
-  { path: '/library', label: 'Library', icon: Bookmark, comingSoon: true },
 ];
 
 export function ChimeraLayout({ children }: ChimeraLayoutProps) {
@@ -122,7 +116,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
   const renderNavLinks = (isMobile = false) => (
     <>
-      {(creativeMode === 'roleplay' ? ROLEPLAY_LINKS : STORYTELLING_LINKS).map(link => (
+      {ALL_NAV_LINKS.map(link => (
         <NavLink
           key={link.path}
           to={link.comingSoon ? '#' : link.path}
@@ -224,7 +218,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             </div>
           </div>
 
-          {/* Center: Dynamic Links */}
+          {/* Center: ALL Navigation Links */}
           <div className="hidden lg:flex flex-1 items-center justify-end mx-2 xl:mx-4 min-w-0">
             <nav className="flex items-center gap-1 shrink-0">
               {renderNavLinks()}

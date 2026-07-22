@@ -133,18 +133,14 @@ function MobileNavDrawerContent({
     }
   };
 
-  const mainLinks = creativeMode === 'roleplay' ? [
+  const mainLinks = [
     { path: '/discover', label: 'Discover', icon: Compass },
     { path: '/characters', label: 'Characters', icon: Users },
     { path: '/conversations', label: 'Chats', icon: MessageSquare },
     { path: '/personas', label: 'Personas', icon: User },
     { path: '/studio', label: 'Creator Studio', icon: Sparkles },
-  ] : [
-    { path: '/', label: 'Home', icon: Compass },
     { path: '/write/desk', label: 'Stories', icon: BookOpen },
     { path: '/worlds', label: 'Worlds', icon: Globe },
-    { path: '/authors', label: 'Authors', icon: Feather, comingSoon: true },
-    { path: '/library', label: 'Library', icon: Bookmark, comingSoon: true },
   ];
 
   return (
@@ -220,20 +216,15 @@ function MobileNavDrawerContent({
               return (
                 <NavLink
                   key={link.path}
-                  to={link.comingSoon ? '#' : link.path}
-                  onClick={(e) => {
-                    if (link.comingSoon) e.preventDefault();
-                    else onClose();
-                  }}
+                  to={link.path}
+                  onClick={onClose}
                   className={({ isActive }) =>
                     `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                      link.comingSoon
-                        ? 'text-warm-400 dark:text-warm-600 cursor-default opacity-60'
-                        : isActive
-                          ? creativeMode === 'storytelling'
-                            ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20'
-                            : 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
-                          : 'text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800'
+                      isActive
+                        ? creativeMode === 'storytelling'
+                          ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20'
+                          : 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
+                        : 'text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800'
                     }`
                   }
                 >
@@ -241,11 +232,6 @@ function MobileNavDrawerContent({
                     <Icon size={16} />
                     <span>{link.label}</span>
                   </div>
-                  {link.comingSoon && (
-                    <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-warm-200 dark:bg-warm-800 text-warm-500">
-                      Soon
-                    </span>
-                  )}
                 </NavLink>
               );
             })}
