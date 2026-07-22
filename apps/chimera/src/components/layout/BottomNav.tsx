@@ -9,17 +9,18 @@ export function BottomNav() {
   const location = useLocation();
 
   const chimeraItems = [
-    { path: '/', icon: Compass, label: 'Explore' },
-    { path: '/chats', icon: MessageCircle, label: 'Chats', badge: true },
-    { path: '/create', icon: Plus, label: 'Create' },
+    { path: '/discover', icon: Compass, label: 'Discover' },
+    { path: '/conversations', icon: MessageCircle, label: 'Chats', badge: true },
+    { path: '/studio', icon: Plus, label: 'Create' },
     { path: '/personas', icon: User, label: 'Personas' },
+    { path: '#menu', icon: Menu, label: 'Menu', isAction: true },
   ];
 
   const items = chimeraItems;
 
   const handleActionClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    window.dispatchEvent(new CustomEvent('open-app-launcher'));
+    window.dispatchEvent(new CustomEvent('open-mobile-drawer'));
   };
 
   return (

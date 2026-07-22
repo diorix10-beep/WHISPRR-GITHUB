@@ -4,7 +4,7 @@ import { Camera, User } from 'lucide-react';
 type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 interface AvatarProps {
-  emoji: string;
+  emoji?: string | null;
   photoUrl?: string | null;
   size?: AvatarSize;
   onClick?: () => void;
@@ -86,7 +86,7 @@ export function Avatar({
       <div
         className={`${baseClasses} ${sizeClass} bg-gradient-to-br from-warm-200 to-warm-300 dark:from-warm-800 dark:to-warm-700 text-warm-600 dark:text-warm-300 shadow-soft overflow-hidden`}
       >
-        <User className="w-1/2 h-1/2" />
+        {emoji ? <span>{emoji}</span> : <User className="w-1/2 h-1/2" />}
       </div>
       {uploading && (
         <div className={`absolute inset-0 ${overlaySizeClasses[size]} rounded-full bg-black/40 flex items-center justify-center`}>

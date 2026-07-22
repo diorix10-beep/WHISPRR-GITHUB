@@ -87,12 +87,17 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
     function handleOpenLauncher() {
       setShowAppLauncher(true);
     }
+    function handleOpenMobileDrawer() {
+      setIsMenuOpen(true);
+    }
     window.addEventListener('open-app-launcher', handleOpenLauncher);
+    window.addEventListener('open-mobile-drawer', handleOpenMobileDrawer);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('open-app-launcher', handleOpenLauncher);
+      window.removeEventListener('open-mobile-drawer', handleOpenMobileDrawer);
     };
   }, []);
 
