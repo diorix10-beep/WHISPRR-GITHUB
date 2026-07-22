@@ -43,8 +43,8 @@ class DrawerErrorBoundary extends Component<
             className="fixed inset-0 bg-warm-950/60 backdrop-blur-sm"
             onClick={this.props.onClose}
           />
-          <div className="relative w-80 max-w-[85vw] bg-white dark:bg-warm-900 h-full p-6 shadow-2xl flex flex-col justify-between z-50">
-            <div className="space-y-4">
+          <div className="relative w-80 max-w-[85vw] bg-white dark:bg-warm-900 h-[100dvh] max-h-[100dvh] p-6 shadow-2xl flex flex-col justify-between z-50 overflow-hidden">
+            <div className="space-y-4 overflow-y-auto flex-1 min-h-0">
               <div className="flex items-center justify-between border-b border-warm-200 dark:border-warm-800 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="font-serif text-lg font-bold text-red-600 dark:text-red-500">CHIMERA</span>
@@ -84,7 +84,7 @@ class DrawerErrorBoundary extends Component<
 
             <button
               onClick={this.props.onClose}
-              className="w-full py-3 bg-red-600 text-white font-bold rounded-xl text-xs shadow-md"
+              className="w-full py-3 bg-red-600 text-white font-bold rounded-xl text-xs shadow-md mt-4 flex-shrink-0"
             >
               Close Menu
             </button>
@@ -164,10 +164,10 @@ function MobileNavDrawerContent({
       />
 
       {/* Drawer Panel */}
-      <div className="relative w-80 max-w-[85vw] bg-white dark:bg-warm-900 h-full shadow-2xl border-r border-warm-200 dark:border-warm-800 flex flex-col z-50 animate-in slide-in-from-left duration-200">
+      <div className="relative w-80 max-w-[85vw] bg-white dark:bg-warm-900 h-[100dvh] max-h-[100dvh] shadow-2xl border-r border-warm-200 dark:border-warm-800 flex flex-col z-50 animate-in slide-in-from-left duration-200 overflow-hidden">
         
         {/* Header */}
-        <div className="p-4 border-b border-warm-200 dark:border-warm-800 flex items-center justify-between bg-warm-50/50 dark:bg-warm-950/50">
+        <div className="p-4 border-b border-warm-200 dark:border-warm-800 flex items-center justify-between bg-warm-50/50 dark:bg-warm-950/50 flex-shrink-0">
           <div className="flex items-center gap-2">
             <span className="font-serif text-lg font-bold text-red-600 dark:text-red-500">CHIMERA</span>
             <span className="text-[10px] font-bold uppercase tracking-wider bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full">
@@ -183,7 +183,7 @@ function MobileNavDrawerContent({
         </div>
 
         {/* Creative Mode Toggle */}
-        <div className="p-3 border-b border-warm-100 dark:border-warm-800 bg-warm-50 dark:bg-warm-950/30">
+        <div className="p-3 border-b border-warm-100 dark:border-warm-800 bg-warm-50 dark:bg-warm-950/30 flex-shrink-0">
           <div className="text-[10px] uppercase font-bold tracking-widest text-warm-400 mb-1.5 px-1">
             Creative Mode
           </div>
@@ -212,7 +212,7 @@ function MobileNavDrawerContent({
         </div>
 
         {/* Scrollable Navigation List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6 no-scrollbar">
+        <div className="flex-1 overflow-y-auto min-h-0 p-4 space-y-6">
           
           {/* Main Links */}
           <div className="space-y-1">
@@ -228,14 +228,14 @@ function MobileNavDrawerContent({
                   end={link.path === '/'}
                   onClick={onClose}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    `flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${
                       isActive
-                        ? 'bg-red-500/10 text-red-600 dark:text-red-400 font-bold'
-                        : 'text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800'
+                        ? 'bg-red-500/15 text-red-600 dark:text-red-400 font-bold border border-red-500/20'
+                        : 'text-warm-800 dark:text-warm-200 hover:bg-warm-100 dark:hover:bg-warm-800'
                     }`
                   }
                 >
-                  <Icon size={18} />
+                  <Icon size={18} className="flex-shrink-0" />
                   <span>{link.label}</span>
                 </NavLink>
               );
@@ -250,17 +250,17 @@ function MobileNavDrawerContent({
             
             <button
               onClick={() => { onClose(); onOpenSearch(); }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-all text-left"
+              className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-all text-left"
             >
-              <Search size={18} />
+              <Search size={18} className="flex-shrink-0" />
               <span>Search Nexus (⌘K)</span>
             </button>
 
             <button
               onClick={() => { onClose(); onOpenAppLauncher(); }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-all text-left"
+              className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-all text-left"
             >
-              <Grid3X3 size={18} className="text-red-500" />
+              <Grid3X3 size={18} className="text-red-500 flex-shrink-0" />
               <span>WHISPRR Ecosystem Hub</span>
             </button>
           </div>
@@ -290,7 +290,7 @@ function MobileNavDrawerContent({
 
         {/* Footer User Profile & Settings */}
         {profile && (
-          <div className="p-4 border-t border-warm-200 dark:border-warm-800 bg-warm-50/70 dark:bg-warm-950/70 space-y-3">
+          <div className="p-4 border-t border-warm-200 dark:border-warm-800 bg-warm-50/70 dark:bg-warm-950/70 space-y-3 flex-shrink-0">
             <div 
               onClick={() => { onClose(); navigate('/profile'); }}
               className="flex items-center gap-3 cursor-pointer p-1.5 rounded-2xl hover:bg-warm-200/50 dark:hover:bg-warm-800/50 transition-colors"
