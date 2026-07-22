@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Sparkles, Filter, MessageSquare, ChevronRight, UserPlus, Heart, X, Play } from 'lucide-react';
+import { Compass, Sparkles, MessageSquare, Search, Filter, ShieldCheck, Heart, User, X, Play } from 'lucide-react';
+import { RichEmptyState } from '../components/common/RichEmptyState';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -142,9 +143,13 @@ export default function DiscoverPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600" />
           </div>
         ) : filteredCharacters.length === 0 ? (
-          <div className="text-center p-12">
-            <p className="text-warm-500">No characters found.</p>
-          </div>
+          <RichEmptyState
+            title="No characters match your search"
+            description="We could not find any active storytelling characters with those terms. Try selecting a category or creating a brand new character."
+            actionLabel="Create a Character"
+            onAction={() => navigate('/create')}
+            onSelectCategory={(cat) => setSelectedCategory(cat)}
+          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredCharacters.map(char => (
