@@ -133,12 +133,14 @@ function MobileNavDrawerContent({
     }
   };
 
-  const mainLinks = [
+  const mainLinks = creativeMode === 'roleplay' ? [
     { path: '/discover', label: 'Discover', icon: Compass },
     { path: '/characters', label: 'Characters', icon: Users },
     { path: '/conversations', label: 'Chats', icon: MessageSquare },
     { path: '/personas', label: 'Personas', icon: User },
     { path: '/studio', label: 'Creator Studio', icon: Sparkles },
+  ] : [
+    { path: '/', label: 'Home', icon: Compass },
     { path: '/write/desk', label: 'Stories', icon: BookOpen },
     { path: '/worlds', label: 'Worlds', icon: Globe },
   ];

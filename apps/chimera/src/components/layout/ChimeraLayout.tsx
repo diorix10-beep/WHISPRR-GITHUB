@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { Outlet, useNavigate, NavLink, useLocation, Link } from 'react-router-dom';
 import {
   Menu, Sun, Moon, Monitor, Search, Plus, LayoutGrid, Settings, LogOut,
-  PenTool, MessageSquare, BookOpen, Globe, Users, Bookmark, Compass, Sparkles, UserCheck
+  PenTool, MessageSquare, BookOpen, Globe, Users, Compass, Sparkles, UserCheck
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -21,12 +21,18 @@ interface NavLinkItem {
   comingSoon?: boolean;
 }
 
-const ALL_NAV_LINKS: NavLinkItem[] = [
+const ROLEPLAY_NAV_LINKS: NavLinkItem[] = [
   { path: '/discover', label: 'Discover', icon: Compass },
   { path: '/characters', label: 'Characters', icon: Users },
   { path: '/conversations', label: 'Chats', icon: MessageSquare },
   { path: '/personas', label: 'Personas', icon: UserCheck },
   { path: '/studio', label: 'Creator Studio', icon: Sparkles },
+];
+
+const STORYTELLING_NAV_LINKS: NavLinkItem[] = [
+  { path: '/', label: 'Home', icon: Compass },
+  { path: '/write/desk', label: 'Stories', icon: BookOpen },
+  { path: '/worlds', label: 'Worlds', icon: Globe },
 ];
 
 export function ChimeraLayout({ children }: ChimeraLayoutProps) {
@@ -49,6 +55,17 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
     const nextMode = targetMode || (creativeMode === 'roleplay' ? 'storytelling' : 'roleplay');
     setCreativeMode(nextMode);
     localStorage.setItem('chimera_creative_mode', nextMode);
+    
+    // Auto-redirect to appropriate home view for active mode
+    if (nextMode === 'storytelling') {
+      if (location.pathname === '/discover' || location.pathname === '/characters' || location.pathname === '/conversations') {
+        navigate('/write/desk');
+      }
+    } else {
+      if (location.pathname === '/' || location.pathname === '/write/desk' || location.pathname === '/worlds') {
+        navigate('/discover');
+      }
+    }
   };
 
   const themeMenuRef = useRef<HTMLDivElement>(null);
@@ -112,9 +129,11 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
     navigate('/auth');
   };
 
+  const currentNavLinks = creativeMode === 'storytelling' ? STORYTELLING_NAV_LINKS : ROLEPLAY_NAV_LINKS;
+
   const renderNavLinks = (isMobile = false) => (
     <>
-      {ALL_NAV_LINKS.map(link => (
+      {currentNavLinks.map(link => (
         <NavLink
           key={link.path}
           to={link.comingSoon ? '#' : link.path}
@@ -155,32 +174,32 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
   return (
     <div className="min-h-screen bg-warm-50 dark:bg-warm-900 transition-colors duration-300 flex flex-col font-sans">
-      {/* Top Navigation Header — 3 Distinct Groups with Generous Whitespace */}
+      {/* Top Navigation Header — Exact match to Photo 2 */}
       <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-warm-850/95 backdrop-blur-md border-b border-warm-200/70 dark:border-warm-800/70 shadow-sm">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-6 xl:gap-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           
-          {/* GROUP 1: LEFT — CHIMERA Brand Logo */}
-          <div className="flex items-center gap-3.5 flex-shrink-0">
+          {/* LEFT: App Launcher & Brand Logo */}
+          <div className="flex items-center gap-3 flex-shrink-0">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="lg:hidden p-2 -ml-2 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
+              className="lg:hidden p-1.5 -ml-1 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
             >
               <Menu size={20} />
             </button>
 
             <button
               onClick={() => setShowAppLauncher(true)}
-              className="hidden lg:block p-2 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
+              className="hidden lg:block p-1.5 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
               title="App Switcher"
             >
               <LayoutGrid size={20} />
             </button>
             
-            <Link to="/" className="flex items-center gap-2.5 group">
+            <Link to="/" className="flex items-center gap-2 group">
               <img
                 src="/chimera_logo.png"
                 alt="CHIMERA"
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-cover border border-red-500/25 shadow-sm shadow-red-500/10 group-hover:shadow-md transition-shadow"
+                className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl object-cover border border-red-500/25 shadow-sm shadow-red-500/10 group-hover:shadow-md transition-shadow"
               />
               <span className="font-serif text-lg sm:text-xl font-bold text-red-600 dark:text-red-500 tracking-wide">
                 CHIMERA
@@ -188,51 +207,53 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             </Link>
           </div>
 
-          {/* GROUP 2: CENTER — CHIMERA Main Navigation Links */}
-          <div className="hidden lg:flex flex-1 items-center justify-center px-4 min-w-0">
+          {/* CENTER: Mode-Specific Navigation Links (Zero Overlap!) */}
+          <div className="hidden lg:flex flex-1 items-center justify-center mx-4 min-w-0">
             <nav className="flex items-center gap-6 xl:gap-8 shrink-0">
               {renderNavLinks()}
             </nav>
           </div>
 
-          {/* GROUP 3: RIGHT — Workspace Controls (Mode Switch, Search, Create, Theme, Profile) */}
-          <div className="flex items-center gap-3.5 xl:gap-4 flex-shrink-0 pl-4 border-l border-warm-200/60 dark:border-warm-800/60">
+          {/* RIGHT: Creative Mode Switch + Search + Create CTA + Theme + Profile */}
+          <div className="flex items-center gap-2.5 sm:gap-3 flex-shrink-0">
             
-            {/* Workspace Creative Mode Switcher */}
-            <div className="hidden sm:flex items-center bg-warm-200/70 dark:bg-warm-800/90 p-0.5 rounded-xl border border-warm-200/90 dark:border-warm-750/90 shadow-inner">
+            {/* Creative Mode Switch Pill (Roleplay vs Storytelling) */}
+            <div className="flex items-center bg-warm-200/70 dark:bg-warm-800/90 p-0.5 rounded-xl border border-warm-200/90 dark:border-warm-750/90 shadow-inner">
               <button
                 onClick={() => toggleCreativeMode('roleplay')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 ${
+                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold transition-all duration-300 ${
                   creativeMode === 'roleplay' 
                     ? 'bg-red-600 text-white shadow-md shadow-red-600/30' 
                     : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
-                title="Roleplay Creative Workspace"
+                title="Switch to Roleplay Mode"
               >
                 <MessageSquare size={13} />
                 <span>Roleplay</span>
               </button>
               <button
                 onClick={() => toggleCreativeMode('storytelling')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 ${
+                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold transition-all duration-300 ${
                   creativeMode === 'storytelling' 
                     ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30' 
                     : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
-                title="Storytelling Creative Workspace"
+                title="Switch to Storytelling Mode"
               >
                 <PenTool size={13} />
-                <span>Storytelling</span>
+                <span>Story</span>
               </button>
             </div>
 
             {/* Search */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-850 text-warm-500 hover:border-warm-300 dark:hover:border-warm-650 transition-colors"
+              className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-850 text-warm-500 hover:border-warm-300 dark:hover:border-warm-650 transition-colors"
             >
               <Search size={16} />
-              <span className="hidden xl:block text-xs mr-1">Search...</span>
+              <span className="hidden xl:block text-xs mr-1">
+                {creativeMode === 'storytelling' ? 'Search stories...' : 'Search characters...'}
+              </span>
               <kbd className="hidden xl:block text-[10px] bg-warm-200 dark:bg-warm-700 px-1.5 py-0.5 rounded font-mono">⌘K</kbd>
             </button>
 
