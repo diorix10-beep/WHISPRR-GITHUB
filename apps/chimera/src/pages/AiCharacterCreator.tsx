@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { UniversalImagePicker } from '../components/common/UniversalImagePicker';
 import { supabase } from '../lib/supabase';
 import { StructuredArchitectureForm } from '../components/character/StructuredArchitectureForm';
 import { compileCharacterSystemPrompt, type CharacterArchitecture } from '../lib/promptCompiler';
@@ -367,20 +368,18 @@ export default function AiCharacterCreator() {
 
                   {/* Right: Image Upload */}
                   <div className="flex-1">
-                    <label className="block text-xs font-bold text-warm-400 mb-2 uppercase tracking-wide">Image *</label>
-                    <div className="w-full h-48 border-2 border-dashed border-warm-700 rounded-2xl bg-warm-800/50 flex flex-col items-center justify-center p-6 text-center hover:border-warm-500 transition-colors cursor-pointer group">
-                      <UploadCloud size={32} className="text-warm-500 mb-3 group-hover:text-warm-300 transition-colors" />
-                      <p className="text-sm font-semibold text-warm-300">Drag & drop an image here, or click to select</p>
-                      <p className="text-xs text-warm-500 mt-2">Or enter an image URL below</p>
-                    </div>
-                    <input
-                      type="text"
-                      name="avatarUrl"
+                  <div>
+                    <UniversalImagePicker
                       value={formData.avatarUrl}
-                      onChange={handleChange}
-                      placeholder="https://example.com/image.png"
-                      className="w-full bg-warm-800 border border-warm-700 rounded-xl py-2 px-3 text-sm text-white focus:outline-none focus:border-red-500 mt-3"
+                      onChange={(url) => setFormData(prev => ({ ...prev, avatarUrl: url || '' }))}
+                      label="Character Avatar Photo"
+                      shape="circle"
                     />
+                    <ul className="text-[10px] text-warm-400 mt-3 space-y-1 list-disc list-inside">
+                      <li>Select or drag-and-drop an image for your character avatar.</li>
+                      <li>Please make sure your image does not violate our platform trust guidelines.</li>
+                    </ul>
+                  </div>
                     <ul className="text-[10px] text-warm-400 mt-3 space-y-1 list-disc list-inside">
                       <li>Select an image as bot avatar, or you can import a Tavern PNG file.</li>
                       <li>Please make sure your image/character does not violate our guidelines.</li>

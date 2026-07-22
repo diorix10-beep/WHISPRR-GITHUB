@@ -6,6 +6,7 @@ import { Story, StoryChapter } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import StoryImporterModal from '../components/stories/StoryImporterModal';
+import { UniversalImagePicker } from '../components/common/UniversalImagePicker';
 
 export default function WritersDeskPage() {
   const navigate = useNavigate();
@@ -302,25 +303,14 @@ export default function WritersDeskPage() {
             <form onSubmit={handleSaveStory} className="space-y-6">
               
               <div className="flex flex-col md:flex-row gap-8">
-                {/* Left: Cover Preview */}
-                <div className="w-full md:w-48 flex flex-col gap-3 flex-shrink-0">
-                  <label className="text-xs font-bold uppercase text-warm-400 tracking-wider">Cover</label>
-                  <div className="w-full aspect-[2/3] bg-warm-900 border-2 border-dashed border-warm-700 rounded-xl overflow-hidden relative group">
-                    {formCoverUrl ? (
-                      <img src={formCoverUrl} alt="Cover" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center text-warm-600 p-4 text-center">
-                        <ImageIcon size={32} className="mb-2" />
-                        <span className="text-[10px] uppercase font-bold">No Cover</span>
-                      </div>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Cover URL (Optional)"
-                    value={formCoverUrl}
-                    onChange={(e) => setFormCoverUrl(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-red-500 text-sm text-white"
+                {/* Left: Cover Upload */}
+                <div className="w-full md:w-56 flex flex-col gap-3 flex-shrink-0">
+                  <UniversalImagePicker
+                    value={formCoverUrl || null}
+                    onChange={(url) => setFormCoverUrl(url || '')}
+                    label="Story Cover Image"
+                    shape="rectangle"
+                    aspectRatio={2 / 3}
                   />
                 </div>
 
