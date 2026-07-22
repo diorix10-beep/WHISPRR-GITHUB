@@ -6,6 +6,7 @@ import { COMMUNITY_CATEGORIES } from '../types';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { CreateCommunityModal } from '../components/communities/CreateCommunityModal';
+import { CommunityAvatar } from '../components/communities/CommunityAvatar';
 
 type ViewMode = 'browse' | 'my' | 'recommended';
 
@@ -252,8 +253,8 @@ export default function CommunitiesPage() {
                 {c.banner_url ? (
                   <div className="h-24 bg-cover bg-center" style={{ backgroundImage: `url(${c.banner_url})` }} />
                 ) : (
-                  <div className="h-24 bg-gradient-to-br from-primary-400 to-accent-400 flex items-center justify-center text-4xl">
-                    {c.emoji}
+                  <div className="h-24 flex items-center justify-center">
+                    <CommunityAvatar photoUrl={c.emoji} size="lg" />
                   </div>
                 )}
                 <div className="p-3">
@@ -281,7 +282,9 @@ export default function CommunitiesPage() {
                 className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 hover:shadow-md transition-all text-left"
               >
                 <span className="text-lg font-bold text-warm-300 dark:text-warm-600 w-6 text-center">{idx + 1}</span>
-                <span className="text-2xl">{c.emoji}</span>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0">
+                  <CommunityAvatar photoUrl={c.emoji} size="sm" />
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-warm-900 dark:text-warm-50 text-sm truncate">{c.name}</p>
                   <p className="text-xs text-warm-500">{c.member_count || 0} members</p>
@@ -347,7 +350,9 @@ export default function CommunitiesPage() {
                     className="card text-left hover:shadow-lg transition-all"
                   >
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="text-3xl">{c.emoji}</span>
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-100 to-accent-100 dark:from-primary-900/50 dark:to-accent-900/50 flex items-center justify-center shrink-0">
+                        <CommunityAvatar photoUrl={c.emoji} size="md" />
+                      </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-warm-900 dark:text-warm-50 truncate">{c.name}</p>
                         <div className="flex items-center gap-2 mt-0.5">
@@ -382,7 +387,7 @@ function CommunityRow({ community: c, onClick }: { community: CommunityWithCount
       onClick={onClick}
       className="w-full flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 hover:shadow-md transition-all text-left"
     >
-      <span className="text-3xl flex-shrink-0">{c.emoji}</span>
+      <CommunityAvatar photoUrl={c.emoji} size="lg" />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <p className="font-semibold text-warm-900 dark:text-warm-50 text-sm truncate">{c.name}</p>

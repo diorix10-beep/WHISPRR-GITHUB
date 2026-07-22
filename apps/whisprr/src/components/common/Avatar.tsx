@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
 import { Camera } from 'lucide-react';
+import { Logo } from './Logo';
 
 type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 interface AvatarProps {
-  emoji: string;
   photoUrl?: string | null;
   size?: AvatarSize;
   onClick?: () => void;
@@ -37,8 +37,15 @@ const overlaySizeClasses: Record<AvatarSize, string> = {
   xl: 'w-20 h-20',
 };
 
+const logoSizes: Record<AvatarSize, number> = {
+  xs: 12,
+  sm: 16,
+  md: 22,
+  lg: 30,
+  xl: 44,
+};
+
 export function Avatar({
-  emoji,
   photoUrl = null,
   size = 'md',
   onClick,
@@ -84,9 +91,11 @@ export function Avatar({
   return (
     <div className="relative group" onClick={editable ? onPhotoClick : onClick}>
       <div
-        className={`${baseClasses} ${sizeClass} bg-gradient-to-br from-primary-300 to-accent-300 dark:from-primary-700 dark:to-accent-700 shadow-soft`}
+        className={`${baseClasses} ${sizeClass} bg-gradient-to-br from-warm-100 to-warm-200 dark:from-warm-800 dark:to-warm-900 shadow-soft border border-warm-200 dark:border-warm-700`}
       >
-        {emoji}
+        <div className="opacity-60 flex items-center justify-center grayscale">
+          <Logo variant="icon-only" size={logoSizes[size]} />
+        </div>
       </div>
       {uploading && (
         <div className={`absolute inset-0 ${overlaySizeClasses[size]} rounded-full bg-black/40 flex items-center justify-center`}>

@@ -549,7 +549,7 @@ export default function CommunityDetailPage() {
               onClick={() => navigate(`/profile/${m.profiles.username}`)}
               className="flex items-center gap-1.5 bg-warm-100 dark:bg-warm-800 rounded-full px-2.5 py-1 flex-shrink-0 hover:bg-warm-200 dark:hover:bg-warm-700 transition-colors"
             >
-              <Avatar emoji={m.profiles.avatar_emoji} photoUrl={m.profiles.photo_url} size="xs" />
+              <Avatar photoUrl={m.profiles.photo_url} size="xs" />
               <span className="text-xs font-medium text-warm-700 dark:text-warm-300">{m.profiles.display_name}</span>
               <UserBadges 
                 badges={getContextualBadges((m.profiles as any).badges, m.role)} 
@@ -704,7 +704,7 @@ export default function CommunityDetailPage() {
                   </div>
                   <div className="flex items-center justify-between pt-3 border-t border-warm-100 dark:border-warm-800">
                     <div className="flex items-center gap-2">
-                      <Avatar emoji={collab.profiles?.avatar_emoji || '👤'} photoUrl={collab.profiles?.photo_url} size="xs" />
+                      <Avatar photoUrl={collab.profiles?.photo_url} size="xs" />
                       <span className="text-xs text-warm-500">by @{collab.profiles?.username}</span>
                     </div>
                     {collab.user_id !== user?.id ? (
@@ -813,7 +813,7 @@ export default function CommunityDetailPage() {
                     <p className="text-xs text-primary-500 font-semibold mb-2 capitalize">{item.asset_type}</p>
                     <p className="text-xs text-warm-650 dark:text-warm-350 line-clamp-2 leading-relaxed mb-3">{item.description}</p>
                     <div className="flex items-center gap-2 pt-2 border-t border-warm-100 dark:border-warm-800">
-                      <Avatar emoji={item.profiles?.avatar_emoji || '👤'} photoUrl={item.profiles?.photo_url} size="xs" />
+                      <Avatar photoUrl={item.profiles?.photo_url} size="xs" />
                       <span className="text-xs text-warm-450">Featured by @{item.profiles?.username}</span>
                     </div>
                   </div>
@@ -945,7 +945,7 @@ export default function CommunityDetailPage() {
               return (
                 <div key={member.id} className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700">
                   <button onClick={() => navigate(`/profile/${member.profiles.username}`)} className="flex-shrink-0">
-                    <Avatar emoji={member.profiles.avatar_emoji} photoUrl={member.profiles.photo_url} size="md" />
+                    <Avatar photoUrl={member.profiles.photo_url} size="md" />
                   </button>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-warm-900 dark:text-warm-50 text-sm truncate flex items-center">
@@ -1095,7 +1095,7 @@ export default function CommunityDetailPage() {
                 return (
                   <div key={member.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-warm-50 dark:bg-warm-700/50">
                     <button onClick={() => navigate(`/profile/${member.profiles.username}`)} className="flex-shrink-0">
-                      <Avatar emoji={member.profiles.avatar_emoji} photoUrl={member.profiles.photo_url} size="sm" />
+                      <Avatar photoUrl={member.profiles.photo_url} size="sm" />
                     </button>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-warm-900 dark:text-warm-50 truncate">{member.profiles.display_name}</p>

@@ -1381,7 +1381,7 @@ export default function FounderPanel() {
                {usersList.map(u => (
                   <div key={u.id} className="flex items-center justify-between p-3 bg-warm-50 dark:bg-warm-900 border border-warm-100/50 dark:border-warm-800 rounded-2xl text-sm">
                      <div className="flex items-center gap-2.5 min-w-0">
-                        <Avatar emoji={u.avatar_emoji} photoUrl={u.photo_url} size="sm" />
+                        <Avatar photoUrl={u.photo_url} size="sm" />
                         <div className="min-w-0">
                            <p className="font-semibold text-warm-900 dark:text-warm-100 truncate">{u.display_name}</p>
                            <p className="text-xs text-warm-500 truncate">@{u.username} • Role: <strong className="text-primary-600 uppercase text-[10px]">{u.role}</strong></p>
@@ -1517,7 +1517,7 @@ export default function FounderPanel() {
                       {rep.profiles && (
                         <div className="flex items-center gap-1.5 pt-2 border-t border-warm-200/40 dark:border-warm-800/40 text-xs text-warm-500">
                            <span>Submitted by:</span>
-                           <Avatar emoji={rep.profiles.avatar_emoji} photoUrl={rep.profiles.photo_url} size="xs" />
+                           <Avatar photoUrl={rep.profiles.photo_url} size="xs" />
                            <span className="font-medium text-warm-700 dark:text-warm-300">@{rep.profiles.username}</span>
                         </div>
                       )}
@@ -1636,7 +1636,7 @@ export default function FounderPanel() {
                    {badgeSearchResults.map(res => (
                       <div key={res.id} className="flex items-center justify-between p-2 rounded-xl bg-warm-50 dark:bg-warm-900 border border-warm-100 dark:border-warm-800 text-xs">
                          <div className="flex items-center gap-2 min-w-0">
-                            <Avatar emoji={res.avatar_emoji} photoUrl={res.photo_url} size="xs" />
+                            <Avatar photoUrl={res.photo_url} size="xs" />
                             <div className="min-w-0">
                                <p className="font-semibold text-xs text-warm-900 dark:text-warm-100 truncate">{res.display_name}</p>
                                <p className="text-[10px] text-warm-500 truncate">@{res.username}</p>
@@ -1673,7 +1673,7 @@ export default function FounderPanel() {
                         return (
                           <div key={holder.id} className="flex items-center justify-between p-2 rounded-xl bg-warm-50 dark:bg-warm-900 border border-warm-100 dark:border-warm-850 text-xs">
                              <div className="flex items-center gap-2 min-w-0">
-                                <Avatar emoji={prof.avatar_emoji} photoUrl={prof.photo_url} size="xs" />
+                                <Avatar photoUrl={prof.photo_url} size="xs" />
                                 <div className="min-w-0">
                                    <p className="font-semibold text-xs text-warm-900 dark:text-warm-100 truncate">{prof.display_name}</p>
                                    <p className="text-[9px] text-warm-500 truncate">@{prof.username}</p>

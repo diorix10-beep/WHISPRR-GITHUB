@@ -618,7 +618,7 @@ export default function ConversationPage() {
 
             {conversation?.type === 'dm' && otherUser && (
               <div className="flex items-center gap-3 min-w-0">
-                <Avatar emoji={otherUser.avatar_emoji} photoUrl={otherUser.photo_url} size="md" />
+                <Avatar photoUrl={otherUser.photo_url} size="md" />
                 <div className="min-w-0">
                   <h1 className="font-medium text-warm-900 dark:text-warm-100 truncate flex items-center">
                     {otherUser.display_name}
@@ -673,7 +673,7 @@ export default function ConversationPage() {
             return (
               <div key={message.id} className={`group flex gap-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
                 {!isOwn && conversation?.type === 'group' && (
-                  <Avatar emoji={sender?.avatar_emoji || '?'} photoUrl={sender?.photo_url || null} size="sm" />
+                  <Avatar photoUrl={sender?.photo_url || null} size="sm" />
                 )}
 
                 <div className="relative max-w-[75%]">
@@ -892,7 +892,7 @@ export default function ConversationPage() {
                 <div className="space-y-2">
                   {participants.map(p => (
                     <div key={p.user_id} className="flex items-center gap-3 p-2 rounded-xl">
-                      <Avatar emoji={p.avatar_emoji} photoUrl={p.photo_url} size="sm" />
+                      <Avatar photoUrl={p.photo_url} size="sm" />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-warm-900 dark:text-warm-100 truncate text-sm">
                           {p.display_name}
@@ -942,7 +942,7 @@ export default function ConversationPage() {
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {followedUsers.map(fu => (
                         <div key={fu.user_id} className="flex items-center gap-3 p-2 rounded-xl">
-                          <Avatar emoji={fu.avatar_emoji} photoUrl={fu.photo_url} size="sm" />
+                          <Avatar photoUrl={fu.photo_url} size="sm" />
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-warm-900 dark:text-warm-100 truncate text-sm">{fu.display_name}</p>
                             <p className="text-xs text-warm-500">@{fu.username}</p>

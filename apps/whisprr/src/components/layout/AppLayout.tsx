@@ -129,7 +129,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                     className="flex items-center justify-center p-1 rounded-full border border-warm-200 dark:border-warm-700 hover:scale-105 active:scale-95 transition-all focus:outline-none"
                     aria-label="Profile menu"
                   >
-                    <Avatar emoji={profile.avatar_emoji} photoUrl={profile.photo_url} size="xs" />
+                    <Avatar photoUrl={profile.photo_url} size="xs" />
                   </button>
 
                   {/* Hamburger Menu Trigger */}
@@ -153,7 +153,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   {isMenuOpen && (
                     <div className="absolute right-0 mt-2.5 w-56 bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-3xl shadow-float py-3 px-2 z-50 animate-scale-in flex flex-col space-y-0.5">
                       <div className="px-3 py-2 border-b border-warm-100 dark:border-warm-700 mb-2 flex items-center gap-2">
-                         <Avatar emoji={profile.avatar_emoji} photoUrl={profile.photo_url} size="sm" />
+                         <Avatar photoUrl={profile.photo_url} size="sm" />
                          <div className="min-w-0">
                            <p className="font-semibold text-warm-900 dark:text-warm-50 text-sm truncate">{profile.display_name}</p>
                            <p className="text-xs text-warm-500 truncate">@{profile.username}</p>

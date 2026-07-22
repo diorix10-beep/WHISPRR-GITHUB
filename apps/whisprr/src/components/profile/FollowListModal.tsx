@@ -137,7 +137,7 @@ export function FollowListModal({ isOpen, onClose, userId, type }: FollowListMod
                   key={p.user_id}
                   className="p-4 flex items-center gap-3 hover:bg-warm-50 dark:hover:bg-warm-800 transition-colors"
                 >
-                  <Avatar emoji={p.avatar_emoji} photoUrl={p.photo_url} size="md" />
+                  <Avatar photoUrl={p.photo_url} size="md" />
                   <div
                     className="flex-1 cursor-pointer"
                     onClick={() => { navigate(`/profile/${p.username}`); onClose(); }}

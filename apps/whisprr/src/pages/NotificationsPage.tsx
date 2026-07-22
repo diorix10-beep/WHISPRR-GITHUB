@@ -153,7 +153,6 @@ export default function NotificationsPage() {
                       {/* Avatar */}
                       {notification.actor_profile && (
                         <Avatar
-                          emoji={notification.actor_profile.avatar_emoji}
                           photoUrl={notification.actor_profile.photo_url}
                           size="md"
                         />

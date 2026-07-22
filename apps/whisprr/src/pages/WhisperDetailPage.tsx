@@ -238,7 +238,6 @@ export default function WhisperDetailPage() {
           <div className="flex items-start gap-3">
             {comment.profiles && (
               <Avatar
-                emoji={comment.profiles.avatar_emoji}
                 photoUrl={comment.profiles.photo_url}
                 size="md"
               />
@@ -414,7 +413,6 @@ export default function WhisperDetailPage() {
         <div className="card">
           <div className="flex items-end gap-3">
             <Avatar
-              emoji={profile.avatar_emoji}
               photoUrl={profile.photo_url}
               size="md"
             />

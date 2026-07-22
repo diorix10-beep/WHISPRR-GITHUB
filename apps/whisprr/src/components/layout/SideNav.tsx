@@ -270,7 +270,7 @@ export function SideNav() {
             onClick={() => setShowMenu(!showMenu)}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-700/80 transition-colors text-left"
           >
-            <Avatar emoji={profile.avatar_emoji} photoUrl={profile.photo_url} size="sm" />
+            <Avatar photoUrl={profile.photo_url} size="sm" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-warm-900 dark:text-warm-50 truncate flex items-center justify-between">
                 <span>{profile.display_name}</span>

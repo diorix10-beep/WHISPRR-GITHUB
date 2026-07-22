@@ -3,7 +3,7 @@ import * as Icons from 'lucide-react';
 type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 interface CommunityAvatarProps {
-  emoji?: string | null;
+  photoUrl?: string | null;
   size?: AvatarSize;
   className?: string;
 }
@@ -24,46 +24,24 @@ const iconSizes: Record<AvatarSize, number> = {
   xl: 40,
 };
 
-export function CommunityAvatar({ emoji, size = 'md', className = '' }: CommunityAvatarProps) {
+export function CommunityAvatar({ photoUrl, size = 'md', className = '' }: CommunityAvatarProps) {
   const sizeClass = sizeClasses[size];
   const iconSize = iconSizes[size];
 
-  if (!emoji) {
+  if (!photoUrl || (!photoUrl.startsWith('http://') && !photoUrl.startsWith('https://'))) {
     const DefaultIcon = Icons.Globe;
     return (
-      <div className={`flex items-center justify-center bg-warm-100 dark:bg-warm-800 text-warm-500 dark:text-warm-400 shrink-0 ${sizeClass} ${className}`}>
-        <DefaultIcon size={iconSize} />
+      <div className={`flex items-center justify-center bg-gradient-to-br from-warm-100 to-warm-200 dark:from-warm-800 dark:to-warm-900 border border-warm-200 dark:border-warm-700 text-warm-500 dark:text-warm-400 shrink-0 shadow-soft ${sizeClass} ${className}`}>
+        <DefaultIcon size={iconSize} className="opacity-60" />
       </div>
     );
   }
 
-  // Check if it is a custom uploaded image URL
-  if (emoji.startsWith('http://') || emoji.startsWith('https://')) {
-    return (
-      <img
-        src={emoji}
-        alt="Community Avatar"
-        className={`object-cover shrink-0 ${sizeClass} ${className}`}
-      />
-    );
-  }
-
-  // Check if it is a Lucide icon
-  const IconComponent = (Icons as any)[emoji];
-  if (IconComponent) {
-    return (
-      <div className={`flex items-center justify-center bg-primary-50 dark:bg-primary-950/30 text-primary-500 dark:text-primary-400 shrink-0 ${sizeClass} ${className}`}>
-        <IconComponent size={iconSize} />
-      </div>
-    );
-  }
-
-  // Fallback to text (emoji)
   return (
-    <div
-      className={`flex items-center justify-center bg-gradient-to-br from-primary-100 to-accent-100 dark:from-primary-950/20 dark:to-accent-950/20 text-warm-800 dark:text-warm-200 shrink-0 ${sizeClass} ${className}`}
-    >
-      <span style={{ fontSize: `${iconSize * 0.9}px` }}>{emoji}</span>
-    </div>
+    <img
+      src={photoUrl}
+      alt="Community Avatar"
+      className={`object-cover shrink-0 ${sizeClass} ${className}`}
+    />
   );
 }

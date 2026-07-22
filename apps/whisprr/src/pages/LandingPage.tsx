@@ -437,18 +437,18 @@ export default function LandingPage() {
             </p>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center', marginBottom: 64 }}>
-              <CreatorPill emoji="✍️" label="Writers" />
-              <CreatorPill emoji="🌍" label="Worldbuilders" />
-              <CreatorPill emoji="🎭" label="AI Roleplay Creators" />
-              <CreatorPill emoji="📖" label="Storytellers" />
-              <CreatorPill emoji="🧙" label="Character Designers" />
-              <CreatorPill emoji="📚" label="Lore Writers" />
-              <CreatorPill emoji="🎨" label="Creative Directors" />
-              <CreatorPill emoji="🤝" label="Collaborators" />
-              <CreatorPill emoji="🌌" label="Fantasy Creators" />
-              <CreatorPill emoji="🔬" label="Sci-Fi Builders" />
-              <CreatorPill emoji="💬" label="Community Builders" />
-              <CreatorPill emoji="⚡" label="Prompt Engineers" />
+              <CreatorPill label="Writers" />
+              <CreatorPill label="Worldbuilders" />
+              <CreatorPill label="AI Roleplay Creators" />
+              <CreatorPill label="Storytellers" />
+              <CreatorPill label="Character Designers" />
+              <CreatorPill label="Lore Writers" />
+              <CreatorPill label="Creative Directors" />
+              <CreatorPill label="Collaborators" />
+              <CreatorPill label="Fantasy Creators" />
+              <CreatorPill label="Sci-Fi Builders" />
+              <CreatorPill label="Community Builders" />
+              <CreatorPill label="Prompt Engineers" />
             </div>
 
             {/* Feed preview */}

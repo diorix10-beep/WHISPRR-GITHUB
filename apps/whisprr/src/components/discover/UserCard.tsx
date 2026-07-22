@@ -37,7 +37,6 @@ export function UserCard({
       {/* Header with Avatar and Role */}
       <div className="flex items-start gap-3 mb-4">
         <Avatar
-          emoji={profile.avatar_emoji}
           photoUrl={profile.photo_url}
           size="lg"
         />

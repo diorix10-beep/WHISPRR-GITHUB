@@ -610,7 +610,7 @@ export default function DiscoverPage() {
                     </p>
                     <div className="flex items-center justify-between text-xs text-warm-500">
                       <div className="flex items-center gap-2">
-                        <Avatar emoji={w.profiles.avatar_emoji} photoUrl={w.profiles.photo_url} size="xs" />
+                        <Avatar photoUrl={w.profiles.photo_url} size="xs" />
                         <span className="font-semibold text-warm-700 dark:text-warm-300">@{w.profiles.username}</span>
                       </div>
                       <div className="flex items-center gap-3">
@@ -719,7 +719,7 @@ function CreatorCard({
   return (
     <div className="flex-shrink-0 w-40 snap-start rounded-2xl bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 overflow-hidden hover:shadow-md hover:border-warm-300 dark:hover:border-warm-600 transition-all">
       <div className="pt-4 pb-2 px-3 flex flex-col items-center cursor-pointer" onClick={onClick}>
-        <Avatar emoji={p.avatar_emoji} photoUrl={p.photo_url} size="lg" />
+        <Avatar photoUrl={p.photo_url} size="lg" />
         <p className="font-semibold text-warm-900 dark:text-warm-50 text-sm mt-2 truncate w-full text-center">
           {p.display_name}
         </p>
@@ -775,7 +775,7 @@ function CommunityRow({ community: c, onClick }: { community: CommunityWithCount
       onClick={onClick}
       className="w-full flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 hover:shadow-md hover:border-warm-300 dark:hover:border-warm-600 transition-all text-left"
     >
-      <CommunityAvatar emoji={c.emoji} size="sm" />
+      <CommunityAvatar size="sm" />
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-warm-900 dark:text-warm-50 text-sm truncate">{c.name}</p>
         {c.description && <p className="text-xs text-warm-500 line-clamp-1">{c.description}</p>}

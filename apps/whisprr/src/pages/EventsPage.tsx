@@ -183,7 +183,6 @@ export default function EventsPage() {
                         Host:
                       </span>
                       <Avatar
-                        emoji={event.host.avatar_emoji}
                         photoUrl={event.host.photo_url}
                         size="xs"
                       />

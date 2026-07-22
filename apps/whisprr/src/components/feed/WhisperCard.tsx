@@ -586,7 +586,6 @@ export const WhisperCard = memo(function WhisperCard({
           onClick={handleProfileClick}
         >
           <Avatar
-            emoji={whisperProfile?.avatar_emoji || '👤'}
             photoUrl={whisperProfile?.photo_url}
             size="md"
           />

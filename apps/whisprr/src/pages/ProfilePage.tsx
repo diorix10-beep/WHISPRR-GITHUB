@@ -171,7 +171,6 @@ export default function ProfilePage() {
           location: profileData.location || '',
           website: profileData.website || '',
           birthday: profileData.birthday || '',
-          avatar_emoji: profileData.avatar_emoji || '',
           pronouns: profileData.pronouns || '',
           languages: (profileData.languages || []).join(', '),
           personality_badges: profileData.personality_badges || [],
@@ -256,7 +255,7 @@ export default function ProfilePage() {
           .select(`
             *,
             profiles:user_id(
-              id, user_id, display_name, username, avatar_emoji, photo_url, bio, badges
+              id, user_id, display_name, username, photo_url, bio, badges
             ),
             reactions(id, whisper_id, user_id, type, created_at)
           `)
@@ -422,7 +421,6 @@ export default function ProfilePage() {
         location: editForm.location,
         website: editForm.website,
         birthday: editForm.birthday,
-        avatar_emoji: editForm.avatar_emoji,
         pronouns: editForm.pronouns,
         languages,
         social_links,
@@ -704,33 +702,6 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Avatar Emoji Edit */}
-            <div>
-              <label className="block text-sm font-semibold text-warm-900 dark:text-warm-50 mb-2">
-                Avatar
-              </label>
-              <div className="flex items-center gap-4">
-                <Avatar
-                  emoji={editForm.avatar_emoji}
-                  photoUrl={profile.photo_url}
-                  size="lg"
-                  editable
-                  onPhotoClick={() => setShowPhotoUpload(true)}
-                  uploading={isPhotoUploading}
-                />
-                <div className="flex-1 space-y-2">
-                  <input
-                    type="text"
-                    maxLength={2}
-                    value={editForm.avatar_emoji}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, avatar_emoji: e.target.value }))}
-                    className="input-field"
-                    placeholder="Fallback emoji"
-                  />
-                </div>
-              </div>
-            </div>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Username Edit */}
               <div>
@@ -1126,7 +1097,6 @@ export default function ProfilePage() {
                 <div className="relative">
                   <div className="ring-4 ring-white dark:ring-warm-800 rounded-full bg-white dark:bg-warm-800">
                     <Avatar
-                      emoji={profile.avatar_emoji}
                       photoUrl={profile.photo_url}
                       size="xl"
                       editable={isOwnProfile}

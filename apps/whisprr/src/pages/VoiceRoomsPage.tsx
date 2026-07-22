@@ -131,7 +131,6 @@ export default function VoiceRoomsPage() {
                 {room.host_profile && (
                   <div className="flex items-center gap-2">
                     <Avatar
-                      emoji={room.host_profile.avatar_emoji}
                       photoUrl={room.host_profile.photo_url}
                       size="sm"
                     />

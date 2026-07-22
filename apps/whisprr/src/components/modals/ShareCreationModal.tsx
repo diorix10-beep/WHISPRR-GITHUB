@@ -172,7 +172,7 @@ export function ShareCreationModal({
                   className="flex items-center justify-between p-2 hover:bg-warm-50 dark:hover:bg-warm-750 rounded-2xl transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <Avatar emoji={c.otherUser.avatar_emoji || '👤'} photoUrl={c.otherUser.photo_url} size="md" />
+                    <Avatar photoUrl={c.otherUser.photo_url} size="md" />
                     <div>
                       <h4 className="text-xs font-bold text-warm-900 dark:text-white leading-snug">{c.otherUser.display_name}</h4>
                       <p className="text-[10px] text-warm-500">@{c.otherUser.username}</p>

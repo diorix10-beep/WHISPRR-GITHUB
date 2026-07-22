@@ -324,7 +324,6 @@ export default function OnboardingPage() {
                 <div className="w-40 h-40 rounded-full shadow-lg ring-4 ring-primary-100 dark:ring-primary-950 flex items-center justify-center overflow-hidden bg-warm-100 dark:bg-warm-800">
                   <Avatar 
                     photoUrl={data.photoUrl} 
-                    emoji={data.displayName?.charAt(0) || '?'} 
                     size="xl" 
                   />
                 </div>
@@ -544,7 +543,6 @@ export default function OnboardingPage() {
                   <div className="w-18 h-18 rounded-full overflow-hidden flex-shrink-0 bg-warm-200 dark:bg-warm-800">
                     <Avatar 
                       photoUrl={data.photoUrl} 
-                      emoji={data.displayName?.charAt(0) || '?'} 
                       size="lg" 
                     />
                   </div>

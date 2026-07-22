@@ -263,7 +263,7 @@ export default function GroupChatPage() {
                           : 'hover:bg-warm-100 dark:hover:bg-warm-700 border border-transparent'
                       }`}
                     >
-                      <Avatar emoji={u.avatar_emoji} photoUrl={u.photo_url} size="md" />
+                      <Avatar photoUrl={u.photo_url} size="md" />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-warm-900 dark:text-warm-100 text-sm truncate">{u.display_name}</p>
                         <p className="text-xs text-warm-500">@{u.username}</p>

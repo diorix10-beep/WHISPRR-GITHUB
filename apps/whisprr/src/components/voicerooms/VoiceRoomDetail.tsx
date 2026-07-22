@@ -152,7 +152,6 @@ export function VoiceRoomDetail({ roomId, onBack }: VoiceRoomDetailProps) {
                 {room.host_profile && (
                   <>
                     <Avatar
-                      emoji={room.host_profile.avatar_emoji}
                       photoUrl={room.host_profile.photo_url}
                       size="lg"
                     />

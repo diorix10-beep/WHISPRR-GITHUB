@@ -332,7 +332,6 @@ export default function MessagesPage() {
                   </div>
                 ) : otherUser ? (
                   <Avatar
-                    emoji={otherUser.avatar_emoji}
                     photoUrl={otherUser.photo_url}
                     size="md"
                   />
@@ -458,7 +457,6 @@ export default function MessagesPage() {
                           }`}
                         >
                           <Avatar
-                            emoji={user.avatar_emoji}
                             photoUrl={user.photo_url}
                             size="md"
                           />
