@@ -84,7 +84,7 @@ function AppLoader() {
     return (
       <div className="h-screen flex items-center justify-center bg-warm-50 dark:bg-warm-900">
         <div className="text-center flex flex-col items-center gap-6">
-          <Logo size={64} className="animate-pulse" />
+          <Logo variant="icon-only" size={72} className="animate-pulse" />
           <p className="text-warm-500 dark:text-warm-400 font-serif tracking-widest text-sm uppercase font-medium">The Home of Creators</p>
         </div>
       </div>
