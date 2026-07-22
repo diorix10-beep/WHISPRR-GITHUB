@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { Outlet, useNavigate, NavLink, useLocation, Link } from 'react-router-dom';
 import {
-  Menu, Sun, Moon, Monitor, Search, Command, Plus, Sparkles, Grid3X3, Settings, LogOut,
-  Palette, Users, Globe, PenTool, MessageSquare, LayoutGrid
+  Menu, Sun, Moon, Monitor, Search, Plus, LayoutGrid, Settings, LogOut,
+  PenTool, MessageSquare, BookOpen, Globe, Users, Feather, Bookmark, Compass, Sparkles, UserCheck
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -17,21 +17,24 @@ interface ChimeraLayoutProps {
 interface NavLinkItem {
   path: string;
   label: string;
+  icon?: any;
   comingSoon?: boolean;
 }
 
 const ROLEPLAY_LINKS: NavLinkItem[] = [
-  { path: '/discover', label: 'Discover' },
-  { path: '/characters', label: 'Characters' },
-  { path: '/conversations', label: 'Chats' },
-  { path: '/personas', label: 'Personas' },
-  { path: '/studio', label: 'Creator Studio' },
+  { path: '/discover', label: 'Discover', icon: Compass },
+  { path: '/characters', label: 'Characters', icon: Users },
+  { path: '/conversations', label: 'Chats', icon: MessageSquare },
+  { path: '/personas', label: 'Personas', icon: UserCheck },
+  { path: '/studio', label: 'Creator Studio', icon: Sparkles },
 ];
 
 const STORYTELLING_LINKS: NavLinkItem[] = [
-  { path: '/', label: 'Home' },
-  { path: '/stories', label: 'Stories' },
-  { path: '/worlds', label: 'Worlds' },
+  { path: '/', label: 'Home', icon: Compass },
+  { path: '/write/desk', label: 'Stories', icon: BookOpen },
+  { path: '/worlds', label: 'Worlds', icon: Globe },
+  { path: '/authors', label: 'Authors', icon: Feather, comingSoon: true },
+  { path: '/library', label: 'Library', icon: Bookmark, comingSoon: true },
 ];
 
 export function ChimeraLayout({ children }: ChimeraLayoutProps) {
@@ -50,10 +53,26 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
     return (localStorage.getItem('chimera_creative_mode') as 'roleplay' | 'storytelling') || 'roleplay';
   });
 
-  const toggleCreativeMode = () => {
-    const newMode = creativeMode === 'roleplay' ? 'storytelling' : 'roleplay';
-    setCreativeMode(newMode);
-    localStorage.setItem('chimera_creative_mode', newMode);
+  const toggleCreativeMode = (targetMode?: 'roleplay' | 'storytelling') => {
+    const nextMode = targetMode || (creativeMode === 'roleplay' ? 'storytelling' : 'roleplay');
+    if (nextMode === creativeMode) return;
+
+    setCreativeMode(nextMode);
+    localStorage.setItem('chimera_creative_mode', nextMode);
+
+    // Auto-redirect workspace to prevent mode bleed
+    const currentPath = location.pathname;
+    if (nextMode === 'storytelling') {
+      const rpRoutes = ['/discover', '/characters', '/conversations', '/personas', '/studio', '/voices', '/models'];
+      if (rpRoutes.some(route => currentPath.startsWith(route))) {
+        navigate('/write/desk');
+      }
+    } else {
+      const storyRoutes = ['/write/desk', '/stories', '/worlds', '/authors', '/library'];
+      if (storyRoutes.some(route => currentPath.startsWith(route))) {
+        navigate('/discover');
+      }
+    }
   };
 
   const themeMenuRef = useRef<HTMLDivElement>(null);
@@ -126,9 +145,9 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
           end={link.path === '/'}
           onClick={link.comingSoon ? (e) => e.preventDefault() : undefined}
           className={({ isActive }) =>
-            `relative px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap inline-flex items-center shrink-0 ${
+            `relative px-3.5 py-2 text-sm font-medium transition-colors whitespace-nowrap inline-flex items-center shrink-0 ${
               link.comingSoon
-                ? 'text-warm-400 dark:text-warm-600 cursor-default'
+                ? 'text-warm-400 dark:text-warm-600 cursor-default opacity-70'
                 : isActive
                   ? creativeMode === 'storytelling'
                     ? 'text-purple-600 dark:text-purple-400 font-bold'
@@ -141,7 +160,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             <>
               {link.label}
               {link.comingSoon && (
-                <span className="ml-2 text-[9px] uppercase tracking-wider font-bold text-warm-400 dark:text-warm-600 bg-warm-100 dark:bg-warm-800 px-1.5 py-0.5 rounded-md">
+                <span className="ml-1.5 text-[9px] uppercase tracking-wider font-bold text-warm-400 dark:text-warm-600 bg-warm-100 dark:bg-warm-800 px-1.5 py-0.5 rounded-md">
                   Soon
                 </span>
               )}
@@ -200,27 +219,27 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               {renderNavLinks()}
             </nav>
 
-            {/* Global Creative Mode Switch (Compact iOS Segmented Selector) */}
-            <div className="flex items-center bg-warm-200/60 dark:bg-warm-800/80 p-0.5 rounded-lg border border-warm-200/80 dark:border-warm-750/80">
+            {/* Global Creative Mode Switch (Distinct Colors per Mode) */}
+            <div className="flex items-center bg-warm-200/60 dark:bg-warm-800/80 p-0.5 rounded-xl border border-warm-200/80 dark:border-warm-750/80">
               <button
-                onClick={() => creativeMode !== 'roleplay' && toggleCreativeMode()}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all duration-200 ${
+                onClick={() => toggleCreativeMode('roleplay')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
                   creativeMode === 'roleplay' 
-                    ? 'bg-white dark:bg-warm-900 text-red-600 dark:text-red-400 shadow-sm font-semibold' 
-                    : 'text-warm-500 hover:text-warm-700 dark:hover:text-warm-300'
+                    ? 'bg-red-600 text-white shadow-md shadow-red-600/20' 
+                    : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
               >
                 <MessageSquare size={13} /> Roleplay
               </button>
               <button
-                onClick={() => creativeMode !== 'storytelling' && toggleCreativeMode()}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all duration-200 ${
+                onClick={() => toggleCreativeMode('storytelling')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
                   creativeMode === 'storytelling' 
-                    ? 'bg-white dark:bg-warm-900 text-purple-600 dark:text-purple-400 shadow-sm font-semibold' 
-                    : 'text-warm-500 hover:text-warm-700 dark:hover:text-warm-300'
+                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20' 
+                    : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
               >
-                <PenTool size={13} /> Story
+                <PenTool size={13} /> Storytelling
               </button>
             </div>
           </div>
@@ -233,17 +252,25 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               className="flex items-center gap-2 px-3 py-1.5 sm:py-2 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-850 text-warm-500 hover:border-warm-300 dark:hover:border-warm-650 transition-colors"
             >
               <Search size={16} />
-              <span className="hidden md:block text-sm mr-4">Search...</span>
+              <span className="hidden md:block text-xs mr-4">
+                {creativeMode === 'storytelling' ? 'Search stories & authors...' : 'Search characters & chats...'}
+              </span>
               <kbd className="hidden md:block text-[10px] bg-warm-200 dark:bg-warm-700 px-1.5 py-0.5 rounded font-mono">⌘K</kbd>
             </button>
 
-            {/* Create Button */}
+            {/* Mode-Specific Primary CTA */}
             <button
-              onClick={() => navigate('/characters/new')}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl font-semibold text-xs sm:text-sm text-white bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 shadow-sm shadow-red-500/20 active:scale-[0.98] transition-all"
+              onClick={() => navigate(creativeMode === 'storytelling' ? '/write/desk' : '/studio')}
+              className={`hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs sm:text-sm text-white shadow-md active:scale-[0.98] transition-all ${
+                creativeMode === 'storytelling'
+                  ? 'bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 shadow-purple-600/20'
+                  : 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 shadow-red-600/20'
+              }`}
             >
               <Plus size={16} strokeWidth={2.5} />
-              <span className="hidden sm:block">Create</span>
+              <span>
+                {creativeMode === 'storytelling' ? 'Write Story' : 'Create Character'}
+              </span>
             </button>
 
             {/* Theme Toggle */}
@@ -251,111 +278,150 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               <button
                 onClick={() => setShowThemeMenu(!showThemeMenu)}
                 className="p-2 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
+                aria-label="Toggle theme menu"
               >
                 {preference === 'light' ? <Sun size={18} /> : preference === 'dark' ? <Moon size={18} /> : <Monitor size={18} />}
               </button>
+
               {showThemeMenu && (
-                <div className="absolute right-0 top-full mt-2 w-36 bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-xl shadow-lg p-1 z-50 flex flex-col gap-0.5">
-                  {(['light', 'dark', 'system'] as const).map(mode => (
-                    <button
-                      key={mode}
-                      onClick={() => { setPreference(mode); setShowThemeMenu(false); }}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium w-full text-left transition-colors ${
-                        preference === mode
-                          ? 'bg-red-50 dark:bg-red-950/20 text-red-600'
-                          : 'text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-750'
-                      }`}
-                    >
-                      {mode === 'light' ? <Sun size={14} /> : mode === 'dark' ? <Moon size={14} /> : <Monitor size={14} />}
-                      {mode.charAt(0).toUpperCase() + mode.slice(1)}
-                    </button>
-                  ))}
+                <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-warm-850 rounded-2xl shadow-xl border border-warm-200 dark:border-warm-750 py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  {[
+                    { id: 'light', label: 'Light', icon: Sun },
+                    { id: 'dark', label: 'Dark', icon: Moon },
+                    { id: 'system', label: 'System', icon: Monitor },
+                  ].map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setPreference(item.id as any);
+                          setShowThemeMenu(false);
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium transition-colors ${
+                          preference === item.id
+                            ? 'text-red-600 dark:text-red-400 font-bold bg-warm-100 dark:bg-warm-800'
+                            : 'text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-800'
+                        }`}
+                      >
+                        <Icon size={14} />
+                        {item.label}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
 
-            {/* User Profile */}
-            {profile && (
+            {/* Profile Dropdown */}
+            {profile ? (
               <div className="relative" ref={profileMenuRef}>
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="p-0.5 rounded-full border border-warm-200 dark:border-warm-700 hover:border-red-400 dark:hover:border-red-500 transition-colors"
+                  className="flex items-center gap-2 p-1 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
                 >
-                  <Avatar emoji={profile.avatar_emoji} photoUrl={profile.photo_url} size="sm" />
+                  <Avatar
+                    photoUrl={profile.photo_url}
+                    emoji={profile.avatar_emoji}
+                    size="sm"
+                  />
                 </button>
+
                 {showProfileMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-xl shadow-lg py-1.5 z-50 flex flex-col">
-                    <div className="px-4 py-2 border-b border-warm-100 dark:border-warm-750 mb-1">
-                      <p className="text-sm font-semibold text-warm-900 dark:text-warm-100 truncate">
-                        {profile.display_name}
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-warm-850 rounded-2xl shadow-xl border border-warm-200 dark:border-warm-750 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="px-4 py-2 border-b border-warm-100 dark:border-warm-800">
+                      <p className="font-semibold text-xs text-warm-900 dark:text-warm-50 truncate">
+                        {profile.display_name || profile.username}
                       </p>
-                      <p className="text-xs text-warm-500 dark:text-warm-400 truncate">
-                        @{profile.username}
-                      </p>
+                      <p className="text-[10px] text-warm-400 truncate">@{profile.username}</p>
                     </div>
-                    <button onClick={() => { setShowProfileMenu(false); navigate('/profile'); }} className="flex items-center gap-2 px-4 py-2 text-sm text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-750 w-full text-left">
-                      <Settings size={16} /> Profile & Settings
-                    </button>
-                    <button onClick={() => { setShowProfileMenu(false); setShowAppLauncher(true); }} className="flex items-center gap-2 px-4 py-2 text-sm text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-750 w-full text-left">
-                      <Grid3X3 size={16} /> WHISPRR Ecosystem
-                    </button>
-                    <div className="h-px bg-warm-100 dark:bg-warm-750 my-1" />
-                    <button onClick={handleSignOut} className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 w-full text-left">
-                      <LogOut size={16} /> Sign Out
-                    </button>
+
+                    <div className="py-1">
+                      <Link
+                        to="/profile"
+                        onClick={() => setShowProfileMenu(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-xs text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-800"
+                      >
+                        Profile
+                      </Link>
+                      <Link
+                        to="/settings"
+                        onClick={() => setShowProfileMenu(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-xs text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-800"
+                      >
+                        <Settings size={14} /> Settings
+                      </Link>
+                    </div>
+
+                    <div className="border-t border-warm-100 dark:border-warm-800 pt-1">
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full flex items-center gap-2 px-4 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
+                      >
+                        <LogOut size={14} /> Sign out
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
+            ) : (
+              <Link
+                to="/auth"
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition-all"
+              >
+                Sign In
+              </Link>
             )}
           </div>
         </div>
-
-        {/* Mobile Navigation Drawer */}
-        <MobileNavDrawer
-          isOpen={isMenuOpen}
-          onClose={() => setIsMenuOpen(false)}
-          creativeMode={creativeMode}
-          toggleCreativeMode={toggleCreativeMode}
-          onOpenSearch={() => setSearchOpen(true)}
-          onOpenAppLauncher={() => setShowAppLauncher(true)}
-        />
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-6 sm:py-8 lg:py-10">
+      <main className="flex-1 w-full max-w-7xl mx-auto">
         {children || <Outlet context={{ creativeMode }} />}
       </main>
 
-      {/* Search Overlay (Command Palette) */}
+      {/* Mobile Navigation Drawer */}
+      <MobileNavDrawer
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        creativeMode={creativeMode}
+        toggleCreativeMode={toggleCreativeMode}
+        onOpenSearch={() => setSearchOpen(true)}
+        onOpenAppLauncher={() => setShowAppLauncher(true)}
+      />
+
+      {/* App Launcher Modal */}
+      <AppLauncherModal
+        isOpen={showAppLauncher}
+        onClose={() => setShowAppLauncher(false)}
+      />
+
+      {/* Cmd+K Search Overlay */}
       {searchOpen && (
-        <div className="fixed inset-0 z-[9999] bg-warm-950/60 backdrop-blur-sm flex items-start justify-center pt-[15vh] px-4">
-          <div className="w-full max-w-lg bg-white dark:bg-warm-850 rounded-2xl border border-warm-200 dark:border-warm-750 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-warm-100 dark:border-warm-800">
+        <div className="fixed inset-0 z-50 bg-warm-950/60 backdrop-blur-sm flex items-start justify-center pt-20 p-4">
+          <div className="w-full max-w-xl bg-white dark:bg-warm-850 rounded-2xl shadow-2xl border border-warm-200 dark:border-warm-750 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-4 border-b border-warm-200 dark:border-warm-750 flex items-center gap-3">
               <Search size={18} className="text-warm-400" />
               <input
                 ref={searchInputRef}
                 type="text"
-                placeholder="Search characters, worlds, stories..."
-                className="flex-1 bg-transparent text-sm text-warm-900 dark:text-warm-100 placeholder:text-warm-400 focus:outline-none"
+                placeholder={creativeMode === 'storytelling' ? "Search stories, books, genres, or authors..." : "Search characters, personas, or chats..."}
+                className="w-full bg-transparent border-none text-sm text-warm-900 dark:text-warm-50 focus:outline-none placeholder:text-warm-400"
               />
-              <kbd
+              <button
                 onClick={() => setSearchOpen(false)}
-                className="text-[10px] bg-warm-100 dark:bg-warm-750 text-warm-500 px-2 py-1 rounded font-mono cursor-pointer hover:bg-warm-200 dark:hover:bg-warm-700 transition-colors"
+                className="text-xs text-warm-400 hover:text-warm-600 dark:hover:text-warm-200 px-2 py-1 rounded bg-warm-100 dark:bg-warm-800"
               >
                 ESC
-              </kbd>
+              </button>
             </div>
-            <div className="p-4 text-center text-warm-400 dark:text-warm-500 text-sm py-12">
-              <Command size={24} className="mx-auto mb-3 opacity-40" />
-              <p>Start typing to search across your creations</p>
-              <p className="text-xs mt-1 text-warm-300 dark:text-warm-600">Characters · Worlds · Stories · Lorebooks</p>
+            <div className="p-6 text-center text-xs text-warm-400">
+              Type to search across {creativeMode === 'storytelling' ? 'stories, series, authors & world building' : 'characters, personas, scenarios & creators'}...
             </div>
           </div>
         </div>
       )}
-
-      {/* App Launcher / Ecosystem Hub Modal */}
-      <AppLauncherModal isOpen={showAppLauncher} onClose={() => setShowAppLauncher(false)} />
     </div>
   );
 }

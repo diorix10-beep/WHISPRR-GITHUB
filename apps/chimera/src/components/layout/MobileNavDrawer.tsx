@@ -1,9 +1,9 @@
-import React, { Component, useState } from 'react';
+import React, { Component } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
-  X, Compass, Users, MessageSquare, User, Sparkles, Mic, Sliders, 
-  BookOpen, Globe, Settings, LogOut, Sun, Moon, Monitor, Search, Grid3X3,
-  PenTool, AlertTriangle
+  X, Compass, Users, MessageSquare, User, Sparkles,
+  BookOpen, Globe, Settings, LogOut, Sun, Moon, Monitor, Search,
+  PenTool, Feather, Bookmark
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -13,7 +13,7 @@ interface MobileNavDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   creativeMode: 'roleplay' | 'storytelling';
-  toggleCreativeMode: () => void;
+  toggleCreativeMode: (mode?: 'roleplay' | 'storytelling') => void;
   onOpenSearch: () => void;
   onOpenAppLauncher: () => void;
 }
@@ -61,13 +61,7 @@ class DrawerErrorBoundary extends Component<
                 <div className="px-2 text-[10px] font-bold text-warm-400 uppercase tracking-wider">Navigation</div>
                 {[
                   { path: '/discover', label: 'Discover' },
-                  { path: '/characters', label: 'Characters' },
-                  { path: '/conversations', label: 'Chats' },
-                  { path: '/personas', label: 'Personas' },
-                  { path: '/studio', label: 'Creator Studio' },
-                  { path: '/voices', label: 'Voice Studio' },
-                  { path: '/models', label: 'AI Brains & API Vault' },
-                  { path: '/stories', label: 'Stories' },
+                  { path: '/write/desk', label: 'Stories' },
                   { path: '/worlds', label: 'Worlds' },
                 ].map(item => (
                   <a
@@ -102,7 +96,6 @@ function MobileNavDrawerContent({
   creativeMode,
   toggleCreativeMode,
   onOpenSearch,
-  onOpenAppLauncher,
 }: MobileNavDrawerProps) {
   const navigate = useNavigate();
   
@@ -146,13 +139,12 @@ function MobileNavDrawerContent({
     { path: '/conversations', label: 'Chats', icon: MessageSquare },
     { path: '/personas', label: 'Personas', icon: User },
     { path: '/studio', label: 'Creator Studio', icon: Sparkles },
-    { path: '/voices', label: 'Voice Studio', icon: Mic },
-    { path: '/models', label: 'AI Brains & API Vault', icon: Sliders },
   ] : [
     { path: '/', label: 'Home', icon: Compass },
-    { path: '/stories', label: 'Stories', icon: BookOpen },
+    { path: '/write/desk', label: 'Stories', icon: BookOpen },
     { path: '/worlds', label: 'Worlds', icon: Globe },
-    { path: '/studio', label: 'Creator Studio', icon: Sparkles },
+    { path: '/authors', label: 'Authors', icon: Feather, comingSoon: true },
+    { path: '/library', label: 'Library', icon: Bookmark, comingSoon: true },
   ];
 
   return (
@@ -169,9 +161,13 @@ function MobileNavDrawerContent({
         {/* Header */}
         <div className="p-4 border-b border-warm-200 dark:border-warm-800 flex items-center justify-between bg-warm-50/50 dark:bg-warm-950/50 flex-shrink-0">
           <div className="flex items-center gap-2">
-            <span className="font-serif text-lg font-bold text-red-600 dark:text-red-500">CHIMERA</span>
-            <span className="text-[10px] font-bold uppercase tracking-wider bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full">
-              Nexus
+            <span className={`font-serif text-lg font-bold ${creativeMode === 'storytelling' ? 'text-purple-600 dark:text-purple-400' : 'text-red-600 dark:text-red-500'}`}>
+              CHIMERA
+            </span>
+            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+              creativeMode === 'storytelling' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' : 'bg-red-500/10 text-red-500'
+            }`}>
+              {creativeMode === 'storytelling' ? 'Storytelling 📖' : 'Roleplay 🎭'}
             </span>
           </div>
           <button 
@@ -185,28 +181,28 @@ function MobileNavDrawerContent({
         {/* Creative Mode Toggle */}
         <div className="p-3 border-b border-warm-100 dark:border-warm-800 bg-warm-50 dark:bg-warm-950/30 flex-shrink-0">
           <div className="text-[10px] uppercase font-bold tracking-widest text-warm-400 mb-1.5 px-1">
-            Creative Mode
+            Creative Workspace
           </div>
           <div className="flex bg-warm-200/70 dark:bg-warm-800/70 p-0.5 rounded-xl">
             <button
-              onClick={() => creativeMode !== 'roleplay' && toggleCreativeMode()}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              onClick={() => toggleCreativeMode('roleplay')}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${
                 creativeMode === 'roleplay'
-                  ? 'bg-white dark:bg-warm-900 text-red-600 dark:text-red-400 shadow-sm'
-                  : 'text-warm-500 hover:text-warm-900 dark:hover:text-white'
+                  ? 'bg-red-600 text-white shadow-md shadow-red-600/20'
+                  : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
               }`}
             >
               <MessageSquare size={14} /> Roleplay
             </button>
             <button
-              onClick={() => creativeMode !== 'storytelling' && toggleCreativeMode()}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              onClick={() => toggleCreativeMode('storytelling')}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${
                 creativeMode === 'storytelling'
-                  ? 'bg-white dark:bg-warm-900 text-purple-600 dark:text-purple-400 shadow-sm'
-                  : 'text-warm-500 hover:text-warm-900 dark:hover:text-white'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
+                  : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
               }`}
             >
-              <PenTool size={14} /> Story
+              <PenTool size={14} /> Storytelling
             </button>
           </div>
         </div>
@@ -217,113 +213,135 @@ function MobileNavDrawerContent({
           {/* Main Links */}
           <div className="space-y-1">
             <div className="px-3 py-1 text-[10px] font-bold text-warm-400 uppercase tracking-wider">
-              Navigation
+              {creativeMode === 'storytelling' ? 'Author Navigation' : 'Roleplay Navigation'}
             </div>
             {mainLinks.map((link) => {
               const Icon = link.icon;
               return (
                 <NavLink
                   key={link.path}
-                  to={link.path}
-                  end={link.path === '/'}
-                  onClick={onClose}
+                  to={link.comingSoon ? '#' : link.path}
+                  onClick={(e) => {
+                    if (link.comingSoon) e.preventDefault();
+                    else onClose();
+                  }}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${
-                      isActive
-                        ? 'bg-red-500/15 text-red-600 dark:text-red-400 font-bold border border-red-500/20'
-                        : 'text-warm-800 dark:text-warm-200 hover:bg-warm-100 dark:hover:bg-warm-800'
+                    `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                      link.comingSoon
+                        ? 'text-warm-400 dark:text-warm-600 cursor-default opacity-60'
+                        : isActive
+                          ? creativeMode === 'storytelling'
+                            ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20'
+                            : 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
+                          : 'text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800'
                     }`
                   }
                 >
-                  <Icon size={18} className="flex-shrink-0" />
-                  <span>{link.label}</span>
+                  <div className="flex items-center gap-3">
+                    <Icon size={16} />
+                    <span>{link.label}</span>
+                  </div>
+                  {link.comingSoon && (
+                    <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-warm-200 dark:bg-warm-800 text-warm-500">
+                      Soon
+                    </span>
+                  )}
                 </NavLink>
               );
             })}
           </div>
 
           {/* Quick Actions */}
-          <div className="space-y-1 pt-2 border-t border-warm-100 dark:border-warm-800">
-            <div className="px-3 py-1 text-[10px] font-bold text-warm-400 uppercase tracking-wider">
-              Quick Tools
+          <div className="pt-2 border-t border-warm-100 dark:border-warm-800">
+            <div className="px-3 py-1 text-[10px] font-bold text-warm-400 uppercase tracking-wider mb-2">
+              Quick Actions
             </div>
-            
             <button
-              onClick={() => { onClose(); onOpenSearch(); }}
-              className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-all text-left"
+              onClick={() => {
+                onClose();
+                navigate(creativeMode === 'storytelling' ? '/write/desk' : '/studio');
+              }}
+              className={`w-full py-2.5 rounded-xl text-xs font-bold text-white shadow-md flex items-center justify-center gap-2 transition-all ${
+                creativeMode === 'storytelling'
+                  ? 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/20'
+                  : 'bg-red-600 hover:bg-red-700 shadow-red-600/20'
+              }`}
             >
-              <Search size={18} className="flex-shrink-0" />
-              <span>Search Nexus (⌘K)</span>
-            </button>
-
-            <button
-              onClick={() => { onClose(); onOpenAppLauncher(); }}
-              className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-all text-left"
-            >
-              <Grid3X3 size={18} className="text-red-500 flex-shrink-0" />
-              <span>WHISPRR Ecosystem Hub</span>
+              <PenTool size={14} />
+              <span>{creativeMode === 'storytelling' ? '+ Write Story' : '+ Create Character'}</span>
             </button>
           </div>
 
-          {/* Theme Preference */}
-          <div className="space-y-2 pt-2 border-t border-warm-100 dark:border-warm-800">
-            <div className="px-3 text-[10px] font-bold text-warm-400 uppercase tracking-wider">
-              Theme Mode
-            </div>
-            <div className="flex gap-2 px-1">
-              {(['light', 'dark', 'system'] as const).map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => setPreference(mode)}
-                  className={`flex-1 py-2 flex items-center justify-center rounded-xl border text-xs font-bold transition-all ${
-                    preference === mode
-                      ? 'border-red-500 text-red-600 bg-red-50 dark:bg-red-950/40'
-                      : 'border-warm-200 dark:border-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-100 dark:hover:bg-warm-800'
-                  }`}
-                >
-                  {mode === 'light' ? <Sun size={15} /> : mode === 'dark' ? <Moon size={15} /> : <Monitor size={15} />}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Search Button */}
+          <button
+            onClick={() => {
+              onClose();
+              onOpenSearch();
+            }}
+            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-850 text-warm-600 dark:text-warm-300 text-xs font-semibold hover:border-warm-300 dark:hover:border-warm-650 transition-colors"
+          >
+            <Search size={16} />
+            <span>{creativeMode === 'storytelling' ? 'Search stories & authors...' : 'Search characters...'}</span>
+          </button>
         </div>
 
-        {/* Footer User Profile & Settings */}
-        {profile && (
-          <div className="p-4 border-t border-warm-200 dark:border-warm-800 bg-warm-50/70 dark:bg-warm-950/70 space-y-3 flex-shrink-0">
-            <div 
-              onClick={() => { onClose(); navigate('/profile'); }}
-              className="flex items-center gap-3 cursor-pointer p-1.5 rounded-2xl hover:bg-warm-200/50 dark:hover:bg-warm-800/50 transition-colors"
-            >
-              <Avatar emoji={profile.avatar_emoji || '👤'} photoUrl={profile.photo_url || null} size="md" />
-              <div className="overflow-hidden flex-1">
-                <h4 className="text-xs font-bold text-warm-900 dark:text-white truncate">
-                  {profile.display_name}
-                </h4>
-                <p className="text-[10px] text-warm-500 truncate">
-                  @{profile.username}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
+        {/* Footer: User Profile & Preferences */}
+        <div className="p-4 border-t border-warm-200 dark:border-warm-800 bg-warm-50/50 dark:bg-warm-950/50 flex-shrink-0 space-y-3">
+          
+          {/* Theme Selector */}
+          <div className="flex bg-warm-200/50 dark:bg-warm-800/50 p-0.5 rounded-lg text-xs">
+            {(['light', 'dark', 'system'] as const).map((t) => (
               <button
-                onClick={() => { onClose(); navigate('/settings'); }}
-                className="flex-1 py-2 px-3 bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-750 hover:bg-warm-100 dark:hover:bg-warm-700 text-warm-800 dark:text-warm-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                key={t}
+                onClick={() => setPreference(t)}
+                className={`flex-1 py-1 rounded-md capitalize font-semibold transition-all ${
+                  preference === t
+                    ? 'bg-white dark:bg-warm-900 text-warm-900 dark:text-warm-50 shadow-sm'
+                    : 'text-warm-500 hover:text-warm-800 dark:hover:text-warm-200'
+                }`}
               >
-                <Settings size={14} /> Settings
+                {t}
               </button>
+            ))}
+          </div>
+
+          {/* User Profile / Sign In */}
+          {profile ? (
+            <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center gap-3 min-w-0">
+                <Avatar
+                  photoUrl={profile.photo_url}
+                  emoji={profile.avatar_emoji}
+                  size="sm"
+                />
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-warm-900 dark:text-warm-50 truncate">
+                    {profile.display_name || profile.username}
+                  </p>
+                  <p className="text-[10px] text-warm-400 truncate">@{profile.username}</p>
+                </div>
+              </div>
+              
               <button
                 onClick={handleSignOut}
-                className="py-2 px-3 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                className="p-2 text-warm-400 hover:text-red-500 rounded-lg hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
                 title="Sign Out"
               >
-                <LogOut size={14} />
+                <LogOut size={16} />
               </button>
             </div>
-          </div>
-        )}
-
+          ) : (
+            <button
+              onClick={() => {
+                onClose();
+                navigate('/auth');
+              }}
+              className="w-full py-2 bg-red-600 text-white font-bold text-xs rounded-xl shadow-md"
+            >
+              Sign In
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
