@@ -43,13 +43,13 @@ export function ChimeraPromoModal({ isOpen, onClose }: ChimeraPromoModalProps) {
           </h2>
           
           <p className="text-warm-300 text-base md:text-lg mb-8 leading-relaxed max-w-sm">
-            Create characters, build worlds, manage personas, and experience immersive AI roleplay.
+            Create characters, build worlds, manage personas, and experience immersive storytelling and roleplay.
           </p>
 
           <div className="grid grid-cols-2 gap-4 w-full mb-8">
             <div className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 border border-white/5">
               <Bot className="text-red-400" size={24} />
-              <span className="text-sm font-medium text-warm-200">AI Characters</span>
+              <span className="text-sm font-medium text-warm-200">Smart Characters</span>
             </div>
             <div className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 border border-white/5">
               <Globe className="text-purple-400" size={24} />

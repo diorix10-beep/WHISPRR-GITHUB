@@ -5,13 +5,13 @@
  * All pages, components, and templates should import properties from here
  * to guarantee 100% brand consistency across the entire platform.
  *
- * CHIMERA = AI Creation Platform
+ * CHIMERA = Creative Platform
  * WHISPRR = Social Network (separate product)
  */
 
 export const CHIMERA_BRAND = {
   name: 'CHIMERA',
-  tagline: 'Your AI Creation Studio.',
+  tagline: 'Where Stories Come to Life.',
   taglineSecondary: 'Create characters. Build worlds. Tell stories.',
   philosophy: 'AI is a tool — not a requirement. Creators always remain in control.',
 

@@ -398,12 +398,12 @@ export default function LandingPage() {
                 <div style={{ display: 'inline-block', padding: '4px 12px', borderRadius: 100, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', fontSize: 11, fontWeight: 700, color: '#a5b4fc', marginBottom: 16, letterSpacing: '0.08em' }}>
                   CHIMERA
                 </div>
-                <h3 style={{ fontSize: 28, fontWeight: 800, margin: '0 0 12px', letterSpacing: '-0.5px' }}>Where creators build.</h3>
+                <h3 style={{ fontSize: 28, fontWeight: 800, margin: '0 0 12px', letterSpacing: '-0.5px' }}>Where Stories Come to Life.</h3>
                 <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 15, lineHeight: 1.7, margin: '0 0 28px' }}>
-                  Your AI-powered creative studio. Craft original AI characters, build entire worlds and universes, write collaborative stories, and bring your creative vision to life with advanced AI tools.
+                  CHIMERA is where creators imagine, write, roleplay, build worlds, design characters, and bring stories to life. Whether you create by hand, with AI, or somewhere in between, CHIMERA is the place where imagination becomes reality.
                 </p>
                 <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 32px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {['AI character creation & roleplay', 'World & universe building', 'Story writing platform', 'Lorebook & lore management', 'AI-powered creative tools'].map(item => (
+                  {['Character creation & roleplay', 'World & universe building', 'Story writing platform', 'Lorebook & lore management', 'Advanced creative tools'].map(item => (
                     <li key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'rgba(255,255,255,0.7)', fontSize: 14 }}>
                       <span style={{ color: '#6366f1', fontSize: 16 }}>✦</span> {item}
                     </li>
@@ -555,16 +555,16 @@ export default function LandingPage() {
               <div style={{ position: 'absolute', top: -60, right: -60, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
               <div style={{ position: 'absolute', bottom: -40, left: -40, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 16px', borderRadius: 100, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', marginBottom: 24, fontSize: 12, fontWeight: 700, color: '#a5b4fc', letterSpacing: '0.08em' }}>
-                🔮 CHIMERA — AI-Powered Creative Studio
+                🔮 CHIMERA — Creative Platform
               </div>
               <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, margin: '0 0 16px', letterSpacing: '-1px' }}>
-                Imagination has no limits<br />
+                Where stories<br />
                 <span style={{ background: 'linear-gradient(135deg, #a5b4fc, #818cf8, #6366f1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-                  when AI is your co-creator.
+                  come to life.
                 </span>
               </h2>
               <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.55)', margin: '0 auto 40px', maxWidth: 520, lineHeight: 1.7 }}>
-                CHIMERA is your AI-powered creative studio. Build original characters, craft living worlds, write stories, and manage your creative universe — then share it all on WHISPRR.
+                CHIMERA is where creators imagine, write, roleplay, build worlds, design characters, and bring stories to life. Whether you create by hand, with AI, or somewhere in between, CHIMERA is the place where imagination becomes reality.
               </p>
               <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
                 <a href={chimeraUrl} className="lp-btn-p" style={{ background: 'linear-gradient(135deg, #6366f1, #4338ca)' }} target="_blank" rel="noopener noreferrer">
