@@ -130,7 +130,9 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               link.comingSoon
                 ? 'text-warm-400 dark:text-warm-600 cursor-default'
                 : isActive
-                  ? 'text-red-600 dark:text-red-400 font-semibold'
+                  ? creativeMode === 'storytelling'
+                    ? 'text-purple-600 dark:text-purple-400 font-bold'
+                    : 'text-red-600 dark:text-red-400 font-bold'
                   : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-warm-100'
             } ${isMobile ? 'flex w-full rounded-lg hover:bg-warm-100 dark:hover:bg-warm-800' : ''}`
           }
@@ -145,7 +147,9 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               )}
               {/* Active underline indicator for desktop */}
               {!isMobile && isActive && !link.comingSoon && (
-                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600 dark:bg-red-500 rounded-t-md" />
+                <span className={`absolute bottom-0 left-0 w-full h-0.5 rounded-t-md ${
+                  creativeMode === 'storytelling' ? 'bg-purple-600 dark:bg-purple-500' : 'bg-red-600 dark:bg-red-500'
+                }`} />
               )}
             </>
           )}
