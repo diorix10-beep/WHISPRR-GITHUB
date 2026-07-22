@@ -31,7 +31,7 @@ export default function BookmarksPage() {
           created_at,
           whispers (
             *,
-            profiles:user_id(id, user_id, display_name, username, avatar_emoji, photo_url, bio, badges),
+            profiles:user_id(id, user_id, display_name, username, photo_url, bio, badges),
             reactions(id, whisper_id, user_id, type, created_at),
             bookmarks(user_id)
           )

@@ -22,7 +22,7 @@ export interface Profile {
   user_id: string;
   display_name: string;
   username: string;
-  avatar_emoji: string;
+  
   photo_url: string | null;
   bio: string | null;
   interests: string[];

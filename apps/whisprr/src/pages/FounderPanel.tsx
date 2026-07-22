@@ -258,7 +258,7 @@ export default function FounderPanel() {
         .from('feedback')
         .select(`
           *,
-          profiles:user_id(id, username, display_name, avatar_emoji)
+          profiles:user_id(id, username, display_name)
         `)
         .order('created_at', { ascending: false });
       if (!error && data) {
@@ -280,7 +280,7 @@ export default function FounderPanel() {
         .select(`
           id,
           earned_at,
-          profiles:user_id(user_id, username, display_name, avatar_emoji, photo_url)
+          profiles:user_id(user_id, username, display_name, photo_url)
         `)
         .eq('badge_type', badgeType);
       if (!error && data) {

@@ -48,7 +48,7 @@ export function ShareCreationModal({
           .from('conversation_participants')
           .select(`
             conversation_id,
-            profiles:user_id(id, user_id, display_name, username, avatar_emoji, photo_url)
+            profiles:user_id(id, user_id, display_name, username, photo_url)
           `)
           .in('conversation_id', convIds)
           .neq('user_id', user.id);

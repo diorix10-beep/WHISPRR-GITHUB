@@ -15,7 +15,7 @@ interface CommunityEvent {
   host?: {
     display_name: string;
     username: string;
-    avatar_emoji: string;
+    
     photo_url: string | null;
   };
 }
@@ -44,7 +44,7 @@ export default function EventsPage() {
       try {
         const { data, error } = await supabase
           .from('community_events')
-          .select('*, host:profiles(display_name, username, avatar_emoji, photo_url)')
+          .select('*, host:profiles(display_name, username, photo_url)')
           .order('scheduled_start_time', { ascending: true });
 
         if (error) throw error;
