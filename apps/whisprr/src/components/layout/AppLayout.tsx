@@ -80,25 +80,36 @@ export function AppLayout({ children }: AppLayoutProps) {
             transition-colors duration-300 lg:hidden"
           role="banner"
         >
-          <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between">
+            {/* Left side: App Launcher + Branding Lockup */}
+            <div className="flex items-center gap-3 sm:gap-4 shrink-0">
               <button
                 onClick={() => setIsLauncherOpen(true)}
-                className="p-1.5 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-700 text-warm-650 dark:text-warm-300 transition-colors"
+                className="p-1.5 sm:p-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-700 text-warm-650 dark:text-warm-300 transition-colors shrink-0"
                 title="App Launcher"
               >
-                <LayoutGrid size={18} />
+                <LayoutGrid size={22} className="hidden sm:block" />
+                <LayoutGrid size={20} className="sm:hidden" />
               </button>
-              <Logo size={28} />
-              <h1
-                className="font-serif text-2xl font-bold
-                  bg-gradient-to-r from-primary-500 to-accent-500
-                  bg-clip-text text-transparent tracking-wide"
-              >
-                WHISPRR
-              </h1>
+              
+              <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 cursor-pointer" onClick={() => navigate('/feed')}>
+                <Logo variant="icon-only" size={30} className="hidden sm:block shrink-0" />
+                <Logo variant="icon-only" size={26} className="sm:hidden shrink-0" />
+                <h1
+                  className="font-serif font-bold tracking-[0.08em] leading-none
+                    bg-gradient-to-r from-primary-500 to-accent-500
+                    bg-clip-text text-transparent
+                    text-xl sm:text-2xl
+                    hidden min-[360px]:block shrink-0"
+                  style={{ paddingTop: '2px' }}
+                >
+                  WHISPRR
+                </h1>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
+
+            {/* Right side: Actions */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <button
                 onClick={() => navigate('/notifications')}
                 className="relative p-2 rounded-xl hover:bg-warm-100
