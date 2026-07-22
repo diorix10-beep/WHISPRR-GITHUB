@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { BookOpen, Bookmark, Heart, Send, ArrowLeft, Plus, Eye, Share2, Sparkles, MessageSquare, Users } from 'lucide-react';
+import { BookOpen, Bookmark, Heart, Send, ArrowLeft, Plus, Eye, Share2, Sparkles, MessageSquare, Users, ChevronRight } from 'lucide-react';
 import { CollaboratorsModal } from '../components/collaboration/CollaboratorsModal';
 import { supabase } from '../lib/supabase';
 import { Story, StoryChapter, StoryComment } from '../types';

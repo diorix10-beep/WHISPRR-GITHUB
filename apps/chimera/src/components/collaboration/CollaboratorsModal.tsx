@@ -223,7 +223,7 @@ export function CollaboratorsModal({
                 {collaborators.map(c => (
                   <div key={c.id} className="bg-white/5 border border-white/5 rounded-xl p-3 flex items-center justify-between">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <Avatar emoji={c.profile?.avatar_emoji} photoUrl={c.profile?.photo_url} size="sm" />
+                      <Avatar emoji={c.profile?.avatar_emoji || '👤'} photoUrl={c.profile?.photo_url || null} size="sm" />
                       <div className="min-w-0">
                         <p className="text-xs font-semibold text-white truncate">
                           {c.profile?.display_name || 'Creator'}

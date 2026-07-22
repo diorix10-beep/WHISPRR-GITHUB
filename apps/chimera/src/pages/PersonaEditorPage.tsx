@@ -276,13 +276,13 @@ export default function PersonaEditorPage() {
           <StructuredArchitectureForm
             value={{
               name: formData.name,
-              gender: formData.gender,
-              age: formData.age,
-              pronouns: formData.pronouns,
-              occupation: formData.occupation,
-              personality_traits: formData.personality,
-              clothing: formData.appearance,
-              habits: formData.backstory,
+              gender: formData.gender || undefined,
+              age: formData.age ? String(formData.age) : undefined,
+              pronouns: formData.pronouns || undefined,
+              occupation: formData.occupation || undefined,
+              personality_traits: formData.personality || undefined,
+              clothing: formData.appearance || undefined,
+              habits: formData.backstory || undefined,
             }}
             onChange={(updated) => {
               const compiled = compileCharacterSystemPrompt(updated);

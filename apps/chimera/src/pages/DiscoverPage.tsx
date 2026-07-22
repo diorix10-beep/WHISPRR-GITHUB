@@ -148,7 +148,7 @@ export default function DiscoverPage() {
             description="We could not find any active storytelling characters with those terms. Try selecting a category or creating a brand new character."
             actionLabel="Create a Character"
             onAction={() => navigate('/create')}
-            onSelectCategory={(cat) => setSelectedCategory(cat)}
+            onSelectCategory={(cat) => setSearchQuery(cat)}
           />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

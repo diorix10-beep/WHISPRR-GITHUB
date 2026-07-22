@@ -14,7 +14,13 @@ interface ChimeraLayoutProps {
   children?: ReactNode;
 }
 
-const ROLEPLAY_LINKS = [
+interface NavLinkItem {
+  path: string;
+  label: string;
+  comingSoon?: boolean;
+}
+
+const ROLEPLAY_LINKS: NavLinkItem[] = [
   { path: '/discover', label: 'Discover' },
   { path: '/characters', label: 'Characters' },
   { path: '/conversations', label: 'Chats' },
@@ -22,7 +28,7 @@ const ROLEPLAY_LINKS = [
   { path: '/studio', label: 'Creator Studio' },
 ];
 
-const STORYTELLING_LINKS = [
+const STORYTELLING_LINKS: NavLinkItem[] = [
   { path: '/', label: 'Home' },
   { path: '/stories', label: 'Stories' },
   { path: '/worlds', label: 'Worlds' },

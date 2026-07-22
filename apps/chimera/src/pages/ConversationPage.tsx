@@ -4,7 +4,7 @@ import { formatDistanceToNow } from 'date-fns';
 import {
   ArrowLeft, Send, Phone, Video, Loader2, Trash2,
   Image as ImageIcon, X, Settings, UserPlus, UserMinus, LogOut, Pencil, Smile, Search,
-  PanelRightClose, PanelRightOpen, BookOpen, Copy, RotateCw, Edit3, Camera
+  PanelRightClose, PanelRightOpen, BookOpen, Copy, RotateCw, Edit3, Camera, Volume2
 } from 'lucide-react';
 import type { Conversation, Message, Profile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -31,7 +31,7 @@ interface ConversationData extends Conversation {
 export default function ConversationPage() {
   const navigate = useNavigate();
   const { conversationId } = useParams<{ conversationId: string }>();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { showToast } = useToast();
 
   const [conversation, setConversation] = useState<ConversationData | null>(null);
@@ -455,7 +455,7 @@ export default function ConversationPage() {
       const { error: msgError } = await supabase
         .from('messages')
         .insert({
-          conversation_id: id,
+          conversation_id: conversationId,
           sender_id: otherUser.user_id,
           content: `*Sends you a photo*`,
           image_url: imageUrl,
@@ -485,7 +485,7 @@ export default function ConversationPage() {
     try {
       const activeMsgs = messages.filter(m => !m.deleted_at);
       const storyText = activeMsgs.map(m => {
-        const senderName = m.profiles?.display_name || (m.user_id === user.id ? 'You' : 'Character');
+        const senderName = m.profiles?.display_name || (m.sender_id === user.id ? 'You' : 'Character');
         return `**${senderName}**: ${m.content}`;
       }).join('\n\n');
 
@@ -864,7 +864,7 @@ export default function ConversationPage() {
         messages={messages}
         onSendMessage={handlePhoneSendMessage}
         otherUser={otherUser}
-        currentUser={user}
+        currentUser={profile}
       />
 
       {/* Main Layout Area */}
@@ -883,7 +883,7 @@ export default function ConversationPage() {
             ) : (
               messages.map((message, index) => {
                 const isOwn = message.sender_id === user?.id;
-                const sender = message.profiles || (isOwn ? user : otherUser);
+                const sender: any = message.profiles || (isOwn ? profile : otherUser);
                 const isAI = sender?.role === 'ai_character';
 
                 return (
@@ -1161,7 +1161,7 @@ export default function ConversationPage() {
             <div className="p-6 space-y-6">
               {/* Character Profile Summary */}
               <div className="text-center space-y-3">
-                <Avatar emoji={otherUser.avatar_emoji} photoUrl={otherUser.photo_url} size="xl" className="mx-auto shadow-lg" />
+                <Avatar emoji={otherUser.avatar_emoji} photoUrl={otherUser.photo_url} size="xl" />
                 <div>
                   <h2 className="font-serif font-bold text-xl text-warm-900 dark:text-warm-50">{otherUser.display_name}</h2>
                   <p className="text-sm text-warm-500">@{otherUser.username}</p>

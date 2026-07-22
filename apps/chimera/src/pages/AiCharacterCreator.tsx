@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Save, Bot, Check, RefreshCw, 
-  Settings, AlertTriangle, User, FileText, UploadCloud, Plus
+  Settings, AlertTriangle, User, FileText, UploadCloud, Plus, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -359,7 +359,7 @@ export default function AiCharacterCreator() {
                         </h4>
                         <div className="flex items-center gap-1.5 mt-1">
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded text-white bg-red-500/80 uppercase">
-                            {formData.contentRating === 'Limitless' ? 'Limitless' : 'Limited'}
+                            {formData.contentRating}
                           </span>
                         </div>
                       </div>
@@ -467,12 +467,12 @@ export default function AiCharacterCreator() {
                         <input
                           type="radio"
                           name="contentRating"
-                          value="Limitless"
-                          checked={formData.contentRating === 'Limitless'}
-                          onChange={() => setFormData(prev => ({...prev, contentRating: 'Limitless'}))}
+                          value="NSFW"
+                          checked={formData.contentRating === 'NSFW'}
+                          onChange={() => setFormData(prev => ({...prev, contentRating: 'NSFW'}))}
                           className="w-4 h-4 text-red-500 bg-warm-800 border-warm-700 focus:ring-red-500 focus:ring-offset-warm-900"
                         />
-                        <span className="text-sm font-bold text-warm-100 group-hover:text-white transition-colors">Limitless</span>
+                        <span className="text-sm font-bold text-warm-100 group-hover:text-white transition-colors">NSFW</span>
                       </label>
                     </div>
                     <ul className="text-[10px] text-warm-400 space-y-1 list-disc list-inside bg-warm-800/30 p-4 rounded-xl border border-warm-800">

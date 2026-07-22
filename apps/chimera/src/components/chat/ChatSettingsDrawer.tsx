@@ -172,7 +172,7 @@ export function ChatSettingsDrawer({
             >
               <span className="font-bold text-sm absolute top-4 left-4">Persona</span>
               <div className="mt-4 border-2 border-primary-500 rounded-full p-0.5 group-hover:scale-105 transition-transform shadow-lg shadow-primary-500/20">
-                <Avatar emoji={null} photoUrl={user?.photo_url} size="lg" />
+                <Avatar emoji="👤" photoUrl={user?.photo_url || null} size="lg" />
               </div>
             </div>
 
