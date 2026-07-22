@@ -83,9 +83,9 @@ function AppLoader() {
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-warm-50 dark:bg-warm-900">
-        <div className="text-center flex flex-col items-center gap-4">
-          <Logo size={56} className="animate-pulse" />
-          <p className="text-warm-600 dark:text-warm-400 font-serif text-lg">WHISPRR</p>
+        <div className="text-center flex flex-col items-center gap-6">
+          <Logo size={64} className="animate-pulse" />
+          <p className="text-warm-500 dark:text-warm-400 font-serif tracking-widest text-sm uppercase font-medium">The Home of Creators</p>
         </div>
       </div>
     );
