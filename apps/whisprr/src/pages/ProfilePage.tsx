@@ -69,7 +69,7 @@ export default function ProfilePage() {
     interests: [] as string[],
     location: '',
     website: '',
-    birthday: '': '',
+    birthday: '',
     pronouns: '',
     languages: '', 
     personality_badges: [] as string[],
