@@ -1,11 +1,12 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Plus, Search, X, Loader2, MessageSquare } from 'lucide-react';
+import { Plus, Search, MessageSquare, Loader2, Users } from 'lucide-react';
 import type { Conversation, Profile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/common/Avatar';
+import { CreateGroupRoomModal } from '../components/chat/CreateGroupRoomModal';
 
 interface ConversationWithProfiles extends Conversation {
   conversation_participants: { user_id: string }[];
@@ -18,6 +19,7 @@ export default function ChimeraChatsPage() {
   const [conversations, setConversations] = useState<ConversationWithProfiles[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [showGroupModal, setShowGroupModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [searching, setSearching] = useState(false);
@@ -256,13 +258,22 @@ export default function ChimeraChatsPage() {
             Your active storytelling and dialogues inside the CHIMERA Nexus
           </p>
         </div>
-        <button
-          onClick={() => setShowNewChatModal(true)}
-          className="flex items-center gap-1.5 bg-red-650 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-xl text-sm shadow-md transition-all active:scale-95 duration-200"
-        >
-          <Plus size={16} />
-          <span>New Chat</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowGroupModal(true)}
+            className="flex items-center gap-1.5 bg-warm-100 dark:bg-warm-800 hover:bg-warm-200 dark:hover:bg-warm-700 text-warm-900 dark:text-warm-100 font-medium px-3.5 py-2 rounded-xl text-xs border border-warm-200 dark:border-warm-700 transition-all active:scale-95 duration-200"
+          >
+            <Users size={15} />
+            <span>Group Room</span>
+          </button>
+          <button
+            onClick={() => setShowNewChatModal(true)}
+            className="flex items-center gap-1.5 bg-red-650 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-xl text-sm shadow-md transition-all active:scale-95 duration-200"
+          >
+            <Plus size={16} />
+            <span>New Chat</span>
+          </button>
+        </div>
       </div>
 
       {/* Loading State */}
@@ -416,6 +427,12 @@ export default function ChimeraChatsPage() {
           </div>
         </div>
       )}
+      {/* Create Group Room Modal */}
+      <CreateGroupRoomModal
+        isOpen={showGroupModal}
+        onClose={() => setShowGroupModal(false)}
+        onRoomCreated={(convId) => navigate(`/conversations/${convId}`)}
+      />
     </div>
   );
 }

@@ -994,6 +994,21 @@ export default function ConversationPage() {
 
                       {isAI && (
                         <>
+                          <button
+                            onClick={() => {
+                              if ('speechSynthesis' in window) {
+                                window.speechSynthesis.cancel();
+                                const utt = new SpeechSynthesisUtterance(message.content || '');
+                                utt.pitch = 1.0;
+                                utt.rate = 1.0;
+                                window.speechSynthesis.speak(utt);
+                              }
+                            }}
+                            className="p-1.5 text-warm-500 hover:text-red-600 dark:hover:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            title="Speak dialogue out loud"
+                          >
+                            <Volume2 size={14} />
+                          </button>
                           <button 
                             onClick={() => {
                               setEditingMessageId(message.id);

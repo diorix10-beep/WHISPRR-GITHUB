@@ -63,6 +63,7 @@ const MemoryManagerPage = lazy(() => import('./pages/MemoryManagerPage'));
 const ChimeraChatsPage  = lazy(() => import('./pages/ChimeraChatsPage'));
 const ConversationPage  = lazy(() => import('./pages/ConversationPage'));
 const ModelsPage        = lazy(() => import('./pages/ModelsPage'));
+const VoiceLibraryPage  = lazy(() => import('./pages/VoiceLibraryPage'));
 
 // ── Personas ───────────────────────────────────────────────
 const PersonasPage      = lazy(() => import('./pages/PersonasPage'));
@@ -213,7 +214,7 @@ function AppLoader() {
             <Route path="/memory" element={<MemoryManagerPage />} />
 
             {/* Voices Module */}
-            <Route path="/voices" element={<ChimeraPlaceholderPage title="Voice Library" description="Browse, preview, and assign voices to your characters. Configure narration and dialogue voices." />} />
+            <Route path="/voices" element={<VoiceLibraryPage />} />
 
             {/* Media / Image Studio */}
             <Route path="/media" element={<ChimeraPlaceholderPage title="Image Studio" description="Generate avatars, expressions, outfits, scenes, and location art for your characters and worlds." />} />
