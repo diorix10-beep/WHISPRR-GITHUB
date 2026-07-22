@@ -8,7 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Avatar } from '../common/Avatar';
 import { AppLauncherModal } from './AppLauncherModal';
-import { MobileNavigationDrawer } from './MobileNavigationDrawer';
+import { MobileNavDrawer } from './MobileNavDrawer';
 
 interface ChimeraLayoutProps {
   children?: ReactNode;
@@ -77,9 +77,16 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
     }
     document.addEventListener('keydown', handleKeyDown);
 
+    // App launcher custom event listener
+    function handleOpenLauncher() {
+      setShowAppLauncher(true);
+    }
+    window.addEventListener('open-app-launcher', handleOpenLauncher);
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('open-app-launcher', handleOpenLauncher);
     };
   }, []);
 
@@ -289,13 +296,13 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
         </div>
 
         {/* Mobile Navigation Drawer */}
-        <MobileNavigationDrawer
+        <MobileNavDrawer
           isOpen={isMenuOpen}
           onClose={() => setIsMenuOpen(false)}
           creativeMode={creativeMode}
-          onToggleCreativeMode={toggleCreativeMode}
-          onOpenAppLauncher={() => setShowAppLauncher(true)}
+          toggleCreativeMode={toggleCreativeMode}
           onOpenSearch={() => setSearchOpen(true)}
+          onOpenAppLauncher={() => setShowAppLauncher(true)}
         />
       </header>
 
