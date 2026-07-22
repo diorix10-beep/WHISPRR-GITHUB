@@ -222,7 +222,7 @@ export default function StoryReaderPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-warm-50 dark:bg-warm-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-red-500 border-t-red-750 mx-auto" />
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-500 border-t-purple-700 mx-auto" />
       </div>
     );
   }
@@ -231,7 +231,7 @@ export default function StoryReaderPage() {
     return (
       <div className="min-h-screen bg-warm-50 dark:bg-warm-900 flex flex-col items-center justify-center p-8">
         <h2 className="font-serif text-2xl font-bold text-warm-900 dark:text-white">Story not found</h2>
-        <button onClick={() => navigate('/')} className="mt-4 bg-red-650 text-white font-semibold px-4 py-2 rounded-xl">
+        <button onClick={() => navigate('/')} className="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 rounded-xl">
           Back to Explore
         </button>
       </div>
@@ -251,8 +251,8 @@ export default function StoryReaderPage() {
             {story.cover_url ? (
               <img src={story.cover_url} alt={story.title} className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-red-600/10 to-amber-600/15 flex items-center justify-center">
-                <BookOpen size={48} className="text-red-500/20" />
+              <div className="w-full h-full bg-gradient-to-br from-purple-600/10 to-indigo-600/15 flex items-center justify-center">
+                <BookOpen size={48} className="text-purple-500/20" />
               </div>
             )}
           </div>
@@ -261,7 +261,7 @@ export default function StoryReaderPage() {
           <div className="flex-1 flex flex-col justify-between">
             <div>
               <div className="flex flex-wrap gap-2 items-center">
-                <span className="text-xs uppercase font-bold tracking-wider text-red-650 dark:text-red-400 bg-red-50 dark:bg-red-950/20 px-3 py-1 rounded-md">
+                <span className="text-xs uppercase font-bold tracking-wider text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/20 px-3 py-1 rounded-md">
                   {story.genre}
                 </span>
                 <span className="text-xs uppercase font-bold tracking-wider text-green-600 dark:text-green-500 bg-green-50 dark:bg-green-950/20 px-3 py-1 rounded-md">
@@ -298,7 +298,7 @@ export default function StoryReaderPage() {
               {chapters.length > 0 ? (
                 <button
                   onClick={() => navigate(`/story/${story.id}/chapter/1`)}
-                  className="flex items-center gap-2 bg-red-650 hover:bg-red-700 text-white font-bold px-6 py-3 rounded-xl shadow-md transition-all hover:scale-103 active:scale-97"
+                  className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-bold px-6 py-3 rounded-xl shadow-md transition-all hover:scale-103 active:scale-97"
                 >
                   <BookOpen size={18} />
                   Read First Chapter
@@ -318,7 +318,7 @@ export default function StoryReaderPage() {
                 onClick={handleToggleLibrary}
                 className={`p-3 rounded-xl border transition-all ${
                   inLibrary
-                    ? 'bg-red-50 dark:bg-red-950/20 text-red-650 border-red-200 dark:border-red-900/30'
+                    ? 'bg-purple-50 dark:bg-purple-950/20 text-purple-600 border-purple-200 dark:border-purple-900/30'
                     : 'bg-white dark:bg-warm-800 text-warm-600 dark:text-warm-400 border-warm-250 dark:border-warm-700 hover:bg-warm-50 dark:hover:bg-warm-750'
                 }`}
                 title={inLibrary ? 'Remove from Library' : 'Save to Library'}
@@ -331,12 +331,12 @@ export default function StoryReaderPage() {
                 onClick={handleToggleVote}
                 className={`flex items-center gap-2 px-4 py-3 rounded-xl border transition-all ${
                   hasVoted
-                    ? 'bg-red-50 dark:bg-red-950/20 text-red-650 border-red-200 dark:border-red-900/30'
+                    ? 'bg-purple-50 dark:bg-purple-950/20 text-purple-600 border-purple-200 dark:border-purple-900/30'
                     : 'bg-white dark:bg-warm-800 text-warm-600 dark:text-warm-400 border-warm-250 dark:border-warm-700 hover:bg-warm-50 dark:hover:bg-warm-750'
                 }`}
                 title={hasVoted ? 'Remove Vote' : 'Upvote Story'}
               >
-                <Heart size={20} className={hasVoted ? 'fill-current text-red-500' : ''} />
+                <Heart size={20} className={hasVoted ? 'fill-current text-purple-500' : ''} />
                 <span className="text-xs font-bold">{story.votes_count || 0}</span>
               </button>
 
@@ -346,7 +346,7 @@ export default function StoryReaderPage() {
                 className="flex items-center gap-2 px-4 py-3 rounded-xl border bg-white dark:bg-warm-800 text-warm-600 dark:text-warm-400 border-warm-250 dark:border-warm-700 hover:bg-warm-50 dark:hover:bg-warm-750 transition-all text-xs font-bold"
                 title="Manage Co-Creators"
               >
-                <Users size={18} className="text-red-500" />
+                <Users size={18} className="text-purple-500" />
                 <span>Co-Creators</span>
               </button>
             </div>
@@ -384,10 +384,10 @@ export default function StoryReaderPage() {
                       className="flex items-center justify-between py-3.5 group cursor-pointer"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-xs font-bold text-warm-400 group-hover:text-red-500 transition-colors w-6">
+                        <span className="text-xs font-bold text-warm-400 group-hover:text-purple-500 transition-colors w-6">
                           {chap.chapter_number}
                         </span>
-                        <h4 className="text-sm font-semibold text-warm-800 dark:text-warm-200 group-hover:text-red-650 transition-colors line-clamp-1">
+                        <h4 className="text-sm font-semibold text-warm-800 dark:text-warm-200 group-hover:text-purple-600 transition-colors line-clamp-1">
                           {chap.title}
                         </h4>
                       </div>
@@ -403,7 +403,7 @@ export default function StoryReaderPage() {
           <div className="space-y-6">
             <div className="bg-white dark:bg-warm-850 rounded-[1.5rem] border border-warm-200/60 dark:border-warm-800 p-6 shadow-sm">
               <h2 className="font-serif text-lg font-bold text-warm-900 dark:text-white mb-4 flex items-center gap-2">
-                <MessageSquare size={18} />
+                <MessageSquare size={18} className="text-purple-500" />
                 Comments
               </h2>
 
@@ -414,12 +414,12 @@ export default function StoryReaderPage() {
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   rows={3}
-                  className="w-full text-xs p-3 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 dark:text-white resize-none"
+                  className="w-full text-xs p-3 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 dark:text-white resize-none"
                 />
                 <button
                   type="submit"
                   disabled={commenting || !newComment.trim()}
-                  className="w-full mt-2 bg-red-650 hover:bg-red-700 text-white font-bold text-xs py-2 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  className="w-full mt-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs py-2 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                 >
                   {commenting ? 'Posting...' : 'Post Comment'}
                 </button>

@@ -263,7 +263,7 @@ export default function WritersDeskPage() {
   if (loading && !selectedStory && !isEditingStory) {
     return (
       <div className="min-h-screen bg-warm-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-red-500 border-t-red-750 mx-auto" />
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-500 border-t-purple-700 mx-auto" />
       </div>
     );
   }
@@ -276,14 +276,14 @@ export default function WritersDeskPage() {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h1 className="font-serif text-xl font-bold text-white flex items-center gap-2">
-              <PenTool size={20} className="text-red-500" />
+              <PenTool size={20} className="text-purple-500" />
               My Works
             </h1>
           </div>
           {!isEditingStory && !selectedStory && (
             <button
               onClick={handleOpenNewStory}
-              className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg font-bold text-sm shadow-sm transition-all flex items-center gap-2"
+              className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg font-bold text-sm shadow-sm transition-all flex items-center gap-2"
             >
               <Plus size={16} />
               New Story
@@ -323,7 +323,7 @@ export default function WritersDeskPage() {
                       placeholder="Untitled Story"
                       value={formTitle}
                       onChange={(e) => setFormTitle(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-red-500 text-white font-serif text-lg"
+                      className="w-full px-4 py-2.5 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-purple-500 text-white font-serif text-lg"
                       required
                     />
                   </div>
@@ -335,7 +335,7 @@ export default function WritersDeskPage() {
                       value={formSummary}
                       rows={5}
                       onChange={(e) => setFormSummary(e.target.value)}
-                      className="w-full px-4 py-3 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-red-500 text-white text-sm resize-none"
+                      className="w-full px-4 py-3 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-purple-500 text-white text-sm resize-none"
                     />
                   </div>
 
@@ -345,7 +345,7 @@ export default function WritersDeskPage() {
                       <select
                         value={formGenre}
                         onChange={(e) => setFormGenre(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-red-500 text-white text-sm"
+                        className="w-full px-4 py-2.5 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-purple-500 text-white text-sm"
                       >
                         <option value="General">General</option>
                         <option value="Romance">Romance</option>
@@ -363,7 +363,7 @@ export default function WritersDeskPage() {
                     <div>
                       <label className="block text-xs font-bold uppercase text-warm-400 tracking-wider mb-2">Language</label>
                       <select
-                        className="w-full px-4 py-2.5 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-red-500 text-white text-sm opacity-70 cursor-not-allowed"
+                        className="w-full px-4 py-2.5 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-purple-500 text-white text-sm opacity-70 cursor-not-allowed"
                         disabled
                       >
                         <option>English</option>
@@ -378,7 +378,7 @@ export default function WritersDeskPage() {
                       placeholder="romance, action, magic (comma separated)"
                       value={formTags}
                       onChange={(e) => setFormTags(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-red-500 text-white text-sm"
+                      className="w-full px-4 py-2.5 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-purple-500 text-white text-sm"
                     />
                   </div>
 
@@ -386,7 +386,7 @@ export default function WritersDeskPage() {
                     <div>
                       <label className="block text-xs font-bold uppercase text-warm-400 tracking-wider mb-2">Copyright</label>
                       <select
-                        className="w-full px-4 py-2.5 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-red-500 text-white text-sm"
+                        className="w-full px-4 py-2.5 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-purple-500 text-white text-sm"
                       >
                         <option>All Rights Reserved</option>
                         <option>Public Domain</option>
@@ -397,7 +397,7 @@ export default function WritersDeskPage() {
                       <select
                         value={formVisibility}
                         onChange={(e) => setFormVisibility(e.target.value as any)}
-                        className="w-full px-4 py-2.5 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-red-500 text-white text-sm"
+                        className="w-full px-4 py-2.5 rounded-lg border border-warm-700 bg-warm-900 focus:outline-none focus:border-purple-500 text-white text-sm"
                       >
                         <option value="public">No (Everyone)</option>
                         <option value="unlisted">Yes (Mature)</option>
@@ -459,7 +459,7 @@ export default function WritersDeskPage() {
                     {selectedStory.status}
                   </span>
                   <span className="w-1 h-1 rounded-full bg-warm-600"></span>
-                  <span className="text-red-400">{chapters.length} Parts</span>
+                  <span className="text-purple-400">{chapters.length} Parts</span>
                 </div>
 
                 <p className="text-sm text-warm-300 line-clamp-4 leading-relaxed mb-6 max-w-2xl">
@@ -483,7 +483,7 @@ export default function WritersDeskPage() {
                   </button>
                   <button
                     onClick={handleCreateChapter}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-bold shadow-md transition-all flex items-center gap-2"
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-bold shadow-md transition-all flex items-center gap-2"
                   >
                     <Plus size={16} />
                     New Part
@@ -507,7 +507,7 @@ export default function WritersDeskPage() {
                   <p className="text-warm-400 font-medium mb-4">This story has no parts yet.</p>
                   <button
                     onClick={handleCreateChapter}
-                    className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-bold shadow-md transition-all"
+                    className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-bold shadow-md transition-all"
                   >
                     Write the first part
                   </button>
@@ -525,7 +525,7 @@ export default function WritersDeskPage() {
                           {chap.chapter_number}
                         </div>
                         <div>
-                          <h4 className="text-white font-bold group-hover:text-red-400 transition-colors">
+                          <h4 className="text-white font-bold group-hover:text-purple-400 transition-colors">
                             {chap.title}
                           </h4>
                           <div className="flex items-center gap-2 mt-1">
@@ -551,7 +551,7 @@ export default function WritersDeskPage() {
                         </button>
                         <button
                           onClick={(e) => handleDeleteChapter(e, chap.id)}
-                          className="p-2 text-warm-400 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors"
+                          className="p-2 text-warm-400 hover:text-purple-400 rounded-lg hover:bg-purple-500/10 transition-colors"
                           title="Delete"
                         >
                           <Trash2 size={16} />
@@ -575,7 +575,7 @@ export default function WritersDeskPage() {
                 </p>
                 <button
                   onClick={handleOpenNewStory}
-                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md transition-all inline-flex items-center gap-2"
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md transition-all inline-flex items-center gap-2"
                 >
                   <Plus size={18} />
                   Write a Story
@@ -608,7 +608,7 @@ export default function WritersDeskPage() {
                       </div>
                     </div>
                     
-                    <h3 className="font-serif font-bold text-white text-base line-clamp-1 group-hover:text-red-400 transition-colors">
+                    <h3 className="font-serif font-bold text-white text-base line-clamp-1 group-hover:text-purple-400 transition-colors">
                       {story.title}
                     </h3>
                     <p className="text-xs text-warm-400 mt-0.5">
