@@ -3,6 +3,7 @@ import {
   X, Globe, Bot, User, Bookmark, Settings, 
   Layers, HelpCircle, Shield, FileText
 } from 'lucide-react';
+import { ChimeraLogo } from '../common/ChimeraLogo';
 
 interface AppLauncherModalProps {
   isOpen: boolean;
@@ -24,7 +25,7 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
 
   const apps = [
     { name: 'WHISPRR', desc: 'Social Network', path: '/feed', icon: Globe, color: 'bg-primary-500/10 text-primary-500 border-primary-500/20 hover:bg-primary-500/20', external: false },
-    { name: 'CHIMERA', desc: 'Roleplay & Storytelling', path: chimeraUrl, logoUrl: 'https://chimera.whisprr.xyz/chimera_logo.png', color: 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20', external: true },
+    { name: 'CHIMERA', desc: 'Roleplay & Storytelling', path: chimeraUrl, icon: ChimeraLogo, color: 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20', external: true },
   ];
 
   const moreLinks = [
@@ -74,9 +75,7 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
                   }}
                   className={`p-4 rounded-2xl border text-left flex flex-col gap-2 transition-all hover:scale-102 active:scale-98 ${app.color}`}
                 >
-                  {'logoUrl' in app && app.logoUrl ? (
-                    <img src={app.logoUrl} alt={app.name} className="w-6 h-6 rounded-lg object-cover border border-red-500/30 shadow-sm" />
-                  ) : Icon ? (
+                  {Icon ? (
                     <Icon size={24} />
                   ) : null}
                   <div>

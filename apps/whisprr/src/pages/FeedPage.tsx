@@ -393,7 +393,7 @@ export default function FeedPage() {
       {/* Floating Compose Button */}
       <button
         onClick={() => setShowCompose(true)}
-        className="fixed bottom-20 right-4 lg:bottom-8 bg-primary-500 hover:bg-primary-600 text-white rounded-full p-4 shadow-lg transition-all duration-200 active:scale-95 z-40"
+        className="fixed bottom-24 right-4 lg:bottom-8 bg-primary-500 hover:bg-primary-600 text-white rounded-full p-4 shadow-lg transition-all duration-200 active:scale-95 z-50"
         aria-label="Compose new whisper"
       >
         <Plus size={24} />

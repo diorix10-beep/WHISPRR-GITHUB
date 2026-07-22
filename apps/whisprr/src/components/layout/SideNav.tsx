@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
-  Home, Compass, Users, MessageCircle, Bell, ShieldAlert, Sparkles,
-  User, Settings, Shield, HelpCircle, LogOut, ChevronUp, Bot,
-  Monitor, Sun, Moon, LayoutGrid
+  Home, Compass, Users, MessageCircle, Bell, Sparkles,
+  User, Settings, Shield, HelpCircle, LogOut, ChevronUp,
+  Monitor, Sun, Moon, LayoutGrid, Crown
 } from 'lucide-react';
 import { useNotifications } from '../../contexts/NotificationsContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -22,7 +22,6 @@ const navItems = [
   { path: '/messages', icon: MessageCircle, label: 'Messages' },
   { path: '/notifications', icon: Bell, label: 'Notifications' },
   { path: '#app-switcher', icon: LayoutGrid, label: 'App Switcher', isAction: true },
-  { path: '#chimera', icon: Bot, label: 'CHIMERA', isChimera: true },
 ];
 
 export function SideNav() {
@@ -48,7 +47,7 @@ export function SideNav() {
 
   const visibleNavItems = [...navItems];
   if (profile?.role === 'founder') {
-    visibleNavItems.push({ path: '/founder', icon: ShieldAlert, label: 'Founder Panel' });
+    visibleNavItems.push({ path: '/founder', icon: Crown, label: 'Founder Panel' });
   }
 
   const handleSignOut = async () => {
@@ -155,11 +154,15 @@ export function SideNav() {
 
           const isExternal = 'external' in item && item.external;
           const isChimera = 'isChimera' in item && item.isChimera;
+          const isFounderPanel = label === 'Founder Panel';
 
           return (
-            <NavLink
-              key={path}
-              to={path}
+            <div key={path}>
+              {isFounderPanel && (
+                <div className="my-2 border-t border-warm-100 dark:border-warm-800 mx-2" />
+              )}
+              <NavLink
+                to={path}
               onClick={(e) => {
                 if (item.isAction && item.label === 'App Switcher') {
                   e.preventDefault();
@@ -183,8 +186,9 @@ export function SideNav() {
                 }`
               }
             >
-              {content}
-            </NavLink>
+                {content}
+              </NavLink>
+            </div>
           );
         })}
       </nav>

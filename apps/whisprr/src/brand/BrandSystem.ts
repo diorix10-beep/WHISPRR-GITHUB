@@ -8,7 +8,7 @@
 
 export const BRAND_SYSTEM = {
   name: 'WHISPRR',
-  tagline: 'Where connections feel real.',
+  tagline: 'The Home of Creators.',
   taglineSecondary: 'Building a healthier social web.',
   philosophy: 'Full development transparency, open roadmaps, and community agency.',
 

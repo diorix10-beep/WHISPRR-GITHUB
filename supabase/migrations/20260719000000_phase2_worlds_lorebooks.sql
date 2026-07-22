@@ -9,12 +9,12 @@ ALTER TABLE public.ai_characters
   ADD COLUMN IF NOT EXISTS content_rating text DEFAULT 'SFW' CHECK (content_rating IN ('SFW', 'Mature', 'NSFW')),
   ADD COLUMN IF NOT EXISTS status text DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
   ADD COLUMN IF NOT EXISTS world_id uuid,
-  ADD COLUMN IF NOT EXISTS project_id uuid REFERENCES public.chimera_projects(id) ON DELETE SET NULL;
+  ADD COLUMN IF NOT EXISTS project_id uuid;
 
 -- ── Extend stories ──────────────────────────────────────────
 
 ALTER TABLE public.stories
-  ADD COLUMN IF NOT EXISTS project_id uuid REFERENCES public.chimera_projects(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS project_id uuid,
   ADD COLUMN IF NOT EXISTS word_count integer DEFAULT 0,
   ADD COLUMN IF NOT EXISTS world_id uuid;
 
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS public.worlds (
   tags text[] DEFAULT '{}',
   visibility text NOT NULL DEFAULT 'private' CHECK (visibility IN ('public', 'private', 'unlisted')),
   settings jsonb DEFAULT '{}',
-  project_id uuid REFERENCES public.chimera_projects(id) ON DELETE SET NULL,
+  project_id uuid,
   published_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -194,57 +194,69 @@ ALTER TABLE public.lorebook_characters ENABLE ROW LEVEL SECURITY;
 
 -- ── RLS: Worlds ─────────────────────────────────────────────
 
+DROP POLICY IF EXISTS "select_worlds" ON public.worlds;
 CREATE POLICY "select_worlds" ON public.worlds
   FOR SELECT TO authenticated
   USING (visibility = 'public' OR visibility = 'unlisted' OR user_id = auth.uid());
 
+DROP POLICY IF EXISTS "insert_worlds" ON public.worlds;
 CREATE POLICY "insert_worlds" ON public.worlds
   FOR INSERT TO authenticated
   WITH CHECK (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "update_worlds" ON public.worlds;
 CREATE POLICY "update_worlds" ON public.worlds
   FOR UPDATE TO authenticated
   USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "delete_worlds" ON public.worlds;
 CREATE POLICY "delete_worlds" ON public.worlds
   FOR DELETE TO authenticated
   USING (user_id = auth.uid());
 
 -- ── RLS: World Locations ────────────────────────────────────
 
+DROP POLICY IF EXISTS "select_world_locations" ON public.world_locations;
 CREATE POLICY "select_world_locations" ON public.world_locations
   FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.worlds WHERE worlds.id = world_locations.world_id AND (worlds.visibility IN ('public','unlisted') OR worlds.user_id = auth.uid())));
 
+DROP POLICY IF EXISTS "manage_world_locations" ON public.world_locations;
 CREATE POLICY "manage_world_locations" ON public.world_locations
   FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM public.worlds WHERE worlds.id = world_locations.world_id AND worlds.user_id = auth.uid()));
 
 -- ── RLS: World Factions ─────────────────────────────────────
 
+DROP POLICY IF EXISTS "select_world_factions" ON public.world_factions;
 CREATE POLICY "select_world_factions" ON public.world_factions
   FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.worlds WHERE worlds.id = world_factions.world_id AND (worlds.visibility IN ('public','unlisted') OR worlds.user_id = auth.uid())));
 
+DROP POLICY IF EXISTS "manage_world_factions" ON public.world_factions;
 CREATE POLICY "manage_world_factions" ON public.world_factions
   FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM public.worlds WHERE worlds.id = world_factions.world_id AND worlds.user_id = auth.uid()));
 
 -- ── RLS: World Timeline ─────────────────────────────────────
 
+DROP POLICY IF EXISTS "select_timeline_events" ON public.world_timeline_events;
 CREATE POLICY "select_timeline_events" ON public.world_timeline_events
   FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.worlds WHERE worlds.id = world_timeline_events.world_id AND (worlds.visibility IN ('public','unlisted') OR worlds.user_id = auth.uid())));
 
+DROP POLICY IF EXISTS "manage_timeline_events" ON public.world_timeline_events;
 CREATE POLICY "manage_timeline_events" ON public.world_timeline_events
   FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM public.worlds WHERE worlds.id = world_timeline_events.world_id AND worlds.user_id = auth.uid()));
 
 -- ── RLS: Character Relationships ────────────────────────────
 
+DROP POLICY IF EXISTS "select_relationships" ON public.character_relationships;
 CREATE POLICY "select_relationships" ON public.character_relationships
   FOR SELECT TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "manage_relationships" ON public.character_relationships;
 CREATE POLICY "manage_relationships" ON public.character_relationships
   FOR ALL TO authenticated
   USING (
@@ -253,48 +265,60 @@ CREATE POLICY "manage_relationships" ON public.character_relationships
 
 -- ── RLS: Lorebooks ──────────────────────────────────────────
 
+DROP POLICY IF EXISTS "select_lorebooks" ON public.lorebooks;
 CREATE POLICY "select_lorebooks" ON public.lorebooks
   FOR SELECT TO authenticated
   USING (visibility = 'public' OR visibility = 'unlisted' OR user_id = auth.uid());
 
+DROP POLICY IF EXISTS "insert_lorebooks" ON public.lorebooks;
 CREATE POLICY "insert_lorebooks" ON public.lorebooks
   FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "update_lorebooks" ON public.lorebooks;
 CREATE POLICY "update_lorebooks" ON public.lorebooks
   FOR UPDATE TO authenticated USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "delete_lorebooks" ON public.lorebooks;
 CREATE POLICY "delete_lorebooks" ON public.lorebooks
   FOR DELETE TO authenticated USING (user_id = auth.uid());
 
 -- ── RLS: Lorebook Entries ───────────────────────────────────
 
+DROP POLICY IF EXISTS "select_lorebook_entries" ON public.lorebook_entries;
 CREATE POLICY "select_lorebook_entries" ON public.lorebook_entries
   FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.lorebooks WHERE lorebooks.id = lorebook_entries.lorebook_id AND (lorebooks.visibility IN ('public','unlisted') OR lorebooks.user_id = auth.uid())));
 
+DROP POLICY IF EXISTS "manage_lorebook_entries" ON public.lorebook_entries;
 CREATE POLICY "manage_lorebook_entries" ON public.lorebook_entries
   FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM public.lorebooks WHERE lorebooks.id = lorebook_entries.lorebook_id AND lorebooks.user_id = auth.uid()));
 
 -- ── RLS: Junction Tables ────────────────────────────────────
 
+DROP POLICY IF EXISTS "select_world_characters" ON public.world_characters;
 CREATE POLICY "select_world_characters" ON public.world_characters
   FOR SELECT TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "manage_world_characters" ON public.world_characters;
 CREATE POLICY "manage_world_characters" ON public.world_characters
   FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM public.worlds WHERE worlds.id = world_characters.world_id AND worlds.user_id = auth.uid()));
 
+DROP POLICY IF EXISTS "select_lorebook_worlds" ON public.lorebook_worlds;
 CREATE POLICY "select_lorebook_worlds" ON public.lorebook_worlds
   FOR SELECT TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "manage_lorebook_worlds" ON public.lorebook_worlds;
 CREATE POLICY "manage_lorebook_worlds" ON public.lorebook_worlds
   FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM public.lorebooks WHERE lorebooks.id = lorebook_worlds.lorebook_id AND lorebooks.user_id = auth.uid()));
 
+DROP POLICY IF EXISTS "select_lorebook_characters" ON public.lorebook_characters;
 CREATE POLICY "select_lorebook_characters" ON public.lorebook_characters
   FOR SELECT TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "manage_lorebook_characters" ON public.lorebook_characters;
 CREATE POLICY "manage_lorebook_characters" ON public.lorebook_characters
   FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM public.lorebooks WHERE lorebooks.id = lorebook_characters.lorebook_id AND lorebooks.user_id = auth.uid()));
