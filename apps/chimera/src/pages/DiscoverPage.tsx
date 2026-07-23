@@ -8,7 +8,6 @@ import { useToast } from '../contexts/ToastContext';
 import { Avatar } from '../components/common/Avatar';
 import { UserBadges } from '../components/common/UserBadges';
 import type { Profile } from '../types';
-import { STARTER_CHARACTERS } from '../lib/starterContent';
 
 interface StoryItem {
   id: string;
@@ -109,10 +108,10 @@ export default function DiscoverPage() {
         bio: char.short_description || char.profiles?.bio,
       }));
       
-      setCharacters(formattedCharacters.length > 0 ? formattedCharacters : (STARTER_CHARACTERS as any[]));
+      setCharacters(formattedCharacters);
     } catch (err: any) {
       console.error('Error fetching characters:', err);
-      setCharacters(STARTER_CHARACTERS as any[]);
+      setCharacters([]);
     } finally {
       setLoading(false);
     }
