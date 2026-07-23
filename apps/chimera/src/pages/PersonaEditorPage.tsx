@@ -36,6 +36,7 @@ export default function PersonaEditorPage() {
     is_default: false
   });
 
+  useEffect(() => {
     if (isEditing && user) {
       fetchPersona();
     } else if (!isEditing) {
