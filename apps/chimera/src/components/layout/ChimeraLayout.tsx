@@ -256,11 +256,11 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             <button
               onClick={() => setShowShardsHub(true)}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 transition-all font-bold text-xs shadow-sm hover:scale-105 active:scale-95"
-              title="Open Shards Hub (Buy, Earn & Spend)"
+              title="Shards & Ads Economy (Coming Soon)"
             >
               <Gem size={15} className="text-amber-500 fill-amber-500" />
-              <span>{shardsBalance}</span>
-              <span className="hidden sm:inline text-[10px] uppercase tracking-wider text-amber-500/80">💎</span>
+              <span>Shards</span>
+              <span className="text-[9px] uppercase font-extrabold tracking-wider bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-md">Soon</span>
             </button>
 
             {/* Search — icon only, no text label on smaller screens */}

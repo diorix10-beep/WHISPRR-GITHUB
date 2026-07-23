@@ -219,7 +219,7 @@ function MobileNavDrawerContent({
               <span>Shards Hub</span>
             </div>
             <span className="bg-amber-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-              {shardsBalance} 💎
+              Coming Soon ✨
             </span>
           </button>
         </div>

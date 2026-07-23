@@ -310,9 +310,7 @@ export default function WritersDeskPage() {
                 )}
               </h3>
               <p className="text-xs text-warm-400">
-                {adFreePassActive
-                  ? 'Enjoy unlimited ad-free story writing and novel editing!'
-                  : 'Watch a quick 5-sec ad or redeem Shards for an Ad-Free Pass!'}
+                Unlimited writing energy for authors. Shards economy & ad-free passes are Coming Soon!
               </p>
             </div>
           </div>
@@ -323,7 +321,7 @@ export default function WritersDeskPage() {
               className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-md"
             >
               <Gem size={14} className="fill-white" />
-              <span>Shards Hub ({shardsBalance} 💎)</span>
+              <span>Shards Hub (Coming Soon ✨)</span>
             </button>
           </div>
         </div>
