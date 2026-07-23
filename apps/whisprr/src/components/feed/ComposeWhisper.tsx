@@ -32,6 +32,29 @@ export function ComposeWhisper({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Restore draft on mount if no initialContent (Rules 25 & 26)
+  useEffect(() => {
+    if (!initialContent) {
+      const savedDraft = localStorage.getItem('whisprr_compose_draft');
+      if (savedDraft) {
+        setContent(savedDraft);
+      }
+    }
+  }, [initialContent]);
+
+  // Auto-save draft while typing (Rules 25 & 26)
+  useEffect(() => {
+    if (initialContent) return; // don't overwrite draft if shared from CHIMERA
+    const timer = setTimeout(() => {
+      if (content.trim()) {
+        localStorage.setItem('whisprr_compose_draft', content);
+      } else {
+        localStorage.removeItem('whisprr_compose_draft');
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [content, initialContent]);
+
   // Attachments State
   const [attachPanel, setAttachPanel] = useState<AttachType>(null);
   const [fetchedItems, setFetchedItems] = useState<any[]>([]);
@@ -216,6 +239,7 @@ export function ComposeWhisper({
         communityId: communityId || undefined,
       });
 
+      localStorage.removeItem('whisprr_compose_draft');
       setContent('');
       onWhisperCreated?.();
       onClose();
