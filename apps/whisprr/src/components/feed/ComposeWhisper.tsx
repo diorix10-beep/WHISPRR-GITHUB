@@ -9,6 +9,7 @@ interface ComposeWhisperProps {
   onClose: () => void;
   onWhisperCreated?: () => void;
   communityId?: string;
+  initialContent?: string;
 }
 
 const CHAR_LIMIT = 5000;
@@ -21,10 +22,11 @@ export function ComposeWhisper({
   onClose,
   onWhisperCreated,
   communityId,
+  initialContent,
 }: ComposeWhisperProps) {
   const { user, profile } = useAuth();
   const { track } = useInterests();
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState(initialContent || '');
   const [isPosting, setIsPosting] = useState(false);
   const [error, setError] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);

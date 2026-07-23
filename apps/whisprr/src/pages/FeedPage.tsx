@@ -26,9 +26,21 @@ export default function FeedPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [feedMode, setFeedMode] = useState<FeedMode>('for_you');
   const [showCompose, setShowCompose] = useState(false);
+  const [initialComposeContent, setInitialComposeContent] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [followedIds, setFollowedIds] = useState<string[]>([]);
   const [hasInterestData, setHasInterestData] = useState(false);
+
+  // Detect incoming post text from CHIMERA ecosystem share flow
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const newPostText = params.get('newPostText');
+    if (newPostText) {
+      setInitialComposeContent(newPostText);
+      setShowCompose(true);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   // Fetch followed user IDs once
   useEffect(() => {
@@ -402,9 +414,14 @@ export default function FeedPage() {
       {/* Compose Modal */}
       {showCompose && (
         <ComposeWhisper
-          onClose={() => setShowCompose(false)}
+          initialContent={initialComposeContent}
+          onClose={() => {
+            setShowCompose(false);
+            setInitialComposeContent(undefined);
+          }}
           onWhisperCreated={() => {
             setShowCompose(false);
+            setInitialComposeContent(undefined);
             loadWhispers(feedMode);
           }}
         />
