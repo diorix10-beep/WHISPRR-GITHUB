@@ -140,7 +140,7 @@ function MobileNavDrawerContent({
     { path: '/characters', label: 'Characters', icon: Users },
     { path: '/conversations', label: 'Chats', icon: MessageSquare },
     { path: '/personas', label: 'Personas', icon: User },
-    { path: '/studio', label: 'Creator Studio', icon: Sparkles },
+    { path: '/studio', label: 'Studio', icon: Sparkles },
   ] : [
     { path: '/', label: 'Home', icon: Compass },
     { path: '/write/desk', label: 'Stories', icon: BookOpen },

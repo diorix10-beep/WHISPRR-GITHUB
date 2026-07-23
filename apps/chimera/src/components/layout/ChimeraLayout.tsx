@@ -27,7 +27,7 @@ const ROLEPLAY_NAV_LINKS: NavLinkItem[] = [
   { path: '/characters', label: 'Characters', icon: Users },
   { path: '/conversations', label: 'Chats', icon: MessageSquare },
   { path: '/personas', label: 'Personas', icon: UserCheck },
-  { path: '/studio', label: 'Creator Studio', icon: Sparkles },
+  { path: '/studio', label: 'Studio', icon: Sparkles },
 ];
 
 const STORYTELLING_NAV_LINKS: NavLinkItem[] = [
@@ -147,7 +147,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
           end={link.path === '/'}
           onClick={link.comingSoon ? (e) => e.preventDefault() : undefined}
           className={({ isActive }) =>
-            `relative px-3 py-2 text-xs sm:text-sm font-semibold transition-all whitespace-nowrap inline-flex items-center shrink-0 ${
+            `relative px-2 sm:px-2.5 py-2 text-xs sm:text-sm font-semibold transition-all whitespace-nowrap inline-flex items-center shrink-0 ${
               link.comingSoon
                 ? 'text-warm-400 dark:text-warm-600 cursor-default opacity-60'
                 : isActive
