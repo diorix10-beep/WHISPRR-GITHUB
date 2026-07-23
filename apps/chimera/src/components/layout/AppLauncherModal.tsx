@@ -74,9 +74,9 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
                 >
                   {'logoUrl' in app && app.logoUrl ? (
                     <img src={app.logoUrl} alt={app.name} className="w-7 h-7 object-contain" />
-                  ) : (
+                  ) : Icon ? (
                     <Icon size={24} />
-                  )}
+                  ) : null}
                   <div>
                     <h4 className="font-bold text-sm leading-none">{app.name}</h4>
                     <p className="text-[10px] opacity-75 mt-1">{app.desc}</p>

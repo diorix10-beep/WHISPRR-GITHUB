@@ -175,11 +175,23 @@ export interface LorebookEntry {
   title: string;
   content: string;
   keywords: string[];
+  selective_keys?: string[];
+  is_constant?: boolean;
   priority: number;
   enabled: boolean;
+  position?: 'before_char' | 'after_char' | 'top_prompt' | 'bottom_prompt';
+  case_sensitive?: boolean;
+  scan_depth?: number;
+  force_active?: boolean;
   insertion_order: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface LorebookTriggerResult {
+  triggeredEntries: LorebookEntry[];
+  compiledPromptText: string;
+  matchedKeywordsMap: Record<string, string[]>; // entryId -> matched keywords
 }
 
 // ── Stories ──────────────────────────────────────────────────

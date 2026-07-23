@@ -6,7 +6,7 @@ import {
   Image as ImageIcon, X, Settings, UserPlus, UserMinus, LogOut, Pencil, Smile, Search,
   PanelRightClose, PanelRightOpen, BookOpen, Copy, RotateCw, Edit3, Camera, Volume2
 } from 'lucide-react';
-import type { Conversation, Message, Profile, MemoryNexusState, ChatMode, MultiCharacterParticipant, RpgGameState, RpgChoice } from '../types';
+import type { Conversation, Message, Profile, MemoryNexusState, ChatMode, MultiCharacterParticipant, RpgGameState, RpgChoice, LorebookEntry } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
@@ -19,7 +19,9 @@ import { MockPhoneModal } from '../components/chat/MockPhoneModal';
 import { MemoryVisualizerModal } from '../components/chat/MemoryVisualizerModal';
 import { MultiCharacterHeader } from '../components/chat/MultiCharacterHeader';
 import { RpgGameOverlay } from '../components/chat/RpgGameOverlay';
+import { LorebookDrawer } from '../components/chat/LorebookDrawer';
 import { createInitialMemoryNexusState, autoExtractMemoriesIfNeeded, formatMemoryNexusPromptContext } from '../services/memoryNexus';
+import { scanAndMatchLorebookEntries, parseJanitorLorebookJson, parseOocMessage } from '../services/lorebookEngine';
 import { useChatAesthetics } from '../hooks/useChatAesthetics';
 import { useVoice } from '../hooks/useVoice';
 import { Paperclip, AudioWaveform, Brain, Gamepad2, Users } from 'lucide-react';
@@ -67,6 +69,26 @@ export default function ConversationPage() {
   const [memoryNexusState, setMemoryNexusState] = useState<MemoryNexusState>(createInitialMemoryNexusState());
   const [showMemoryVisualizer, setShowMemoryVisualizer] = useState(false);
 
+  // Lorebook & Janitor AI Engine State
+  const [lorebookEntries, setLorebookEntries] = useState<LorebookEntry[]>([
+    {
+      id: 'demo-1',
+      lorebook_id: 'default',
+      title: 'CHIMERA Universe',
+      content: 'CHIMERA is a vast multi-dimensional nexus where stories, roleplays, and worlds converge.',
+      keywords: ['CHIMERA', 'Nexus', 'Universe'],
+      priority: 10,
+      enabled: true,
+      is_constant: true,
+      insertion_order: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  ]);
+  const [showLorebookDrawer, setShowLorebookDrawer] = useState(false);
+  const [scanDepth, setScanDepth] = useState<number>(10);
+  const [isOocMode, setIsOocMode] = useState<boolean>(false);
+
   // Chat Modes & Multi-Character Pool
   const [chatMode, setChatMode] = useState<ChatMode>('one_on_one');
   const [multiParticipants, setMultiParticipants] = useState<MultiCharacterParticipant[]>([]);
@@ -88,6 +110,10 @@ export default function ConversationPage() {
 
   const voice = useVoice();
   const aesthetics = useChatAesthetics(conversationId);
+
+  const loreTriggerResult = scanAndMatchLorebookEntries(messages, lorebookEntries, {
+    defaultScanDepth: scanDepth,
+  });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -381,7 +407,31 @@ export default function ConversationPage() {
     e.preventDefault();
     if (!user || !conversationId || (!messageInput.trim() && !imageFile)) return;
 
-    const content = messageInput.trim();
+    let content = messageInput.trim();
+    if (isOocMode && content && !content.startsWith('(OOC:') && !content.startsWith('[OOC:')) {
+      content = `(OOC: ${content})`;
+    }
+
+    // Check OOC Lore Request
+    const oocParsed = parseOocMessage(content);
+    if (oocParsed.isOoc && oocParsed.isCreateLoreRequest && oocParsed.loreTopic) {
+      const topic = oocParsed.loreTopic;
+      const autoEntry: LorebookEntry = {
+        id: `ooc-${Date.now()}`,
+        lorebook_id: 'default',
+        title: topic.charAt(0).toUpperCase() + topic.slice(1),
+        content: `Lore details for ${topic} established during RP: ${oocParsed.oocContent}`,
+        keywords: [topic, topic.toLowerCase()],
+        priority: 10,
+        enabled: true,
+        insertion_order: lorebookEntries.length,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      setLorebookEntries((prev) => [...prev, autoEntry]);
+      showToast(`✨ Created Lorebook entry for "${topic}"!`, 'success');
+    }
+
     setMessageInput('');
     setSending(true);
     broadcastTyping(false);
@@ -419,6 +469,11 @@ export default function ConversationPage() {
         // Simulate typing status immediately for fluid UI
         setTypingUsers([otherUser.user_id]);
 
+        // Compute current triggered lore context
+        const loreRes = scanAndMatchLorebookEntries(messages, lorebookEntries, {
+          defaultScanDepth: scanDepth,
+        });
+
         // Trigger AI reply generation in the background
         const sessionRes = await supabase.auth.getSession();
         const token = sessionRes.data.session?.access_token;
@@ -431,7 +486,11 @@ export default function ConversationPage() {
           },
           body: JSON.stringify({
             conversation_id: conversationId,
-            bot_user_id: otherUser.user_id
+            bot_user_id: otherUser.user_id,
+            lorebook_context: loreRes.compiledPromptText,
+            memory_nexus_context: formatMemoryNexusPromptContext(memoryNexusState),
+            chat_mode: chatMode,
+            active_speaker_id: activeSpeakerId,
           })
         }).catch(err => {
           console.error('Failed to trigger AI response:', err);
@@ -847,6 +906,18 @@ export default function ConversationPage() {
                   </span>
                 </button>
 
+                {/* Janitor AI Lorebook Inspector Button */}
+                <button 
+                  onClick={() => setShowLorebookDrawer(true)}
+                  className="p-2 rounded-xl hover:bg-purple-500/10 text-purple-600 dark:text-purple-400 transition-colors flex items-center gap-1 relative"
+                  title="Open Lorebook Inspector (Janitor AI Engine)"
+                >
+                  <BookOpen size={20} />
+                  <span className="text-[10px] font-bold uppercase tracking-wider hidden lg:inline bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20">
+                    Lore ({loreTriggerResult.triggeredEntries.length})
+                  </span>
+                </button>
+
                 <button 
                   onClick={handleContinueAsStory}
                   disabled={convertingToStory}
@@ -950,6 +1021,56 @@ export default function ConversationPage() {
         onClose={() => setShowMemoryVisualizer(false)}
         memoryNexusState={memoryNexusState}
         onUpdateState={setMemoryNexusState}
+      />
+
+      {/* Janitor AI Lorebook Drawer & Inspector */}
+      <LorebookDrawer
+        isOpen={showLorebookDrawer}
+        onClose={() => setShowLorebookDrawer(false)}
+        entries={lorebookEntries}
+        matchedKeywordsMap={loreTriggerResult.matchedKeywordsMap}
+        onToggleForceActive={(entryId, forceActive) => {
+          setLorebookEntries((prev) =>
+            prev.map((e) => (e.id === entryId ? { ...e, force_active: forceActive } : e))
+          );
+        }}
+        onAddEntry={async (newEntry) => {
+          const created: LorebookEntry = {
+            id: `lb-${Date.now()}`,
+            lorebook_id: 'default',
+            title: newEntry.title,
+            content: newEntry.content,
+            keywords: newEntry.keywords,
+            priority: 10,
+            enabled: true,
+            insertion_order: lorebookEntries.length,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          setLorebookEntries((prev) => [...prev, created]);
+          showToast(`Added Lorebook Entry: ${newEntry.title}`, 'success');
+        }}
+        onImportJson={async (jsonString) => {
+          const parsed = parseJanitorLorebookJson(jsonString);
+          const newEntries: LorebookEntry[] = parsed.entries.map((e, idx) => ({
+            id: `imported-${Date.now()}-${idx}`,
+            lorebook_id: 'imported',
+            title: e.title || `Entry ${idx + 1}`,
+            content: e.content || '',
+            keywords: e.keywords || [],
+            selective_keys: e.selective_keys || [],
+            is_constant: e.is_constant || false,
+            priority: e.priority || 10,
+            enabled: true,
+            insertion_order: lorebookEntries.length + idx,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }));
+          setLorebookEntries((prev) => [...prev, ...newEntries]);
+          showToast(`Imported Lorebook "${parsed.title}" with ${newEntries.length} entries!`, 'success');
+        }}
+        scanDepth={scanDepth}
+        onChangeScanDepth={setScanDepth}
       />
 
       {/* Memory Modal */}
@@ -1237,6 +1358,19 @@ export default function ConversationPage() {
                   >
                     <Smile size={20} />
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsOocMode(p => !p)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1 ${
+                      isOocMode
+                        ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-400/40'
+                        : 'bg-warm-200 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-300 dark:hover:bg-warm-700'
+                    }`}
+                    disabled={sending}
+                    title="Toggle Out Of Character (OOC) Mode"
+                  >
+                    <span>OOC</span>
+                  </button>
                 </div>
 
                 <textarea
@@ -1249,7 +1383,7 @@ export default function ConversationPage() {
                       handleSendMessage(e as any);
                     }
                   }}
-                  placeholder="Type your response... (Shift+Enter for new line)"
+                  placeholder={isOocMode ? "Out of Character (OOC) mode: Talk to the AI author or instruct lore updates..." : "Type your response... (Shift+Enter for new line)"}
                   className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 resize-none py-3 text-[15px] text-warm-900 dark:text-warm-50 placeholder:text-warm-400 font-serif leading-relaxed"
                   style={{ minHeight: '3rem', maxHeight: '12rem' }}
                   maxLength={MSG_LIMIT}
