@@ -30,13 +30,37 @@ export function CreateGroupRoomModal({ isOpen, onClose, onRoomCreated }: CreateG
   const fetchCharacters = async () => {
     try {
       setFetching(true);
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'ai_character')
-        .limit(20);
-      setAvailableChars(data || []);
+      const { data: aiChars } = await supabase
+        .from('ai_characters')
+        .select(`
+          user_id,
+          name,
+          short_description,
+          profiles:profiles!ai_characters_user_id_fkey(
+            id, user_id, display_name, username, avatar_emoji, photo_url, role
+          )
+        `)
+        .limit(30);
+
+      if (aiChars && aiChars.length > 0) {
+        const formatted = aiChars
+          .filter((c: any) => c.profiles)
+          .map((c: any) => ({
+            ...c.profiles,
+            user_id: c.user_id,
+            display_name: c.name || c.profiles?.display_name,
+            bio: c.short_description || c.profiles?.bio,
+          }));
+        setAvailableChars(formatted);
+      } else {
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('*')
+          .limit(30);
+        setAvailableChars(profs || []);
+      }
     } catch (e) {
+      console.error('Error loading characters:', e);
       showToast('Error loading characters', 'error');
     } finally {
       setFetching(false);

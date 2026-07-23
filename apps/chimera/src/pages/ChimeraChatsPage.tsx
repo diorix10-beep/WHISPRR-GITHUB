@@ -156,11 +156,33 @@ export default function ChimeraChatsPage() {
   const fetchDefaultCharacters = async () => {
     setSearching(true);
     try {
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
+      const { data: aiChars } = await supabase
+        .from('ai_characters')
+        .select(`
+          user_id,
+          name,
+          short_description,
+          greeting,
+          profiles:profiles!ai_characters_user_id_fkey(
+            id, user_id, display_name, username, avatar_emoji, photo_url, role
+          )
+        `)
         .limit(20);
-      setSearchResults(data || []);
+
+      if (aiChars && aiChars.length > 0) {
+        const formatted = aiChars
+          .filter((c: any) => c.profiles)
+          .map((c: any) => ({
+            ...c.profiles,
+            user_id: c.user_id,
+            display_name: c.name || c.profiles?.display_name,
+            bio: c.short_description || c.profiles?.bio,
+          }));
+        setSearchResults(formatted);
+      } else {
+        const { data: profs } = await supabase.from('profiles').select('*').limit(20);
+        setSearchResults(profs || []);
+      }
     } catch (err) {
       console.error('Error fetching characters:', err);
     } finally {
@@ -188,14 +210,38 @@ export default function ChimeraChatsPage() {
 
     setSearching(true);
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
+      const { data: aiChars } = await supabase
+        .from('ai_characters')
+        .select(`
+          user_id,
+          name,
+          short_description,
+          greeting,
+          profiles:profiles!ai_characters_user_id_fkey(
+            id, user_id, display_name, username, avatar_emoji, photo_url, role
+          )
+        `)
+        .or(`name.ilike.%${query}%,short_description.ilike.%${query}%`)
         .limit(20);
 
-      if (error) throw error;
-      setSearchResults(data || []);
+      if (aiChars && aiChars.length > 0) {
+        const formatted = aiChars
+          .filter((c: any) => c.profiles)
+          .map((c: any) => ({
+            ...c.profiles,
+            user_id: c.user_id,
+            display_name: c.name || c.profiles?.display_name,
+            bio: c.short_description || c.profiles?.bio,
+          }));
+        setSearchResults(formatted);
+      } else {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
+          .limit(20);
+        setSearchResults(data || []);
+      }
     } catch (error) {
       console.error('Error searching roleplay characters:', error);
     } finally {
