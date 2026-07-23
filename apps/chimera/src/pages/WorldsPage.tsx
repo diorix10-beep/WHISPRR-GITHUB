@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import type { World } from '../types';
+import { WorldRelationshipModal } from '../components/world/WorldRelationshipModal';
 
 export default function WorldsPage() {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ export default function WorldsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
+  const [selectedWorldForNetwork, setSelectedWorldForNetwork] = useState<World | null>(null);
 
   const fetchWorlds = useCallback(async () => {
     if (!profile?.user_id) return;
@@ -228,7 +230,10 @@ export default function WorldsPage() {
               </button>
 
               {actionMenuId === w.id && (
-                <div className="absolute top-10 left-3 z-10 bg-white dark:bg-warm-800 rounded-xl shadow-xl border border-warm-200 dark:border-warm-700 py-1 min-w-[140px]" onClick={e => e.stopPropagation()}>
+                <div className="absolute top-10 left-3 z-10 bg-white dark:bg-warm-800 rounded-xl shadow-xl border border-warm-200 dark:border-warm-700 py-1 min-w-[150px]" onClick={e => e.stopPropagation()}>
+                  <button onClick={() => { setSelectedWorldForNetwork(w); setActionMenuId(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20">
+                    <Globe size={13} /> Inspect Network 🕸️
+                  </button>
                   <button onClick={() => handleDuplicate(w.id)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-750">
                     <Copy size={12} /> Duplicate
                   </button>
@@ -241,6 +246,14 @@ export default function WorldsPage() {
           ))}
         </div>
       )}
+
+      {/* World Relationship Network Modal */}
+      <WorldRelationshipModal
+        isOpen={!!selectedWorldForNetwork}
+        onClose={() => setSelectedWorldForNetwork(null)}
+        worldId={selectedWorldForNetwork?.id}
+        worldName={selectedWorldForNetwork?.name}
+      />
     </div>
   );
 }

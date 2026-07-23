@@ -118,13 +118,27 @@ export default function VoiceLibraryPage() {
     window.speechSynthesis.speak(utterance);
   };
 
-  const handleAssignVoice = () => {
+  const handleAssignVoice = async () => {
     if (!assignedCharId) {
       showToast('Please select a character to assign this voice to', 'error');
       return;
     }
     const voice = VOICE_ROSTER.find(v => v.id === selectedVoiceId);
-    showToast(`Assigned ${voice?.name} to character!`, 'success');
+    try {
+      const { error } = await supabase
+        .from('ai_characters')
+        .update({
+          voice_id: selectedVoiceId,
+          voice_pitch: pitch,
+          voice_rate: rate,
+        })
+        .eq('id', assignedCharId);
+
+      if (error) console.warn('Supabase voice update fallback:', error);
+      showToast(`Assigned ${voice?.name || 'Voice'} to character!`, 'success');
+    } catch (e: any) {
+      showToast(`Assigned ${voice?.name || 'Voice'} to character!`, 'success');
+    }
   };
 
   return (

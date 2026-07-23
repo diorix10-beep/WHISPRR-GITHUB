@@ -20,11 +20,13 @@ import { MemoryVisualizerModal } from '../components/chat/MemoryVisualizerModal'
 import { MultiCharacterHeader } from '../components/chat/MultiCharacterHeader';
 import { RpgGameOverlay } from '../components/chat/RpgGameOverlay';
 import { LorebookDrawer } from '../components/chat/LorebookDrawer';
+import { InChatPersonaDrawer } from '../components/chat/InChatPersonaDrawer';
+import { WorldRelationshipModal } from '../components/world/WorldRelationshipModal';
 import { createInitialMemoryNexusState, autoExtractMemoriesIfNeeded, formatMemoryNexusPromptContext } from '../services/memoryNexus';
 import { scanAndMatchLorebookEntries, parseJanitorLorebookJson, parseOocMessage } from '../services/lorebookEngine';
 import { useChatAesthetics } from '../hooks/useChatAesthetics';
 import { useVoice } from '../hooks/useVoice';
-import { Paperclip, AudioWaveform, Brain, Gamepad2, Users } from 'lucide-react';
+import { Paperclip, AudioWaveform, Brain, Gamepad2, Users, Globe, UserCheck } from 'lucide-react';
 
 interface MessageWithProfile extends Message {
   profiles?: Profile;
@@ -88,6 +90,9 @@ export default function ConversationPage() {
   const [showLorebookDrawer, setShowLorebookDrawer] = useState(false);
   const [scanDepth, setScanDepth] = useState<number>(10);
   const [isOocMode, setIsOocMode] = useState<boolean>(false);
+  const [showPersonaDrawer, setShowPersonaDrawer] = useState<boolean>(false);
+  const [showWorldModal, setShowWorldModal] = useState<boolean>(false);
+  const [activePersona, setActivePersona] = useState<any>(null);
 
   // Chat Modes & Multi-Character Pool
   const [chatMode, setChatMode] = useState<ChatMode>('one_on_one');
@@ -913,6 +918,30 @@ export default function ConversationPage() {
                   </span>
                 </button>
 
+                {/* Persona Switcher Pill (Rule 35) */}
+                <button
+                  onClick={() => setShowPersonaDrawer(true)}
+                  className="p-2 rounded-xl hover:bg-red-500/10 text-red-600 dark:text-red-400 transition-colors flex items-center gap-1 text-xs font-bold"
+                  title="Switch Active Persona (Rule 35)"
+                >
+                  <UserCheck size={20} />
+                  <span className="text-[10px] font-bold uppercase tracking-wider hidden lg:inline bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/20">
+                    {activePersona ? activePersona.name : 'Persona'}
+                  </span>
+                </button>
+
+                {/* World Relationship Network (Rule 34) */}
+                <button
+                  onClick={() => setShowWorldModal(true)}
+                  className="p-2 rounded-xl hover:bg-purple-500/10 text-purple-600 dark:text-purple-400 transition-colors flex items-center gap-1 text-xs font-bold"
+                  title="Inspect World Relationship Network (Rule 34)"
+                >
+                  <Globe size={20} />
+                  <span className="text-[10px] font-bold uppercase tracking-wider hidden xl:inline bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20">
+                    World
+                  </span>
+                </button>
+
                 {/* Janitor AI Lorebook Inspector Button */}
                 <button 
                   onClick={() => setShowLorebookDrawer(true)}
@@ -1087,6 +1116,7 @@ export default function ConversationPage() {
           isOpen={showMemoryModal} 
           onClose={() => setShowMemoryModal(false)} 
           character={otherUser} 
+          conversationId={conversationId}
         />
       )}
 
@@ -1603,6 +1633,21 @@ export default function ConversationPage() {
           </div>
         </div>
       )}
+
+      {/* In-Chat Persona Switcher Drawer */}
+      <InChatPersonaDrawer
+        isOpen={showPersonaDrawer}
+        onClose={() => setShowPersonaDrawer(false)}
+        activePersonaId={activePersona?.id}
+        onSelectPersona={(p) => setActivePersona(p)}
+      />
+
+      {/* World Relationship Network Modal */}
+      <WorldRelationshipModal
+        isOpen={showWorldModal}
+        onClose={() => setShowWorldModal(false)}
+        worldName={otherUser?.display_name ? `${otherUser.display_name}'s Realm` : 'Eldoria Nexus'}
+      />
 
       {/* End Phone Wrapper */}
       </div>
