@@ -9,6 +9,7 @@ import { ChimeraLayout } from './components/layout/ChimeraLayout';
 import { ChimeraPlaceholderPage } from './components/common/ChimeraPlaceholderPage';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { PublicOnlyRoute } from './components/common/PublicOnlyRoute';
+import { Logo } from './components/common/Logo';
 import { ReloadPrompt } from './components/common/ReloadPrompt';
 
 // ── Auth & Onboarding ──────────────────────────────────────
@@ -96,12 +97,8 @@ function AppLoader() {
     return (
       <div className="h-screen flex items-center justify-center bg-warm-50 dark:bg-warm-900">
         <div className="text-center flex flex-col items-center gap-4">
-          <img
-            src="/chimera_logo.png"
-            alt="CHIMERA"
-            className="w-16 h-16 object-contain animate-pulse"
-          />
-          <p className="text-warm-600 dark:text-warm-400 font-serif text-lg tracking-widest uppercase">CHIMERA</p>
+          <Logo size={56} className="animate-pulse" />
+          <p className="text-warm-600 dark:text-warm-400 font-serif text-lg">CHIMERA</p>
         </div>
       </div>
     );
