@@ -420,6 +420,46 @@ export default function AiCharacterCreator() {
             <h1 className="font-serif text-xl font-bold text-white">New Character</h1>
           </div>
 
+          {/* Top Responsive Tab Selector for Mobile & Desktop */}
+          <div className="flex items-center gap-2 mb-6 bg-warm-850 p-1.5 rounded-2xl border border-warm-800 w-full overflow-x-auto select-none">
+            <button
+              type="button"
+              onClick={() => setActiveTab('general')}
+              className={`flex-1 min-w-[140px] py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${
+                activeTab === 'general'
+                  ? 'bg-red-600 text-white shadow-md'
+                  : 'text-warm-400 hover:text-white hover:bg-warm-800'
+              }`}
+            >
+              <User size={16} />
+              <span>General & Greeting</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('architecture')}
+              className={`flex-1 min-w-[160px] py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${
+                activeTab === 'architecture'
+                  ? 'bg-red-600 text-white shadow-md'
+                  : 'text-warm-400 hover:text-white hover:bg-warm-800'
+              }`}
+            >
+              <Bot size={16} />
+              <span>16-Section Builder</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('definition')}
+              className={`flex-1 min-w-[130px] py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${
+                activeTab === 'definition'
+                  ? 'bg-red-600 text-white shadow-md'
+                  : 'text-warm-400 hover:text-white hover:bg-warm-800'
+              }`}
+            >
+              <FileText size={16} />
+              <span>Raw Definition</span>
+            </button>
+          </div>
+
           {/* Form Content */}
           <div className="space-y-8">
             {activeTab === 'general' ? (
@@ -584,6 +624,64 @@ export default function AiCharacterCreator() {
                       <li>Please ensure your bot adheres to these guidelines to maintain a safe and respectful environment.</li>
                     </ul>
                   </div>
+                  {/* First Greeting Block in General Tab */}
+                  <div className="pt-6 border-t border-warm-800">
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="block text-xs font-bold text-warm-400">
+                        First Message / Greeting <span className="text-red-400">*</span>
+                      </label>
+                      <span className="text-[10px] bg-red-500/20 text-red-400 font-bold px-2 py-0.5 rounded-md border border-red-500/30">
+                        * Required for Roleplay
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-warm-500 mb-3">
+                      The initial opening message sent by your character when a roleplay conversation starts.
+                    </p>
+
+                    {!formData.greeting.trim() && publishPipeline.step === 'failed' && (
+                      <div className="mb-3 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs font-bold text-red-400 flex items-center gap-2 animate-shake">
+                        <AlertTriangle size={16} />
+                        <span>First Greeting is required so roleplay can start! Type your character's opening message below.</span>
+                      </div>
+                    )}
+
+                    <div className={`bg-warm-800/50 border rounded-xl overflow-hidden transition-all ${
+                      !formData.greeting.trim() && publishPipeline.step === 'failed' ? 'border-red-500 ring-2 ring-red-500/30' : 'border-warm-700'
+                    }`}>
+                      <div className="flex bg-warm-800 border-b border-warm-700">
+                        <button type="button" className="px-4 py-2 text-xs font-bold text-white border-b-2 border-red-500 bg-warm-700/50">Write Opening Message</button>
+                      </div>
+                      <textarea
+                        ref={greetingRef}
+                        name="greeting"
+                        value={formData.greeting}
+                        onChange={handleChange}
+                        rows={5}
+                        placeholder="Type your character's first opening message to the user... e.g. *smiles warmly* 'Welcome! How can I assist you today?'"
+                        className="w-full bg-transparent p-4 text-sm text-white focus:outline-none resize-none placeholder:text-warm-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Tab Navigation Controls */}
+                  <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-warm-800">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('architecture')}
+                      className="w-full sm:w-auto px-6 py-3 rounded-xl bg-warm-800 hover:bg-warm-700 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 border border-warm-700"
+                    >
+                      <span>Next: 16-Section Builder</span>
+                      <Bot size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleFinalPublish}
+                      className="w-full sm:w-auto px-8 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-lg"
+                    >
+                      <Sparkles size={16} />
+                      <span>Publish Character</span>
+                    </button>
+                  </div>
 
                 </div>
               </>
@@ -623,6 +721,36 @@ export default function AiCharacterCreator() {
                     }));
                   }}
                 />
+
+                {/* Architecture Tab Bottom Step Controls */}
+                <div className="pt-6 mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-warm-800">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('general')}
+                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-warm-800 hover:bg-warm-700 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 border border-warm-700"
+                  >
+                    <User size={16} />
+                    <span>Back: General & Greeting</span>
+                  </button>
+                  <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('definition')}
+                      className="w-full sm:w-auto px-6 py-3 rounded-xl bg-warm-800 hover:bg-warm-700 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 border border-warm-700"
+                    >
+                      <span>Next: Raw Definition</span>
+                      <FileText size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleFinalPublish}
+                      className="w-full sm:w-auto px-8 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-lg"
+                    >
+                      <Sparkles size={16} />
+                      <span>Publish Character</span>
+                    </button>
+                  </div>
+                </div>
               </>
             ) : (
               <>
@@ -706,6 +834,26 @@ export default function AiCharacterCreator() {
                       rows={8}
                       className="w-full bg-warm-800 border border-warm-700 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-red-500"
                     />
+                  </div>
+
+                  {/* Definition Tab Bottom Step Controls */}
+                  <div className="pt-6 mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-warm-800">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('architecture')}
+                      className="w-full sm:w-auto px-6 py-3 rounded-xl bg-warm-800 hover:bg-warm-700 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 border border-warm-700"
+                    >
+                      <Bot size={16} />
+                      <span>Back: 16-Section Builder</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleFinalPublish}
+                      className="w-full sm:w-auto px-8 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-lg"
+                    >
+                      <Sparkles size={16} />
+                      <span>Publish Character</span>
+                    </button>
                   </div>
                 </div>
               </>
