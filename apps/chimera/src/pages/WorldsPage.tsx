@@ -6,6 +6,7 @@ import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import type { World } from '../types';
 import { WorldRelationshipModal } from '../components/world/WorldRelationshipModal';
+import { STARTER_WORLDS } from '../lib/starterContent';
 
 export default function WorldsPage() {
   const navigate = useNavigate();
@@ -170,6 +171,29 @@ export default function WorldsPage() {
             <span className="flex items-center gap-1.5"><Map size={14} className="text-purple-400" /> Interactive Maps</span>
             <span className="flex items-center gap-1.5"><Layers size={14} className="text-purple-400" /> Factions & Magic</span>
             <span className="flex items-center gap-1.5"><BookOpen size={14} className="text-purple-400" /> Story Timelines</span>
+          </div>
+
+          {/* Featured Starter Templates for Inspiration */}
+          <div className="pt-8 space-y-4 text-left border-t border-warm-100 dark:border-warm-800">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+              <Compass size={16} />
+              <span>Explore Starter World Templates</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {STARTER_WORLDS.map(sw => (
+                <div key={sw.id} className="p-4 rounded-2xl bg-warm-50 dark:bg-warm-800/50 border border-warm-200 dark:border-warm-750 flex items-start gap-4">
+                  <img src={sw.cover_url} alt={sw.name} className="w-16 h-16 rounded-xl object-cover shrink-0 border border-purple-500/20" />
+                  <div className="space-y-1 overflow-hidden">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-sm text-warm-900 dark:text-white truncate">{sw.name}</h4>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/10 text-purple-500">Template</span>
+                    </div>
+                    <p className="text-xs text-warm-600 dark:text-warm-400 line-clamp-2">{sw.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       ) : (
