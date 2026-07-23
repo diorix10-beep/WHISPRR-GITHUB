@@ -1,3 +1,5 @@
+When making any decision, always choose the implementation that provides the best long-term experience for the user—not the easiest implementation for the developer or AI agent.
+
 # CHIMERA Engineering Constitution
 Version 1.0
 
@@ -437,3 +439,273 @@ Every interaction should communicate craftsmanship.
 The product should feel elegant, polished, trustworthy, and carefully designed.
 
 Whenever uncertain between two implementations, choose the one that creates the better user experience.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION VIII — AI & ROLEPLAY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 31 — AI Should Empower Creativity
+
+AI exists to enhance human creativity, never replace it.
+
+CHIMERA is a creative platform first.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 32 — Modes Must Feel Different
+
+Switching between Roleplay and Story should feel like entering a different creative workspace.
+
+Different identity.
+
+Different colors.
+
+Different atmosphere.
+
+Same design language.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 33 — Characters Are Living Identities
+
+Characters are not chatbots.
+
+Each character should feel like a persistent identity with memories, personality, relationships, preferences, and history.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 34 — Worlds Come Before Conversations
+
+Characters become richer when they belong to worlds.
+
+Always prioritize connections between:
+
+Worlds
+
+Characters
+
+Stories
+
+Lore
+
+Relationships
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 35 — Personas Belong to Users
+
+Personas represent the user.
+
+They are never the AI.
+
+AI characters respond to personas.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION IX — STORYTELLING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 36 — Stories Are Sacred
+
+Never reduce storytelling into simple chat messages.
+
+Respect pacing.
+
+Structure.
+
+Narrative.
+
+Emotion.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 37 — Every Story Has Ownership
+
+Every published story should clearly display:
+
+Author
+
+Publication date
+
+Updates
+
+Series
+
+Status
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 38 — Writing Must Feel Comfortable
+
+Provide distraction-free writing.
+
+Avoid unnecessary UI.
+
+Prioritize typography and readability.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 39 — Worlds Should Be Discoverable
+
+Worlds deserve the same importance as Characters and Stories.
+
+They should never feel secondary.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION X — DESIGN CONSISTENCY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 40 — One Design Language
+
+Every page should feel like it belongs to the same application.
+
+Avoid isolated design decisions.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 41 — Predictable Interactions
+
+Buttons should always behave consistently.
+
+Search behaves consistently.
+
+Cards behave consistently.
+
+Dialogs behave consistently.
+
+Never surprise users.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 42 — Motion Has Purpose
+
+Animations should communicate state.
+
+Never animate simply because you can.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 43 — Responsive Doesn't Mean Smaller
+
+Responsive design means redesigning intelligently.
+
+Not shrinking desktop interfaces.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION XI — PERFORMANCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 44 — Every Millisecond Matters
+
+Optimize perceived speed.
+
+Avoid unnecessary waiting.
+
+Cache intelligently.
+
+Load progressively.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 45 — Background Work Stays Invisible
+
+Synchronization,
+
+Caching,
+
+Database updates,
+
+Deployment refreshes,
+
+should happen quietly whenever possible.
+
+Users should not notice technical operations.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION XII — SECURITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 46 — Privacy By Default
+
+Protect user data.
+
+Collect only what is necessary.
+
+Respect creator ownership.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 47 — Fail Gracefully
+
+When something fails,
+
+users should always understand:
+
+what happened,
+
+what they can do next,
+
+and how to recover.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION XIII — ENGINEERING EXCELLENCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 48 — No Temporary Hacks
+
+Quick fixes become permanent problems.
+
+Implement proper solutions.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 49 — Every Commit Improves CHIMERA
+
+No commit should reduce quality.
+
+Leave the codebase cleaner than you found it.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 50 — Think Like a Product Owner
+
+Every implementation should answer:
+
+Does this improve the user experience?
+
+Does this respect the design system?
+
+Does this scale?
+
+Would I proudly ship this?
+
+If the answer is no,
+
+rethink the implementation.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 51 — The CHIMERA Standard
+
+Every feature must meet four equally important standards before it is considered complete.
+
+1. Beautiful
+
+Elegant, balanced, and visually consistent.
+
+2. Functional
+
+Reliable, intuitive, and bug-free.
+
+3. Responsive
+
+Exceptional on desktop, tablet, and mobile.
+
+4. Delightful
+
+Leaves users with the feeling that every detail was intentionally crafted.
+
+If a feature satisfies only three of these four standards, it is not finished.
+
+Perfection is not the goal.
+
+Craftsmanship is.
