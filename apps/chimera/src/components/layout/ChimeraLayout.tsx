@@ -254,13 +254,12 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
             {/* Shards Currency Pill — Responsive Mobile & Desktop */}
             <button
-              onClick={() => setShowShardsHub(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 transition-all font-bold text-xs shadow-sm hover:scale-105 active:scale-95"
-              title="Shards & Ads Economy (Coming Soon)"
+              onClick={() => navigate('/shards')}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 transition-all font-bold text-xs shadow-sm hover:scale-105 active:scale-95 group"
+              title="CHIMERA Shards Hub & Passes"
             >
-              <Gem size={15} className="text-amber-500 fill-amber-500" />
-              <span>Shards</span>
-              <span className="text-[9px] uppercase font-extrabold tracking-wider bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-md">Soon</span>
+              <Gem size={15} className="text-amber-500 fill-amber-500 group-hover:animate-bounce" />
+              <span>{shardsBalance} 💎</span>
             </button>
 
             {/* Search — icon only, no text label on smaller screens */}

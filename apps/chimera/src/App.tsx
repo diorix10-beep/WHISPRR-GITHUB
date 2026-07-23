@@ -36,6 +36,7 @@ const TrustPage                = lazy(() => import('./pages/TrustPage'));
 // ── Dashboard ──────────────────────────────────────────────
 const CreatorDashboardPage = lazy(() => import('./pages/CreatorDashboardPage'));
 const DiscoverPage = lazy(() => import('./pages/DiscoverPage'));
+const ShardsPage = lazy(() => import('./pages/ShardsPage'));
 
 // ── Creator Studio ─────────────────────────────────────────
 const CreatorStudioPage = lazy(() => import('./pages/CreatorStudioPage'));
@@ -182,6 +183,7 @@ function AppLoader() {
             <Route path="/dashboard" element={<Navigate to="/discover" replace />} />
             <Route path="/" element={<DiscoverPage />} />
             <Route path="/discover" element={<DiscoverPage />} />
+            <Route path="/shards" element={<ShardsPage />} />
 
             {/* Characters Module */}
             <Route path="/characters" element={<CharactersPage />} />
