@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Avatar } from '../common/Avatar';
+import { Logo } from '../common/Logo';
 import { AppLauncherModal } from './AppLauncherModal';
 import { MobileNavDrawer } from './MobileNavDrawer';
 
@@ -196,11 +197,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             </button>
             
             <Link to="/" className="flex items-center gap-2 group">
-              <img
-                src="/chimera_logo.png"
-                alt="CHIMERA"
-                className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl object-cover border border-red-500/25 shadow-sm shadow-red-500/10 group-hover:shadow-md transition-shadow"
-              />
+              <Logo variant="icon-only" size={32} className="shrink-0" />
               <span className="font-serif text-lg sm:text-xl font-bold text-red-600 dark:text-red-500 tracking-wide">
                 CHIMERA
               </span>
