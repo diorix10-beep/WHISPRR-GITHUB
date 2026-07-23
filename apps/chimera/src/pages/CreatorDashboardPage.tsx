@@ -76,6 +76,39 @@ export default function CreatorDashboardPage() {
         </p>
       </motion.div>
 
+      {/* Creator Monetization & Revenue Widget */}
+      <div className="mb-8 mx-4 sm:mx-0 p-6 rounded-3xl bg-gradient-to-r from-warm-900 via-warm-950 to-warm-900 text-white border border-amber-500/30 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-extrabold uppercase tracking-wider">
+              <TrendingUp size={14} /> Creator Revenue Share
+            </div>
+            <h2 className="font-serif text-2xl font-bold">Monetize Your Characters &amp; Stories</h2>
+            <p className="text-xs text-warm-400 max-w-xl">
+              Earn Shards when roleplayers chat with your AI characters, read your novels, or tip you directly. Convert your earned Shards to real cash payouts!
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-center w-full sm:w-auto min-w-[140px]">
+              <span className="text-xs text-warm-400 font-medium block">Total Earned</span>
+              <span className="font-serif text-2xl font-bold text-amber-400">350 💎</span>
+              <span className="text-[11px] text-emerald-400 font-bold block mt-0.5">≈ $3.50 USD</span>
+            </div>
+
+            <button
+              onClick={() => alert('Payout requests unlock once you reach the $10 USD (1,000 Shards) minimum threshold!')}
+              className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs shadow-lg transition-all flex items-center justify-center gap-2"
+            >
+              <span>Request Cash Payout</span>
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Category Pills */}
       <div className="flex gap-3 overflow-x-auto pb-4 mb-8 scrollbar-hide px-4 sm:px-0">
         <button className="px-5 py-2 rounded-full bg-red-600 text-white font-bold text-sm shadow-md whitespace-nowrap">
