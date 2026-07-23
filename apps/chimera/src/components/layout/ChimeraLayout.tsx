@@ -32,7 +32,7 @@ const ROLEPLAY_NAV_LINKS: NavLinkItem[] = [
 
 const STORYTELLING_NAV_LINKS: NavLinkItem[] = [
   { path: '/', label: 'Home', icon: Compass },
-  { path: '/write/desk', label: 'Stories', icon: BookOpen },
+  { path: '/stories', label: 'Stories', icon: BookOpen },
   { path: '/worlds', label: 'Worlds', icon: Globe },
 ];
 

@@ -61,7 +61,7 @@ class DrawerErrorBoundary extends Component<
                 <div className="px-2 text-[10px] font-bold text-warm-400 uppercase tracking-wider">Navigation</div>
                 {[
                   { path: '/discover', label: 'Discover' },
-                  { path: '/write/desk', label: 'Stories' },
+                  { path: '/stories', label: 'Stories' },
                   { path: '/worlds', label: 'Worlds' },
                 ].map(item => (
                   <a
@@ -143,7 +143,7 @@ function MobileNavDrawerContent({
     { path: '/studio', label: 'Studio', icon: Sparkles },
   ] : [
     { path: '/', label: 'Home', icon: Compass },
-    { path: '/write/desk', label: 'Stories', icon: BookOpen },
+    { path: '/stories', label: 'Stories', icon: BookOpen },
     { path: '/worlds', label: 'Worlds', icon: Globe },
   ];
 

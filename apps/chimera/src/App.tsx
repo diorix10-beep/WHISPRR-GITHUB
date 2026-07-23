@@ -202,6 +202,7 @@ function AppLoader() {
 
             {/* Stories Module */}
             <Route path="/stories" element={<WritersDeskPage />} />
+            <Route path="/write/desk" element={<Navigate to="/stories" replace />} />
             <Route path="/stories/new" element={<WritersDeskPage />} />
             <Route path="/stories/:id" element={<StoryReaderPage />} />
             <Route path="/stories/:storyId/chapter/:chapterNumber" element={<ChapterReaderPage />} />
