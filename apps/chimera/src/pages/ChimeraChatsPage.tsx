@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { Plus, Search, MessageSquare, Loader2, Users, X } from 'lucide-react';
 import type { Conversation, Profile } from '../types';
@@ -15,6 +15,8 @@ interface ConversationWithProfiles extends Conversation {
 
 export default function ChimeraChatsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const characterIdParam = searchParams.get('characterId') || searchParams.get('character');
   const { user } = useAuth();
   const [conversations, setConversations] = useState<ConversationWithProfiles[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,6 +39,21 @@ export default function ChimeraChatsPage() {
       setChatError(null);
     }
   }, [showNewChatModal]);
+
+  useEffect(() => {
+    if (characterIdParam && user) {
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', characterIdParam)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data) {
+            handleStartConversation(data);
+          }
+        });
+    }
+  }, [characterIdParam, user]);
 
   const fetchConversations = async () => {
     if (!user) return;
@@ -78,9 +95,9 @@ export default function ChimeraChatsPage() {
         })
       );
 
-      // Only display chats with AI Characters (role: 'ai_character')
+      // Display all group chats and DM conversations
       const chimeraChats = conversationsWithProfiles.filter(
-        (c) => c.other_user?.role === 'ai_character'
+        (c) => c.type === 'group' || (c.type === 'dm' && c.other_user !== undefined)
       );
 
       setConversations(chimeraChats);
@@ -136,23 +153,46 @@ export default function ChimeraChatsPage() {
     };
   }, [user]);
 
+  const fetchDefaultCharacters = async () => {
+    setSearching(true);
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .limit(20);
+      setSearchResults(data || []);
+    } catch (err) {
+      console.error('Error fetching characters:', err);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showNewChatModal) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+      setChatError(null);
+      fetchDefaultCharacters();
+    }
+  }, [showNewChatModal]);
+
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
 
     if (query.trim().length === 0) {
-      setSearchResults([]);
+      fetchDefaultCharacters();
       return;
     }
 
     setSearching(true);
     try {
-      // Find public AI Characters to chat with
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('role', 'ai_character')
         .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
-        .limit(10);
+        .limit(20);
 
       if (error) throw error;
       setSearchResults(data || []);
@@ -187,7 +227,7 @@ export default function ChimeraChatsPage() {
 
         const existing = match?.find((m: any) => m.conversations?.type === 'dm');
         if (existing) {
-          navigate(`/messages/${existing.conversation_id}`);
+          navigate(`/conversations/${existing.conversation_id}`);
           return;
         }
       }
@@ -237,7 +277,7 @@ export default function ChimeraChatsPage() {
         })
         .eq('id', newConv.id);
 
-      navigate(`/messages/${newConv.id}`);
+      navigate(`/conversations/${newConv.id}`);
     } catch (error: any) {
       console.error('Error starting roleplay chat:', error);
       setChatError(error.message || 'Could not establish connection.');
@@ -301,24 +341,25 @@ export default function ChimeraChatsPage() {
         <div className="bg-white dark:bg-warm-900 rounded-3xl border border-warm-200 dark:border-warm-800 overflow-hidden shadow-sm">
           {conversations.map(conv => {
             const unreadCount = unreadCounts[conv.id] || 0;
+            const isGroup = conv.type === 'group';
             const otherUser = conv.other_user;
+
+            const displayName = isGroup ? (conv.name || 'Group Room') : (otherUser?.display_name || 'Roleplay Chat');
+            const avatarEmoji = isGroup ? '👥' : (otherUser?.avatar_emoji || '🤖');
+            const photoUrl = isGroup ? null : otherUser?.photo_url;
 
             return (
               <button
                 key={conv.id}
-                onClick={() => navigate(`/messages/${conv.id}`)}
+                onClick={() => navigate(`/conversations/${conv.id}`)}
                 className="w-full text-left group flex items-center gap-4 p-5 border-b border-warm-100 dark:border-warm-800 last:border-0 hover:bg-warm-50 dark:hover:bg-warm-800/50 transition-colors"
               >
                 <div className="relative">
-                  {otherUser ? (
-                    <Avatar
-                      emoji={otherUser.avatar_emoji}
-                      photoUrl={otherUser.photo_url}
-                      size="lg"
-                    />
-                  ) : (
-                    <div className="w-14 h-14 rounded-full bg-warm-200 dark:bg-warm-800 flex-shrink-0" />
-                  )}
+                  <Avatar
+                    emoji={avatarEmoji}
+                    photoUrl={photoUrl}
+                    size="lg"
+                  />
                   {unreadCount > 0 && (
                     <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 border-2 border-white dark:border-warm-900">
                       {unreadCount}
@@ -391,38 +432,43 @@ export default function ChimeraChatsPage() {
                 />
               </div>
 
-              {searchQuery.length > 0 && (
-                <div className="space-y-1.5">
-                  {searching ? (
-                    <div className="text-center py-4 text-xs text-warm-500">
-                      Searching active personas...
-                    </div>
-                  ) : searchResults.length === 0 ? (
-                    <div className="text-center py-4 text-xs text-warm-500">
-                      No matching roleplay characters found
-                    </div>
-                  ) : (
-                    searchResults.map(result => (
-                      <button
-                        key={result.user_id}
-                        onClick={() => handleStartConversation(result)}
-                        disabled={isCreatingChat}
-                        className="w-full text-left p-2.5 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors flex items-center gap-3 disabled:opacity-50"
-                      >
-                        <Avatar emoji={result.avatar_emoji} photoUrl={result.photo_url} size="sm" />
-                        <div className="min-w-0">
-                          <p className="font-semibold text-xs text-warm-900 dark:text-warm-100 truncate">
-                            {result.display_name}
-                          </p>
-                          <p className="text-[10px] text-warm-500 truncate">
-                            @{result.username}
-                          </p>
-                        </div>
-                      </button>
-                    ))
-                  )}
+              <div className="space-y-1.5 mt-2">
+                <div className="px-1 text-[10px] uppercase font-bold text-warm-400 tracking-wider">
+                  {searchQuery ? 'Search Results' : 'Recommended Characters'}
                 </div>
-              )}
+                {searching ? (
+                  <div className="text-center py-6 text-xs text-warm-500 flex items-center justify-center gap-2">
+                    <Loader2 size={16} className="animate-spin text-red-500" />
+                    <span>Loading characters...</span>
+                  </div>
+                ) : searchResults.length === 0 ? (
+                  <div className="text-center py-6 text-xs text-warm-500">
+                    No matching roleplay characters found
+                  </div>
+                ) : (
+                  searchResults.map(result => (
+                    <button
+                      key={result.user_id}
+                      onClick={() => handleStartConversation(result)}
+                      disabled={isCreatingChat}
+                      className="w-full text-left p-2.5 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors flex items-center gap-3 disabled:opacity-50 border border-transparent hover:border-warm-200 dark:hover:border-warm-750"
+                    >
+                      <Avatar emoji={result.avatar_emoji} photoUrl={result.photo_url} size="md" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-xs text-warm-900 dark:text-warm-50 truncate">
+                          {result.display_name}
+                        </p>
+                        <p className="text-[10px] text-warm-500 truncate">
+                          @{result.username}
+                        </p>
+                      </div>
+                      <span className="text-[10px] font-bold text-red-600 dark:text-red-400 bg-red-500/10 px-2 py-1 rounded-lg">
+                        Chat 💬
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>
