@@ -4,7 +4,6 @@ import {
   Layers, HelpCircle, Shield, FileText
 } from 'lucide-react';
 import { WhisprrLogo } from '../common/WhisprrLogo';
-import { Logo } from '../common/Logo';
 
 const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
 const whisprrUrl = isLocalhost ? 'http://localhost:5174' : 'https://whisprr.xyz';
@@ -30,7 +29,7 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
 
   const apps = [
     { name: 'WHISPRR', desc: 'Social Network', path: `${whisprrUrl}/feed`, icon: WhisprrLogo, color: 'bg-primary-500/10 text-primary-500 border-primary-500/20 hover:bg-primary-500/20', external: true },
-    { name: 'CHIMERA', desc: 'Roleplay & Storytelling', path: '/', icon: Logo, color: 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20' },
+    { name: 'CHIMERA', desc: 'Roleplay & Storytelling', path: '/', logoUrl: '/chimera_logo.png', color: 'bg-violet-500/10 text-violet-500 border-violet-500/20 hover:bg-violet-500/20' },
   ];
 
   const moreLinks = [
@@ -73,7 +72,11 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
                   onClick={() => handleNavigate(app.path, app.external)}
                   className={`p-4 rounded-2xl border text-left flex flex-col gap-2 transition-all hover:scale-102 active:scale-98 ${app.color}`}
                 >
-                  {Icon && <Icon size={24} />}
+                  {'logoUrl' in app && app.logoUrl ? (
+                    <img src={app.logoUrl} alt={app.name} className="w-7 h-7 object-contain" />
+                  ) : (
+                    <Icon size={24} />
+                  )}
                   <div>
                     <h4 className="font-bold text-sm leading-none">{app.name}</h4>
                     <p className="text-[10px] opacity-75 mt-1">{app.desc}</p>
