@@ -10,6 +10,7 @@ import { ChimeraPlaceholderPage } from './components/common/ChimeraPlaceholderPa
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { PublicOnlyRoute } from './components/common/PublicOnlyRoute';
 import { ReloadPrompt } from './components/common/ReloadPrompt';
+import { EcosystemMaintenancePage } from './pages/EcosystemMaintenancePage';
 
 // ── Auth & Onboarding ──────────────────────────────────────
 const AuthPage          = lazy(() => import('./pages/AuthPage'));
@@ -136,10 +137,11 @@ function AppLoader() {
       }
 
       return (
-        <div className="min-h-screen flex items-center justify-center bg-warm-950 text-white flex-col text-center p-8">
-          <h1 className="text-3xl font-bold mb-4">Under Maintenance</h1>
-          <p className="text-warm-400">CHIMERA is currently undergoing scheduled maintenance. Please check back soon.</p>
-        </div>
+        <EcosystemMaintenancePage
+          message={systemSettings?.message || 'We are improving WHISPRR & CHIMERA, thank you for your patience.'}
+          target={systemSettings?.target || 'all'}
+          estimatedDuration={systemSettings?.estimated_duration || 'Underway'}
+        />
       );
     }
   }
