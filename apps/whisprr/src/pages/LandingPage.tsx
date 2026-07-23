@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { Logo } from '../components/common/Logo';
+import { ChimeraLogo } from '../components/common/ChimeraLogo';
 
 // ─── Brand Logo imported from common components ────────────────────────────────
 
@@ -329,16 +330,7 @@ export default function LandingPage() {
                 boxShadow: '0 0 60px rgba(168,85,247,0.08)',
               }}>
                 <div style={{ marginBottom: 24 }}>
-                  <svg width="44" height="44" viewBox="0 0 52 52" fill="none">
-                    <defs>
-                      <linearGradient id="eco-wl" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#a855f7" />
-                        <stop offset="100%" stopColor="#7c3aed" />
-                      </linearGradient>
-                    </defs>
-                    <path d="M2 8 L12 44 L22 20 L32 44 L42 8" stroke="url(#eco-wl)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                    <path d="M47 3 L48.2 6.8 L52 8 L48.2 9.2 L47 13 L45.8 9.2 L42 8 L45.8 6.8 Z" fill="#a855f7" fillOpacity="0.9" />
-                  </svg>
+                  <Logo variant="icon-only" size={44} />
                 </div>
                 <div style={{ display: 'inline-block', padding: '4px 12px', borderRadius: 100, background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.3)', fontSize: 11, fontWeight: 700, color: '#d8b4fe', marginBottom: 16, letterSpacing: '0.08em' }}>
                   WHISPRR
@@ -375,9 +367,7 @@ export default function LandingPage() {
                 boxShadow: '0 0 60px rgba(99,102,241,0.08)',
               }}>
                 <div style={{ marginBottom: 24 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg, #6366f1, #4338ca)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
-                    🔮
-                  </div>
+                  <ChimeraLogo size={44} />
                 </div>
                 <div style={{ display: 'inline-block', padding: '4px 12px', borderRadius: 100, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', fontSize: 11, fontWeight: 700, color: '#a5b4fc', marginBottom: 16, letterSpacing: '0.08em' }}>
                   CHIMERA
@@ -539,7 +529,7 @@ export default function LandingPage() {
               <div style={{ position: 'absolute', top: -60, right: -60, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
               <div style={{ position: 'absolute', bottom: -40, left: -40, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 16px', borderRadius: 100, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', marginBottom: 24, fontSize: 12, fontWeight: 700, color: '#a5b4fc', letterSpacing: '0.08em' }}>
-                🔮 CHIMERA — Creative Platform
+                <ChimeraLogo size={16} /> CHIMERA — Creative Platform
               </div>
               <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, margin: '0 0 16px', letterSpacing: '-1px' }}>
                 Where stories<br />
