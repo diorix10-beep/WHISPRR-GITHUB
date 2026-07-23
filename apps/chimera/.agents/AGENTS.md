@@ -709,3 +709,93 @@ If a feature satisfies only three of these four standards, it is not finished.
 Perfection is not the goal.
 
 Craftsmanship is.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION XIV — IMAGES & CREATOR IDENTITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 52 — Universal Image Upload System
+
+Every object in CHIMERA or WHISPRR that requires an image must use the same universal image upload component.
+
+This includes, but is not limited to:
+
+• User profile pictures
+• Character avatars
+• Persona avatars
+• Story covers
+• World covers
+• Collection covers
+• Community icons
+• Creator profile banners
+• Organization logos
+• Group icons
+• Future image-based content
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Users should NEVER be required to:
+
+• Search the internet for an image.
+• Copy an image URL.
+• Paste an image URL.
+• Understand what an image URL is.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Every image upload should provide:
+
+• Click to Upload
+• Drag & Drop
+• Mobile Photo Picker
+• Camera Support (mobile devices)
+• Instant Preview
+• Crop
+• Zoom
+• Reposition
+• Replace Image
+• Remove Image
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The upload experience must remain identical everywhere.
+
+The same interaction.
+
+The same animations.
+
+The same cropping interface.
+
+The same quality.
+
+Users should immediately recognize how image uploads work regardless of where they are in the ecosystem.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Storage
+
+Images should automatically upload to the storage provider.
+
+Image URLs should be generated and managed internally.
+
+Users should never interact with raw image URLs.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Design Principle
+
+Image uploads should feel effortless.
+
+The platform handles the technology.
+
+The user simply chooses an image and continues creating.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Consistency Rule
+
+There must only be ONE universal image upload component shared across the entire CHIMERA ecosystem.
+
+Do not create multiple upload experiences for different features.
+
+Every upload should feel familiar, predictable, and consistent.

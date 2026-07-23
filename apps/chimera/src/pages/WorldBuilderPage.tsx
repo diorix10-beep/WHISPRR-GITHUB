@@ -10,6 +10,7 @@ import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import type { World, WorldLocation, WorldFaction, WorldTimelineEvent } from '../types';
 import { WorldCanvasTab } from '../components/world/WorldCanvasTab';
+import { UniversalImagePicker } from '../components/common/UniversalImagePicker';
 
 type TabId = 'overview' | 'canvas' | 'locations' | 'factions' | 'timeline' | 'characters' | 'lorebooks' | 'settings';
 
@@ -48,6 +49,7 @@ export default function WorldBuilderPage() {
   const [scenario, setScenario] = useState('');
   const [tags, setTags] = useState('');
   const [visibility, setVisibility] = useState<'public' | 'private' | 'unlisted'>('private');
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
 
   const fetchWorld = useCallback(async () => {
     if (!id) return;
@@ -61,6 +63,7 @@ export default function WorldBuilderPage() {
       setScenario(data.scenario);
       setTags((data.tags || []).join(', '));
       setVisibility(data.visibility);
+      setCoverUrl(data.cover_url || null);
 
       // Fetch sub-data in parallel
       const [locRes, facRes, tlRes, charRes, loreRes] = await Promise.all([
@@ -91,7 +94,7 @@ export default function WorldBuilderPage() {
     try {
       setSaving(true);
       const { error } = await supabase.from('worlds').update({
-        name, description, scenario, visibility,
+        name, description, scenario, visibility, cover_url: coverUrl,
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
       }).eq('id', id);
       if (error) throw error;
@@ -230,6 +233,16 @@ export default function WorldBuilderPage() {
         {/* OVERVIEW */}
         {activeTab === 'overview' && (
           <div className="space-y-5">
+            <div>
+              <label className="block text-xs font-semibold text-warm-600 dark:text-warm-400 mb-1.5 uppercase tracking-wider">World Cover Image (Rule 52)</label>
+              <UniversalImagePicker
+                value={coverUrl}
+                onChange={setCoverUrl}
+                shape="rectangle"
+                aspectRatio={16 / 9}
+                label="World Banner / Cover Image"
+              />
+            </div>
             <div>
               <label className="block text-xs font-semibold text-warm-600 dark:text-warm-400 mb-1.5 uppercase tracking-wider">World Name</label>
               <input value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-warm-50 dark:bg-warm-850 border border-warm-200 dark:border-warm-700 text-sm text-warm-900 dark:text-warm-50 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500" />

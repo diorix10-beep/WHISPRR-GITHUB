@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { Avatar } from '../components/common/Avatar';
-import { PhotoUpload } from '../components/common/PhotoUpload';
+import { UniversalImagePicker } from '../components/common/UniversalImagePicker';
 import type { Persona } from '../types';
 
 export default function ProfilePage() {
@@ -265,16 +265,30 @@ export default function ProfilePage() {
         </div>
 
       </div>
-      {/* Photo Upload Modal */}
-      <PhotoUpload
-        isOpen={showPhotoUpload}
-        onClose={() => setShowPhotoUpload(false)}
-        currentPhotoUrl={profile?.photo_url || null}
-        onPhotoUpdated={() => {
-          updateProfile({});
-          showToast('Profile avatar updated across the ecosystem!', 'success');
-        }}
-      />
+      {/* Photo Upload Modal (Rule 52) */}
+      {showPhotoUpload && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white dark:bg-warm-900 rounded-3xl p-6 max-w-sm w-full space-y-4 border border-warm-200 dark:border-warm-800 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="font-serif font-bold text-lg text-warm-900 dark:text-white">Profile Avatar</h3>
+              <button onClick={() => setShowPhotoUpload(false)} className="p-1 rounded-full text-warm-400 hover:text-white">
+                <Shield size={18} />
+              </button>
+            </div>
+            <UniversalImagePicker
+              value={profile?.photo_url || null}
+              onChange={async (url) => {
+                await updateProfile({ photo_url: url });
+                setShowPhotoUpload(false);
+                showToast('Profile avatar updated across CHIMERA!', 'success');
+              }}
+              shape="circle"
+              aspectRatio={1}
+              label="User Profile Picture"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
