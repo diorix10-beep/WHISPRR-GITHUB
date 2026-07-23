@@ -205,7 +205,10 @@ function AppLoader() {
             <Route path="/stories/new" element={<WritersDeskPage />} />
             <Route path="/stories/:id" element={<StoryReaderPage />} />
             <Route path="/stories/:storyId/chapter/:chapterNumber" element={<ChapterReaderPage />} />
+            <Route path="/stories/:storyId/chapters/:chapterNumber" element={<ChapterReaderPage />} />
             <Route path="/stories/:storyId/edit/chapter/:chapterId" element={<ChapterEditorPage />} />
+            <Route path="/stories/:storyId/chapters/:chapterId/edit" element={<ChapterEditorPage />} />
+            <Route path="/write/story/:storyId/chapter/:chapterId" element={<ChapterEditorPage />} />
 
             {/* AI Models Module */}
             <Route path="/models" element={<ModelsPage />} />

@@ -130,9 +130,9 @@ export function TranscriptsExporterModal({
 
       if (storyError) throw storyError;
 
-      // 2. Insert Chapter 1 into 'chapters' table
+      // 2. Insert Chapter 1 into 'story_chapters' table
       const { error: chapterError } = await supabase
-        .from('chapters')
+        .from('story_chapters')
         .insert({
           story_id: story.id,
           chapter_number: 1,

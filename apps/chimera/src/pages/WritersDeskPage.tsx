@@ -29,14 +29,32 @@ export default function WritersDeskPage() {
   const [formVisibility, setFormVisibility] = useState<'public' | 'private' | 'unlisted'>('public');
   const [formStatus, setFormStatus] = useState<'ongoing' | 'completed' | 'hiatus'>('ongoing');
 
-  // Importer state
+  // Importer & Tab state
   const [isImporterOpen, setIsImporterOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'community' | 'mine'>('community');
+  const [communityStories, setCommunityStories] = useState<Story[]>([]);
 
   useEffect(() => {
+    fetchCommunityStories();
     if (profile?.user_id) {
       fetchStories();
     }
   }, [profile]);
+
+  const fetchCommunityStories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('stories')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(40);
+
+      if (error) throw error;
+      setCommunityStories(data || []);
+    } catch (err) {
+      console.error('Error fetching community stories:', err);
+    }
+  };
 
   const fetchStories = async () => {
     if (!profile?.user_id) return;
@@ -596,58 +614,143 @@ export default function WritersDeskPage() {
             </div>
           </div>
         ) : (
-          /* Dashboard View (My Works) */
+          /* Dashboard & Community Hub View */
           <div>
-            {stories.length === 0 ? (
-              <div className="text-center py-20 bg-warm-850 rounded-2xl border border-warm-800">
-                <BookOpen size={48} className="mx-auto text-warm-700 mb-4" />
-                <h3 className="text-xl font-serif font-bold text-white mb-2">You haven't written anything yet.</h3>
-                <p className="text-warm-400 mb-6 max-w-md mx-auto">
-                  Start your journey as an author. Create your first story and share your imagination with the world.
-                </p>
-                <button
-                  onClick={handleOpenNewStory}
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md transition-all inline-flex items-center gap-2"
-                >
-                  <Plus size={18} />
-                  Write a Story
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                {stories.map(story => (
-                  <div 
-                    key={story.id} 
-                    onClick={() => handleSelectStory(story)}
-                    className="group cursor-pointer flex flex-col"
-                  >
-                    <div className="w-full aspect-[2/3] bg-warm-800 rounded-xl overflow-hidden relative shadow-lg border border-warm-800 group-hover:border-warm-600 transition-colors mb-3">
-                      {story.cover_url ? (
-                        <img src={story.cover_url} alt={story.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-warm-800 to-warm-900 flex items-center justify-center">
-                          <BookOpen size={32} className="text-warm-700" />
-                        </div>
-                      )}
-                      
-                      {/* Status Badge overlay */}
-                      <div className="absolute top-2 left-2 flex gap-1">
-                        <span className={`text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded shadow-sm ${
-                          story.status === 'completed' ? 'bg-green-500 text-white' : 'bg-black/60 text-white backdrop-blur-md'
-                        }`}>
-                          {story.status}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <h3 className="font-serif font-bold text-white text-base line-clamp-1 group-hover:text-purple-400 transition-colors">
-                      {story.title}
-                    </h3>
-                    <p className="text-xs text-warm-400 mt-0.5">
-                      Updated {new Date(story.updated_at).toLocaleDateString()}
+            {/* Tab Selector */}
+            <div className="flex items-center gap-2 mb-8 bg-warm-850 p-1.5 rounded-2xl border border-warm-800 w-fit">
+              <button
+                onClick={() => setActiveTab('community')}
+                className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${
+                  activeTab === 'community'
+                    ? 'bg-purple-600 text-white shadow-md'
+                    : 'text-warm-400 hover:text-white'
+                }`}
+              >
+                <BookOpen size={16} />
+                <span>Discover Web Novels ({communityStories.length})</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('mine')}
+                className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${
+                  activeTab === 'mine'
+                    ? 'bg-purple-600 text-white shadow-md'
+                    : 'text-warm-400 hover:text-white'
+                }`}
+              >
+                <PenTool size={16} />
+                <span>My Writer's Desk ({stories.length})</span>
+              </button>
+            </div>
+
+            {/* TAB 1: Discover Web Novels (Community) */}
+            {activeTab === 'community' && (
+              <div>
+                {communityStories.length === 0 ? (
+                  <div className="text-center py-20 bg-warm-850 rounded-2xl border border-warm-800 p-8">
+                    <BookOpen size={48} className="mx-auto text-purple-400 mb-4 animate-bounce" />
+                    <h3 className="text-2xl font-serif font-bold text-white mb-2">Be the First Web Novel Author on CHIMERA! 📖</h3>
+                    <p className="text-warm-400 mb-6 max-w-md mx-auto text-sm leading-relaxed">
+                      No published stories found yet. Export your roleplay tchats or write an original web novel right now!
                     </p>
+                    <button
+                      onClick={handleOpenNewStory}
+                      className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md transition-all inline-flex items-center gap-2"
+                    >
+                      <Plus size={18} />
+                      Write First Web Novel
+                    </button>
                   </div>
-                ))}
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                    {communityStories.map((story) => (
+                      <div
+                        key={story.id}
+                        onClick={() => navigate(`/stories/${story.id}`)}
+                        className="group cursor-pointer flex flex-col bg-warm-850 p-3 rounded-2xl border border-warm-800 hover:border-purple-500/50 transition-all hover:scale-[1.02] shadow-lg"
+                      >
+                        <div className="w-full aspect-[2/3] bg-warm-800 rounded-xl overflow-hidden relative shadow-md mb-3">
+                          {story.cover_url ? (
+                            <img src={story.cover_url} alt={story.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-purple-900/60 to-warm-900 flex items-center justify-center">
+                              <BookOpen size={36} className="text-purple-400" />
+                            </div>
+                          )}
+                          <div className="absolute top-2 left-2">
+                            <span className="text-[9px] uppercase font-extrabold tracking-widest px-2 py-0.5 rounded bg-purple-600 text-white shadow">
+                              {story.genre || 'Web Novel'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <h3 className="font-serif font-bold text-white text-base line-clamp-1 group-hover:text-purple-400 transition-colors">
+                          {story.title}
+                        </h3>
+                        <p className="text-xs text-warm-400 mt-1 line-clamp-2 leading-relaxed">
+                          {story.summary || 'An epic story waiting for you.'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 2: My Writer's Desk */}
+            {activeTab === 'mine' && (
+              <div>
+                {stories.length === 0 ? (
+                  <div className="text-center py-20 bg-warm-850 rounded-2xl border border-warm-800">
+                    <BookOpen size={48} className="mx-auto text-warm-700 mb-4" />
+                    <h3 className="text-xl font-serif font-bold text-white mb-2">You haven't written anything yet.</h3>
+                    <p className="text-warm-400 mb-6 max-w-md mx-auto">
+                      Start your journey as an author. Create your first story and share your imagination with the world.
+                    </p>
+                    <button
+                      onClick={handleOpenNewStory}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md transition-all inline-flex items-center gap-2"
+                    >
+                      <Plus size={18} />
+                      Write a Story
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                    {stories.map(story => (
+                      <div 
+                        key={story.id} 
+                        onClick={() => handleSelectStory(story)}
+                        className="group cursor-pointer flex flex-col"
+                      >
+                        <div className="w-full aspect-[2/3] bg-warm-800 rounded-xl overflow-hidden relative shadow-lg border border-warm-800 group-hover:border-warm-600 transition-colors mb-3">
+                          {story.cover_url ? (
+                            <img src={story.cover_url} alt={story.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-warm-800 to-warm-900 flex items-center justify-center">
+                              <BookOpen size={32} className="text-warm-700" />
+                            </div>
+                          )}
+                          
+                          {/* Status Badge overlay */}
+                          <div className="absolute top-2 left-2 flex gap-1">
+                            <span className={`text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded shadow-sm ${
+                              story.status === 'completed' ? 'bg-green-500 text-white' : 'bg-black/60 text-white backdrop-blur-md'
+                            }`}>
+                              {story.status}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <h3 className="font-serif font-bold text-white text-base line-clamp-1 group-hover:text-purple-400 transition-colors">
+                          {story.title}
+                        </h3>
+                        <p className="text-xs text-warm-400 mt-0.5">
+                          Updated {new Date(story.updated_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
