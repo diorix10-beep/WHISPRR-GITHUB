@@ -22,6 +22,7 @@ import { RpgGameOverlay } from '../components/chat/RpgGameOverlay';
 import { LorebookDrawer } from '../components/chat/LorebookDrawer';
 import { InChatPersonaDrawer } from '../components/chat/InChatPersonaDrawer';
 import { WorldRelationshipModal } from '../components/world/WorldRelationshipModal';
+import { TranscriptsExporterModal } from '../components/chat/TranscriptsExporterModal';
 import { createInitialMemoryNexusState, autoExtractMemoriesIfNeeded, formatMemoryNexusPromptContext } from '../services/memoryNexus';
 import { scanAndMatchLorebookEntries, parseJanitorLorebookJson, parseOocMessage } from '../services/lorebookEngine';
 import { useChatAesthetics } from '../hooks/useChatAesthetics';
@@ -70,6 +71,7 @@ export default function ConversationPage() {
   // Memory Nexus State & Visualizer Modal
   const [memoryNexusState, setMemoryNexusState] = useState<MemoryNexusState>(createInitialMemoryNexusState());
   const [showMemoryVisualizer, setShowMemoryVisualizer] = useState(false);
+  const [showExporterModal, setShowExporterModal] = useState(false);
 
   // Lorebook & Janitor AI Engine State
   const [lorebookEntries, setLorebookEntries] = useState<LorebookEntry[]>([
@@ -955,13 +957,12 @@ export default function ConversationPage() {
                 </button>
 
                 <button 
-                  onClick={handleContinueAsStory}
-                  disabled={convertingToStory}
-                  className="p-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-primary-500 transition-colors flex items-center gap-1 text-xs font-semibold"
-                  title="Continue as Story (Novel Mode)"
+                  onClick={() => setShowExporterModal(true)}
+                  className="p-2 rounded-xl hover:bg-purple-500/10 text-purple-600 dark:text-purple-400 transition-colors flex items-center gap-1 text-xs font-bold"
+                  title="Roleplay Web Novel Exporter Studio"
                 >
-                  {convertingToStory ? <Loader2 size={18} className="animate-spin" /> : <BookOpen size={18} />}
-                  <span className="hidden sm:inline">Continue as Story</span>
+                  <BookOpen size={18} />
+                  <span className="hidden sm:inline">Novel Studio</span>
                 </button>
                 <button className="p-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500 transition-colors">
                   <Paperclip size={20} />
@@ -1647,6 +1648,16 @@ export default function ConversationPage() {
         isOpen={showWorldModal}
         onClose={() => setShowWorldModal(false)}
         worldName={otherUser?.display_name ? `${otherUser.display_name}'s Realm` : 'Eldoria Nexus'}
+      />
+
+      {/* Roleplay Web Novel Exporter Studio */}
+      <TranscriptsExporterModal
+        isOpen={showExporterModal}
+        onClose={() => setShowExporterModal(false)}
+        characterName={otherUser?.display_name || 'AI Character'}
+        characterAvatarUrl={otherUser?.photo_url || undefined}
+        messages={messages}
+        conversationTitle={conversation?.name || `Chronicle of ${otherUser?.display_name || 'Hero'}`}
       />
 
       {/* End Phone Wrapper */}
