@@ -23,6 +23,8 @@ import { LorebookDrawer } from '../components/chat/LorebookDrawer';
 import { InChatPersonaDrawer } from '../components/chat/InChatPersonaDrawer';
 import { WorldRelationshipModal } from '../components/world/WorldRelationshipModal';
 import { TranscriptsExporterModal } from '../components/chat/TranscriptsExporterModal';
+import { LanguageSelectorModal } from '../components/common/LanguageSelectorModal';
+import { SUPPORTED_LANGUAGES, translateText } from '../services/translationEngine';
 import { createInitialMemoryNexusState, autoExtractMemoriesIfNeeded, formatMemoryNexusPromptContext } from '../services/memoryNexus';
 import { scanAndMatchLorebookEntries, parseJanitorLorebookJson, parseOocMessage } from '../services/lorebookEngine';
 import { useChatAesthetics } from '../hooks/useChatAesthetics';
@@ -72,6 +74,8 @@ export default function ConversationPage() {
   const [memoryNexusState, setMemoryNexusState] = useState<MemoryNexusState>(createInitialMemoryNexusState());
   const [showMemoryVisualizer, setShowMemoryVisualizer] = useState(false);
   const [showExporterModal, setShowExporterModal] = useState(false);
+  const [targetLang, setTargetLang] = useState('en');
+  const [showLangModal, setShowLangModal] = useState(false);
 
   // Lorebook & Janitor AI Engine State
   const [lorebookEntries, setLorebookEntries] = useState<LorebookEntry[]>([
@@ -964,6 +968,18 @@ export default function ConversationPage() {
                   <BookOpen size={18} />
                   <span className="hidden sm:inline">Novel Studio</span>
                 </button>
+
+                {/* Multilingual AI Translation Button */}
+                <button
+                  onClick={() => setShowLangModal(true)}
+                  className="p-2 rounded-xl hover:bg-blue-500/10 text-blue-600 dark:text-blue-400 transition-colors flex items-center gap-1 text-xs font-bold"
+                  title="Multilingual AI Chat Translation"
+                >
+                  <Globe size={18} />
+                  <span className="text-[10px] font-bold uppercase tracking-wider hidden lg:inline bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">
+                    {targetLang.toUpperCase()}
+                  </span>
+                </button>
                 <button className="p-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500 transition-colors">
                   <Paperclip size={20} />
                 </button>
@@ -1658,6 +1674,14 @@ export default function ConversationPage() {
         characterAvatarUrl={otherUser?.photo_url || undefined}
         messages={messages}
         conversationTitle={conversation?.name || `Chronicle of ${otherUser?.display_name || 'Hero'}`}
+      />
+
+      {/* Multilingual AI Translation Modal */}
+      <LanguageSelectorModal
+        isOpen={showLangModal}
+        onClose={() => setShowLangModal(false)}
+        currentLanguage={targetLang}
+        onSelectLanguage={(lang) => setTargetLang(lang)}
       />
 
       {/* End Phone Wrapper */}

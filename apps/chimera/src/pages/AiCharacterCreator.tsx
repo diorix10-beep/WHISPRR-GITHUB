@@ -10,6 +10,8 @@ import { UniversalImagePicker } from '../components/common/UniversalImagePicker'
 import { supabase } from '../lib/supabase';
 import { StructuredArchitectureForm } from '../components/character/StructuredArchitectureForm';
 import { compileCharacterSystemPrompt, type CharacterArchitecture } from '../lib/promptCompiler';
+import { UniversalCharacterImporterModal } from '../components/creator/UniversalCharacterImporterModal';
+import { Upload } from 'lucide-react';
 
 export default function AiCharacterCreator() {
   const navigate = useNavigate();
@@ -58,6 +60,7 @@ export default function AiCharacterCreator() {
   });
 
   const [archData, setArchData] = useState<CharacterArchitecture>({});
+  const [showImporterModal, setShowImporterModal] = useState(false);
 
   // Track online/offline status
   useEffect(() => {
@@ -421,10 +424,22 @@ export default function AiCharacterCreator() {
           <div className="space-y-8">
             {activeTab === 'general' ? (
               <>
-                <h3 className="text-xl font-serif font-bold text-white mb-2">Create a character</h3>
-                <p className="text-sm text-warm-400 mb-8 border-b border-warm-800 pb-6">
-                  Set up how your character looks, speaks, and behaves in chat.
-                </p>
+                <div className="flex items-center justify-between border-b border-warm-800 pb-6 mb-8 gap-4">
+                  <div>
+                    <h3 className="text-xl font-serif font-bold text-white mb-1">Create a character</h3>
+                    <p className="text-sm text-warm-400">
+                      Set up how your character looks, speaks, and behaves in chat.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowImporterModal(true)}
+                    className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 shrink-0"
+                  >
+                    <Upload size={16} />
+                    <span>Import Card</span>
+                  </button>
+                </div>
 
                 {/* Preview & Image Upload Block */}
                 <div className="flex flex-col sm:flex-row gap-8 mb-8">
@@ -773,7 +788,7 @@ export default function AiCharacterCreator() {
                   </button>
                   <button
                     onClick={() => setPublishPipeline({ isActive: false, step: 'saving' })}
-                    className="flex-1 py-2.5 bg-warm-800 text-warm-305 rounded-xl text-xs font-semibold"
+                    className="flex-1 py-2.5 bg-warm-800 text-warm-300 rounded-xl text-xs font-semibold"
                   >
                     Save as Draft
                   </button>
@@ -783,6 +798,24 @@ export default function AiCharacterCreator() {
           </div>
         </div>
       )}
+
+      {/* Universal Character Card Importer Modal */}
+      <UniversalCharacterImporterModal
+        isOpen={showImporterModal}
+        onClose={() => setShowImporterModal(false)}
+        onImportSuccess={(data) => {
+          setFormData(prev => ({
+            ...prev,
+            name: data.name || prev.name,
+            shortDescription: data.tagline || prev.shortDescription,
+            longDescription: data.description || prev.longDescription,
+            personality: data.personality || prev.personality,
+            greeting: data.first_mes || prev.greeting,
+            scenario: data.scenario || prev.scenario,
+            tagsString: data.badges ? data.badges.join(', ') : prev.tagsString,
+          }));
+        }}
+      />
 
     </div>
   );
