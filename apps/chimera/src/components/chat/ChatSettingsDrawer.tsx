@@ -19,6 +19,9 @@ interface ChatSettingsDrawerProps {
   onToggleVoice: () => void;
   onSelectPersona: () => void;
   onOpenMemory: () => void;
+  onOpenMemoryVisualizer?: () => void;
+  recallStrength?: number;
+  onChangeRecallStrength?: (strength: number) => void;
   aesthetics: ReturnType<typeof useChatAesthetics>;
 }
 
@@ -31,6 +34,9 @@ export function ChatSettingsDrawer({
   onToggleVoice,
   onSelectPersona,
   onOpenMemory,
+  onOpenMemoryVisualizer,
+  recallStrength,
+  onChangeRecallStrength,
   aesthetics
 }: ChatSettingsDrawerProps) {
   const [showWallpaper, setShowWallpaper] = useState(false);
@@ -78,6 +84,56 @@ export function ChatSettingsDrawer({
                 <ChevronRight size={20} className="md:rotate-0 rotate-90" />
               </button>
             </div>
+          </div>
+
+          {/* Memory Nexus Control Card */}
+          <div className="mb-6 bg-warm-900 border border-warm-800 rounded-3xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                  <Sparkles size={18} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-white">Memory Nexus</h3>
+                  <p className="text-[11px] text-warm-400">Infinite long-term recall system</p>
+                </div>
+              </div>
+
+              {onOpenMemoryVisualizer && (
+                <button
+                  onClick={() => { onClose(); onOpenMemoryVisualizer(); }}
+                  className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5"
+                >
+                  <Wand2 size={13} />
+                  <span>Visualize 2D Graph</span>
+                </button>
+              )}
+            </div>
+
+            {/* Recall Strength Slider (1 to 16) */}
+            {onChangeRecallStrength && (
+              <div className="space-y-2 pt-2 border-t border-warm-800">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-semibold text-warm-300">Recall Strength</span>
+                  <span className="font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
+                    {recallStrength || 8} / 16
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="16"
+                  value={recallStrength || 8}
+                  onChange={(e) => onChangeRecallStrength(Number(e.target.value))}
+                  className="w-full accent-purple-500 cursor-pointer"
+                />
+                <div className="flex justify-between text-[10px] text-warm-400">
+                  <span>Free (5)</span>
+                  <span>Mastermind (10)</span>
+                  <span>Omnipotent (16)</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Grid Layout */}

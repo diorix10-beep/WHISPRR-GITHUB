@@ -649,3 +649,62 @@ export const LOOKING_FOR_OPTIONS = [
 
 export type LookingForOption = typeof LOOKING_FOR_OPTIONS[number];
 
+// ── Memory Nexus & Graph Types ─────────────────────────────
+
+export interface MemoryNode {
+  id: string;
+  conversation_id: string;
+  topic: string;
+  fact: string;
+  category: 'event' | 'fact' | 'relationship' | 'secret' | 'preference';
+  recall_weight: number; // 1 to 10 scale
+  created_at: string;
+  source_message_index?: number;
+}
+
+export interface MemoryEdge {
+  id: string;
+  source_id: string;
+  target_id: string;
+  label: string;
+  strength: number; // 1 to 5 scale
+}
+
+export interface MemoryNexusState {
+  enabled: boolean;
+  recall_strength: number; // 1 to 16 scale (Default = 8)
+  nodes: MemoryNode[];
+  edges: MemoryEdge[];
+  last_extracted_message_count: number;
+}
+
+// ── Multi-Character & Chat Modes ───────────────────────────
+
+export type ChatMode = 'one_on_one' | 'group_chat' | 'story_mode' | 'game_mode';
+
+export interface MultiCharacterParticipant {
+  character_id: string;
+  display_name: string;
+  username?: string;
+  avatar_emoji?: string;
+  photo_url?: string | null;
+  personality_summary?: string;
+  is_active_speaker?: boolean;
+}
+
+export interface RpgChoice {
+  id: string;
+  key: 'A' | 'B' | 'C' | 'CUSTOM';
+  label: string;
+  description?: string;
+}
+
+export interface RpgGameState {
+  current_objective: string;
+  progress_percent: number;
+  inventory: string[];
+  stats: Record<string, number | string>;
+  available_choices: RpgChoice[];
+  game_over: boolean;
+}
+

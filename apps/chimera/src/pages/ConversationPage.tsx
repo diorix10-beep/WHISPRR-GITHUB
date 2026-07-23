@@ -6,7 +6,7 @@ import {
   Image as ImageIcon, X, Settings, UserPlus, UserMinus, LogOut, Pencil, Smile, Search,
   PanelRightClose, PanelRightOpen, BookOpen, Copy, RotateCw, Edit3, Camera, Volume2
 } from 'lucide-react';
-import type { Conversation, Message, Profile } from '../types';
+import type { Conversation, Message, Profile, MemoryNexusState, ChatMode, MultiCharacterParticipant, RpgGameState, RpgChoice } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
@@ -16,9 +16,13 @@ import { EmojiPicker } from '../components/common/EmojiPicker';
 import { ChatSettingsDrawer } from '../components/chat/ChatSettingsDrawer';
 import { ChatMemoryModal } from '../components/chat/ChatMemoryModal';
 import { MockPhoneModal } from '../components/chat/MockPhoneModal';
+import { MemoryVisualizerModal } from '../components/chat/MemoryVisualizerModal';
+import { MultiCharacterHeader } from '../components/chat/MultiCharacterHeader';
+import { RpgGameOverlay } from '../components/chat/RpgGameOverlay';
+import { createInitialMemoryNexusState, autoExtractMemoriesIfNeeded, formatMemoryNexusPromptContext } from '../services/memoryNexus';
 import { useChatAesthetics } from '../hooks/useChatAesthetics';
 import { useVoice } from '../hooks/useVoice';
-import { Paperclip, AudioWaveform } from 'lucide-react';
+import { Paperclip, AudioWaveform, Brain, Gamepad2, Users } from 'lucide-react';
 
 interface MessageWithProfile extends Message {
   profiles?: Profile;
@@ -58,6 +62,29 @@ export default function ConversationPage() {
   const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
   const [showMemoryModal, setShowMemoryModal] = useState(false);
   const [isPhoneOpen, setIsPhoneOpen] = useState(false);
+
+  // Memory Nexus State & Visualizer Modal
+  const [memoryNexusState, setMemoryNexusState] = useState<MemoryNexusState>(createInitialMemoryNexusState());
+  const [showMemoryVisualizer, setShowMemoryVisualizer] = useState(false);
+
+  // Chat Modes & Multi-Character Pool
+  const [chatMode, setChatMode] = useState<ChatMode>('one_on_one');
+  const [multiParticipants, setMultiParticipants] = useState<MultiCharacterParticipant[]>([]);
+  const [activeSpeakerId, setActiveSpeakerId] = useState<string | null>(null);
+
+  // RPG Game Mode State
+  const [rpgGameState, setRpgGameState] = useState<RpgGameState>({
+    current_objective: 'Begin your journey and investigate the surroundings.',
+    progress_percent: 15,
+    inventory: ['Rusty Sword', 'Health Potion'],
+    stats: { HP: 100, Mana: 50, Level: 1 },
+    available_choices: [
+      { id: 'c1', key: 'A', label: 'Explore the dark forest ahead' },
+      { id: 'c2', key: 'B', label: 'Speak to the tavern keeper' },
+      { id: 'c3', key: 'C', label: 'Inspect your inventory and gear' },
+    ],
+    game_over: false,
+  });
 
   const voice = useVoice();
   const aesthetics = useChatAesthetics(conversationId);
@@ -145,9 +172,23 @@ export default function ConversationPage() {
 
         if (profiles) {
           setParticipants(profiles);
+          const nonUserProfiles = profiles.filter(p => p.user_id !== user.id);
           if (conv.type === 'dm') {
-            const other = profiles.find(p => p.user_id !== user.id);
-            setOtherUser(other || null);
+            const other = nonUserProfiles[0] || null;
+            setOtherUser(other);
+          }
+          const initialMulti: MultiCharacterParticipant[] = nonUserProfiles.map((p, idx) => ({
+            character_id: p.user_id,
+            display_name: p.display_name,
+            username: p.username,
+            avatar_emoji: p.avatar_emoji,
+            photo_url: p.photo_url,
+            personality_summary: p.bio,
+            is_active_speaker: idx === 0,
+          }));
+          setMultiParticipants(initialMulti);
+          if (initialMulti.length > 0) {
+            setActiveSpeakerId(initialMulti[0].character_id);
           }
         }
 
@@ -160,7 +201,13 @@ export default function ConversationPage() {
           .order('created_at', { ascending: true });
 
         if (msgsError) throw msgsError;
-        setMessages(msgs || []);
+        const loadedMsgs = msgs || [];
+        setMessages(loadedMsgs);
+
+        // Auto extract Memory Nexus memories from initial messages
+        if (loadedMsgs.length > 0) {
+          setMemoryNexusState((prev) => autoExtractMemoriesIfNeeded(loadedMsgs, prev, conversationId));
+        }
 
         // Check if we should trigger an AI initiation response
         if (conv.type === 'dm' && profiles) {
@@ -788,6 +835,18 @@ export default function ConversationPage() {
           <div className="flex items-center gap-2">
             {conversation?.type === 'dm' && (
               <>
+                {/* Memory Nexus 2D Visualizer Button */}
+                <button 
+                  onClick={() => setShowMemoryVisualizer(true)}
+                  className="p-2 rounded-xl hover:bg-purple-500/10 text-purple-600 dark:text-purple-400 transition-colors flex items-center gap-1"
+                  title="Open Memory Nexus 2D Graph Visualizer"
+                >
+                  <Brain size={20} />
+                  <span className="text-[10px] font-bold uppercase tracking-wider hidden lg:inline bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20">
+                    Nexus {memoryNexusState.recall_strength}
+                  </span>
+                </button>
+
                 <button 
                   onClick={handleContinueAsStory}
                   disabled={convertingToStory}
@@ -831,6 +890,40 @@ export default function ConversationPage() {
             )}
           </div>
         </div>
+
+        {/* Mode Switcher Bar */}
+        <div className="bg-warm-50 dark:bg-warm-900 px-4 py-1.5 border-t border-warm-200/50 dark:border-warm-800/50 flex items-center justify-between text-xs overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1">
+            {[
+              { id: 'one_on_one', label: '1-on-1 RP', icon: Users },
+              { id: 'group_chat', label: 'Group Chat', icon: Users },
+              { id: 'story_mode', label: 'Story Mode', icon: BookOpen },
+              { id: 'game_mode', label: 'RPG Game Mode', icon: Gamepad2 },
+            ].map((m) => {
+              const Icon = m.icon;
+              const isActive = chatMode === m.id;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => setChatMode(m.id as ChatMode)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition-all ${
+                    isActive
+                      ? 'bg-purple-600 text-white shadow-sm'
+                      : 'text-warm-600 dark:text-warm-400 hover:bg-warm-200 dark:hover:bg-warm-800'
+                  }`}
+                >
+                  <Icon size={12} />
+                  <span>{m.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-2 text-[11px] text-warm-500 dark:text-warm-400 font-medium">
+            <span>Recall: <strong className="text-purple-500 font-bold">{memoryNexusState.recall_strength}/16</strong></span>
+            <span>Memories: <strong className="text-purple-500 font-bold">{memoryNexusState.nodes.length}</strong></span>
+          </div>
+        </div>
       </header>
 
       {/* Settings Drawer */}
@@ -844,9 +937,20 @@ export default function ConversationPage() {
           onToggleVoice={voice.toggleVoice}
           onSelectPersona={() => navigate('/personas')}
           onOpenMemory={() => setShowMemoryModal(true)}
+          onOpenMemoryVisualizer={() => setShowMemoryVisualizer(true)}
+          recallStrength={memoryNexusState.recall_strength}
+          onChangeRecallStrength={(val) => setMemoryNexusState((prev) => ({ ...prev, recall_strength: val }))}
           aesthetics={aesthetics}
         />
       )}
+
+      {/* Memory Nexus 2D Graph Visualizer Modal */}
+      <MemoryVisualizerModal
+        isOpen={showMemoryVisualizer}
+        onClose={() => setShowMemoryVisualizer(false)}
+        memoryNexusState={memoryNexusState}
+        onUpdateState={setMemoryNexusState}
+      />
 
       {/* Memory Modal */}
       {otherUser && (
@@ -873,8 +977,36 @@ export default function ConversationPage() {
         {/* Chat Column */}
         <div className="flex-1 flex flex-col min-w-0 relative">
           
+          {/* Multi-Character Participant Header Bar */}
+          {(chatMode === 'group_chat' || chatMode === 'story_mode' || multiParticipants.length > 1) && (
+            <MultiCharacterHeader
+              participants={multiParticipants}
+              activeSpeakerId={activeSpeakerId}
+              onSelectActiveSpeaker={(id) => {
+                setActiveSpeakerId(id);
+                setMultiParticipants((prev) =>
+                  prev.map((p) => ({ ...p, is_active_speaker: p.character_id === id }))
+                );
+              }}
+              onAddCharacter={() => navigate('/characters')}
+              onRemoveCharacter={(id) => {
+                setMultiParticipants((prev) => prev.filter((p) => p.character_id !== id));
+              }}
+            />
+          )}
+
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 space-y-6 scroll-smooth">
+            
+            {/* RPG Game Master Overlay */}
+            {chatMode === 'game_mode' && (
+              <RpgGameOverlay
+                gameState={rpgGameState}
+                onSelectChoice={(choice) => {
+                  setMessageInput(`[Action Choice ${choice.key}]: ${choice.label}`);
+                }}
+              />
+            )}
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-warm-500 space-y-3">
                 <BookOpen size={32} className="opacity-20" />
