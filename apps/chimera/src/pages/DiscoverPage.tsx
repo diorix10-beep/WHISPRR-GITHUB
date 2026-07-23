@@ -49,53 +49,6 @@ const ROLEPLAY_CATEGORIES = [
   'Supernatural'
 ];
 
-const MOCK_CHARACTERS = [
-  {
-    id: 'mock-1',
-    user_id: 'mock-1',
-    display_name: 'Aether the Archmage',
-    username: 'aether_mage',
-    avatar_emoji: '🧙‍♂️',
-    bio: 'Keeper of ancient arcane knowledge, master of elemental sorcery, and guide through the mystical realm of Eldoria.',
-    role: 'user',
-    badges: ['verified'],
-    personality_badges: ['Wise', 'Arcane', 'Mysterious']
-  },
-  {
-    id: 'mock-2',
-    user_id: 'mock-2',
-    display_name: 'Elena Starling',
-    username: 'elena_starling',
-    avatar_emoji: '🗡️',
-    bio: 'Rogue commander of the Silver Vanguard. Sharp-tongued, fearless, and ready for any high-stakes fantasy adventure.',
-    role: 'user',
-    badges: ['founder'],
-    personality_badges: ['Bold', 'Strategic', 'Charming']
-  },
-  {
-    id: 'mock-3',
-    user_id: 'mock-3',
-    display_name: 'Kaelen Drake',
-    username: 'kaelen_drake',
-    avatar_emoji: '🌌',
-    bio: 'Starship captain and veteran explorer searching for lost alien artifacts on the uncharted galactic frontier.',
-    role: 'user',
-    badges: ['verified'],
-    personality_badges: ['Sci-Fi', 'Leader', 'Adventurous']
-  },
-  {
-    id: 'mock-4',
-    user_id: 'mock-4',
-    display_name: 'Nova AI',
-    username: 'nova_cyber',
-    avatar_emoji: '⚡',
-    bio: 'Sentient cybernetic companion navigating neon-lit megacities and unraveling corporate synth-conspiracies.',
-    role: 'user',
-    badges: ['verified'],
-    personality_badges: ['Cyberpunk', 'Witty', 'Tech']
-  }
-] as unknown as Profile[];
-
 export default function DiscoverPage() {
   const outletContext = useOutletContext<{ creativeMode?: 'roleplay' | 'storytelling' }>();
   const creativeMode = outletContext?.creativeMode || 'roleplay';
@@ -155,10 +108,10 @@ export default function DiscoverPage() {
         bio: char.short_description || char.profiles?.bio,
       }));
       
-      setCharacters(formattedCharacters.length > 0 ? formattedCharacters : MOCK_CHARACTERS);
+      setCharacters(formattedCharacters);
     } catch (err: any) {
       console.error('Error fetching characters:', err);
-      setCharacters(MOCK_CHARACTERS);
+      setCharacters([]);
     } finally {
       setLoading(false);
     }
@@ -375,10 +328,14 @@ export default function DiscoverPage() {
           filteredStories.length === 0 ? (
             <RichEmptyState
               icon={BookOpen}
-              title="No stories match your search"
-              description="We could not find any published books or stories matching those terms. Try selecting a literary genre or writing a brand new story."
-              actionLabel="Write a Story"
-              onAction={() => navigate('/stories/new')}
+              title={stories.length === 0 ? "No public stories have been published yet" : "No stories match your search"}
+              description={
+                stories.length === 0
+                  ? "Be the first author to publish a story and ignite the CHIMERA literary universe."
+                  : "We could not find any published books or stories matching those terms. Try selecting a literary genre or writing a brand new story."
+              }
+              actionLabel="Write Story"
+              onAction={() => navigate('/write/desk')}
               categories={STORY_GENRES}
               onSelectCategory={(cat) => setSelectedGenre(cat)}
               accentColor="purple"
@@ -460,10 +417,14 @@ export default function DiscoverPage() {
           filteredCharacters.length === 0 ? (
             <RichEmptyState
               icon={Compass}
-              title="No characters match your search"
-              description="We could not find any active AI characters with those terms. Try selecting a category or creating a brand new character."
-              actionLabel="Create a Character"
-              onAction={() => navigate('/characters/new')}
+              title={characters.length === 0 ? "No public characters have been published yet" : "No characters match your search"}
+              description={
+                characters.length === 0
+                  ? "Be the first creator to bring a character to life and start building the CHIMERA roleplay universe."
+                  : "We could not find any active AI characters matching those terms. Try selecting a category or creating a brand new character."
+              }
+              actionLabel="Create Character"
+              onAction={() => navigate('/studio')}
               categories={ROLEPLAY_CATEGORIES}
               onSelectCategory={(cat) => setSearchQuery(cat)}
               accentColor="red"
