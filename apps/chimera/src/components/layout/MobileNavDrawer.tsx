@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   X, Compass, Users, MessageSquare, User, Sparkles,
   BookOpen, Globe, Settings, LogOut, Sun, Moon, Monitor, Search,
-  PenTool, Feather, Bookmark
+  PenTool, Feather, Bookmark, Gem
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -102,10 +102,12 @@ function MobileNavDrawerContent({
   // Safe auth context access
   let profile = null;
   let signOut = async () => {};
+  let shardsBalance = 50;
   try {
     const auth = useAuth();
     profile = auth.profile;
     signOut = auth.signOut;
+    shardsBalance = auth.shardsBalance;
   } catch (e) {
     console.warn('AuthContext inside MobileNavDrawer:', e);
   }
@@ -203,6 +205,23 @@ function MobileNavDrawerContent({
               <PenTool size={14} /> Storytelling
             </button>
           </div>
+
+          {/* Shards Currency Mobile Banner */}
+          <button
+            onClick={() => {
+              onClose();
+              window.dispatchEvent(new CustomEvent('open-shards-hub'));
+            }}
+            className="w-full mt-2.5 p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 flex items-center justify-between text-xs font-bold text-amber-600 dark:text-amber-400 transition-colors shadow-sm"
+          >
+            <div className="flex items-center gap-2">
+              <Gem size={16} className="text-amber-500 fill-amber-500" />
+              <span>Shards Hub</span>
+            </div>
+            <span className="bg-amber-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+              {shardsBalance} 💎
+            </span>
+          </button>
         </div>
 
         {/* Scrollable Navigation List */}

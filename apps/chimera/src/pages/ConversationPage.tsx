@@ -37,7 +37,7 @@ interface ConversationData extends Conversation {
 export default function ConversationPage() {
   const navigate = useNavigate();
   const { conversationId } = useParams<{ conversationId: string }>();
-  const { user, profile } = useAuth();
+  const { user, profile, spendShards } = useAuth();
   const { showToast } = useToast();
 
   const [conversation, setConversation] = useState<ConversationData | null>(null);
@@ -549,6 +549,13 @@ export default function ConversationPage() {
   const [requestingImage, setRequestingImage] = useState(false);
   const handleRequestImage = async () => {
     if (!user || requestingImage || !otherUser) return;
+
+    if (!spendShards(2, 'Character Selfie Request')) {
+      showToast('Insufficient Shards! Need 2 💎 Shards.', 'error');
+      window.dispatchEvent(new CustomEvent('open-shards-hub'));
+      return;
+    }
+
     setRequestingImage(true);
     try {
       const characterName = otherUser.display_name;
@@ -933,10 +940,11 @@ export default function ConversationPage() {
                 <button 
                   onClick={handleRequestImage}
                   disabled={requestingImage}
-                  className={`p-2 rounded-xl transition-colors ${requestingImage ? 'text-primary-500 animate-pulse' : 'hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500'}`}
-                  title="Request Image/Selfie"
+                  className={`p-2 rounded-xl transition-colors flex items-center gap-1 ${requestingImage ? 'text-primary-500 animate-pulse' : 'hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500'}`}
+                  title="Request Image/Selfie (Cost: 2 💎 Shards)"
                 >
                   <Camera size={20} />
+                  <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">2💎</span>
                 </button>
                 <button 
                   onClick={voice.toggleVoice} 

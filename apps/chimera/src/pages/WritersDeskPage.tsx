@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PenTool, Plus, BookOpen, Trash2, Edit, ChevronLeft, Globe, Eye, Settings, Share2, FileText, Image as ImageIcon, UploadCloud } from 'lucide-react';
+import { PenTool, Plus, BookOpen, Trash2, Edit, ChevronLeft, Globe, Eye, Settings, Share2, FileText, Image as ImageIcon, UploadCloud, Gem } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Story, StoryChapter } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,7 +10,7 @@ import { UniversalImagePicker } from '../components/common/UniversalImagePicker'
 
 export default function WritersDeskPage() {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { profile, shardsBalance, adFreePassActive } = useAuth();
   const { showToast } = useToast();
   
   const [stories, setStories] = useState<Story[]>([]);
@@ -294,6 +294,40 @@ export default function WritersDeskPage() {
 
       <div className="max-w-6xl mx-auto px-6 py-8">
         
+        {/* Shards & Writing Energy Banner Card */}
+        <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-purple-900/50 via-warm-850 to-purple-900/50 border border-purple-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-2xl bg-purple-600/20 text-purple-400 border border-purple-500/30">
+              <Gem size={24} />
+            </div>
+            <div>
+              <h3 className="font-serif font-bold text-sm text-white flex items-center gap-2">
+                Writer's Energy & Ad Pass
+                {adFreePassActive && (
+                  <span className="text-[10px] bg-amber-500 text-black font-extrabold px-2 py-0.5 rounded-full uppercase">
+                    Ad-Free Pass Active ✨
+                  </span>
+                )}
+              </h3>
+              <p className="text-xs text-warm-400">
+                {adFreePassActive
+                  ? 'Enjoy unlimited ad-free story writing and novel editing!'
+                  : 'Watch a quick 5-sec ad or redeem Shards for an Ad-Free Pass!'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('open-shards-hub'))}
+              className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-md"
+            >
+              <Gem size={14} className="fill-white" />
+              <span>Shards Hub ({shardsBalance} 💎)</span>
+            </button>
+          </div>
+        </div>
+
         {/* Story Metadata Editor Modal/View */}
         {isEditingStory ? (
           <div className="max-w-3xl mx-auto bg-warm-850 rounded-2xl border border-warm-800 p-8 shadow-xl">

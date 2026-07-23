@@ -35,6 +35,11 @@ interface AuthContextType extends AuthState {
   resetPassword: (email: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
   updateProfile: (updates: Partial<ChimeraProfile>) => Promise<void>;
+  shardsBalance: number;
+  spendShards: (amount: number, reason: string) => boolean;
+  earnShards: (amount: number, reason: string) => void;
+  adFreePassActive: boolean;
+  activateAdFreePass: () => boolean;
   systemSettings: any;
   fetchSystemSettings: () => Promise<void>;
   updateSystemSettings: (updates: any) => Promise<void>;
@@ -293,6 +298,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
+  const [shardsBalance, setShardsBalance] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem('chimera_shards_balance');
+      if (stored !== null) return Number(stored);
+    } catch {}
+    return 50; // 50 Free Starting Shards
+  });
+
+  const [adFreePassActive, setAdFreePassActive] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('chimera_ad_free_pass') === 'true';
+    } catch {}
+    return false;
+  });
+
+  const spendShards = useCallback((amount: number, reason: string): boolean => {
+    if (shardsBalance < amount) return false;
+    const newBal = shardsBalance - amount;
+    setShardsBalance(newBal);
+    try {
+      localStorage.setItem('chimera_shards_balance', String(newBal));
+    } catch {}
+    return true;
+  }, [shardsBalance]);
+
+  const earnShards = useCallback((amount: number, reason: string) => {
+    setShardsBalance((prev) => {
+      const newBal = prev + amount;
+      try {
+        localStorage.setItem('chimera_shards_balance', String(newBal));
+      } catch {}
+      return newBal;
+    });
+  }, []);
+
+  const activateAdFreePass = useCallback((): boolean => {
+    if (shardsBalance < 20) return false;
+    if (spendShards(20, 'Ad-Free Pass Activation')) {
+      setAdFreePassActive(true);
+      try {
+        localStorage.setItem('chimera_ad_free_pass', 'true');
+      } catch {}
+      return true;
+    }
+    return false;
+  }, [shardsBalance, spendShards]);
+
   const acceptLegalTerms = async (version: string) => {
     if (!state.user) return;
     const { error } = await supabase
@@ -331,6 +383,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       resetPassword,
       refreshProfile,
       updateProfile,
+      shardsBalance,
+      spendShards,
+      earnShards,
+      adFreePassActive,
+      activateAdFreePass,
       systemSettings,
       fetchSystemSettings,
       updateSystemSettings,

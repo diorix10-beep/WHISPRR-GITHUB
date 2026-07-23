@@ -2,13 +2,14 @@ import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { Outlet, useNavigate, NavLink, useLocation, Link } from 'react-router-dom';
 import {
   Menu, Sun, Moon, Monitor, Search, Plus, LayoutGrid, Settings, LogOut,
-  PenTool, MessageSquare, BookOpen, Globe, Users, Compass, Sparkles, UserCheck
+  PenTool, MessageSquare, BookOpen, Globe, Users, Compass, Sparkles, UserCheck, Gem
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Avatar } from '../common/Avatar';
 import { AppLauncherModal } from './AppLauncherModal';
 import { MobileNavDrawer } from './MobileNavDrawer';
+import { ShardsHubModal } from '../common/ShardsHubModal';
 
 interface ChimeraLayoutProps {
   children?: ReactNode;
@@ -38,7 +39,7 @@ const STORYTELLING_NAV_LINKS: NavLinkItem[] = [
 export function ChimeraLayout({ children }: ChimeraLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, shardsBalance } = useAuth();
   const { preference, setPreference } = useTheme();
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -46,6 +47,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [showAppLauncher, setShowAppLauncher] = useState(false);
+  const [showShardsHub, setShowShardsHub] = useState(false);
 
   const [creativeMode, setCreativeMode] = useState<'roleplay' | 'storytelling'>(() => {
     return (localStorage.getItem('chimera_creative_mode') as 'roleplay' | 'storytelling') || 'roleplay';
@@ -102,14 +104,19 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
     function handleOpenMobileDrawer() {
       setIsMenuOpen(true);
     }
+    function handleOpenShardsHub() {
+      setShowShardsHub(true);
+    }
     window.addEventListener('open-app-launcher', handleOpenLauncher);
     window.addEventListener('open-mobile-drawer', handleOpenMobileDrawer);
+    window.addEventListener('open-shards-hub', handleOpenShardsHub);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('open-app-launcher', handleOpenLauncher);
       window.removeEventListener('open-mobile-drawer', handleOpenMobileDrawer);
+      window.removeEventListener('open-shards-hub', handleOpenShardsHub);
     };
   }, []);
 
@@ -244,6 +251,17 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
                 <span>Story</span>
               </button>
             </div>
+
+            {/* Shards Currency Pill — Responsive Mobile & Desktop */}
+            <button
+              onClick={() => setShowShardsHub(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 transition-all font-bold text-xs shadow-sm hover:scale-105 active:scale-95"
+              title="Open Shards Hub (Buy, Earn & Spend)"
+            >
+              <Gem size={15} className="text-amber-500 fill-amber-500" />
+              <span>{shardsBalance}</span>
+              <span className="hidden sm:inline text-[10px] uppercase tracking-wider text-amber-500/80">💎</span>
+            </button>
 
             {/* Search — icon only, no text label on smaller screens */}
             <button
@@ -391,6 +409,12 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
       <AppLauncherModal
         isOpen={showAppLauncher}
         onClose={() => setShowAppLauncher(false)}
+      />
+
+      {/* Shards Hub Modal & Mobile Sheet */}
+      <ShardsHubModal
+        isOpen={showShardsHub}
+        onClose={() => setShowShardsHub(false)}
       />
 
       {/* Cmd+K Search Overlay */}
