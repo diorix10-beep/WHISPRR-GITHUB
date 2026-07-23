@@ -175,12 +175,12 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
   return (
     <div className="min-h-screen bg-warm-50 dark:bg-warm-900 transition-colors duration-300 flex flex-col font-sans">
-      {/* Top Navigation Header — Exact match to Photo 2 */}
+      {/* Top Navigation Header — CSS Grid 3-column layout */}
       <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-warm-850/95 backdrop-blur-md border-b border-warm-200/70 dark:border-warm-800/70 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 grid grid-cols-[auto_1fr_auto] lg:grid-cols-[220px_1fr_auto] items-center gap-4">
           
-          {/* LEFT: App Launcher & Brand Logo */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+          {/* 1. BLOC GAUCHE — Logo */}
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="lg:hidden p-1.5 -ml-1 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
@@ -196,7 +196,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               <LayoutGrid size={20} />
             </button>
             
-            <Link to="/" className="flex items-center gap-2 group">
+            <Link to="/" className="flex items-center gap-2 group shrink-0">
               <Logo variant="icon-only" size={32} className="shrink-0" />
               <span className="font-serif text-lg sm:text-xl font-bold text-red-600 dark:text-red-500 tracking-wide">
                 CHIMERA
@@ -204,21 +204,21 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             </Link>
           </div>
 
-          {/* CENTER: Mode-Specific Navigation Links (Zero Overlap!) */}
-          <div className="hidden lg:flex flex-1 items-center justify-center mx-4 min-w-0">
-            <nav className="flex items-center gap-6 xl:gap-8 shrink-0">
+          {/* 2. BLOC MILIEU — Navigation (centré, overflow-hidden pour ne jamais déborder) */}
+          <div className="hidden lg:flex items-center justify-center overflow-hidden">
+            <nav className="flex items-center gap-1 xl:gap-2 whitespace-nowrap shrink-0">
               {renderNavLinks()}
             </nav>
           </div>
 
-          {/* RIGHT: Creative Mode Switch + Search + Create CTA + Theme + Profile */}
-          <div className="flex items-center gap-2.5 sm:gap-3 flex-shrink-0">
-            
-            {/* Creative Mode Switch Pill (Roleplay vs Storytelling) */}
-            <div className="flex items-center bg-warm-200/70 dark:bg-warm-800/90 p-0.5 rounded-xl border border-warm-200/90 dark:border-warm-750/90 shadow-inner">
+          {/* 3. BLOC DROITE — Actions */}
+          <div className="flex items-center justify-end gap-2 sm:gap-3">
+
+            {/* Creative Mode Switch Pill — hidden until xl to save space */}
+            <div className="hidden xl:flex items-center bg-warm-200/70 dark:bg-warm-800/90 p-0.5 rounded-xl border border-warm-200/90 dark:border-warm-750/90 shadow-inner">
               <button
                 onClick={() => toggleCreativeMode('roleplay')}
-                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold transition-all duration-300 ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 ${
                   creativeMode === 'roleplay' 
                     ? 'bg-red-600 text-white shadow-md shadow-red-600/30' 
                     : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
@@ -230,7 +230,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               </button>
               <button
                 onClick={() => toggleCreativeMode('storytelling')}
-                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold transition-all duration-300 ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 ${
                   creativeMode === 'storytelling' 
                     ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30' 
                     : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
@@ -242,29 +242,26 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               </button>
             </div>
 
-            {/* Search */}
+            {/* Search — icon only, no text label on smaller screens */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-850 text-warm-500 hover:border-warm-300 dark:hover:border-warm-650 transition-colors"
+              className="p-2 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-850 text-warm-500 hover:border-warm-300 dark:hover:border-warm-650 transition-colors"
+              aria-label="Search"
             >
               <Search size={16} />
-              <span className="hidden xl:block text-xs mr-1">
-                {creativeMode === 'storytelling' ? 'Search stories...' : 'Search characters...'}
-              </span>
-              <kbd className="hidden xl:block text-[10px] bg-warm-200 dark:bg-warm-700 px-1.5 py-0.5 rounded font-mono">⌘K</kbd>
             </button>
 
-            {/* Mode-Specific Primary CTA */}
+            {/* Mode-Specific Primary CTA — text hidden until xl */}
             <button
               onClick={() => navigate(creativeMode === 'storytelling' ? '/write/desk' : '/studio')}
-              className={`hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs sm:text-sm text-white shadow-md active:scale-[0.98] transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs text-white shadow-md active:scale-[0.98] transition-all ${
                 creativeMode === 'storytelling'
                   ? 'bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 shadow-purple-600/20'
                   : 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 shadow-red-600/20'
               }`}
             >
               <Plus size={16} strokeWidth={2.5} />
-              <span>
+              <span className="hidden xl:inline">
                 {creativeMode === 'storytelling' ? 'Write Story' : 'Create Character'}
               </span>
             </button>
