@@ -54,6 +54,17 @@ export default function ShardsPage() {
       {/* Background Glow Spheres */}
       <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-gradient-to-tr from-purple-600/20 via-pink-600/10 to-amber-500/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
 
+      {/* ── COMING SOON BANNER NOTICE ── */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-amber-500/20 border border-amber-500/40 text-center space-y-1 relative z-10 shadow-lg animate-fade-in">
+        <div className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-amber-400">
+          <Sparkles size={16} className="animate-spin" />
+          <span>✨ COMING SOON — SHARDS &amp; REWARDED ADS ECONOMY</span>
+        </div>
+        <p className="text-xs text-warm-300">
+          All AI Character Chatting, Voice Line auditions, and Story Writing are currently 100% FREE for all creators &amp; roleplayers!
+        </p>
+      </div>
+
       {/* ── 1. Character.AI Top Hero Display (Floating 3D Crystal Cube) ── */}
       <div className="flex flex-col items-center justify-center text-center space-y-4 pt-4 relative z-10">
         
