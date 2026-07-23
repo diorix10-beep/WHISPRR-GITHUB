@@ -147,7 +147,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
           end={link.path === '/'}
           onClick={link.comingSoon ? (e) => e.preventDefault() : undefined}
           className={({ isActive }) =>
-            `relative px-2 sm:px-2.5 py-2 text-xs sm:text-sm font-semibold transition-all whitespace-nowrap inline-flex items-center shrink-0 ${
+            `relative px-1.5 xl:px-3 py-1.5 text-xs xl:text-sm font-semibold transition-all whitespace-nowrap inline-flex items-center shrink-0 ${
               link.comingSoon
                 ? 'text-warm-400 dark:text-warm-600 cursor-default opacity-60'
                 : isActive
@@ -214,15 +214,15 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             </Link>
           </div>
 
-          {/* 2. BLOC MILIEU — Navigation (centré, overflow-hidden pour ne jamais déborder) */}
-          <div className="hidden lg:flex items-center justify-center overflow-hidden">
-            <nav className="flex items-center gap-1 xl:gap-2 whitespace-nowrap shrink-0">
+          {/* 2. BLOC MILIEU — Navigation (centré, flex-1 min-w-0 pour donner tout l'espace nécessaire) */}
+          <div className="hidden lg:flex flex-1 min-w-0 items-center justify-center px-1 sm:px-2">
+            <nav className="flex items-center gap-0.5 xl:gap-2 whitespace-nowrap shrink-0">
               {renderNavLinks()}
             </nav>
           </div>
 
           {/* 3. BLOC DROITE — Actions */}
-          <div className="flex items-center justify-end gap-2 sm:gap-3">
+          <div className="flex items-center justify-end gap-1.5 sm:gap-2.5 shrink-0">
 
             {/* Creative Mode Switch Pill — hidden until xl to save space */}
             <div className="hidden xl:flex items-center bg-warm-200/70 dark:bg-warm-800/90 p-0.5 rounded-xl border border-warm-200/90 dark:border-warm-750/90 shadow-inner">
