@@ -62,8 +62,25 @@ export default function WorldBuilderPage() {
       setDescription(data.description);
       setScenario(data.scenario);
       setTags((data.tags || []).join(', '));
-      setVisibility(data.visibility);
       setCoverUrl(data.cover_url || null);
+
+      // Check for local draft (Rules 25 & 26)
+      const draftKey = `chimera_world_draft_${id}`;
+      const savedDraft = localStorage.getItem(draftKey);
+      if (savedDraft) {
+        try {
+          const parsed = JSON.parse(savedDraft);
+          if (parsed.name) setName(parsed.name);
+          if (parsed.description) setDescription(parsed.description);
+          if (parsed.scenario) setScenario(parsed.scenario);
+          if (parsed.tags !== undefined) setTags(parsed.tags);
+          if (parsed.visibility) setVisibility(parsed.visibility);
+          if (parsed.coverUrl !== undefined) setCoverUrl(parsed.coverUrl);
+          showToast('Restored unsaved local draft', 'info');
+        } catch (e) {
+          console.error('Failed to parse draft:', e);
+        }
+      }
 
       // Fetch sub-data in parallel
       const [locRes, facRes, tlRes, charRes, loreRes] = await Promise.all([
@@ -89,6 +106,18 @@ export default function WorldBuilderPage() {
 
   useEffect(() => { fetchWorld(); }, [fetchWorld]);
 
+  // Auto-save draft protection (Rules 25 & 26)
+  useEffect(() => {
+    if (!id || loading) return;
+    const draftKey = `chimera_world_draft_${id}`;
+    const timer = setTimeout(() => {
+      localStorage.setItem(draftKey, JSON.stringify({
+        name, description, scenario, tags, visibility, coverUrl, savedAt: Date.now()
+      }));
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [id, loading, name, description, scenario, tags, visibility, coverUrl]);
+
   const handleSaveOverview = async () => {
     if (!id) return;
     try {
@@ -98,6 +127,7 @@ export default function WorldBuilderPage() {
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
       }).eq('id', id);
       if (error) throw error;
+      localStorage.removeItem(`chimera_world_draft_${id}`);
       showToast('World saved!', 'success');
     } catch (err: any) {
       showToast(err.message || 'Error saving', 'error');

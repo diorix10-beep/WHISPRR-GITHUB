@@ -40,6 +40,21 @@ export default function LorebookEditorPage() {
       setDescription(lbRes.data.description);
       setVisibility(lbRes.data.visibility);
       setEntries(entriesRes.data || []);
+
+      // Check for local draft (Rules 25 & 26)
+      const draftKey = `chimera_lorebook_draft_${id}`;
+      const savedDraft = localStorage.getItem(draftKey);
+      if (savedDraft) {
+        try {
+          const parsed = JSON.parse(savedDraft);
+          if (parsed.title) setTitle(parsed.title);
+          if (parsed.description) setDescription(parsed.description);
+          if (parsed.visibility) setVisibility(parsed.visibility);
+          showToast('Restored unsaved lorebook draft', 'info');
+        } catch (e) {
+          console.error('Failed to parse lorebook draft:', e);
+        }
+      }
     } catch (err: any) {
       showToast(err.message || 'Error loading lorebook', 'error');
       navigate('/lorebooks');
@@ -50,12 +65,25 @@ export default function LorebookEditorPage() {
 
   useEffect(() => { fetchLorebook(); }, [fetchLorebook]);
 
+  // Auto-save draft protection (Rules 25 & 26)
+  useEffect(() => {
+    if (!id || loading) return;
+    const draftKey = `chimera_lorebook_draft_${id}`;
+    const timer = setTimeout(() => {
+      localStorage.setItem(draftKey, JSON.stringify({
+        title, description, visibility, savedAt: Date.now()
+      }));
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [id, loading, title, description, visibility]);
+
   const handleSave = async () => {
     if (!id) return;
     try {
       setSaving(true);
       const { error } = await supabase.from('lorebooks').update({ title, description, visibility }).eq('id', id);
       if (error) throw error;
+      localStorage.removeItem(`chimera_lorebook_draft_${id}`);
       showToast('Lorebook saved!', 'success');
     } catch (err: any) {
       showToast(err.message || 'Error saving', 'error');

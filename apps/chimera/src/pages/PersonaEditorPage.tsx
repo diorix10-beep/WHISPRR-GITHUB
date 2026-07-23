@@ -36,11 +36,18 @@ export default function PersonaEditorPage() {
     is_default: false
   });
 
-  useEffect(() => {
     if (isEditing && user) {
       fetchPersona();
+    } else if (!isEditing) {
+      const savedDraft = localStorage.getItem('chimera_new_persona_draft');
+      if (savedDraft) {
+        try {
+          setFormData(JSON.parse(savedDraft));
+          showToast('Restored unsaved new persona draft', 'info');
+        } catch {}
+      }
     }
-  }, [id, user]);
+  }, [id, user, isEditing]);
 
   const fetchPersona = async () => {
     try {
@@ -59,6 +66,16 @@ export default function PersonaEditorPage() {
       }
       
       setFormData(data);
+
+      // Check draft override
+      const draftKey = `chimera_persona_draft_${id}`;
+      const savedDraft = localStorage.getItem(draftKey);
+      if (savedDraft) {
+        try {
+          setFormData(prev => ({ ...prev, ...JSON.parse(savedDraft) }));
+          showToast('Restored unsaved persona draft', 'info');
+        } catch {}
+      }
     } catch (err) {
       console.error('Error fetching persona:', err);
       showToast('Failed to load persona', 'error');
@@ -67,6 +84,16 @@ export default function PersonaEditorPage() {
       setLoading(false);
     }
   };
+
+  // Auto-save draft protection (Rules 25 & 26)
+  useEffect(() => {
+    if (loading) return;
+    const draftKey = isEditing ? `chimera_persona_draft_${id}` : 'chimera_new_persona_draft';
+    const timer = setTimeout(() => {
+      localStorage.setItem(draftKey, JSON.stringify(formData));
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [formData, isEditing, id, loading]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,6 +130,9 @@ export default function PersonaEditorPage() {
       
       if (error) throw error;
       
+      const draftKey = isEditing ? `chimera_persona_draft_${id}` : 'chimera_new_persona_draft';
+      localStorage.removeItem(draftKey);
+
       showToast(`Persona ${isEditing ? 'updated' : 'created'} successfully!`, 'success');
       navigate('/personas');
     } catch (err) {
