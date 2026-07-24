@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Search, Grid3X3, List, Filter, X, 
   Copy, Archive, Download, MoreHorizontal,
-  SortAsc, Users, Globe, Lock, Eye
+  SortAsc, Users, Globe, Lock, Eye, Sparkles, Flame, MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { CharacterCard } from '../components/chimera/CharacterCard';
+import { RichEmptyState } from '../components/common/RichEmptyState';
 
 interface CharacterItem {
   id: string;
@@ -56,11 +57,9 @@ export default function CharactersPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [tab, setTab] = useState<'mine' | 'drafts' | 'all'>('mine');
   const [sortBy, setSortBy] = useState('updated');
-  const [actionMenuId, setActionMenuId] = useState<string | null>(null);
 
   const fetchCharacters = useCallback(async () => {
     if (!profile?.user_id) return;
@@ -93,7 +92,6 @@ export default function CharactersPage() {
       const { data, error } = await query.limit(100);
       if (error) throw error;
 
-      // Client-side search filter (can't filter on joined columns in PostgREST)
       let results = data || [];
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -107,12 +105,11 @@ export default function CharactersPage() {
       setCharacters(results);
     } catch (err: any) {
       console.error('Error loading characters:', err);
-      // Show empty state instead of error for graceful degradation
       setCharacters([]);
     } finally {
       setLoading(false);
     }
-  }, [profile, tab, selectedCategory, searchQuery, sortBy, showToast]);
+  }, [profile, tab, selectedCategory, searchQuery, sortBy]);
 
   useEffect(() => { fetchCharacters(); }, [fetchCharacters]);
 
@@ -121,11 +118,11 @@ export default function CharactersPage() {
       const original = characters.find(c => c.id === characterId);
       if (!original || !profile) return;
       showToast('Duplicating character...', 'info');
-      // Fetch full data
+      
       const { data } = await supabase.from('ai_characters').select('*').eq('id', characterId).single();
       if (!data) return;
       const { id, user_id, created_at, updated_at, chats_count, likes_count, followers_count, ...rest } = data;
-      // Create new profile for the character
+      
       const { data: newProfile, error: profileError } = await supabase.from('profiles').insert({
         display_name: `${data.bot_profile?.display_name || 'Character'} (Copy)`,
         username: `copy_${Date.now().toString(36)}`,
@@ -133,10 +130,12 @@ export default function CharactersPage() {
         role: 'ai_character',
         onboarding_complete: true,
       }).select().single();
+      
       if (profileError || !newProfile) {
         showToast('Failed to duplicate', 'error');
         return;
       }
+      
       await supabase.from('ai_characters').insert({
         ...rest,
         user_id: newProfile.user_id,
@@ -152,7 +151,6 @@ export default function CharactersPage() {
     } catch {
       showToast('Failed to duplicate character', 'error');
     }
-    setActionMenuId(null);
   };
 
   const handleExport = async (characterId: string) => {
@@ -170,237 +168,166 @@ export default function CharactersPage() {
     } catch {
       showToast('Export failed', 'error');
     }
-    setActionMenuId(null);
-  };
-
-  const visibilityIcon = (v: string) => {
-    switch (v) {
-      case 'public': return <Globe size={12} className="text-green-500" />;
-      case 'unlisted': return <Eye size={12} className="text-yellow-500" />;
-      default: return <Lock size={12} className="text-warm-400" />;
-    }
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-serif font-bold text-warm-900 dark:text-warm-50">Characters</h1>
-          <p className="text-sm text-warm-500 dark:text-warm-400 mt-1">
-            Build characters for your stories, worlds, and conversations.
-          </p>
-        </div>
-        <button
-          onClick={() => navigate('/characters/new')}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 shadow-sm shadow-red-500/20 hover:shadow-md active:scale-[0.98] transition-all"
-        >
-          <Plus size={16} strokeWidth={2.5} />
-          New Character
-        </button>
-      </div>
+    <div className="min-h-screen bg-warm-50 dark:bg-warm-900 text-warm-900 dark:text-warm-50 font-sans pb-24 relative overflow-hidden transition-colors duration-300">
+      
+      {/* Ambient Red Glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-b from-red-600/15 via-amber-600/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
-      {/* Tabs + Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        {/* Mine / All tabs */}
-        <div className="flex bg-warm-100 dark:bg-warm-800 rounded-xl p-1 gap-1">
-          {(['mine', 'drafts', 'all'] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
-                tab === t
-                  ? 'bg-white dark:bg-warm-700 text-warm-900 dark:text-warm-50 shadow-sm'
-                  : 'text-warm-500 hover:text-warm-700 dark:hover:text-warm-300'
-              }`}
-            >
-              {t === 'mine' ? 'My Characters' : t === 'drafts' ? 'Drafts 📝' : 'All Characters'}
-            </button>
-          ))}
-        </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 relative z-10 pt-6">
 
-        {/* Search */}
-        <div className="flex-1 relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-warm-400" />
-          <input
-            type="text"
-            placeholder="Search characters..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-warm-100 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 text-sm text-warm-900 dark:text-warm-50 placeholder:text-warm-400 focus:outline-none focus:ring-2 focus:ring-red-500/30"
-          />
-        </div>
-
-        {/* View mode */}
-        <div className="flex gap-1 bg-warm-100 dark:bg-warm-800 rounded-xl p-1">
-          <button
-            onClick={() => setViewMode('grid')}
-            className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-warm-700 shadow-sm' : 'text-warm-400 hover:text-warm-600'}`}
-          >
-            <Grid3X3 size={16} />
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white dark:bg-warm-700 shadow-sm' : 'text-warm-400 hover:text-warm-600'}`}
-          >
-            <List size={16} />
-          </button>
-        </div>
-
-        {/* Sort */}
-        <select
-          value={sortBy}
-          onChange={e => setSortBy(e.target.value)}
-          className="px-3 py-2.5 rounded-xl bg-warm-100 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 text-sm text-warm-900 dark:text-warm-50 focus:outline-none"
-        >
-          {SORT_OPTIONS.map(o => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-
-        {/* Filter toggle */}
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className={`p-2.5 rounded-xl border transition-all ${showFilters ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700 text-red-600' : 'border-warm-200 dark:border-warm-700 text-warm-400 hover:text-warm-600'}`}
-        >
-          <Filter size={16} />
-        </button>
-      </div>
-
-      {/* Category Filters */}
-      {showFilters && (
-        <div className="flex flex-wrap gap-2 p-4 rounded-xl bg-warm-50 dark:bg-warm-850 border border-warm-200 dark:border-warm-750">
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                selectedCategory === cat
-                  ? 'bg-red-500 text-white shadow-sm'
-                  : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-200 dark:hover:bg-warm-700'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Content */}
-      {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="rounded-2xl bg-warm-100 dark:bg-warm-800 animate-pulse h-56" />
-          ))}
-        </div>
-      ) : characters.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-red-100 to-red-50 dark:from-red-900/30 dark:to-red-900/10 flex items-center justify-center">
-            <Users size={32} className="text-red-400" />
+        {/* ── 1. HERO SECTION ── */}
+        <section className="flex flex-col items-center text-center pt-6 sm:pt-8 space-y-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-bold uppercase tracking-wider">
+            <Users size={14} />
+            <span>AI Character Multiverse</span>
           </div>
-          <h2 className="text-lg font-serif font-bold text-warm-900 dark:text-warm-100 mb-2">
-            {tab === 'mine' ? 'No characters yet' : 'No characters found'}
-          </h2>
-          <p className="text-sm text-warm-500 dark:text-warm-400 max-w-md mx-auto mb-6">
-            {tab === 'mine'
-              ? 'Create your first character — whether for a story, a world, or an AI conversation.'
-              : 'Try adjusting your search or filters.'}
+
+          <h1 className="font-serif text-4xl sm:text-5xl font-extrabold tracking-tight text-warm-900 dark:text-white">
+            Characters &amp; OCs
+          </h1>
+
+          <p className="text-sm sm:text-base text-warm-600 dark:text-warm-300 max-w-xl mx-auto leading-relaxed">
+            Build, roleplay, and manage persistent AI character identities with customizable personalities, greetings, and memory.
           </p>
-          {tab === 'mine' && (
-            <button
-              onClick={() => navigate('/characters/new')}
-              className="px-6 py-3 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 shadow-md active:scale-[0.98] transition-all"
-            >
-              <Plus size={16} className="inline mr-2" />
-              Create Your First Character
-            </button>
-          )}
-        </div>
-      ) : viewMode === 'grid' ? (
-        /* Grid View */
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {characters.map(c => (
-            <CharacterCard
-              key={c.id}
-              character={c}
-              onClick={() => {
-                if (c.visibility === 'private') {
-                  navigate(`/create?id=${c.id}`);
-                } else {
-                  navigate(`/create?id=${c.id}`);
-                }
-              }}
-              actionMenu={
-                <div className="relative group/menu">
-                  <button
-                    onClick={e => { e.stopPropagation(); setActionMenuId(actionMenuId === c.id ? null : c.id); }}
-                    className="p-1.5 rounded-lg bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 transition-colors"
-                  >
-                    <MoreHorizontal size={14} />
-                  </button>
-                  {actionMenuId === c.id && (
-                    <div className="absolute top-8 right-0 z-10 bg-white dark:bg-warm-800 rounded-xl shadow-xl border border-warm-200 dark:border-warm-700 py-1 min-w-[140px]" onClick={e => e.stopPropagation()}>
-                      <button onClick={() => handleDuplicate(c.id)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-750">
-                        <Copy size={12} /> Duplicate
-                      </button>
-                      <button onClick={() => handleExport(c.id)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-warm-700 dark:text-warm-300 hover:bg-warm-50 dark:hover:bg-warm-750">
-                        <Download size={12} /> Export JSON
-                      </button>
-                    </div>
-                  )}
-                </div>
-              }
-            />
-          ))}
-        </div>
-      ) : (
-        /* List View */
-        <div className="space-y-2">
-          {characters.map(c => (
-            <div
-              key={c.id}
-              className="group flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-750 hover:border-red-300 dark:hover:border-red-700 cursor-pointer transition-all"
-              onClick={() => navigate(`/characters/${c.id}/edit`)}
-            >
-              {/* Avatar */}
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-100 to-warm-100 dark:from-red-900/30 dark:to-warm-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                {c.bot_profile?.photo_url ? (
-                  <img src={c.bot_profile.photo_url} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-xl">{c.bot_profile?.avatar_emoji || '🎭'}</span>
-                )}
-              </div>
-              {/* Details */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-sm text-warm-900 dark:text-warm-50 truncate">
-                    {c.bot_profile?.display_name || 'Unnamed'}
-                  </h3>
-                  {visibilityIcon(c.visibility)}
-                </div>
-                <p className="text-xs text-warm-500 dark:text-warm-400 truncate mt-0.5">
-                  {c.short_description || 'No description'}
-                </p>
-              </div>
-              {/* Meta */}
-              <div className="hidden sm:flex items-center gap-4 text-xs text-warm-400 flex-shrink-0">
-                <span className="px-2 py-1 rounded-lg bg-warm-100 dark:bg-warm-750">{c.category}</span>
-                <span>{c.chats_count} chats</span>
-                <span>{new Date(c.updated_at).toLocaleDateString()}</span>
-              </div>
-              {/* Actions */}
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={e => { e.stopPropagation(); handleDuplicate(c.id); }} className="p-2 rounded-lg hover:bg-warm-100 dark:hover:bg-warm-750 text-warm-400" title="Duplicate">
-                  <Copy size={14} />
+
+          <button
+            onClick={() => navigate('/characters/new')}
+            className="px-6 py-3 rounded-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-extrabold text-xs shadow-lg shadow-red-600/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+          >
+            <Plus size={16} strokeWidth={3} />
+            <span>Create New Character</span>
+          </button>
+        </section>
+
+
+        {/* ── 2. QUICK ACTIONS & FILTER CONTROLS ── */}
+        <section className="p-4 rounded-3xl bg-white/70 dark:bg-warm-850/80 backdrop-blur-xl border border-warm-200/80 dark:border-warm-750/80 shadow-lg space-y-4">
+          
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            
+            {/* Tabs */}
+            <div className="flex items-center p-1 rounded-2xl bg-warm-100 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 w-full sm:w-auto">
+              <button
+                onClick={() => setTab('mine')}
+                className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  tab === 'mine'
+                    ? 'bg-red-600 text-white shadow-md'
+                    : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
+                }`}
+              >
+                My Characters
+              </button>
+              <button
+                onClick={() => setTab('all')}
+                className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  tab === 'all'
+                    ? 'bg-red-600 text-white shadow-md'
+                    : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
+                }`}
+              >
+                Public Multiverse
+              </button>
+              <button
+                onClick={() => setTab('drafts')}
+                className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  tab === 'drafts'
+                    ? 'bg-red-600 text-white shadow-md'
+                    : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
+                }`}
+              >
+                Drafts
+              </button>
+            </div>
+
+            {/* View Mode & Sort */}
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-3 py-2 rounded-xl bg-warm-100 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 text-xs font-bold text-warm-700 dark:text-warm-300 focus:outline-none"
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+
+              <div className="flex items-center p-1 rounded-xl bg-warm-100 dark:bg-warm-800 border border-warm-200 dark:border-warm-700">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-1.5 rounded-lg transition-all ${
+                    viewMode === 'grid' ? 'bg-white dark:bg-warm-700 text-red-600 dark:text-red-400 shadow-sm' : 'text-warm-400'
+                  }`}
+                >
+                  <Grid3X3 size={16} />
                 </button>
-                <button onClick={e => { e.stopPropagation(); handleExport(c.id); }} className="p-2 rounded-lg hover:bg-warm-100 dark:hover:bg-warm-750 text-warm-400" title="Export">
-                  <Download size={14} />
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-1.5 rounded-lg transition-all ${
+                    viewMode === 'list' ? 'bg-white dark:bg-warm-700 text-red-600 dark:text-red-400 shadow-sm' : 'text-warm-400'
+                  }`}
+                >
+                  <List size={16} />
                 </button>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+
+          </div>
+
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+                  selectedCategory === cat
+                    ? 'bg-red-600 text-white shadow-sm'
+                    : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+        </section>
+
+
+        {/* ── 3. CHARACTER CATALOGUE MATRIX ── */}
+        <section className="space-y-6">
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="h-64 rounded-3xl bg-warm-200 dark:bg-warm-800 animate-pulse" />
+              ))}
+            </div>
+          ) : characters.length === 0 ? (
+            <RichEmptyState
+              icon={Users}
+              title={tab === 'mine' ? 'No characters created yet' : 'No characters found'}
+              description={tab === 'mine' ? 'Start building your first AI character with rich backstory & greeting!' : 'Try selecting a different category or search term.'}
+              actionLabel="Create Character"
+              onAction={() => navigate('/characters/new')}
+            />
+          ) : (
+            <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
+              {characters.map((character) => (
+                <CharacterCard
+                  key={character.id}
+                  character={character as any}
+                  onClick={() => navigate(`/characters/${character.id}`)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+      </div>
     </div>
   );
 }

@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, Map, BookOpen, PenTool, MessageSquare,
-  Plus, ArrowRight, Clock, Sparkles, Wand2, PenLine
+  Plus, ArrowRight, Clock, Sparkles, Wand2, PenLine, Globe, Layers, Award
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
+import { RichEmptyState } from '../components/common/RichEmptyState';
 
 interface StudioStats {
   characters: number;
@@ -26,8 +27,8 @@ interface RecentItem {
 const MODULE_CARDS = [
   {
     id: 'characters',
-    title: 'Characters',
-    description: 'Create characters for your stories, worlds, and conversations.',
+    title: 'AI Characters',
+    description: 'Build persistent AI identities, OCs, and roleplay companions.',
     icon: Users,
     color: 'red',
     href: '/characters',
@@ -35,39 +36,32 @@ const MODULE_CARDS = [
   },
   {
     id: 'worlds',
-    title: 'Worlds',
-    description: 'Build universes with locations, factions, and timelines.',
-    icon: Map,
+    title: 'Universes & Worlds',
+    description: 'Construct locations, cultures, factions, and story timelines.',
+    icon: Globe,
     color: 'blue',
     href: '/worlds',
     createHref: '/worlds',
   },
   {
     id: 'stories',
-    title: 'Stories',
-    description: 'Write fiction or non-fiction, with chapters and scenes.',
+    title: 'Stories & Novels',
+    description: 'Write fiction, original sagas, and multi-chapter books.',
     icon: PenTool,
     color: 'purple',
     href: '/stories',
-    createHref: '/stories',
+    createHref: '/write/desk',
   },
   {
     id: 'lorebooks',
-    title: 'Lorebooks',
-    description: 'Knowledge books for world lore, magic systems, and reference.',
+    title: 'Lorebooks & Reference',
+    description: 'Knowledge bases for world lore, magic systems, and canon.',
     icon: BookOpen,
     color: 'amber',
     href: '/lorebooks',
     createHref: '/lorebooks',
   },
 ];
-
-const COLOR_MAP: Record<string, { bg: string; border: string; text: string; gradientFrom: string; gradientTo: string }> = {
-  red: { bg: 'bg-red-50 dark:bg-red-900/20', border: 'border-red-200 dark:border-red-800', text: 'text-red-600 dark:text-red-400', gradientFrom: 'from-red-500', gradientTo: 'to-red-400' },
-  blue: { bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-200 dark:border-blue-800', text: 'text-blue-600 dark:text-blue-400', gradientFrom: 'from-blue-500', gradientTo: 'to-blue-400' },
-  purple: { bg: 'bg-purple-50 dark:bg-purple-900/20', border: 'border-purple-200 dark:border-purple-800', text: 'text-purple-600 dark:text-purple-400', gradientFrom: 'from-purple-500', gradientTo: 'to-purple-400' },
-  amber: { bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-200 dark:border-amber-800', text: 'text-amber-600 dark:text-amber-400', gradientFrom: 'from-amber-500', gradientTo: 'to-amber-400' },
-};
 
 export default function CreatorStudioPage() {
   const navigate = useNavigate();
@@ -91,7 +85,6 @@ export default function CreatorStudioPage() {
     try {
       setLoading(true);
 
-      // Fetch counts in parallel
       const [charRes, worldRes, storyRes, loreRes, convRes] = await Promise.all([
         supabase.from('ai_characters').select('id', { count: 'exact', head: true }).eq('creator_id', profile.user_id),
         supabase.from('worlds').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
@@ -108,7 +101,6 @@ export default function CreatorStudioPage() {
         conversations: convRes.count || 0,
       });
 
-      // Fetch recent items
       const recent: RecentItem[] = [];
 
       const { data: recentChars } = await supabase
@@ -135,7 +127,6 @@ export default function CreatorStudioPage() {
         .limit(3);
       recentStories?.forEach(s => recent.push({ id: s.id, type: 'story', name: s.title, updated_at: s.updated_at }));
 
-      // Sort all by updated_at desc and take top 8
       recent.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
       setRecentItems(recent.slice(0, 8));
     } catch (err: any) {
@@ -155,7 +146,7 @@ export default function CreatorStudioPage() {
   const typeIcon = (type: string) => {
     switch (type) {
       case 'character': return <Users size={14} className="text-red-500" />;
-      case 'world': return <Map size={14} className="text-blue-500" />;
+      case 'world': return <Globe size={14} className="text-blue-500" />;
       case 'story': return <PenTool size={14} className="text-purple-500" />;
       case 'lorebook': return <BookOpen size={14} className="text-amber-500" />;
       default: return null;
@@ -187,133 +178,153 @@ export default function CreatorStudioPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6 space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-serif font-bold text-warm-900 dark:text-warm-50">Creator Studio</h1>
-          <p className="text-sm text-warm-500 dark:text-warm-400 mt-1">
-            Your unified workspace for characters, worlds, stories, and lore.
+    <div className="min-h-screen bg-warm-50 dark:bg-warm-900 text-warm-900 dark:text-warm-50 font-sans pb-24 relative overflow-hidden transition-colors duration-300">
+      
+      {/* Ambient Glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-b from-amber-600/15 via-purple-600/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 relative z-10 pt-6">
+
+        {/* ── 1. HERO SECTION ── */}
+        <section className="flex flex-col items-center text-center pt-6 sm:pt-8 space-y-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
+            <Sparkles size={14} />
+            <span>Professional Creator Workspace</span>
+          </div>
+
+          <h1 className="font-serif text-4xl sm:text-5xl font-extrabold tracking-tight text-warm-900 dark:text-white">
+            Creator Studio
+          </h1>
+
+          <p className="text-sm sm:text-base text-warm-600 dark:text-warm-300 max-w-xl mx-auto leading-relaxed">
+            The heart of creation inside CHIMERA. Build characters, worlds, stories, and lorebooks in one unified creative engine.
           </p>
-        </div>
 
-        {/* Writing Mode Toggle */}
-        <button
-          onClick={toggleWritingMode}
-          className={`flex items-center gap-3 px-5 py-3 rounded-2xl border transition-all ${
-            writingMode === 'manual'
-              ? 'bg-warm-50 dark:bg-warm-850 border-warm-200 dark:border-warm-700'
-              : 'bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-purple-200 dark:border-purple-800'
-          }`}
-        >
-          {writingMode === 'manual' ? (
-            <PenLine size={18} className="text-warm-600 dark:text-warm-400" />
-          ) : (
-            <Wand2 size={18} className="text-purple-600 dark:text-purple-400" />
-          )}
-          <div className="text-left">
-            <p className="text-xs font-semibold text-warm-900 dark:text-warm-50">
-              {writingMode === 'manual' ? 'Manual Mode' : 'AI-Assisted Mode'}
-            </p>
-            <p className="text-[10px] text-warm-400">
-              {writingMode === 'manual' ? 'Pure imagination, no AI' : 'AI tools available'}
-            </p>
-          </div>
-        </button>
-      </div>
-
-      {/* Stats Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        {[
-          { label: 'Characters', value: stats.characters, icon: Users, color: 'text-red-500' },
-          { label: 'Worlds', value: stats.worlds, icon: Map, color: 'text-blue-500' },
-          { label: 'Stories', value: stats.stories, icon: PenTool, color: 'text-purple-500' },
-          { label: 'Lorebooks', value: stats.lorebooks, icon: BookOpen, color: 'text-amber-500' },
-          { label: 'Conversations', value: stats.conversations, icon: MessageSquare, color: 'text-green-500' },
-        ].map(stat => {
-          const Icon = stat.icon;
-          return (
-            <div key={stat.label} className="bg-white dark:bg-warm-800 rounded-xl border border-warm-200 dark:border-warm-750 p-4 text-center">
-              <Icon size={20} className={`mx-auto ${stat.color} mb-2`} />
-              <p className="text-2xl font-bold text-warm-900 dark:text-warm-50">{loading ? '—' : stat.value}</p>
-              <p className="text-[10px] text-warm-400 uppercase tracking-wider mt-1">{stat.label}</p>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Module Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {MODULE_CARDS.map(mod => {
-          const Icon = mod.icon;
-          const c = COLOR_MAP[mod.color];
-          return (
-            <div
-              key={mod.id}
-              className={`rounded-2xl border ${c.border} ${c.bg} p-5 hover:shadow-lg transition-all cursor-pointer group`}
-              onClick={() => navigate(mod.href)}
+          {/* Mode Switch Pill */}
+          <div className="pt-2">
+            <button
+              onClick={toggleWritingMode}
+              className="px-4 py-2 rounded-full bg-white dark:bg-warm-850 border border-warm-200 dark:border-warm-750 text-xs font-bold shadow-md hover:scale-105 transition-all flex items-center gap-2"
             >
-              <div className="flex items-start gap-4">
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${c.gradientFrom} ${c.gradientTo} flex items-center justify-center shadow-sm`}>
-                  <Icon size={22} className="text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-warm-900 dark:text-warm-50">{mod.title}</h3>
-                  <p className="text-xs text-warm-500 dark:text-warm-400 mt-1">{mod.description}</p>
-                </div>
-                <ArrowRight size={18} className="text-warm-300 group-hover:text-warm-500 transition mt-1" />
-              </div>
-              <div className="mt-4 flex gap-2">
-                <button
-                  onClick={e => { e.stopPropagation(); navigate(mod.href); }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-warm-600 dark:text-warm-400 bg-white/60 dark:bg-warm-800/60 hover:bg-white dark:hover:bg-warm-800 transition"
-                >
-                  Browse
-                </button>
-                <button
-                  onClick={e => { e.stopPropagation(); navigate(mod.createHref); }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium ${c.text} bg-white/80 dark:bg-warm-800/80 hover:bg-white dark:hover:bg-warm-800 transition`}
-                >
-                  <Plus size={12} /> Create New
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+              {writingMode === 'manual' ? (
+                <>
+                  <PenLine size={15} className="text-amber-500" />
+                  <span>Manual Writing Mode</span>
+                </>
+              ) : (
+                <>
+                  <Wand2 size={15} className="text-purple-500" />
+                  <span>AI-Assisted Co-Authoring Mode</span>
+                </>
+              )}
+            </button>
+          </div>
+        </section>
 
-      {/* Recent Activity */}
-      <div>
-        <h2 className="text-sm font-semibold text-warm-700 dark:text-warm-300 mb-3 flex items-center gap-2">
-          <Clock size={14} /> Recent Activity
-        </h2>
-        {loading ? (
-          <div className="space-y-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-14 rounded-xl bg-warm-100 dark:bg-warm-800 animate-pulse" />
-            ))}
-          </div>
-        ) : recentItems.length === 0 ? (
-          <div className="text-center py-10 bg-warm-50 dark:bg-warm-850 rounded-xl border border-warm-200 dark:border-warm-700">
-            <Sparkles size={24} className="mx-auto text-warm-300 mb-3" />
-            <p className="text-sm text-warm-400">No activity yet. Start creating!</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {recentItems.map(item => (
+
+        {/* ── 2. MODULE CARDS (CREATION ENGINE) ── */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {MODULE_CARDS.map((module) => {
+            const Icon = module.icon;
+            const count = (stats as any)[module.id] || 0;
+
+            return (
               <div
-                key={`${item.type}-${item.id}`}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white dark:bg-warm-800 border border-warm-200 dark:border-warm-750 hover:border-warm-300 dark:hover:border-warm-600 cursor-pointer transition"
-                onClick={() => navigate(typeHref(item.type, item.id))}
+                key={module.id}
+                className="p-6 rounded-3xl bg-white dark:bg-warm-850 border border-warm-200 dark:border-warm-750 hover:border-amber-500/40 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-6 group cursor-pointer"
+                onClick={() => navigate(module.href)}
               >
-                {typeIcon(item.type)}
-                <span className="flex-1 text-sm text-warm-900 dark:text-warm-50 truncate">{item.name}</span>
-                <span className="text-[10px] text-warm-400 capitalize">{item.type}</span>
-                <span className="text-[10px] text-warm-400">{formatDate(item.updated_at)}</span>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
+                      <Icon size={24} />
+                    </div>
+                    <span className="font-serif text-2xl font-extrabold text-warm-900 dark:text-white">
+                      {count}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <h3 className="font-bold text-lg text-warm-900 dark:text-white group-hover:text-amber-500 transition-colors">
+                      {module.title}
+                    </h3>
+                    <p className="text-xs text-warm-500 dark:text-warm-400 leading-relaxed">
+                      {module.description}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-warm-100 dark:border-warm-800 flex items-center justify-between">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(module.createHref);
+                    }}
+                    className="px-3.5 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs shadow-md transition-all flex items-center gap-1"
+                  >
+                    <Plus size={14} />
+                    <span>Create</span>
+                  </button>
+
+                  <span className="text-xs text-warm-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-bold">
+                    <span>Manage</span>
+                    <ArrowRight size={12} />
+                  </span>
+                </div>
               </div>
-            ))}
+            );
+          })}
+        </section>
+
+
+        {/* ── 3. RECENT ACTIVITY & DRAFTS ── */}
+        <section className="p-8 rounded-3xl bg-white dark:bg-warm-850 border border-warm-200 dark:border-warm-750 shadow-lg space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="font-serif text-xl font-bold text-warm-900 dark:text-white flex items-center gap-2">
+              <Clock size={20} className="text-amber-500" />
+              <span>Recent Workspace Activity</span>
+            </h2>
           </div>
-        )}
+
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-12 rounded-xl bg-warm-100 dark:bg-warm-800 animate-pulse" />
+              ))}
+            </div>
+          ) : recentItems.length === 0 ? (
+            <RichEmptyState
+              icon={Sparkles}
+              title="Your workspace is ready"
+              description="Start by creating a character, world, or writing your first chapter!"
+              actionLabel="Create Character"
+              onAction={() => navigate('/characters/new')}
+            />
+          ) : (
+            <div className="divide-y divide-warm-100 dark:divide-warm-800">
+              {recentItems.map((item) => (
+                <div
+                  key={`${item.type}-${item.id}`}
+                  onClick={() => navigate(typeHref(item.type, item.id))}
+                  className="py-3 px-2 flex items-center justify-between hover:bg-warm-100/50 dark:hover:bg-warm-800/50 rounded-xl transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-warm-100 dark:bg-warm-800 flex items-center justify-center">
+                      {typeIcon(item.type)}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-xs sm:text-sm text-warm-900 dark:text-white">{item.name}</h4>
+                      <span className="text-[11px] text-warm-400 capitalize">{item.type}</span>
+                    </div>
+                  </div>
+
+                  <span className="text-xs text-warm-400">{formatDate(item.updated_at)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
       </div>
     </div>
   );
