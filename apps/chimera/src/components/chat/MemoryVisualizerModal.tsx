@@ -117,7 +117,7 @@ export const MemoryVisualizerModal: React.FC<MemoryVisualizerModalProps> = ({
             </div>
             <div>
               <h2 className="text-lg font-serif font-bold text-white flex items-center gap-2">
-                <span>Neural Memory Web Visualizer</span>
+                <span>Memory Visualizer Graph</span>
                 <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
                   Neural Web
                 </span>

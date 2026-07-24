@@ -86,7 +86,7 @@ export function ChatSettingsDrawer({
             </div>
           </div>
 
-          {/* Neural Memory Web Control Card */}
+          {/* Memory Nexus Control Card */}
           <div className="mb-6 bg-warm-900 border border-warm-800 rounded-3xl p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">

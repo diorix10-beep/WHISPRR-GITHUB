@@ -523,7 +523,7 @@ export default function AiCharacterCreator() {
                     </ul>
                   </div>
                     <ul className="text-[10px] text-warm-400 mt-3 space-y-1 list-disc list-inside">
-                      <li>Select an image as bot avatar, or import a character card PNG file.</li>
+                      <li>Select an image as bot avatar, or you can import a Tavern PNG file.</li>
                       <li>Please make sure your image/character does not violate our guidelines.</li>
                       <li>Important: updating the image on a public character can take up to 30 seconds to verify.</li>
                     </ul>
