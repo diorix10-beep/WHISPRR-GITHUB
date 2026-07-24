@@ -52,7 +52,7 @@ export function UniversalCharacterImporterModal({
           </div>
 
           <h3 className="font-serif text-2xl font-bold">Universal Character Card Importer</h3>
-          <p className="text-xs text-purple-100 mt-1">Import PNG or JSON cards from Character.AI, Janitor AI, or SillyTavern</p>
+          <p className="text-xs text-purple-100 mt-1">Import universal PNG or JSON character cards instantly</p>
         </div>
 
         {/* Dropzone */}

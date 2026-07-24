@@ -117,9 +117,9 @@ export const MemoryVisualizerModal: React.FC<MemoryVisualizerModalProps> = ({
             </div>
             <div>
               <h2 className="text-lg font-serif font-bold text-white flex items-center gap-2">
-                <span>Memory Visualizer Graph</span>
+                <span>Neural Memory Web Visualizer</span>
                 <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                  2D Nexus
+                  Neural Web
                 </span>
               </h2>
               <p className="text-xs text-warm-400">
@@ -155,7 +155,7 @@ export const MemoryVisualizerModal: React.FC<MemoryVisualizerModalProps> = ({
                 <Brain size={48} className="mx-auto text-purple-400/40 animate-pulse" />
                 <h4 className="font-serif font-bold text-lg text-white">No Memory Nodes Generated Yet</h4>
                 <p className="text-xs text-warm-400">
-                  Memory Nexus automatically extracts memories every 10 messages as you chat, or you can add custom nodes manually.
+                  Neural Memory Web automatically extracts memories every 10 messages as you chat, or you can add custom nodes manually.
                 </p>
                 <button
                   onClick={() => setIsAddingNew(true)}

@@ -65,7 +65,7 @@ export default function ShardsPage() {
         </p>
       </div>
 
-      {/* ── 1. Character.AI Top Hero Display (Floating 3D Crystal Cube) ── */}
+      {/* ── 1. Shards Vault & Economy Hero Display (Floating 3D Crystal Cube) ── */}
       <div className="flex flex-col items-center justify-center text-center space-y-4 pt-4 relative z-10">
         
         {/* Animated 3D Shard Cube */}

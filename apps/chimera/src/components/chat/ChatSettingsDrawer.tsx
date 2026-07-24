@@ -86,7 +86,7 @@ export function ChatSettingsDrawer({
             </div>
           </div>
 
-          {/* Memory Nexus Control Card */}
+          {/* Neural Memory Web Control Card */}
           <div className="mb-6 bg-warm-900 border border-warm-800 rounded-3xl p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -94,7 +94,7 @@ export function ChatSettingsDrawer({
                   <Sparkles size={18} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-white">Memory Nexus</h3>
+                  <h3 className="font-bold text-sm text-white">Neural Memory Web</h3>
                   <p className="text-[11px] text-warm-400">Infinite long-term recall system</p>
                 </div>
               </div>
@@ -105,7 +105,7 @@ export function ChatSettingsDrawer({
                   className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5"
                 >
                   <Wand2 size={13} />
-                  <span>Visualize 2D Graph</span>
+                  <span>Visualize Memory Web</span>
                 </button>
               )}
             </div>
