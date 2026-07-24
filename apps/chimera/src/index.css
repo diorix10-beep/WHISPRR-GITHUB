@@ -4,6 +4,35 @@
 
 @layer base {
   :root {
+    /* ── CHIMERA DESIGN TOKEN SYSTEM (LIGHT MODE) ── */
+    --bg-app:          #FAFAF8;
+    --fg-app:          #151412;
+    --surface-bg:      #FFFFFF;
+    --surface-fg:      #282520;
+    --card-bg:         #F5F4F0;
+    --card-fg:         #151412;
+    --card-border:     rgba(0, 0, 0, 0.08);
+
+    --primary-bg:      #C96059;
+    --primary-fg:      #FFFFFF;
+    --primary-hover:   #B04B44;
+
+    --secondary-bg:    #ECEAE3;
+    --secondary-fg:    #3D3933;
+    --muted-bg:        #E4E1D8;
+    --muted-fg:        #706B62;
+
+    --rp-accent-bg:    #EF4444;
+    --rp-accent-fg:    #FFFFFF;
+    --story-accent-bg: #8B5CF6;
+    --story-accent-fg: #FFFFFF;
+
+    --border-default:  #D9D5CB;
+    --input-bg:        #FFFFFF;
+    --input-border:    #C8C3B8;
+    --ring-focus:      rgba(201, 96, 89, 0.5);
+    --overlay-bg:      rgba(0, 0, 0, 0.6);
+
     /* Theme-aware Text Colors (Light Mode) */
     --text-warm-50:  #282520;
     --text-warm-100: #302D28;
@@ -44,6 +73,35 @@
   }
 
   .dark {
+    /* ── CHIMERA DESIGN TOKEN SYSTEM (DARK MODE) ── */
+    --bg-app:          #151412;
+    --fg-app:          #FAFAF8;
+    --surface-bg:      #1E1B17;
+    --surface-fg:      #F5F4F0;
+    --card-bg:         #282520;
+    --card-fg:         #FAFAF8;
+    --card-border:     rgba(255, 255, 255, 0.08);
+
+    --primary-bg:      #C96059;
+    --primary-fg:      #FFFFFF;
+    --primary-hover:   #DF817A;
+
+    --secondary-bg:    #38342E;
+    --secondary-fg:    #ECEAE3;
+    --muted-bg:        #2E2B25;
+    --muted-fg:        #8F8A80;
+
+    --rp-accent-bg:    #EF4444;
+    --rp-accent-fg:    #FFFFFF;
+    --story-accent-bg: #8B5CF6;
+    --story-accent-fg: #FFFFFF;
+
+    --border-default:  #3D3933;
+    --input-bg:        #1E1B17;
+    --input-border:    #47433C;
+    --ring-focus:      rgba(223, 129, 122, 0.6);
+    --overlay-bg:      rgba(0, 0, 0, 0.85);
+
     /* Theme-aware Text Colors (Dark Mode) */
     --text-warm-50:  #FAFAF8;
     --text-warm-100: #F5F4F0;

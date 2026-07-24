@@ -799,3 +799,56 @@ There must only be ONE universal image upload component shared across the entire
 Do not create multiple upload experiences for different features.
 
 Every upload should feel familiar, predictable, and consistent.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION XV — DESIGN FOUNDATION & TOKEN SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 53 — Design Token Architecture
+
+Every visual value (colors, typography, spacing, border radii, shadows, motion) must consume shared design tokens.
+
+Never hardcode raw hex values or arbitrary pixel offsets directly in component files.
+
+Always use semantic design token aliases:
+• `--bg-app`, `--fg-app`
+• `--surface-bg`, `--surface-fg`
+• `--card-bg`, `--card-fg`
+• `--primary-bg`, `--primary-fg`
+• `--rp-accent-bg`, `--story-accent-bg`
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 54 — 3D Asset Quality Standard
+
+All 3D assets (SHARDS, badges, trophies, collectibles) must maintain a premium sapphire crystalline aesthetic with realistic light refraction, sharp geometric facets, and semi-transparent depth.
+
+Never render plastic, cartoonish, or toy-like 3D assets.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+SECTION XVI — PRODUCT CONSTITUTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 55 — AI Empowers Human Authorship
+
+AI exists to empower, enrich, and amplify human creative imagination—never to replace human authors.
+
+Humans remain the true creators and authors.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 56 — Free Core Creative Engine
+
+Core creative capabilities (Roleplay Chat, Novel Writing, Worldbuilding, Character Creation) will NEVER be locked behind mandatory paywalls.
+
+Monetization must focus on premium cosmetics, storage expansions, and rewarded value—never paywalling basic creation.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rule 57 — Non-Addictive & Respectful Product Design
+
+Design for meaningful engagement, not addictive retention loops or artificial urgency.
+
+Respect user time, attention, and creative focus.
+

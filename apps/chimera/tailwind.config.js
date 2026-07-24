@@ -5,6 +5,22 @@ export default {
   theme: {
     extend: {
       colors: {
+        // CHIMERA Design Token System Semantic Aliases
+        token: {
+          app: 'var(--bg-app)',
+          'app-fg': 'var(--fg-app)',
+          surface: 'var(--surface-bg)',
+          'surface-fg': 'var(--surface-fg)',
+          card: 'var(--card-bg)',
+          'card-fg': 'var(--card-fg)',
+          'card-border': 'var(--card-border)',
+          primary: 'var(--primary-bg)',
+          'primary-fg': 'var(--primary-fg)',
+          rp: 'var(--rp-accent-bg)',
+          story: 'var(--story-accent-bg)',
+          border: 'var(--border-default)',
+          input: 'var(--input-bg)',
+        },
         // V3 Primary: Muted Coral / Dusty Rose — softer, better contrast, premium
         primary: {
           50:  '#FDF4F3',
