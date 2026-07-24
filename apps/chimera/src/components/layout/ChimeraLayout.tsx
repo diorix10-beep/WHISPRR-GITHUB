@@ -183,21 +183,21 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
   return (
     <div className="min-h-screen bg-warm-50 dark:bg-warm-900 transition-colors duration-300 flex flex-col font-sans">
       {/* Top Navigation Header — CSS Grid 3-column layout */}
-      <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-warm-850/95 backdrop-blur-md border-b border-warm-200/70 dark:border-warm-800/70 shadow-sm">
+      <header className="sticky top-0 z-40 w-full bg-white/80 dark:bg-warm-900/80 backdrop-blur-xl border-b border-warm-200/80 dark:border-warm-800/80 shadow-sm transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 grid grid-cols-[auto_1fr_auto] lg:grid-cols-[220px_1fr_auto] items-center gap-4">
           
           {/* 1. BLOC GAUCHE — Logo */}
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="lg:hidden p-1.5 -ml-1 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
+              className="lg:hidden p-2 -ml-1 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
             >
               <Menu size={20} />
             </button>
 
             <button
               onClick={() => setShowAppLauncher(true)}
-              className="hidden lg:block p-1.5 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
+              className="hidden lg:block p-2 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
               title="App Switcher"
             >
               <LayoutGrid size={20} />
@@ -217,19 +217,19 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
           {/* 2. BLOC MILIEU — Navigation (centré, flex-1 min-w-0 pour donner tout l'espace nécessaire) */}
           <div className="hidden lg:flex flex-1 min-w-0 items-center justify-center px-1 sm:px-2">
-            <nav className="flex items-center gap-0.5 xl:gap-2 whitespace-nowrap shrink-0">
+            <nav className="flex items-center gap-1 xl:gap-3 whitespace-nowrap shrink-0">
               {renderNavLinks()}
             </nav>
           </div>
 
           {/* 3. BLOC DROITE — Actions */}
-          <div className="flex items-center justify-end gap-1.5 sm:gap-2.5 shrink-0">
+          <div className="flex items-center justify-end gap-2 sm:gap-3 shrink-0">
 
-            {/* Creative Mode Switch Pill — hidden until xl to save space */}
-            <div className="hidden xl:flex items-center bg-warm-200/70 dark:bg-warm-800/90 p-0.5 rounded-xl border border-warm-200/90 dark:border-warm-750/90 shadow-inner">
+            {/* Creative Mode Switch Pill */}
+            <div className="hidden lg:flex items-center bg-warm-200/70 dark:bg-warm-800/90 p-1 rounded-2xl border border-warm-200/90 dark:border-warm-750/90 shadow-inner">
               <button
                 onClick={() => toggleCreativeMode('roleplay')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 ${
                   creativeMode === 'roleplay' 
                     ? 'bg-red-600 text-white shadow-md shadow-red-600/30' 
                     : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
@@ -253,15 +253,14 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               </button>
             </div>
 
-            {/* Shards Currency Pill — Responsive Mobile & Desktop */}
+            {/* Shards Currency Pill — Active Balance & Store Trigger */}
             <button
               onClick={() => navigate('/shards')}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 dark:text-blue-400 border border-blue-500/20 transition-all font-bold text-xs shadow-sm hover:scale-105 active:scale-95 group"
-              title="CHIMERA Shards Hub & Passes (Coming Soon)"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-gradient-to-r from-blue-500/10 via-cyan-500/10 to-indigo-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 hover:border-cyan-400 transition-all font-bold text-xs shadow-sm hover:shadow-[0_0_15px_rgba(6,182,212,0.25)] hover:scale-105 active:scale-95 group"
+              title="CHIMERA SHARDS Economy & Store"
             >
-              <ShardCrystalImage size={18} showGlow={false} />
-              <span>Shards</span>
-              <span className="text-[9px] uppercase font-extrabold tracking-wider bg-blue-500/20 text-blue-500 dark:text-blue-400 px-1.5 py-0.5 rounded-md">Soon</span>
+              <ShardCrystalImage size={20} showGlow={false} />
+              <span className="font-serif font-extrabold text-sm">{shardsBalance}</span>
             </button>
 
             {/* Search — icon only, no text label on smaller screens */}

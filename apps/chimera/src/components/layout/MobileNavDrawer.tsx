@@ -8,6 +8,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Avatar } from '../common/Avatar';
+import { ShardCrystalImage } from '../common/ShardCrystalImage';
 
 interface MobileNavDrawerProps {
   isOpen: boolean;
@@ -210,16 +211,16 @@ function MobileNavDrawerContent({
           <button
             onClick={() => {
               onClose();
-              window.dispatchEvent(new CustomEvent('open-shards-hub'));
+              navigate('/shards');
             }}
-            className="w-full mt-2.5 p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 flex items-center justify-between text-xs font-bold text-amber-600 dark:text-amber-400 transition-colors shadow-sm"
+            className="w-full mt-2.5 p-2.5 rounded-xl bg-gradient-to-r from-blue-500/10 via-cyan-500/10 to-indigo-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 border border-cyan-500/30 flex items-center justify-between text-xs font-bold text-cyan-600 dark:text-cyan-400 transition-all shadow-sm"
           >
             <div className="flex items-center gap-2">
-              <Gem size={16} className="text-amber-500 fill-amber-500" />
-              <span>Shards Hub</span>
+              <ShardCrystalImage size={20} showGlow={false} />
+              <span>SHARDS Financial Hub</span>
             </div>
-            <span className="bg-amber-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-              Coming Soon ✨
+            <span className="bg-cyan-500/20 text-cyan-400 text-xs font-extrabold px-2.5 py-0.5 rounded-full border border-cyan-500/30">
+              💎 {shardsBalance}
             </span>
           </button>
         </div>
