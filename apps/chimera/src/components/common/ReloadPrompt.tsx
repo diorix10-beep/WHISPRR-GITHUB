@@ -12,21 +12,32 @@ export function ReloadPrompt() {
     updateServiceWorker,
   } = useRegisterSW({
     onRegistered(r) {
-      console.log('SW Registered: ' + r);
+      if (!r) return;
+
+      // Active polling every 15 seconds for instant Vercel deployment detection
+      const interval = setInterval(() => {
+        r.update().catch(() => {});
+      }, 15000);
+
+      // Check immediately when user switches back to this tab
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          r.update().catch(() => {});
+        }
+      };
+
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('online', () => r.update().catch(() => {}));
     },
     onRegisterError(error) {
-      console.log('SW registration error', error);
+      console.error('SW registration error', error);
     },
   });
 
-  // Wait ~60 seconds after a new version is detected before presenting the warm update prompt
+  // Display prompt immediately when a new deployment/version is available
   useEffect(() => {
     if (needRefresh && !dismissed) {
-      const timer = setTimeout(() => {
-        setShowPrompt(true);
-      }, 60000); // 60 seconds delay
-
-      return () => clearTimeout(timer);
+      setShowPrompt(true);
     }
   }, [needRefresh, dismissed]);
 
@@ -49,7 +60,7 @@ export function ReloadPrompt() {
             </div>
             <div>
               <h3 className="font-serif font-bold text-warm-900 dark:text-warm-50 text-base flex items-center gap-1.5">
-                CHIMERA has been updated
+                ✨ CHIMERA has been updated
               </h3>
               <p className="text-xs text-warm-600 dark:text-warm-400 mt-1 leading-relaxed">
                 Refresh whenever you're ready to enjoy the latest improvements.
@@ -69,7 +80,7 @@ export function ReloadPrompt() {
         <div className="mt-4 flex gap-2">
           <button
             onClick={() => updateServiceWorker(true)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5"
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-xs shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5"
           >
             <RefreshCw size={14} />
             Refresh CHIMERA
