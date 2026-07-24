@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
+import { ShardCrystalImage } from './ShardCrystalImage';
 
 interface ShardsHubModalProps {
   isOpen: boolean;
@@ -63,7 +64,7 @@ export function ShardsHubModal({ isOpen, onClose }: ShardsHubModalProps) {
       <div className="w-full max-w-xl bg-white dark:bg-warm-900 rounded-3xl shadow-2xl border border-warm-200 dark:border-warm-800 overflow-hidden relative animate-scale-in">
         
         {/* Top Decorative Banner */}
-        <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 p-6 text-white text-center relative overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-700 via-cyan-600 to-indigo-700 p-6 text-white text-center relative overflow-hidden">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors"
@@ -71,19 +72,19 @@ export function ShardsHubModal({ isOpen, onClose }: ShardsHubModalProps) {
             <X size={20} />
           </button>
 
-          <div className="inline-flex p-3 rounded-2xl bg-white/10 backdrop-blur-md mb-2 ring-1 ring-white/20">
-            <Gem size={32} className="text-amber-300 animate-pulse" />
+          <div className="inline-flex p-2.5 rounded-2xl bg-black/30 backdrop-blur-md mb-2 ring-1 ring-white/20">
+            <ShardCrystalImage size={48} />
           </div>
 
           <h2 className="font-serif text-2xl font-bold">CHIMERA Shards Hub &amp; VIP</h2>
-          <p className="text-xs text-purple-100 mt-1">Unlock premium AI magic, character selfies, and VIP ad-free creation</p>
+          <p className="text-xs text-cyan-100 mt-1">Unlock premium AI magic, character selfies, and VIP ad-free creation</p>
 
           {/* Balance Pill */}
-          <div className="mt-4 inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/20 backdrop-blur-md ring-1 ring-white/30 text-sm font-bold shadow-inner">
-            <Gem size={18} className="text-amber-300 fill-amber-300" />
-            <span>Balance: {shardsBalance} 💎 Shards</span>
+          <div className="mt-4 inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-black/30 backdrop-blur-md ring-1 ring-white/30 text-sm font-bold shadow-inner">
+            <ShardCrystalImage size={22} showGlow={false} />
+            <span>Balance: {shardsBalance} Shards</span>
             {adFreePassActive && (
-              <span className="ml-2 text-[10px] bg-amber-400 text-black px-2.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold flex items-center gap-1">
+              <span className="ml-2 text-[10px] bg-cyan-400 text-black px-2.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold flex items-center gap-1">
                 <Crown size={12} /> VIP Active
               </span>
             )}

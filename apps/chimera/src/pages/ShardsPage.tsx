@@ -6,6 +6,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { ShardsHubModal } from '../components/common/ShardsHubModal';
+import { ShardCrystalImage } from '../components/common/ShardCrystalImage';
 
 export default function ShardsPage() {
   const { shardsBalance, earnShards, spendShards, adFreePassActive, activateAdFreePass } = useAuth();
@@ -52,11 +53,11 @@ export default function ShardsPage() {
     <div className="min-h-screen bg-warm-950 text-white font-sans py-8 px-4 sm:px-8 max-w-4xl mx-auto space-y-8 animate-fade-in relative overflow-hidden select-none">
       
       {/* Background Glow Spheres */}
-      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-gradient-to-tr from-purple-600/20 via-pink-600/10 to-amber-500/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
+      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-gradient-to-tr from-blue-600/20 via-cyan-600/15 to-purple-600/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
 
       {/* ── COMING SOON BANNER NOTICE ── */}
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-amber-500/20 border border-amber-500/40 text-center space-y-1 relative z-10 shadow-lg animate-fade-in">
-        <div className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-amber-400">
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-500/20 via-cyan-500/20 to-purple-500/20 border border-cyan-500/40 text-center space-y-1 relative z-10 shadow-lg animate-fade-in">
+        <div className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-cyan-400">
           <Sparkles size={16} className="animate-spin" />
           <span>✨ COMING SOON — SHARDS &amp; REWARDED ADS ECONOMY</span>
         </div>
@@ -65,24 +66,24 @@ export default function ShardsPage() {
         </p>
       </div>
 
-      {/* ── 1. Character.AI Top Hero Display (Floating 3D Crystal Cube) ── */}
+      {/* ── 1. Top Hero Display (Floating Sapphire Crystalline Shard) ── */}
       <div className="flex flex-col items-center justify-center text-center space-y-4 pt-4 relative z-10">
         
-        {/* Animated 3D Shard Cube */}
+        {/* Animated Sapphire Shard */}
         <div className="relative group cursor-pointer" onClick={() => setShowBuyModal(true)}>
-          <div className="absolute inset-0 bg-purple-500/30 rounded-3xl blur-xl group-hover:blur-2xl transition-all animate-pulse" />
+          <div className="absolute inset-0 bg-blue-500/30 rounded-3xl blur-2xl group-hover:blur-3xl transition-all animate-pulse" />
           
-          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-gradient-to-tr from-purple-700 via-pink-600 to-amber-400 p-0.5 shadow-2xl transform transition-transform group-hover:scale-105 animate-bounce-subtle">
-            <div className="w-full h-full bg-warm-900/90 backdrop-blur-md rounded-[22px] flex items-center justify-center relative overflow-hidden">
-              <Gem size={52} className="text-amber-300 fill-amber-400 drop-shadow-[0_0_15px_rgba(245,158,11,0.6)] animate-pulse" />
-              <div className="absolute top-2 right-2 w-3 h-3 bg-amber-400 rounded-full animate-ping" />
+          <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-3xl bg-gradient-to-tr from-blue-700 via-cyan-500 to-indigo-600 p-0.5 shadow-[0_0_40px_rgba(37,99,235,0.4)] transform transition-transform group-hover:scale-105 animate-bounce-subtle">
+            <div className="w-full h-full bg-warm-950/90 backdrop-blur-md rounded-[22px] flex items-center justify-center relative overflow-hidden">
+              <ShardCrystalImage size={96} />
+              <div className="absolute top-3 right-3 w-3 h-3 bg-cyan-400 rounded-full animate-ping" />
             </div>
           </div>
         </div>
 
         {/* Large Balance Display */}
-        <div className="flex items-center gap-2 font-serif text-4xl sm:text-5xl font-extrabold tracking-tight">
-          <Gem size={38} className="text-amber-400 fill-amber-400" />
+        <div className="flex items-center gap-3 font-serif text-4xl sm:text-5xl font-extrabold tracking-tight text-white drop-shadow-md">
+          <ShardCrystalImage size={44} showGlow={false} />
           <span>{shardsBalance}</span>
         </div>
 

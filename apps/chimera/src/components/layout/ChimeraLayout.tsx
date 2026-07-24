@@ -10,6 +10,7 @@ import { Avatar } from '../common/Avatar';
 import { AppLauncherModal } from './AppLauncherModal';
 import { MobileNavDrawer } from './MobileNavDrawer';
 import { ShardsHubModal } from '../common/ShardsHubModal';
+import { ShardCrystalImage } from '../common/ShardCrystalImage';
 
 interface ChimeraLayoutProps {
   children?: ReactNode;
@@ -255,12 +256,12 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             {/* Shards Currency Pill — Responsive Mobile & Desktop */}
             <button
               onClick={() => navigate('/shards')}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 transition-all font-bold text-xs shadow-sm hover:scale-105 active:scale-95 group"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 dark:text-blue-400 border border-blue-500/20 transition-all font-bold text-xs shadow-sm hover:scale-105 active:scale-95 group"
               title="CHIMERA Shards Hub & Passes (Coming Soon)"
             >
-              <Gem size={15} className="text-amber-500 fill-amber-500 group-hover:animate-bounce" />
+              <ShardCrystalImage size={18} showGlow={false} />
               <span>Shards</span>
-              <span className="text-[9px] uppercase font-extrabold tracking-wider bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-md">Soon</span>
+              <span className="text-[9px] uppercase font-extrabold tracking-wider bg-blue-500/20 text-blue-500 dark:text-blue-400 px-1.5 py-0.5 rounded-md">Soon</span>
             </button>
 
             {/* Search — icon only, no text label on smaller screens */}
