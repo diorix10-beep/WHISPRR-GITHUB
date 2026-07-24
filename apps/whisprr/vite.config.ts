@@ -1,9 +1,33 @@
-import { defineConfig } from 'vite'; // Trigger deploy
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { writeFileSync, mkdirSync, existsSync } from 'fs';
+import { resolve } from 'path';
+
+const buildTimestamp = Date.now().toString();
+
+function generateVersionPlugin() {
+  return {
+    name: 'generate-version-json',
+    buildStart() {
+      const publicDir = resolve(__dirname, 'public');
+      if (!existsSync(publicDir)) {
+        mkdirSync(publicDir, { recursive: true });
+      }
+      writeFileSync(
+        resolve(publicDir, 'version.json'),
+        JSON.stringify({ version: buildTimestamp, timestamp: new Date().toISOString() })
+      );
+    },
+  };
+}
 
 export default defineConfig({
+  define: {
+    __APP_BUILD_TIME__: JSON.stringify(buildTimestamp),
+  },
   plugins: [
+    generateVersionPlugin(),
     react(),
     VitePWA({
       registerType: 'prompt',

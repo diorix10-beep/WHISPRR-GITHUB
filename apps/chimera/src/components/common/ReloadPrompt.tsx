@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { Sparkles, RefreshCw, X } from 'lucide-react';
 
 export function ReloadPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const currentBuildTimeRef = useRef<string>(typeof __APP_BUILD_TIME__ !== 'undefined' ? __APP_BUILD_TIME__ : '');
 
   const {
     offlineReady: [_offlineReady, setOfflineReady],
@@ -14,12 +15,11 @@ export function ReloadPrompt() {
     onRegistered(r) {
       if (!r) return;
 
-      // Active polling every 15 seconds for instant Vercel deployment detection
+      // Active SW polling every 10 seconds for instant Vercel deployment detection
       const interval = setInterval(() => {
         r.update().catch(() => {});
-      }, 15000);
+      }, 10000);
 
-      // Check immediately when user switches back to this tab
       const handleVisibilityChange = () => {
         if (document.visibilityState === 'visible') {
           r.update().catch(() => {});
@@ -34,12 +34,59 @@ export function ReloadPrompt() {
     },
   });
 
-  // Display prompt immediately when a new deployment/version is available
+  // Dual Version Check: Direct /version.json fetch bypassing browser & SW cache
+  useEffect(() => {
+    if (dismissed || showPrompt) return;
+
+    const checkVersionJson = async () => {
+      try {
+        const response = await fetch(`/version.json?t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data.version && currentBuildTimeRef.current && data.version !== currentBuildTimeRef.current) {
+          setShowPrompt(true);
+        }
+      } catch (err) {
+        // Silently catch fetch errors
+      }
+    };
+
+    // Check version.json immediately on mount
+    checkVersionJson();
+
+    // Poll version.json every 10 seconds
+    const pollInterval = setInterval(checkVersionJson, 10000);
+
+    const handleTabFocus = () => {
+      if (document.visibilityState === 'visible') {
+        checkVersionJson();
+      }
+    };
+    document.addEventListener('visibilitychange', handleTabFocus);
+
+    return () => {
+      clearInterval(pollInterval);
+      document.removeEventListener('visibilitychange', handleTabFocus);
+    };
+  }, [dismissed, showPrompt]);
+
+  // Display prompt immediately when PWA service worker detects a new build
   useEffect(() => {
     if (needRefresh && !dismissed) {
       setShowPrompt(true);
     }
   }, [needRefresh, dismissed]);
+
+  const handleRefresh = () => {
+    try {
+      updateServiceWorker(true);
+    } catch {
+      window.location.reload();
+    }
+  };
 
   const close = () => {
     setShowPrompt(false);
@@ -79,7 +126,7 @@ export function ReloadPrompt() {
 
         <div className="mt-4 flex gap-2">
           <button
-            onClick={() => updateServiceWorker(true)}
+            onClick={handleRefresh}
             className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-xs shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5"
           >
             <RefreshCw size={14} />
