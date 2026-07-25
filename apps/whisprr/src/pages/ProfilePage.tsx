@@ -617,7 +617,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="page-container flex items-center justify-center py-12">
+      <div className="content-shell content-shell-lg flex items-center justify-center py-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary-300 border-t-primary-500 mx-auto mb-4" />
           <p className="text-warm-600 dark:text-warm-400">Loading profile...</p>
@@ -628,7 +628,7 @@ export default function ProfilePage() {
 
   if (!profile) {
     return (
-      <div className="page-container flex items-center justify-center py-12">
+      <div className="content-shell content-shell-lg flex items-center justify-center py-12">
         <div className="text-center">
           <p className="text-lg text-warm-600 dark:text-warm-400 mb-4">
             Profile not found
@@ -671,7 +671,7 @@ export default function ProfilePage() {
         )}
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+      <div className="content-shell content-shell-lg">
         {isEditMode ? (
           // Edit Mode
           <div className="bg-white dark:bg-warm-800 rounded-3xl shadow-sm p-6 sm:p-8 -mt-12 relative z-10 border border-warm-100 dark:border-warm-800 mb-8 space-y-6">

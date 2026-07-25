@@ -234,8 +234,8 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="page-container pb-32 sm:pb-24 px-4 sm:px-6">
-      <h1 className="section-title mb-8">Settings</h1>
+    <div className="content-shell content-shell-md">
+      <h1 className="section-title mb-5">Settings</h1>
 
       {/* Account Section */}
       <section className="mb-8" aria-labelledby="account-heading">

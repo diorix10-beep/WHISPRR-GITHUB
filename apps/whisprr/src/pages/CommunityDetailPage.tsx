@@ -436,7 +436,7 @@ export default function CommunityDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="page-container flex items-center justify-center min-h-[60vh]">
+      <div className="content-shell content-shell-lg flex items-center justify-center min-h-[60vh]">
         <Loader2 size={32} className="animate-spin text-primary-500" />
       </div>
     );
@@ -444,7 +444,7 @@ export default function CommunityDetailPage() {
 
   if (!community) {
     return (
-      <div className="page-container text-center py-16">
+      <div className="content-shell content-shell-lg text-center py-16">
         <p className="text-warm-500 mb-4">Community not found</p>
         <button onClick={() => navigate('/communities')} className="btn-primary">Back to Communities</button>
       </div>
@@ -462,7 +462,7 @@ export default function CommunityDetailPage() {
   };
 
   return (
-    <div className="page-container pb-8">
+    <div className="content-shell content-shell-lg">
       {/* Back */}
       <button onClick={() => navigate('/communities')} className="flex items-center gap-2 mb-4 text-sm text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-warm-100 transition-colors">
         <ArrowLeft size={18} />

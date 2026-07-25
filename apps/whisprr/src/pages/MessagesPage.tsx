@@ -282,14 +282,14 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="page-container">
+    <div className="content-shell content-shell-md">
       {/* Header with New Message and Group Chat Buttons */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h1 className="section-title">Messages</h1>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowNewMessageModal(true)}
-            className="btn-primary flex items-center gap-2 py-2 px-4"
+            className="btn-primary flex items-center gap-1.5 py-1.5 px-3 text-sm"
           >
             <Plus size={18} />
             New Message

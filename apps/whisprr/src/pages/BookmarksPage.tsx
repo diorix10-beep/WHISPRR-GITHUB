@@ -88,14 +88,11 @@ export default function BookmarksPage() {
   }, [user, loadBookmarks]);
 
   return (
-    <div className="max-w-2xl mx-auto py-6 sm:py-12 px-4 sm:px-6">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 text-warm-900 dark:text-warm-50 mb-2">
-            <Bookmark size={28} className="fill-current text-primary-500" />
-            <h1 className="text-3xl font-serif">Bookmarks</h1>
-          </div>
-          <p className="text-warm-500 dark:text-warm-400">
-            A private collection of the content you've saved.
+    <div className="content-shell content-shell-sm">
+        <div className="mb-5">
+          <h1 className="section-title">Bookmarks</h1>
+          <p className="text-xs text-warm-500 dark:text-warm-400 mt-0.5">
+            A private collection of content you've saved.
           </p>
         </div>
 

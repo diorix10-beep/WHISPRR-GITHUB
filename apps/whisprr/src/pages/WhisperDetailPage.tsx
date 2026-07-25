@@ -319,7 +319,7 @@ export default function WhisperDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="page-container">
+      <div className="content-shell content-shell-sm">
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary-300 border-t-primary-500 mx-auto mb-4" />
@@ -332,7 +332,7 @@ export default function WhisperDetailPage() {
 
   if (!whisper) {
     return (
-      <div className="page-container">
+      <div className="content-shell content-shell-sm">
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-primary-500 hover:text-primary-600 mb-6 transition-colors"
@@ -360,7 +360,7 @@ export default function WhisperDetailPage() {
   const commentTree = buildCommentTree(comments);
 
   return (
-    <div className="page-container">
+    <div className="content-shell content-shell-sm">
       {/* Back Button */}
       <button
         onClick={() => navigate(-1)}

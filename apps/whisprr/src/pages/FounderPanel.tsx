@@ -1127,7 +1127,7 @@ export default function FounderPanel() {
 
   if (profile?.role !== 'founder') {
     return (
-      <div className="page-container flex items-center justify-center min-h-[60vh]">
+      <div className="content-shell content-shell-xl flex items-center justify-center min-h-[60vh]">
         <div className="text-center bg-white dark:bg-warm-800 p-8 rounded-3xl border border-warm-100 dark:border-warm-700 max-w-md shadow-soft">
            <ShieldAlert size={48} className="text-red-500 mx-auto mb-4" />
            <h2 className="text-xl font-bold text-warm-900 dark:text-warm-50 mb-2">Access Denied</h2>
@@ -1138,7 +1138,7 @@ export default function FounderPanel() {
   }
 
   return (
-    <div className="page-container max-w-5xl">
+    <div className="content-shell content-shell-xl">
       {/* Header */}
       <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>

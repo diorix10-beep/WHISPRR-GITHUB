@@ -90,9 +90,9 @@ export default function NotificationsPage() {
   );
 
   return (
-    <div className="page-container">
+    <div className="content-shell content-shell-sm">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h1 className="section-title">Notifications</h1>
         {unreadCount > 0 && (
           <button

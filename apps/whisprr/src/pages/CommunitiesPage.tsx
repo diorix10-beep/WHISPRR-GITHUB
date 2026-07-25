@@ -153,15 +153,15 @@ export default function CommunitiesPage() {
   }
 
   return (
-    <div className="page-container">
+    <div className="content-shell content-shell-md">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-warm-900 dark:text-warm-50">Communities</h1>
-          <p className="text-sm text-warm-500 mt-0.5">Find your people</p>
+          <h1 className="section-title">Communities</h1>
+          <p className="text-xs text-warm-500 dark:text-warm-400 mt-0.5">Find your people</p>
         </div>
-        <button onClick={() => setShowCreateModal(true)} className="btn-primary flex items-center gap-2 py-2 px-4">
-          <Plus size={18} />
+        <button onClick={() => setShowCreateModal(true)} className="btn-primary flex items-center gap-1.5 py-1.5 px-3 text-sm">
+          <Plus size={16} />
           Create
         </button>
       </div>

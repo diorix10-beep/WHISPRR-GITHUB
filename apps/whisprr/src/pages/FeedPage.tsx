@@ -278,7 +278,7 @@ export default function FeedPage() {
   const handleReactionChange = () => loadWhispers(feedMode);
 
   return (
-    <div className="page-container max-w-2xl mx-auto">
+    <div className="content-shell content-shell-sm">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>

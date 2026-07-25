@@ -98,14 +98,26 @@
   }
 }
 
-/* Glassmorphism & Premium UI Classes */
+/* ═══════════════════════════════════════════════════════════════
+   WHISPRR Layout Foundation v1.0
+   Content Width Tokens — the permanent layout system
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --content-xs:   480px;  /* narrow dialogs, reply threads         */
+  --content-sm:   600px;  /* feed, whisper detail, notifications   */
+  --content-md:   720px;  /* messages, communities, settings       */
+  --content-lg:   900px;  /* discover, profile, community detail   */
+  --content-xl:  1080px;  /* founder panel, data-heavy admin views */
+  --sidebar-w:    224px;  /* w-56 — fixed left sidebar             */
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Glassmorphism & Premium UI Classes
+   ═══════════════════════════════════════════════════════════════ */
 @layer components {
+  /* ── Cards ──────────────────────────────────────────────────── */
   .card {
     @apply bg-white/90 dark:bg-warm-900/80 backdrop-blur-xl border border-warm-200/60 dark:border-warm-800/70 rounded-2xl p-4 shadow-soft hover:shadow-md hover:border-primary-500/20 dark:hover:border-primary-500/20 transition-all duration-200;
-  }
-
-  .page-container {
-    @apply px-4 py-4 sm:px-5 sm:py-5 pb-24 lg:pb-6;
   }
 
   .glass-card {
@@ -116,15 +128,69 @@
     @apply glass-card hover:-translate-y-0.5 hover:border-primary-500/30 dark:hover:border-primary-500/30 hover:shadow-lg hover:shadow-primary-500/5;
   }
 
+  /* ── Content Shell — universal page content container ────────
+     Every authenticated page wraps its content in one of these.
+     They are always centred within the main area (after sidebar).
+  ─────────────────────────────────────────────────────────────── */
+  .content-shell {
+    /* default: medium — 720px */
+    width: 100%;
+    max-width: var(--content-md);
+    margin-left: auto;
+    margin-right: auto;
+    padding: 1.25rem 1rem 6rem;   /* top | sides | bottom (mobile nav) */
+  }
+
+  @media (min-width: 640px) {
+    .content-shell {
+      padding: 1.5rem 1.25rem 6rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .content-shell {
+      padding: 1.5rem 1.5rem 2.5rem;
+    }
+  }
+
+  /* Size variants */
+  .content-shell-xs { max-width: var(--content-xs); }
+  .content-shell-sm { max-width: var(--content-sm); }
+  .content-shell-md { max-width: var(--content-md); }
+  .content-shell-lg { max-width: var(--content-lg); }
+  .content-shell-xl { max-width: var(--content-xl); }
+
+  /* All size variants inherit content-shell base centering & padding */
+  .content-shell-xs,
+  .content-shell-sm,
+  .content-shell-md,
+  .content-shell-lg,
+  .content-shell-xl {
+    @apply content-shell;
+  }
+
+  /* ── Legacy compatibility — keep page-container working ──────── */
+  .page-container {
+    @apply content-shell;
+  }
+
+  /* ── Typography — section headers (now properly defined) ─────── */
+  .section-title {
+    @apply text-lg font-bold tracking-tight text-warm-900 dark:text-warm-50;
+  }
+
+  /* ── Buttons ─────────────────────────────────────────────────── */
   .btn-primary,
   .btn-gradient-primary {
     @apply bg-gradient-to-r from-primary-600 via-purple-600 to-indigo-600 text-white font-semibold shadow-md shadow-primary-500/20 hover:shadow-lg hover:shadow-primary-500/35 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 rounded-xl;
   }
 
+  /* ── Text Gradient ───────────────────────────────────────────── */
   .text-gradient {
     @apply bg-gradient-to-r from-warm-900 via-primary-700 to-warm-900 dark:from-white dark:via-primary-300 dark:to-warm-100 bg-clip-text text-transparent;
   }
 }
+
 
 /* Custom Scrollbar styling */
 ::-webkit-scrollbar {

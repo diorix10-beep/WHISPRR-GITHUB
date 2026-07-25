@@ -9,6 +9,7 @@ import { Logo } from '../common/Logo';
 import { Avatar } from '../common/Avatar';
 import { AppLauncherModal } from './AppLauncherModal';
 import { ChimeraPromoModal } from '../modals/ChimeraPromoModal';
+import { ComposeWhisper } from '../feed/ComposeWhisper';
 
 interface AppLayoutProps {
   children?: ReactNode;
@@ -22,17 +23,21 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [isBannerVisible, setIsBannerVisible] = useState(true);
   const [isLauncherOpen, setIsLauncherOpen] = useState(false);
   const [isChimeraPromoOpen, setIsChimeraPromoOpen] = useState(false);
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
 
   useEffect(() => {
     const handleOpenLauncher = () => setIsLauncherOpen(true);
     const handleOpenChimeraPromo = () => setIsChimeraPromoOpen(true);
+    const handleOpenCompose = () => setIsComposeOpen(true);
     
     window.addEventListener('open-app-launcher', handleOpenLauncher);
     window.addEventListener('open-chimera-promo', handleOpenChimeraPromo);
+    window.addEventListener('open-compose', handleOpenCompose);
     
     return () => {
       window.removeEventListener('open-app-launcher', handleOpenLauncher);
       window.removeEventListener('open-chimera-promo', handleOpenChimeraPromo);
+      window.removeEventListener('open-compose', handleOpenCompose);
     };
   }, []);
 
@@ -287,6 +292,9 @@ export function AppLayout({ children }: AppLayoutProps) {
         onClose={() => setIsLauncherOpen(false)} 
       />
       <ChimeraPromoModal isOpen={isChimeraPromoOpen} onClose={() => setIsChimeraPromoOpen(false)} />
+      {isComposeOpen && (
+        <ComposeWhisper onClose={() => setIsComposeOpen(false)} />
+      )}
     </div>
   );
 }

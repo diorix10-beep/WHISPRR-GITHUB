@@ -360,7 +360,7 @@ export default function DiscoverPage() {
 
   if (loading) {
     return (
-      <div className="page-container max-w-4xl space-y-8">
+      <div className="content-shell content-shell-lg space-y-8">
         <LoadingSkeleton height={48} width="60%" className="mb-4" />
         <LoadingSkeleton height={52} width="100%" className="mb-6 rounded-2xl" />
         <div className="flex gap-3 overflow-hidden">
@@ -373,7 +373,7 @@ export default function DiscoverPage() {
   }
 
   return (
-    <div className="page-container max-w-4xl">
+    <div className="content-shell content-shell-lg">
       {/* Header */}
       <div className="mb-5 flex items-center justify-between">
         <div>
