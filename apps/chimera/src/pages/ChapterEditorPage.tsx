@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Globe, MoreHorizontal, AlignLeft, Bold, Italic, Underline, Link, Image as ImageIcon, Check, Sparkles, Download, Maximize2, Feather } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Story, StoryChapter } from '../types';
+import { checkUserPromptSafety, CRISIS_HELPLINE_INFO } from '../lib/safetyGuard';
 import { useToast } from '../contexts/ToastContext';
 import { AiCoPilotDrawer } from '../components/writers/AiCoPilotDrawer';
 
@@ -70,6 +71,16 @@ export default function ChapterEditorPage() {
 
   const handleSaveDraft = async (publishStatus?: 'draft' | 'published', isAutoSave = false) => {
     const activeStatus = publishStatus || status;
+
+    // Run SafetyGuard check on chapter title & content
+    const titleSafety = checkUserPromptSafety(title);
+    const contentSafety = checkUserPromptSafety(content);
+    if ((!titleSafety.isSafe && titleSafety.crisisTriggered) || (!contentSafety.isSafe && contentSafety.crisisTriggered)) {
+      if (!isAutoSave) showToast(`💜 Help is available. Call/text ${CRISIS_HELPLINE_INFO.phone} (${CRISIS_HELPLINE_INFO.name}). You are not alone.`, 'error');
+      setSaveStatus('offline');
+      return;
+    }
+
     try {
       if (isAutoSave) setSaveStatus('saving');
       else setSaving(true);

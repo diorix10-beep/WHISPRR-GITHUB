@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import StoryImporterModal from '../components/stories/StoryImporterModal';
 import { UniversalImagePicker } from '../components/common/UniversalImagePicker';
+import { checkUserPromptSafety, CRISIS_HELPLINE_INFO } from '../lib/safetyGuard';
 
 export default function WritersDeskPage() {
   const navigate = useNavigate();
@@ -130,6 +131,14 @@ export default function WritersDeskPage() {
     e.preventDefault();
     if (!profile?.user_id) return showToast('You must be logged in to save a story.', 'error');
     if (!formTitle.trim()) return showToast('Title is required', 'info');
+
+    // Run SafetyGuard check on story title & summary
+    const titleSafety = checkUserPromptSafety(formTitle);
+    const summarySafety = checkUserPromptSafety(formSummary);
+    if ((!titleSafety.isSafe && titleSafety.crisisTriggered) || (!summarySafety.isSafe && summarySafety.crisisTriggered)) {
+      showToast(`💜 Help is available. Call/text ${CRISIS_HELPLINE_INFO.phone} (${CRISIS_HELPLINE_INFO.name}). You are not alone.`, 'error');
+      return;
+    }
 
     const tagsArray = formTags.split(',').map(tag => tag.trim().toLowerCase()).filter(Boolean);
 
