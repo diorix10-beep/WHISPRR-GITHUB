@@ -368,20 +368,37 @@ export default function ChimeraChatsPage() {
           <Loader2 size={32} className="animate-spin text-red-500" />
         </div>
       ) : conversations.length === 0 ? (
-        <div className="bg-white dark:bg-warm-900 rounded-3xl border border-warm-200 dark:border-warm-800 shadow-sm flex flex-col items-center justify-center py-20 px-4 text-center">
-          <div className="w-20 h-20 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-full flex items-center justify-center mb-6">
-            <MessageSquare size={32} />
+        <div className="bg-white dark:bg-warm-900 rounded-3xl border border-warm-100 dark:border-warm-800 shadow-sm flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in space-y-6">
+          {/* Icon */}
+          <div className="relative">
+            <div className="w-20 h-20 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-500/10 dark:to-rose-500/5 rounded-3xl flex items-center justify-center border border-red-100 dark:border-red-500/15 shadow-inner">
+              <MessageSquare size={32} className="text-red-400" />
+            </div>
+            <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center border-2 border-white dark:border-warm-900 text-[11px]">
+              ✨
+            </div>
           </div>
-          <h2 className="text-xl font-serif font-bold text-warm-900 dark:text-warm-50 mb-2">No active chats</h2>
-          <p className="text-sm text-warm-500 dark:text-warm-400 max-w-sm mb-8">
-            Your Spirit is waiting. Choose a character from the Nexus or create a new chat to begin your storyline.
-          </p>
+          {/* Copy */}
+          <div className="space-y-2 max-w-xs">
+            <h2 className="font-serif text-xl font-extrabold text-warm-900 dark:text-white">
+              Your Story Awaits
+            </h2>
+            <p className="text-sm text-warm-500 dark:text-warm-400 leading-relaxed font-medium">
+              Start a conversation with any character from the Nexus — or create your own — and begin your roleplay journey.
+            </p>
+          </div>
+          {/* CTA */}
           <button
             onClick={() => setShowNewChatModal(true)}
-            className="bg-red-600 hover:bg-red-500 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition-all active:scale-95"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-rose-500 text-white font-bold text-sm rounded-2xl shadow-lg shadow-red-500/25 hover:shadow-red-500/35 hover:scale-[1.02] active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
           >
-            Start a New Chat
+            <MessageSquare size={16} />
+            Start Your First Chat
           </button>
+          {/* Discovery nudge */}
+          <p className="text-xs text-warm-400 dark:text-warm-500 font-medium">
+            Or <button onClick={() => navigate('/discover')} className="text-red-500 hover:text-red-400 font-bold transition-colors underline-offset-2 hover:underline">explore characters</button> on the Discover page
+          </p>
         </div>
       ) : (
         <div className="bg-white dark:bg-warm-900 rounded-3xl border border-warm-200 dark:border-warm-800 overflow-hidden shadow-sm">
