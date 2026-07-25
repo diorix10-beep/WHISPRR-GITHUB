@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { Story, StoryChapter, StoryComment } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { checkUserPromptSafety, CRISIS_HELPLINE_INFO } from '../lib/safetyGuard';
 
 export default function StoryReaderPage() {
   const { id } = useParams<{ id: string }>();
@@ -186,6 +187,14 @@ export default function StoryReaderPage() {
     e.preventDefault();
     if (!newComment.trim()) return;
     if (!profile?.user_id) return showToast('Please log in to comment', 'info');
+
+    // Run SafetyGuard check on comment
+    const commentSafety = checkUserPromptSafety(newComment);
+    if (!commentSafety.isSafe && commentSafety.crisisTriggered) {
+      showToast(`💜 Help is available. Call/text ${CRISIS_HELPLINE_INFO.phone} (${CRISIS_HELPLINE_INFO.name}). You are not alone.`, 'error');
+      setNewComment('');
+      return;
+    }
 
     try {
       setCommenting(true);
