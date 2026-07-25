@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { 
   X, User, Bookmark, Settings, 
-  Layers, HelpCircle, Shield, FileText
+  Layers, HelpCircle, Shield, FileText, Sparkles, Users, Globe, Volume2, ArrowRight
 } from 'lucide-react';
 import { WhisprrLogo } from '../common/WhisprrLogo';
+import { ShardCrystalImage } from '../common/ShardCrystalImage';
 
 const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
 const whisprrUrl = isLocalhost ? 'http://localhost:5174' : 'https://whisprr.xyz';
@@ -28,58 +29,80 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
   };
 
   const apps = [
-    { name: 'WHISPRR', desc: 'Social Network', path: `${whisprrUrl}/feed`, icon: WhisprrLogo, color: 'bg-primary-500/10 text-primary-500 border-primary-500/20 hover:bg-primary-500/20', external: true },
-    { name: 'CHIMERA', desc: 'Roleplay & Storytelling', path: '/', logoUrl: '/chimera_logo.png', color: 'bg-violet-500/10 text-violet-500 border-violet-500/20 hover:bg-violet-500/20' },
+    { name: 'WHISPRR', desc: 'Social Creator Network', path: `${whisprrUrl}/feed`, icon: WhisprrLogo, color: 'bg-primary-500/10 text-primary-500 border-primary-500/30 hover:bg-primary-500/20', external: true },
+    { name: 'CHIMERA', desc: 'Roleplay & Storytelling', path: '/discover', logoUrl: '/chimera_logo.png', color: 'bg-red-500/10 text-red-500 border-red-500/30 hover:bg-red-500/20' },
+    { name: 'SHARDS Hub', desc: 'Ecosystem Currency & VIP', path: '/shards', isShard: true, color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/20' },
   ];
 
-  const moreLinks = [
-    { label: 'My Profile', path: '/profile', icon: User },
-    { label: 'Saved & Bookmarks', path: `${whisprrUrl}/discover?tab=bookmarks`, icon: Bookmark, external: true },
-    { label: 'CHIMERA Studio / Drafts', path: '/personas', icon: FileText },
-    { label: 'Settings', path: '/settings', icon: Settings },
-    { label: 'Account Security', path: '/settings', icon: Shield },
-    { label: 'Platform Trust Center', path: '/trust', icon: Layers },
+  const features = [
+    { label: 'AI Characters', path: '/characters', icon: Users },
+    { label: 'Roleplay Personas', path: '/personas', icon: User },
+    { label: 'Worldbuilding Studio', path: '/worlds', icon: Globe },
+    { label: 'Creator Studio', path: '/studio', icon: Sparkles },
+    { label: 'Voice Library', path: '/voice-library', icon: Volume2 },
+    { label: 'Account Settings', path: '/settings', icon: Settings },
+    { label: 'Trust & Privacy Center', path: '/trust', icon: Shield },
   ];
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-warm-950/80 backdrop-blur-lg flex items-center justify-center p-4 animate-fade-in">
-      <div className="w-full max-w-lg bg-white dark:bg-warm-850 rounded-3xl border border-warm-200 dark:border-warm-750 shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto no-scrollbar flex flex-col gap-6">
+    <div className="fixed inset-0 z-[9999] bg-warm-950/80 backdrop-blur-xl flex items-center justify-center p-4 animate-fade-in">
+      <div className="w-full max-w-xl bg-white dark:bg-warm-850 rounded-3xl border border-warm-200 dark:border-warm-750 shadow-2xl p-6 sm:p-8 relative max-h-[90vh] overflow-y-auto no-scrollbar flex flex-col gap-6">
         
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-xl bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-300 hover:scale-105 active:scale-95 transition-all"
+          className="absolute top-4 right-4 p-2 rounded-2xl bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-300 hover:scale-105 active:scale-95 transition-all"
           aria-label="Close launcher"
         >
           <X size={18} />
         </button>
 
-        {/* Title */}
-        <div className="text-center mt-2">
-          <h2 className="font-serif text-2xl font-bold text-warm-900 dark:text-warm-50">Ecosystem Hub</h2>
-          <p className="text-xs text-warm-500 mt-1">Quick switch between WHISPRR workspaces</p>
+        {/* Title & Ambient Header */}
+        <div className="text-center space-y-1 mt-1">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-extrabold uppercase tracking-widest">
+            <Sparkles size={12} />
+            <span>Universal Ecosystem Switcher</span>
+          </div>
+
+          <h2 className="font-serif text-3xl font-extrabold bg-gradient-to-r from-red-500 via-purple-400 to-cyan-400 bg-clip-text text-transparent drop-shadow-sm">
+            Ecosystem Hub
+          </h2>
+
+          <p className="text-xs text-warm-500 dark:text-warm-400">
+            Seamlessly switch between CHIMERA creative engines &amp; WHISPRR social networks
+          </p>
         </div>
 
-        {/* Apps Grid */}
-        <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-warm-400 mb-3 px-1">Available Apps</h3>
-          <div className="grid grid-cols-2 gap-3">
+        {/* Primary Apps Grid */}
+        <div className="space-y-3">
+          <h3 className="text-[10px] font-extrabold uppercase tracking-wider text-warm-400 px-1">
+            Ecosystem Applications
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {apps.map((app) => {
               const Icon = app.icon;
               return (
                 <button
                   key={app.name}
                   onClick={() => handleNavigate(app.path, app.external)}
-                  className={`p-4 rounded-2xl border text-left flex flex-col gap-2 transition-all hover:scale-102 active:scale-98 ${app.color}`}
+                  className={`p-4 rounded-2xl border text-left flex flex-col justify-between gap-3 transition-all hover:scale-102 active:scale-98 shadow-sm ${app.color}`}
                 >
-                  {'logoUrl' in app && app.logoUrl ? (
-                    <img src={app.logoUrl} alt={app.name} className="w-7 h-7 object-contain" />
-                  ) : Icon ? (
-                    <Icon size={24} />
-                  ) : null}
+                  <div className="flex items-center justify-between">
+                    {app.isShard ? (
+                      <ShardCrystalImage size={24} showGlow={false} />
+                    ) : 'logoUrl' in app && app.logoUrl ? (
+                      <img src={app.logoUrl} alt={app.name} className="w-7 h-7 object-contain drop-shadow" />
+                    ) : Icon ? (
+                      <Icon size={24} />
+                    ) : null}
+                    
+                    <ArrowRight size={14} className="opacity-60 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+
                   <div>
-                    <h4 className="font-bold text-sm leading-none">{app.name}</h4>
-                    <p className="text-[10px] opacity-75 mt-1">{app.desc}</p>
+                    <h4 className="font-serif font-extrabold text-sm leading-none">{app.name}</h4>
+                    <p className="text-[10px] opacity-80 mt-1">{app.desc}</p>
                   </div>
                 </button>
               );
@@ -90,20 +113,27 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
         {/* Divider */}
         <div className="border-t border-warm-100 dark:border-warm-800" />
 
-        {/* More Menu List */}
-        <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-warm-400 mb-3 px-1">Features & Tools</h3>
+        {/* Features & Tools Grid */}
+        <div className="space-y-3">
+          <h3 className="text-[10px] font-extrabold uppercase tracking-wider text-warm-400 px-1">
+            Creation Tools &amp; Workspaces
+          </h3>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {moreLinks.map((link) => {
-              const Icon = link.icon;
+            {features.map((item) => {
+              const Icon = item.icon;
               return (
                 <button
-                  key={link.label}
-                  onClick={() => handleNavigate(link.path, link.external)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-warm-700 dark:text-warm-350 hover:bg-warm-50 dark:hover:bg-warm-800 transition-colors text-left"
+                  key={item.label}
+                  onClick={() => handleNavigate(item.path)}
+                  className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold text-warm-800 dark:text-warm-200 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors text-left group"
                 >
-                  <Icon size={16} className="text-warm-500" />
-                  <span>{link.label}</span>
+                  <div className="flex items-center gap-3">
+                    <Icon size={16} className="text-purple-500 group-hover:scale-110 transition-transform" />
+                    <span>{item.label}</span>
+                  </div>
+
+                  <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity text-warm-400" />
                 </button>
               );
             })}
