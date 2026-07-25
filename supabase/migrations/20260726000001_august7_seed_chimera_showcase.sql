@@ -1,23 +1,26 @@
 -- Migration: 20260726000001_august7_seed_chimera_showcase.sql
--- Description: Seed exemplary CHIMERA showcase creations (Worlds & Lorebooks) for August 7th World Launch
+-- Description: Seed exemplary CHIMERA showcase creations (Worlds & Lorebooks) matching exact phase2 table schemas
 
 -- 1. Seed Exemplary World
-INSERT INTO public.worlds (name, description, genre, rules, is_public, created_at)
+INSERT INTO public.worlds (user_id, name, description, scenario, tags, visibility, created_at)
 SELECT 
+  p.user_id, 
   'Aetheria — The Floating Realm', 
   'A grand archipelago of floating islands suspended in a sky of infinite aurora. Powered by ancient Aetherium crystal magic.', 
-  'High Fantasy / Steampunk', 
   'Aetherium crystals power all levitation ships. Skylords govern the high islands while Guild Navigators chart the cloud sea.', 
-  true, 
+  ARRAY['Fantasy', 'Steampunk', 'Worldbuilding'], 
+  'public', 
   NOW()
+FROM (SELECT user_id FROM public.profiles LIMIT 1) p
 WHERE NOT EXISTS (SELECT 1 FROM public.worlds WHERE name LIKE 'Aetheria%');
 
 -- 2. Seed Exemplary Lorebook
-INSERT INTO public.lorebooks (title, description, tags, is_public, created_at)
+INSERT INTO public.lorebooks (user_id, title, description, visibility, created_at)
 SELECT 
+  p.user_id, 
   'The Aetherium Chronicles', 
   'Comprehensive compendium of levitation magic, skyship designs, island factions, and sky-beasts across Aetheria.', 
-  ARRAY['Fantasy', 'Magic', 'Worldbuilding'], 
-  true, 
+  'public', 
   NOW()
+FROM (SELECT user_id FROM public.profiles LIMIT 1) p
 WHERE NOT EXISTS (SELECT 1 FROM public.lorebooks WHERE title LIKE 'The Aetherium Chronicles%');
