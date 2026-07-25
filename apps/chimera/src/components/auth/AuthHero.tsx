@@ -38,7 +38,7 @@ export function AuthHero() {
 
   const particles = useMemo(
     () =>
-      Array.from({ length: 14 }, (_, i) => {
+      Array.from({ length: 18 }, (_, i) => {
         const size = 2 + Math.random() * 4;
         return {
           id: i,
@@ -47,7 +47,7 @@ export function AuthHero() {
           duration: 14 + Math.random() * 12,
           delay: Math.random() * 10,
           drift: (Math.random() - 0.5) * 60,
-          opacity: 0.15 + Math.random() * 0.25,
+          opacity: 0.15 + Math.random() * 0.3,
         };
       }),
     [],
@@ -70,19 +70,17 @@ export function AuthHero() {
         }}
       />
 
-      {/* Dark overlay 28% */}
-      <div className="absolute inset-0 bg-black/28" />
-
-      {/* Warm gradient blend at edges */}
-      <div className="absolute inset-0 bg-gradient-to-r from-warm-950/60 via-transparent to-warm-950/20" />
-      <div className="absolute inset-0 bg-gradient-to-t from-warm-950/70 via-transparent to-warm-950/30" />
+      {/* Dark overlay & warm gradient blend */}
+      <div className="absolute inset-0 bg-warm-950/40" />
+      <div className="absolute inset-0 bg-gradient-to-r from-warm-950 via-warm-950/30 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-warm-950 via-transparent to-warm-950/40" />
 
       {/* Soft light bloom */}
       <div
         className="absolute top-[20%] left-[30%] w-[50%] h-[50%] rounded-full light-bloom will-change-transform pointer-events-none"
         style={{
           background:
-            'radial-gradient(circle, rgba(212,115,110,0.12) 0%, transparent 70%)',
+            'radial-gradient(circle, rgba(239,68,68,0.15) 0%, rgba(168,85,247,0.1) 40%, transparent 70%)',
         }}
       />
 
@@ -105,17 +103,24 @@ export function AuthHero() {
       ))}
 
       {/* Hero text overlay */}
-      <div className="absolute inset-0 flex flex-col justify-end p-10 xl:p-14 pointer-events-none">
-        <div className="max-w-md">
-          <p className="auth-text-rise auth-text-rise-delay-3 font-serif text-2xl xl:text-3xl text-white/95 leading-snug drop-shadow-lg">
-            Every story begins
-            <br />
-            with a spark of imagination.
+      <div className="absolute inset-0 flex flex-col justify-end p-12 xl:p-16 pointer-events-none space-y-4">
+        <div className="max-w-lg space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white/90 text-[10px] font-extrabold uppercase tracking-widest">
+            <span>Living Identity Engine</span>
+          </div>
+
+          <p className="auth-text-rise auth-text-rise-delay-3 font-serif text-3xl xl:text-4xl font-extrabold text-white leading-tight drop-shadow-lg">
+            Where human imagination meets living identities.
           </p>
-          <div className="auth-text-rise auth-text-rise-delay-4 mt-4 flex items-center gap-2">
-            <div className="h-px w-10 bg-primary-400/60" />
-            <span className="text-xs uppercase tracking-[0.2em] text-white/50 font-medium">
-              CHIMERA
+
+          <p className="text-xs text-warm-300/90 leading-relaxed max-w-md">
+            Roleplay with persistent AI identities, explore deep narrative worlds, and co-create novels with total creative freedom.
+          </p>
+
+          <div className="auth-text-rise auth-text-rise-delay-4 pt-2 flex items-center gap-3">
+            <div className="h-0.5 w-12 bg-gradient-to-r from-red-500 to-purple-500 rounded-full" />
+            <span className="text-[11px] font-serif font-extrabold uppercase tracking-[0.25em] text-white/70">
+              CHIMERA &amp; WHISPRR
             </span>
           </div>
         </div>
