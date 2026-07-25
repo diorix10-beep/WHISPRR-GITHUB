@@ -237,8 +237,8 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-warm-50 dark:bg-warm-950 py-12 px-4 transition-colors duration-200">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-warm-50 dark:bg-warm-950 py-8 transition-colors duration-200">
+      <div className="content-shell content-shell-md">
         {/* Progress Indicator */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
