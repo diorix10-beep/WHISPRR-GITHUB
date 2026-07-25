@@ -204,25 +204,28 @@ export default function LandingPage() {
         </div>
 
         {/* Nav */}
-        <nav style={{
-          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-          padding: '0 24px',
-          background: navBg,
-          borderBottom: scrollY > 60 ? '1px solid rgba(255,255,255,0.06)' : 'none',
-          backdropFilter: scrollY > 60 ? 'blur(20px)' : 'none',
-          transition: 'all 0.3s ease',
-        }}>
-          <div className="lp-con" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 68 }}>
+        <nav className={`fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 transition-all duration-300 ${
+          scrollY > 60
+            ? 'bg-warm-950/90 backdrop-blur-xl border-b border-white/10 shadow-lg'
+            : 'bg-transparent'
+        }`}>
+          <div className="max-w-6xl mx-auto flex items-center justify-between h-16 sm:h-20">
             <Logo variant="icon-only" size={28} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-              <a href="#ecosystem" className="lp-nl">Ecosystem</a>
-              <a href="#creators" className="lp-nl">Creators</a>
-              <a href="#features" className="lp-nl">Features</a>
-              <a href={chimeraUrl} className="lp-nl" target="_blank" rel="noopener noreferrer">CHIMERA ↗</a>
+            
+            <div className="hidden md:flex items-center gap-8">
+              <a href="#ecosystem" className="text-sm font-medium text-white/70 hover:text-white transition-colors">Ecosystem</a>
+              <a href="#creators" className="text-sm font-medium text-white/70 hover:text-white transition-colors">Creators</a>
+              <a href="#features" className="text-sm font-medium text-white/70 hover:text-white transition-colors">Features</a>
+              <a href={chimeraUrl} className="text-sm font-medium text-purple-400 hover:text-purple-300 transition-colors" target="_blank" rel="noopener noreferrer">CHIMERA ↗</a>
             </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <Link to="/auth" className="lp-btn-g" style={{ padding: '9px 20px', fontSize: 14 }}>Sign In</Link>
-              <Link to="/auth" className="lp-btn-p" style={{ padding: '9px 20px', fontSize: 14 }}>Join Free</Link>
+
+            <div className="flex items-center gap-2.5">
+              <Link to="/auth" className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white/80 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white transition-all">
+                Sign In
+              </Link>
+              <Link to="/auth" className="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-purple-500 to-indigo-600 shadow-md shadow-purple-500/25 hover:brightness-110 transition-all">
+                Join Free
+              </Link>
             </div>
           </div>
         </nav>
