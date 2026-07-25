@@ -18,9 +18,16 @@ export default function TermsPage() {
       </section>
 
       <section>
-        <h2>3. Acceptable AI Usage</h2>
+        <h2>3. Acceptable AI Usage & Harm Prevention</h2>
         <p>
-          You agree to use CHIMERA's intelligence tools responsibly. You must not use the platform to generate illegal content, CSAM, non-consensual deepfakes, or content that assists in the creation of biological weapons or cyberattacks.
+          You agree to use CHIMERA's intelligence tools responsibly. You must not use the platform to generate illegal content, CSAM, non-consensual deepfakes, or content that assists in real-world self-harm, suicide, or violence.
+        </p>
+      </section>
+
+      <section>
+        <h2>4. Self-Harm Disclaimer & Roleplay Boundaries</h2>
+        <p>
+          CHIMERA has absolute zero tolerance for real-world self-harm or suicide encouragement. All character interactions, narrative themes, and dramatic elements produced by AI models exist strictly as fictional creative roleplay within the bounds of interactive storytelling. AI characters are artificial entities and are not qualified to provide mental health support, medical guidance, or crisis intervention. If you or someone you know is experiencing distress, please reach out to a professional crisis helpline (such as calling or texting 988 in the US/Canada, or your local emergency services).
         </p>
       </section>
 

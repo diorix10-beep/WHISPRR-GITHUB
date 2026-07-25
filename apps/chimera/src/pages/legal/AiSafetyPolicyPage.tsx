@@ -18,9 +18,16 @@ export default function AiSafetyPolicyPage() {
       </section>
 
       <section>
-        <h2>3. Mature Content</h2>
+        <h2>3. Mature Content & Roleplay Isolation</h2>
         <p>
-          While CHIMERA allows for creative freedom and mature roleplay scenarios (NSFW), all interactions must comply with our hard limits. Content involving non-consensual acts, child exploitation, or extreme violence is strictly prohibited and filtered.
+          While CHIMERA allows for creative freedom and mature roleplay scenarios (NSFW), all interactions must comply with our hard safety limits. Content involving non-consensual acts, child exploitation, or real-world self-harm encouragement is strictly prohibited and filtered.
+        </p>
+      </section>
+
+      <section>
+        <h2>4. Self-Harm & Suicide Prevention Protocol</h2>
+        <p>
+          CHIMERA's safety filters actively block and prevent AI models from encouraging, suggesting, or instructing on self-harm or suicide. All AI responses, dark narrative themes, and dramatic character interactions must remain strictly within fictional creative roleplay. AI models are programmed to provide crisis referral information if a user indicates real-world distress or self-harm intent.
         </p>
       </section>
 
