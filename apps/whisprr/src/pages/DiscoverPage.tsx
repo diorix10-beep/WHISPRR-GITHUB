@@ -460,7 +460,13 @@ export default function DiscoverPage() {
                   onFollowToggle={() => handleFollowToggle(p.user_id)}
                 />
               )) : (
-                <div className="text-center py-12 text-warm-500">No people found matching "{searchQuery}"</div>
+                <EmptyState
+                  icon={Users}
+                  title="No creators found"
+                  description={`No creator profiles matching "${searchQuery}". Try searching by handle, specialty, or clear search.`}
+                  actionLabel="Clear Search"
+                  onAction={() => setSearchQuery('')}
+                />
               )}
             </div>
           ) : searchTab === 'communities' ? (
@@ -468,7 +474,13 @@ export default function DiscoverPage() {
               {communityResults.length > 0 ? communityResults.map(c => (
                 <CommunityRow key={c.id} community={c} onClick={() => navigate(`/communities/${c.id}`)} />
               )) : (
-                <div className="text-center py-12 text-warm-500">No communities found matching "{searchQuery}"</div>
+                <EmptyState
+                  icon={Users}
+                  title="No communities found"
+                  description={`No communities matching "${searchQuery}".`}
+                  actionLabel="Clear Search"
+                  onAction={() => setSearchQuery('')}
+                />
               )}
             </div>
           ) : searchTab === 'posts' ? (
@@ -476,7 +488,13 @@ export default function DiscoverPage() {
               {postResults.length > 0 ? postResults.map(w => (
                 <WhisperCard key={w.id} whisper={w} />
               )) : (
-                <div className="text-center py-12 text-warm-500">No posts found matching "{searchQuery}"</div>
+                <EmptyState
+                  icon={MessageSquare}
+                  title="No whispers found"
+                  description={`No whispers or posts matching "${searchQuery}".`}
+                  actionLabel="Clear Search"
+                  onAction={() => setSearchQuery('')}
+                />
               )}
             </div>
           ) : searchTab === 'stories' ? (
@@ -484,7 +502,15 @@ export default function DiscoverPage() {
               {storyResults.length > 0 ? storyResults.map(s => (
                 <StoryCard key={s.id} story={s} chimeraUrl={chimeraUrl} />
               )) : (
-                <div className="text-center py-12 text-warm-500 col-span-2">No stories found matching "{searchQuery}"</div>
+                <div className="col-span-2">
+                  <EmptyState
+                    icon={BookOpen}
+                    title="No stories found"
+                    description={`No stories matching "${searchQuery}".`}
+                    actionLabel="Clear Search"
+                    onAction={() => setSearchQuery('')}
+                  />
+                </div>
               )}
             </div>
           ) : searchTab === 'characters' ? (
@@ -501,7 +527,15 @@ export default function DiscoverPage() {
                   </a>
                 </div>
               )) : (
-                <div className="text-center py-12 text-warm-500 col-span-2">No characters found matching "{searchQuery}"</div>
+                <div className="col-span-2">
+                  <EmptyState
+                    icon={Sparkles}
+                    title="No AI characters found"
+                    description={`No AI characters matching "${searchQuery}".`}
+                    actionLabel="Clear Search"
+                    onAction={() => setSearchQuery('')}
+                  />
+                </div>
               )}
             </div>
           ) : searchTab === 'worlds' ? (
@@ -518,7 +552,15 @@ export default function DiscoverPage() {
                   </a>
                 </div>
               )) : (
-                <div className="text-center py-12 text-warm-500 col-span-2">No worlds found matching "{searchQuery}"</div>
+                <div className="col-span-2">
+                  <EmptyState
+                    icon={Sparkles}
+                    title="No worlds found"
+                    description={`No worldbuilding projects matching "${searchQuery}".`}
+                    actionLabel="Clear Search"
+                    onAction={() => setSearchQuery('')}
+                  />
+                </div>
               )}
             </div>
           ) : null}
