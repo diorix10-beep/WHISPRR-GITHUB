@@ -199,7 +199,7 @@ export default function SettingsPage() {
           <p className="text-xs text-warm-600 dark:text-warm-400">
             Choose your preferred theme appearance. Choosing System Mode will automatically match your browser and operating system settings.
           </p>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
               { id: 'light', label: '🌞 Light Mode', icon: Sun },
               { id: 'dark', label: '🌙 Dark Mode', icon: Moon },
