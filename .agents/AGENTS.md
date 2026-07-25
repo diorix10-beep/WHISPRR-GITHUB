@@ -1050,3 +1050,35 @@ The platform should first become stable before expanding into advanced features.
 7. Launch the private beta.
 8. Collect feedback.
 9. Build advanced creator and AI features.
+
+---
+
+====================================================
+WHISPRR DESIGN CONSTITUTION
+====================================================
+
+The following permanent rules govern every user interface element in the WHISPRR ecosystem:
+
+1. **RULE 52 — ZERO SILENT UI FAILURES**: Every asynchronous action (posting, liking, joining, uploading) MUST provide immediate optimistic or loading feedback, followed by a friendly toast or clear error recovery state if it fails.
+2. **RULE 53 — DEFERENCE TO CREATOR CONTENT**: Backgrounds must remain neutral. UI chrome must never compete with creator images, story chapters, or post cards for visual dominance.
+3. **RULE 54 — SINGLE SOURCE OF TRUTH TOKENS**: Hardcoded hex codes (`#121212`, `#ffffff`) or arbitrary pixel padding (`pt-[13px]`) are prohibited. All components must reference tokens or standardized scales.
+4. **RULE 55 — TOUCH TARGET SAFETY (44PX+)**: Interactive elements (buttons, icons, dropdown triggers) must have a minimum touch target size of 44×44px on mobile viewports.
+5. **RULE 56 — ACCESSIBILITY BY DEFAULT**: Contrast ratios must meet WCAG AA standards (4.5:1 for body text, 3:1 for large text). Focus rings (`ring-2 ring-primary-500`) must be visible during keyboard navigation.
+6. **RULE 57 — NEVER HIDE SAFETY CONTROLS**: Moderation actions (Report, Block, Mute, Hide) must always remain accessible within two taps/clicks from any post, profile, or message card.
+7. **RULE 58 — ZERO EMOJI PROFILE AVATARS**: Fallback avatars must always render initials over deterministic HSL gradients. Emoji avatars are strictly forbidden.
+8. **RULE 59 — RESPECT REDUCED MOTION**: All animations must respect `prefers-reduced-motion: reduce` by degrading gracefully to instant opacity fades.
+9. **RULE 60 — DRAFT DATA SAFETY**: Any text field exceeding 50 characters (post composer, profile bio, community description) must auto-save drafts locally before network submission.
+10. **RULE 61 — RESPONSIVE ELASTICITY**: Interfaces must scale fluidly across Mobile (320px–480px), Tablet (768px–1024px), and Desktop (1280px+). Horizontal scrollbars are forbidden on page containers.
+
+---
+
+====================================================
+WHISPRR PRODUCT CONSTITUTION
+====================================================
+
+1. **Conversation Over Consumption**: We design for meaningful creator interaction, discussion, and feedback—not mindless, infinite algorithmic doom-scrolling.
+2. **Authentic Communities Over Artificial Engagement**: We never inject fake likes, synthetic follower counts, or deceptive notifications to trick creators into staying online.
+3. **Creator Content Ownership**: Creators own 100% of their words, characters, and stories. Export and deletion options must always remain prominent.
+4. **Creator Wellness Integration**: We actively encourage healthy digital habits through quiet hours and voluntary break reminders (Rule 50).
+5. **Transparency & Trust**: We are transparent about algorithms, moderation reasons, and platform rules. No mysterious shadow-bans.
+6. **Sibling Ecosystem Identity**: WHISPRR is the Social Home where creations live and communities form. CHIMERA is the Creative Studio where worlds, characters, and stories are born. Both share unified identity and design tokens while preserving distinct personalities.
