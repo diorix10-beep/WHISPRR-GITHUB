@@ -63,12 +63,12 @@ export function SideNav() {
   return (
     <div className="flex flex-col h-full relative">
       {/* ── Brand header ────────────────────────────────────── */}
-      <div className="px-5 py-6 border-b border-warm-100 dark:border-warm-800 flex justify-center items-center">
-        <Logo variant="icon-only" size={40} className="shrink-0" />
+      <div className="px-4 py-4 border-b border-warm-200/60 dark:border-warm-800 flex justify-center items-center">
+        <Logo variant="icon-only" size={36} className="shrink-0" />
       </div>
 
       {/* Nav links */}
-      <nav className="flex-1 px-3 py-4 space-y-1" aria-label="Main navigation">
+      <nav className="flex-1 px-2.5 py-3 space-y-0.5" aria-label="Main navigation">
         {visibleNavItems.map((item) => {
           const { path, icon: Icon, label } = item as any;
           const isMessages = label === 'Messages';
@@ -131,10 +131,10 @@ export function SideNav() {
               }}
               end={path === '/' || path === '/profile'}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 ${
+                `flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-medium text-[13px] tracking-[-0.01em] transition-all duration-150 ${
                   isActive
-                    ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
-                    : 'text-warm-600 dark:text-warm-400 hover:bg-warm-100 dark:hover:bg-warm-700 hover:text-warm-900 dark:hover:text-warm-100'
+                    ? 'bg-primary-50 dark:bg-primary-900/25 text-primary-600 dark:text-primary-400 font-semibold'
+                    : 'text-warm-600 dark:text-warm-400 hover:bg-warm-100/80 dark:hover:bg-warm-800/60 hover:text-warm-900 dark:hover:text-warm-100'
                 }`
               }
             >
@@ -147,7 +147,7 @@ export function SideNav() {
 
       {/* User card at bottom with popup menu */}
       {profile && (
-        <div className="px-3 py-4 border-t border-warm-100 dark:border-warm-700 relative" ref={menuRef}>
+        <div className="px-2.5 py-3 border-t border-warm-200/60 dark:border-warm-800 relative" ref={menuRef}>
           {/* Dropdown Popover Menu */}
           {showMenu && (
             <div 

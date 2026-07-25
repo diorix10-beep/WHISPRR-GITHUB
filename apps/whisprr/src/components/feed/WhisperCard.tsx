@@ -572,9 +572,9 @@ export const WhisperCard = memo(function WhisperCard({
   if (isRemoved) return null;
 
   return (
-    <div className="card mb-4 relative">
+    <div className="card mb-3 relative">
       {/* Header */}
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex items-start justify-between mb-2.5">
         {isPinned && (
           <div className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-500 font-bold mb-2 uppercase tracking-wide">
             <Pin size={12} className="rotate-45 fill-current" />
@@ -587,7 +587,7 @@ export const WhisperCard = memo(function WhisperCard({
         >
           <Avatar
             photoUrl={whisperProfile?.photo_url}
-            size="md"
+            size="sm"
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline gap-2">
@@ -682,13 +682,13 @@ export const WhisperCard = memo(function WhisperCard({
       {/* Content */}
       <div
         onClick={handleWhisperClick}
-        className="mb-4 cursor-pointer"
+        className="mb-3 cursor-pointer"
       >
         {renderRichContent(whisper.content)}
       </div>
 
       {/* Reactions */}
-      <div className="flex items-center flex-wrap gap-2 pt-3 border-t border-warm-100 dark:border-warm-700">
+      <div className="flex items-center flex-wrap gap-1.5 pt-2.5 border-t border-warm-100/80 dark:border-warm-800/60">
         <motion.button
           whileTap={{ scale: 0.85 }}
           whileHover={{ scale: 1.05 }}

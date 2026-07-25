@@ -72,20 +72,20 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       <div className="flex flex-1 relative">
         {/* Desktop sidebar (hidden on mobile) */}
-        <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-warm-200 lg:dark:border-warm-700 lg:bg-white lg:dark:bg-warm-800 z-30">
+        <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:w-56 lg:flex-col lg:border-r lg:border-warm-200/60 lg:dark:border-warm-800 lg:bg-white/95 lg:dark:bg-warm-950/95 lg:backdrop-blur-sm z-30">
         <SideNav />
       </aside>
 
         {/* Main content area */}
-        <div className="lg:pl-64 flex flex-col min-h-screen flex-1">
+        <div className="lg:pl-56 flex flex-col min-h-screen flex-1">
           {/* Mobile/tablet header */}
         <header
-          className="sticky top-0 z-30 bg-white/80 dark:bg-warm-800/80
-            backdrop-blur-lg border-b border-warm-100 dark:border-warm-700
-            transition-colors duration-300 lg:hidden"
+          className="sticky top-0 z-30 bg-white/90 dark:bg-warm-950/90
+            backdrop-blur-xl border-b border-warm-200/50 dark:border-warm-800/60
+            transition-colors duration-200 lg:hidden"
           role="banner"
         >
-          <div className="mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between">
+          <div className="mx-auto px-3 sm:px-5 py-2 flex items-center justify-between">
             {/* Left side: App Launcher */}
             <div className="flex items-center gap-3 sm:gap-4 shrink-0 w-12 sm:w-16">
               <button

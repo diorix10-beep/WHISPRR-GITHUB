@@ -101,15 +101,19 @@
 /* Glassmorphism & Premium UI Classes */
 @layer components {
   .card {
-    @apply bg-white/80 dark:bg-warm-850/80 backdrop-blur-xl border border-warm-200/80 dark:border-warm-750/70 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-primary-500/30 dark:hover:border-primary-500/30 transition-all duration-300;
+    @apply bg-white/90 dark:bg-warm-900/80 backdrop-blur-xl border border-warm-200/60 dark:border-warm-800/70 rounded-2xl p-4 shadow-soft hover:shadow-md hover:border-primary-500/20 dark:hover:border-primary-500/20 transition-all duration-200;
+  }
+
+  .page-container {
+    @apply px-4 py-4 sm:px-5 sm:py-5 pb-24 lg:pb-6;
   }
 
   .glass-card {
-    @apply bg-white/80 dark:bg-warm-850/80 backdrop-blur-xl border border-warm-200/70 dark:border-warm-750/70 shadow-sm hover:shadow-md transition-all duration-300;
+    @apply bg-white/90 dark:bg-warm-900/80 backdrop-blur-xl border border-warm-200/60 dark:border-warm-800/70 shadow-soft hover:shadow-md transition-all duration-200;
   }
 
   .glass-card-hover {
-    @apply glass-card hover:-translate-y-0.5 hover:border-primary-500/40 dark:hover:border-primary-500/40 hover:shadow-lg hover:shadow-primary-500/5;
+    @apply glass-card hover:-translate-y-0.5 hover:border-primary-500/30 dark:hover:border-primary-500/30 hover:shadow-lg hover:shadow-primary-500/5;
   }
 
   .btn-primary,
