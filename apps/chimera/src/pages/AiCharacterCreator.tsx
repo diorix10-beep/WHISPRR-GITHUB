@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { checkUserPromptSafety, CRISIS_HELPLINE_INFO } from '../lib/safetyGuard';
 import { UniversalImagePicker } from '../components/common/UniversalImagePicker';
 import { supabase } from '../lib/supabase';
 import { StructuredArchitectureForm } from '../components/character/StructuredArchitectureForm';
@@ -269,9 +270,29 @@ export default function AiCharacterCreator() {
 
     setPublishPipeline({ isActive: true, step: 'saving' });
 
-    // Step 1: Save Draft
+    // Step 1: SafetyGuard Check on Character Data
+    const nameSafety = checkUserPromptSafety(formData.name);
+    const greetingSafety = checkUserPromptSafety(formData.greeting);
+    const personalitySafety = checkUserPromptSafety(formData.personality);
+    const scenarioSafety = checkUserPromptSafety(formData.scenario);
+
+    if (
+      (!nameSafety.isSafe && nameSafety.crisisTriggered) ||
+      (!greetingSafety.isSafe && greetingSafety.crisisTriggered) ||
+      (!personalitySafety.isSafe && personalitySafety.crisisTriggered) ||
+      (!scenarioSafety.isSafe && scenarioSafety.crisisTriggered)
+    ) {
+      setPublishPipeline({
+        isActive: true,
+        step: 'failed',
+        error: `💜 Help is available. Call/text ${CRISIS_HELPLINE_INFO.phone} (${CRISIS_HELPLINE_INFO.name}). Character definitions must not contain real-world self-harm content.`
+      });
+      return;
+    }
+
+    // Step 2: Save Draft
     setTimeout(() => {
-      // Step 2: Validate Character Required Fields
+      // Step 3: Validate Character Required Fields
       setPublishPipeline(prev => ({ ...prev, step: 'validating' }));
       
       if (!formData.name.trim()) {
