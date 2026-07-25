@@ -1,14 +1,13 @@
 -- Migration: 20260726000001_august7_seed_chimera_showcase.sql
--- Description: Seed exemplary CHIMERA showcase creations (Worlds & Lorebooks) matching exact phase2 table schemas
+-- Description: Seed exemplary CHIMERA showcase creations (Worlds & Lorebooks) matching lean guaranteed table schemas
 
 -- 1. Seed Exemplary World
-INSERT INTO public.worlds (user_id, name, description, scenario, tags, visibility, created_at)
+INSERT INTO public.worlds (user_id, name, description, scenario, visibility, created_at)
 SELECT 
   p.user_id, 
   'Aetheria — The Floating Realm', 
   'A grand archipelago of floating islands suspended in a sky of infinite aurora. Powered by ancient Aetherium crystal magic.', 
   'Aetherium crystals power all levitation ships. Skylords govern the high islands while Guild Navigators chart the cloud sea.', 
-  ARRAY['Fantasy', 'Steampunk', 'Worldbuilding'], 
   'public', 
   NOW()
 FROM (SELECT user_id FROM public.profiles LIMIT 1) p
