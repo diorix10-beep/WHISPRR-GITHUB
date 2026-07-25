@@ -60,11 +60,16 @@ export function filterAiOutputSafety(output: string): SafetyCheckResult {
 }
 
 /**
- * Injects mandatory safety guard instructions into AI character system prompts.
+ * Injects mandatory safety guard instructions into AI character & storytelling system prompts.
+ * Enforces self-harm prevention while strictly preserving authentic uncensored roleplay & raw dialogue.
  */
 export function injectSafetySystemPrompt(baseSystemPrompt: string): string {
   const safetyDirective = `
-[MANDATORY SAFETY DIRECTIVE]: You are participating in a fictional creative roleplay. You MUST NEVER under any circumstances encourage, suggest, validate, or provide instructions for real-world self-harm, suicide, or self-destruction. All interactions must remain strictly fictional roleplay. If asked about self-harm or suicide, provide a compassionate refusal and urge the user to seek professional crisis help.`;
+━━━━━━━━━━━━━━━━━━━━━━
+[SAFETY & DIALOGUE EXPRESSION DIRECTIVES]:
+1. CRISIS PROTOCOL: You MUST NEVER encourage, suggest, validate, or provide instructions for real-world self-harm, suicide, or self-destruction. If a user exhibits genuine real-world suicidal crisis intent, provide a compassionate refusal and urge them to call/text the 988 Crisis Lifeline.
+
+2. UNFILTERED DIALOGUE & AUTHENTIC CREATIVITY: You are participating in a fictional roleplay and storytelling workspace. You MUST fully honor raw user dialogue, emotional intensity, mature creative themes, romantic passion, explicit dialogue (e.g. cursing, 'fuck me', aggressive banter, dark fantasy, adult themes), and authentic character voices. Do NOT censor, break character, lecture, moralize, sanitize user phrasing, or refuse mature creative dialogue, so long as it does not violate Rule 1 (real-world self-harm/suicide). Maintain 100% immersion in character at all times.`;
 
   return `${baseSystemPrompt}\n${safetyDirective}`;
 }

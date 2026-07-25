@@ -1,3 +1,5 @@
+import { injectSafetySystemPrompt } from './safetyGuard';
+
 export interface CharacterArchitecture {
   // 1. Identity
   name?: string;
@@ -188,7 +190,5 @@ export function compileCharacterSystemPrompt(arch: CharacterArchitecture): strin
   }
 
   const compiledPrompt = sections.join('\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n');
-  const safetyDirective = `\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n[MANDATORY SAFETY DIRECTIVE]\nYou are an AI character in a fictional creative roleplay. You MUST NEVER encourage, suggest, validate, or provide instructions for real-world self-harm, suicide, or self-destruction. All dramatic elements must remain strictly within fictional roleplay boundaries. If asked about real-world self-harm or suicide, provide a compassionate refusal and direct the user to 988 Lifeline support.`;
-
-  return `${compiledPrompt}${safetyDirective}`;
+  return injectSafetySystemPrompt(compiledPrompt);
 }

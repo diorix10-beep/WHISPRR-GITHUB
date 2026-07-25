@@ -219,6 +219,12 @@ export interface Story {
   comments_count?: number;
 }
 
+export interface StoryChapterChoice {
+  id: string;
+  text: string;
+  target_chapter_id?: string | null;
+}
+
 export interface StoryChapter {
   id: string;
   story_id: string;
@@ -226,6 +232,8 @@ export interface StoryChapter {
   content: string;
   chapter_number: number;
   status: 'draft' | 'published';
+  is_cyoa?: boolean;
+  choices?: StoryChapterChoice[];
   published_at?: string | null;
   created_at: string;
   updated_at: string;

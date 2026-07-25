@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Globe, MoreHorizontal, AlignLeft, Bold, Italic, Underline, Link, Image as ImageIcon, Check, Sparkles, Download, Maximize2, Feather } from 'lucide-react';
+import { ArrowLeft, Save, Globe, MoreHorizontal, AlignLeft, Bold, Italic, Underline, Link, Image as ImageIcon, Check, Sparkles, Download, Maximize2, Feather, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Story, StoryChapter } from '../types';
 import { checkUserPromptSafety, CRISIS_HELPLINE_INFO } from '../lib/safetyGuard';
@@ -22,6 +22,7 @@ export default function ChapterEditorPage() {
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'offline'>('saved');
+  const [choices, setChoices] = useState<{ id: string; text: string; target_chapter_id?: string | null }[]>([]);
 
   // Human-First & AI States
   const [focusMode, setFocusMode] = useState(false);
@@ -43,11 +44,13 @@ export default function ChapterEditorPage() {
     try {
       setLoading(true);
       
-      const { data: storyData } = await supabase
+      const { data: storyData, error: storyErr } = await supabase
         .from('stories')
         .select('*')
         .eq('id', storyId)
         .single();
+
+      if (storyErr) throw storyErr;
       setStory(storyData);
 
       const { data: chapData, error } = await supabase
@@ -61,6 +64,7 @@ export default function ChapterEditorPage() {
       setTitle(chapData.title);
       setContent(chapData.content || '');
       setStatus(chapData.status);
+      setChoices(chapData.choices || []);
 
     } catch (err: any) {
       showToast(err.message || 'Error loading chapter details', 'error');
@@ -89,6 +93,8 @@ export default function ChapterEditorPage() {
         title,
         content,
         status: activeStatus,
+        choices,
+        is_cyoa: choices.length > 0,
         updated_at: new Date().toISOString()
       };
 
@@ -280,10 +286,60 @@ export default function ChapterEditorPage() {
             />
             
             {/* Word Count Footer */}
-            <div className="pt-8 pb-4 text-center">
+            <div className="py-4 text-center">
               <span className="text-xs font-bold text-[#8A8580] dark:text-[#6A6867] uppercase tracking-widest">
                 {wordCount} {wordCount === 1 ? 'Word' : 'Words'}
               </span>
+            </div>
+
+            {/* CYOA Reader Choices Creator */}
+            <div className="mt-6 pt-6 border-t border-[#E5E0D8] dark:border-[#2A2827]">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-warm-900 dark:text-white flex items-center gap-2">
+                  <Sparkles size={16} className="text-red-500" />
+                  <span>Interactive Reader Choices (CYOA)</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setChoices([...choices, { id: `choice-${Date.now()}`, text: '' }])}
+                  className="px-3 py-1.5 rounded-xl bg-red-600/10 hover:bg-red-600/20 text-red-600 text-xs font-bold transition-all border border-red-500/20 flex items-center gap-1"
+                >
+                  <Plus size={14} />
+                  <span>Add Choice</span>
+                </button>
+              </div>
+
+              {choices.length === 0 ? (
+                <p className="text-xs text-warm-400 italic">
+                  No reader choices added. This is a standard narrative chapter. Click "Add Choice" to create branch paths for your readers!
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {choices.map((c, index) => (
+                    <div key={c.id || index} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder={`Choice ${index + 1}: e.g. "Enter the mysterious cavern..."`}
+                        value={c.text}
+                        onChange={(e) => {
+                          const next = [...choices];
+                          next[index].text = e.target.value;
+                          setChoices(next);
+                        }}
+                        className="flex-1 bg-warm-100 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 rounded-xl px-4 py-2 text-xs text-warm-900 dark:text-white focus:outline-none focus:border-red-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setChoices(choices.filter((_, i) => i !== index))}
+                        className="p-2 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors"
+                        title="Remove choice"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

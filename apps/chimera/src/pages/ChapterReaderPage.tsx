@@ -266,6 +266,36 @@ export default function ChapterReaderPage() {
             </p>
           )}
         </article>
+
+        {/* Interactive CYOA Choices */}
+        {chapter.choices && chapter.choices.length > 0 && (
+          <div className="mt-12 pt-8 border-t border-red-500/20">
+            <h3 className="font-serif text-lg font-bold text-warm-900 dark:text-white mb-4 text-center flex items-center justify-center gap-2">
+              <Sparkles size={18} className="text-red-500" />
+              <span>Choose Your Path:</span>
+            </h3>
+            <div className="space-y-3">
+              {chapter.choices.map((choice, idx) => (
+                <button
+                  key={choice.id || idx}
+                  onClick={() => {
+                    if (choice.target_chapter_id) {
+                      navigate(`/story/${storyId}/chapter/${choice.target_chapter_id}`);
+                    } else if (chapNum < totalChapters) {
+                      navigate(`/story/${storyId}/chapter/${chapNum + 1}`);
+                    } else {
+                      showToast('End of path reached! Stay tuned for updates.', 'info');
+                    }
+                  }}
+                  className="w-full text-left p-4 rounded-2xl bg-gradient-to-r from-red-500/10 to-purple-500/10 border border-red-500/30 hover:border-red-500 text-warm-900 dark:text-white font-medium text-sm transition-all hover:scale-[1.01] flex items-center justify-between group shadow-sm"
+                >
+                  <span>{choice.text}</span>
+                  <ChevronRight size={18} className="text-red-500 group-hover:translate-x-1 transition-transform" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Bottom Paging Controller */}
