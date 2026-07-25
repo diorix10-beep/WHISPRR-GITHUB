@@ -278,44 +278,68 @@ export default function FeedPage() {
   const handleReactionChange = () => loadWhispers(feedMode);
 
   return (
-    <div className="page-container">
+    <div className="page-container max-w-2xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="section-title">Your Feed</h1>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-gradient">Your Feed</h1>
+          <p className="text-xs text-warm-500 dark:text-warm-400 mt-0.5">Discover discussions, stories, and updates from creators</p>
+        </div>
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className="p-2 hover:bg-warm-100 dark:hover:bg-warm-700 rounded-full transition-colors disabled:opacity-50"
+          className="p-2.5 bg-white/80 dark:bg-warm-850/80 backdrop-blur-md border border-warm-200/80 dark:border-warm-750/70 hover:border-primary-500/50 rounded-xl transition-all shadow-sm text-warm-600 dark:text-warm-300 disabled:opacity-50"
           aria-label="Refresh feed"
         >
-          <RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} />
+          <RefreshCw size={18} className={isRefreshing ? 'animate-spin text-primary-500' : ''} />
         </button>
       </div>
 
+      {/* Quick Compose Trigger Box */}
+      {user && (
+        <div 
+          onClick={() => setShowCompose(true)}
+          className="glass-card p-4 mb-6 rounded-2xl cursor-pointer hover:border-primary-500/40 transition-all group flex items-center gap-3.5"
+        >
+          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary-600 to-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-primary-500/20 group-hover:scale-105 transition-transform">
+            <Plus size={20} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-warm-400 dark:text-warm-500 group-hover:text-warm-600 dark:group-hover:text-warm-300 transition-colors">
+              Share a whisper, story, or project update...
+            </p>
+          </div>
+          <span className="btn-primary text-xs py-1.5 px-3.5 rounded-xl hidden sm:inline-flex items-center gap-1.5 shadow-sm">
+            <span>Post</span>
+          </span>
+        </div>
+      )}
+
       {/* Feed Mode Toggle */}
-      <div className="flex gap-1 mb-4 bg-warm-100 dark:bg-warm-800 p-1 rounded-xl">
+      <div className="flex gap-1.5 mb-6 bg-white/60 dark:bg-warm-900/60 p-1.5 rounded-2xl backdrop-blur-md border border-warm-200/60 dark:border-warm-750/60 shadow-sm">
         <button
           onClick={() => setFeedMode('for_you')}
-          className={`flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
             feedMode === 'for_you'
-              ? 'bg-white dark:bg-warm-700 text-warm-900 dark:text-warm-50 shadow-sm'
-              : 'text-warm-500 dark:text-warm-400 hover:text-warm-700 dark:hover:text-warm-200'
+              ? 'bg-gradient-to-r from-primary-600 via-purple-600 to-indigo-600 text-white shadow-md shadow-primary-500/25'
+              : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white hover:bg-warm-100/50 dark:hover:bg-warm-800/50'
           }`}
           aria-pressed={feedMode === 'for_you'}
         >
-          {hasInterestData && <Sparkles size={14} className="text-primary-500" />}
-          For You
+          <Sparkles size={15} className={feedMode === 'for_you' ? 'text-white' : 'text-primary-500'} />
+          <span>For You</span>
         </button>
         <button
           onClick={() => setFeedMode('following')}
-          className={`flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-200 ${
+          className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
             feedMode === 'following'
-              ? 'bg-white dark:bg-warm-700 text-warm-900 dark:text-warm-50 shadow-sm'
-              : 'text-warm-500 dark:text-warm-400 hover:text-warm-700 dark:hover:text-warm-200'
+              ? 'bg-gradient-to-r from-primary-600 via-purple-600 to-indigo-600 text-white shadow-md shadow-primary-500/25'
+              : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white hover:bg-warm-100/50 dark:hover:bg-warm-800/50'
           }`}
           aria-pressed={feedMode === 'following'}
         >
-          Following
+          <Users size={15} />
+          <span>Following</span>
         </button>
       </div>
 

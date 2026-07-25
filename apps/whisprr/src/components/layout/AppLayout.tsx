@@ -37,7 +37,12 @@ export function AppLayout({ children }: AppLayoutProps) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-warm-50 dark:bg-warm-900 transition-colors duration-300 flex flex-col">
+    <div className="min-h-screen bg-warm-50 dark:bg-warm-950 text-warm-900 dark:text-warm-100 transition-colors duration-300 flex flex-col relative overflow-x-hidden">
+      {/* Background ambient lighting effects */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-primary-500/5 dark:bg-primary-500/10 rounded-full blur-[140px]" />
+        <div className="absolute bottom-1/3 right-1/4 w-[500px] h-[500px] bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-[130px]" />
+      </div>
       {/* Founder Mode Indicator Banner */}
       {systemSettings?.enabled && isBannerVisible && (
         <div className="bg-primary-600 dark:bg-primary-950 text-white px-4 py-2.5 text-xs font-semibold flex items-center justify-between z-50 relative animate-slide-down border-b border-primary-500/25 flex-shrink-0">
