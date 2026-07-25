@@ -207,9 +207,13 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               <img
                 src="/chimera_logo.png"
                 alt="CHIMERA"
-                className="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow-md group-hover:drop-shadow-lg transition-all"
+                className="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow-md group-hover:scale-105 group-hover:drop-shadow-lg transition-all"
               />
-              <span className="font-serif text-lg sm:text-xl font-bold text-red-600 dark:text-red-500 tracking-wide">
+              <span className={`font-serif text-lg sm:text-xl font-extrabold tracking-wider bg-clip-text text-transparent transition-all duration-300 drop-shadow-sm ${
+                creativeMode === 'storytelling'
+                  ? 'bg-gradient-to-r from-purple-500 via-indigo-400 to-cyan-400'
+                  : 'bg-gradient-to-r from-red-500 via-rose-400 to-amber-400'
+              }`}>
                 CHIMERA
               </span>
             </Link>

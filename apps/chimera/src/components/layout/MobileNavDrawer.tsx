@@ -162,7 +162,11 @@ function MobileNavDrawerContent({
         {/* Header */}
         <div className="p-4 border-b border-warm-200 dark:border-warm-800 flex items-center justify-between bg-warm-50/50 dark:bg-warm-950/50 flex-shrink-0">
           <div className="flex items-center gap-2">
-            <span className={`font-serif text-lg font-bold ${creativeMode === 'storytelling' ? 'text-purple-600 dark:text-purple-400' : 'text-red-600 dark:text-red-500'}`}>
+            <span className={`font-serif text-lg font-extrabold tracking-wider bg-clip-text text-transparent ${
+              creativeMode === 'storytelling'
+                ? 'bg-gradient-to-r from-purple-500 via-indigo-400 to-cyan-400'
+                : 'bg-gradient-to-r from-red-500 via-rose-400 to-amber-400'
+            }`}>
               CHIMERA
             </span>
             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
