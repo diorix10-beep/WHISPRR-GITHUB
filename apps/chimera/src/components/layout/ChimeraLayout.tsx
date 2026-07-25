@@ -187,18 +187,19 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 grid grid-cols-[auto_1fr_auto] lg:grid-cols-[220px_1fr_auto] items-center gap-4">
           
           {/* 1. BLOC GAUCHE — Logo */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="lg:hidden p-2 -ml-1 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
+              title="Open Navigation Menu"
             >
               <Menu size={20} />
             </button>
 
             <button
               onClick={() => setShowAppLauncher(true)}
-              className="hidden lg:block p-2 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
-              title="App Switcher"
+              className="p-2 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
+              title="Ecosystem App Switcher"
             >
               <LayoutGrid size={20} />
             </button>
@@ -207,9 +208,9 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               <img
                 src="/chimera_logo.png"
                 alt="CHIMERA"
-                className="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow-md group-hover:scale-105 group-hover:drop-shadow-lg transition-all"
+                className="w-7 h-7 sm:w-9 sm:h-9 object-contain drop-shadow-md group-hover:scale-105 group-hover:drop-shadow-lg transition-all"
               />
-              <span className={`font-serif text-lg sm:text-xl font-extrabold tracking-wider bg-clip-text text-transparent transition-all duration-300 drop-shadow-sm ${
+              <span className={`font-serif text-base sm:text-xl font-extrabold tracking-wider bg-clip-text text-transparent transition-all duration-300 drop-shadow-sm ${
                 creativeMode === 'storytelling'
                   ? 'bg-gradient-to-r from-purple-500 via-indigo-400 to-cyan-400'
                   : 'bg-gradient-to-r from-red-500 via-rose-400 to-amber-400'
@@ -219,7 +220,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             </Link>
           </div>
 
-          {/* 2. BLOC MILIEU — Navigation (centré, flex-1 min-w-0 pour donner tout l'espace nécessaire) */}
+          {/* 2. BLOC MILIEU — Navigation */}
           <div className="hidden lg:flex flex-1 min-w-0 items-center justify-center px-1 sm:px-2">
             <nav className="flex items-center gap-1 xl:gap-3 whitespace-nowrap shrink-0">
               {renderNavLinks()}
@@ -227,33 +228,33 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
           </div>
 
           {/* 3. BLOC DROITE — Actions */}
-          <div className="flex items-center justify-end gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center justify-end gap-1.5 sm:gap-3 shrink-0">
 
-            {/* Creative Mode Switch Pill */}
-            <div className="hidden lg:flex items-center bg-warm-200/70 dark:bg-warm-800/90 p-1 rounded-2xl border border-warm-200/90 dark:border-warm-750/90 shadow-inner">
+            {/* Creative Mode Switch Pill — Responsive on Mobile & Desktop */}
+            <div className="flex items-center bg-warm-200/70 dark:bg-warm-800/90 p-0.5 sm:p-1 rounded-xl sm:rounded-2xl border border-warm-200/90 dark:border-warm-750/90 shadow-inner">
               <button
                 onClick={() => toggleCreativeMode('roleplay')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 ${
+                className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all duration-300 ${
                   creativeMode === 'roleplay' 
                     ? 'bg-red-600 text-white shadow-md shadow-red-600/30' 
                     : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
                 title="Switch to Roleplay Mode"
               >
-                <MessageSquare size={13} />
-                <span>Roleplay</span>
+                <MessageSquare size={12} className="sm:w-3.5 sm:h-3.5" />
+                <span className="hidden sm:inline">Roleplay</span>
               </button>
               <button
                 onClick={() => toggleCreativeMode('storytelling')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 ${
+                className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all duration-300 ${
                   creativeMode === 'storytelling' 
                     ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30' 
                     : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
                 title="Switch to Storytelling Mode"
               >
-                <PenTool size={13} />
-                <span>Story</span>
+                <PenTool size={12} className="sm:w-3.5 sm:h-3.5" />
+                <span className="hidden sm:inline">Story</span>
               </button>
             </div>
 
