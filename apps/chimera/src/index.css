@@ -254,50 +254,12 @@
     @apply text-xs text-warm-500 dark:text-warm-500 mt-1;
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-     WHISPRR × CHIMERA Layout Foundation v1.0
-     Content Width Tokens — unified layout system
-     ═══════════════════════════════════════════════════════════════ */
-  .content-shell {
-    width: 100%;
-    max-width: var(--content-md, 720px);
-    margin-left: auto;
-    margin-right: auto;
-    padding: 1.25rem 1rem 6rem;
-  }
-
-  @media (min-width: 640px) {
-    .content-shell {
-      padding: 1.5rem 1.25rem 6rem;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .content-shell {
-      padding: 1.5rem 1.5rem 2.5rem;
-    }
-  }
-
-  .content-shell-xs { max-width: 480px; }
-  .content-shell-sm { max-width: 600px; }
-  .content-shell-md { max-width: 720px; }
-  .content-shell-lg { max-width: 900px; }
-  .content-shell-xl { max-width: 1080px; }
-
-  .content-shell-xs,
-  .content-shell-sm,
-  .content-shell-md,
-  .content-shell-lg,
-  .content-shell-xl {
-    @apply content-shell;
-  }
-
   .page-container {
-    @apply content-shell;
+    @apply max-w-3xl mx-auto px-4 sm:px-6 pb-24 lg:pb-8 pt-4;
   }
 
   .section-title {
-    @apply font-serif text-xl font-bold tracking-tight text-warm-900 dark:text-warm-50;
+    @apply font-serif text-2xl font-semibold text-warm-900 dark:text-warm-50;
   }
 
   .safe-bottom {

@@ -411,7 +411,7 @@ export default function AiCharacterCreator() {
       </aside>
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 overflow-y-auto bg-warm-900 pb-24 relative">
+      <main className="flex-1 overflow-y-auto bg-warm-900 pb-36 md:pb-24 relative">
         <div className="max-w-4xl mx-auto p-6 sm:p-10">
           
           {/* Top Mobile Header */}
@@ -864,7 +864,7 @@ export default function AiCharacterCreator() {
       </main>
 
       {/* FLOATING ACTION BAR */}
-      <div className="fixed bottom-0 left-0 right-0 md:left-64 bg-warm-900 border-t border-warm-800 p-4 px-6 flex justify-between items-center z-50">
+      <div className="fixed bottom-0 left-0 right-0 md:left-64 bg-warm-900/95 backdrop-blur-sm border-t border-warm-800 px-4 sm:px-6 z-50" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 16px)', paddingTop: '12px' }}>
         <div className="flex items-center gap-4 text-xs text-warm-500">
           <span className="flex items-center gap-1.5">
             <span className={`w-2 h-2 rounded-full ${saveStatus === 'offline' ? 'bg-red-500' : saveStatus === 'saving' ? 'bg-yellow-500 animate-pulse' : 'bg-emerald-500'}`}></span>

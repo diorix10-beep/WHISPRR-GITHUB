@@ -220,7 +220,9 @@ export default function DiscoverPage() {
       c.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (c.bio && c.bio.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    const matchesCategory = selectedCategory === 'All' || true;
+    const matchesCategory = selectedCategory === 'All' || 
+      (c.mood && c.mood.toLowerCase() === selectedCategory.toLowerCase()) ||
+      (c.interests && (c.interests as string[]).some(i => i.toLowerCase() === selectedCategory.toLowerCase()));
     return matchesSearch && matchesCategory;
   });
 
@@ -496,9 +498,10 @@ export default function DiscoverPage() {
               <RichEmptyState
                 icon={Users}
                 title="No characters found"
-                description="Try clearing your search filters or create the first character!"
-                actionLabel="Create Character"
-                onAction={() => navigate('/studio')}
+                description={searchQuery || selectedCategory !== 'All' ? `No characters match "${searchQuery || selectedCategory}". Try clearing your filters or exploring another category.` : "Start building the first AI character for the CHIMERA multiverse!"}
+                actionLabel={searchQuery || selectedCategory !== 'All' ? "Clear Search & Filters" : "Create Character"}
+                onAction={searchQuery || selectedCategory !== 'All' ? () => { setSearchQuery(''); setSelectedCategory('All'); } : () => navigate('/studio')}
+                onSelectCategory={(cat) => setSelectedCategory(cat)}
               />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -547,10 +550,12 @@ export default function DiscoverPage() {
             filteredStories.length === 0 ? (
               <RichEmptyState
                 icon={BookOpen}
+                accentColor="purple"
                 title="No stories found"
-                description="Try clearing your search query or publish the first story!"
-                actionLabel="Write Story"
-                onAction={() => navigate('/write/desk')}
+                description={searchQuery || selectedCategory !== 'All' ? `No stories match "${searchQuery || selectedCategory}". Try clearing your search query or exploring a different genre.` : "Publish the first original story or saga on CHIMERA!"}
+                actionLabel={searchQuery || selectedCategory !== 'All' ? "Clear Search & Filters" : "Write Story"}
+                onAction={searchQuery || selectedCategory !== 'All' ? () => { setSearchQuery(''); setSelectedCategory('All'); } : () => navigate('/write/desk')}
+                onSelectCategory={(cat) => setSelectedCategory(cat)}
               />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

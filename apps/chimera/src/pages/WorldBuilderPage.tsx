@@ -219,21 +219,21 @@ export default function WorldBuilderPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <button onClick={() => navigate('/worlds')} className="p-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 transition">
+      <div className="flex items-center gap-3">
+        <button onClick={() => navigate('/worlds')} className="p-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 transition shrink-0">
           <ArrowLeft size={20} className="text-warm-500" />
         </button>
-        <div className="flex-1">
-          <h1 className="text-xl font-serif font-bold text-warm-900 dark:text-warm-50">{world.name}</h1>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-base sm:text-xl font-serif font-bold text-warm-900 dark:text-warm-50 truncate">{world.name}</h1>
           <p className="text-xs text-warm-400 mt-0.5">World Builder</p>
         </div>
         <button
           onClick={handleSaveOverview}
           disabled={saving}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 disabled:opacity-50 shadow-md shadow-purple-600/20 transition-all"
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 disabled:opacity-50 shadow-md shadow-purple-600/20 transition-all shrink-0"
         >
           <Save size={14} />
-          {saving ? 'Saving...' : 'Save'}
+          <span className="hidden xs:inline">{saving ? 'Saving...' : 'Save'}</span>
         </button>
       </div>
 
@@ -259,7 +259,7 @@ export default function WorldBuilderPage() {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-white dark:bg-warm-800 rounded-2xl border border-warm-200 dark:border-warm-750 p-6">
+      <div className="bg-white dark:bg-warm-800 rounded-2xl border border-warm-200 dark:border-warm-750 p-4 sm:p-6">
         {/* OVERVIEW */}
         {activeTab === 'overview' && (
           <div className="space-y-5">
@@ -494,12 +494,12 @@ export default function WorldBuilderPage() {
           <div className="space-y-5">
             <div>
               <label className="block text-xs font-semibold text-warm-600 dark:text-warm-400 mb-1.5 uppercase tracking-wider">Visibility</label>
-              <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
                 {(['private', 'unlisted', 'public'] as const).map(v => (
                   <button
                     key={v}
                     onClick={() => setVisibility(v)}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                       visibility === v
                         ? 'bg-purple-600 text-white shadow-sm font-bold'
                         : 'bg-warm-100 dark:bg-warm-750 text-warm-600 dark:text-warm-400 hover:bg-warm-200'
