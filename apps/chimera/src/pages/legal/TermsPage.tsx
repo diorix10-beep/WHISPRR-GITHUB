@@ -25,9 +25,9 @@ export default function TermsPage() {
       </section>
 
       <section>
-        <h2>4. Self-Harm Disclaimer & Roleplay Boundaries</h2>
+        <h2>4. Automated Safety Guard Bot & Roleplay Boundaries</h2>
         <p>
-          CHIMERA has absolute zero tolerance for real-world self-harm or suicide encouragement. All character interactions, narrative themes, and dramatic elements produced by AI models exist strictly as fictional creative roleplay within the bounds of interactive storytelling. AI characters are artificial entities and are not qualified to provide mental health support, medical guidance, or crisis intervention. If you or someone you know is experiencing distress, please reach out to a professional crisis helpline (such as calling or texting 988 in the US/Canada, or your local emergency services).
+          CHIMERA operates an Automated Safety Guard Bot that scans user prompts and AI responses in real time. The Safety Guard Bot enforces zero tolerance for real-world self-harm or suicide encouragement by filtering unsafe outputs and automatically directing users in distress to professional crisis helplines. All character interactions, dark narrative themes, and dramatic elements produced by AI models exist strictly as fictional creative roleplay within interactive storytelling. AI characters are artificial entities and are prohibited from giving real-world self-harm instructions or mental health advice. If you or someone you know is experiencing distress, please call or text the 988 Suicide & Crisis Lifeline (or your local emergency services).
         </p>
       </section>
 

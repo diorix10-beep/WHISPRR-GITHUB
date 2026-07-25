@@ -23,7 +23,7 @@ export default function TermsPage() {
           We expect our users to treat each other with respect. The following behaviors are strictly prohibited:
         </p>
         <ul>
-          <li><strong>Self-Harm & Suicide Encouragement:</strong> Real-world self-harm, suicide encouragement, or providing self-harm instructions is strictly prohibited. All dark or dramatic character interactions must remain strictly within fictional creative roleplay.</li>
+          <li><strong>Self-Harm & Suicide Encouragement:</strong> Real-world self-harm, suicide encouragement, or providing self-harm instructions is strictly prohibited. An Automated Safety Guard Bot actively filters inputs/outputs and directs users in crisis to 988 Lifeline support. All character interactions must remain strictly within fictional creative roleplay.</li>
           <li><strong>Harassment & Bullying:</strong> Targeting individuals for sustained harassment, doxxing, or coordinating attacks.</li>
           <li><strong>Hate Speech:</strong> Promoting violence, inciting hatred, or using slurs based on race, ethnicity, religion, disability, or sexual orientation.</li>
           <li><strong>Spam & Manipulation:</strong> Using automated scripts, fake accounts, or misleading tactics to artificially inflate engagement or disrupt conversations.</li>

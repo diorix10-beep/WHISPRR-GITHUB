@@ -27,6 +27,7 @@ import { LanguageSelectorModal } from '../components/common/LanguageSelectorModa
 import { SUPPORTED_LANGUAGES, translateText } from '../services/translationEngine';
 import { createInitialMemoryNexusState, autoExtractMemoriesIfNeeded, formatMemoryNexusPromptContext } from '../services/memoryNexus';
 import { scanAndMatchLorebookEntries, parseJanitorLorebookJson, parseOocMessage } from '../services/lorebookEngine';
+import { checkUserPromptSafety, CRISIS_HELPLINE_INFO } from '../lib/safetyGuard';
 import { useChatAesthetics } from '../hooks/useChatAesthetics';
 import { useVoice } from '../hooks/useVoice';
 import { Paperclip, AudioWaveform, Brain, Gamepad2, Users, Globe, UserCheck } from 'lucide-react';
@@ -419,6 +420,15 @@ export default function ConversationPage() {
     if (!user || !conversationId || (!messageInput.trim() && !imageFile)) return;
 
     let content = messageInput.trim();
+
+    // Check Safety Guard for self-harm/suicide intent
+    const safetyCheck = checkUserPromptSafety(content);
+    if (!safetyCheck.isSafe && safetyCheck.crisisTriggered) {
+      showToast(`💜 Help is available. Call/text ${CRISIS_HELPLINE_INFO.phone} (${CRISIS_HELPLINE_INFO.name}). You are not alone.`, 'error');
+      setMessageInput('');
+      return;
+    }
+
     if (isOocMode && content && !content.startsWith('(OOC:') && !content.startsWith('[OOC:')) {
       content = `(OOC: ${content})`;
     }
