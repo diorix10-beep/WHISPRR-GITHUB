@@ -506,6 +506,36 @@ export default function ShardsPage() {
               <div className="text-xl font-bold text-emerald-400 font-serif">$0.00 USD</div>
             </div>
           </div>
+
+          {/* Recent Transaction Log */}
+          <div className="pt-4 border-t border-white/10 space-y-3">
+            <div className="text-xs font-bold uppercase tracking-wider text-warm-400">Recent Activity</div>
+            <div className="space-y-2">
+              {[
+                { title: 'Welcome Gift', amount: '+20 SHARDS', type: 'earn', time: 'Initial Bonus' },
+                ...(dailyClaimed ? [{ title: 'Daily Login Reward', amount: '+5 SHARDS', type: 'earn', time: 'Today' }] : []),
+                ...(adCount > 0 ? [{ title: `Rewarded Ads Watched (${adCount})`, amount: `+${adCount * 5} SHARDS`, type: 'earn', time: 'Today' }] : []),
+                ...(adFreePassActive ? [{ title: '30-Day VIP No-Ads Pass', amount: '-20 SHARDS', type: 'spend', time: 'Active' }] : [])
+              ].map((tx, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3.5 rounded-2xl bg-black/30 border border-white/5 text-xs">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
+                      tx.type === 'earn' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                    }`}>
+                      {tx.type === 'earn' ? '✦' : '👑'}
+                    </div>
+                    <div>
+                      <div className="font-bold text-white">{tx.title}</div>
+                      <div className="text-[10px] text-warm-400">{tx.time}</div>
+                    </div>
+                  </div>
+                  <span className={`font-mono font-bold text-sm ${tx.type === 'earn' ? 'text-cyan-400' : 'text-purple-300'}`}>
+                    {tx.amount}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
       </div>

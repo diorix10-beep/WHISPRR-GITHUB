@@ -92,17 +92,29 @@ export default function VoiceRoomsPage() {
 
       {/* Voice Rooms List */}
       {voiceRooms.length === 0 ? (
-        <div className="card flex flex-col items-center justify-center py-12 text-center">
-          <div className="text-4xl mb-4">🎙️</div>
-          <p className="text-warm-600 mb-2">No active voice rooms</p>
-          <p className="text-sm text-warm-500">
-            Create a voice room to start connecting with others
-          </p>
+        <div className="rounded-3xl border border-warm-100 dark:border-warm-800 bg-white dark:bg-warm-850 p-8 sm:p-12 text-center max-w-xl mx-auto shadow-sm space-y-6 animate-fade-in">
+          <div className="relative w-20 h-20 mx-auto rounded-3xl bg-gradient-to-br from-primary-500/15 via-purple-500/10 to-indigo-500/10 flex items-center justify-center border border-primary-200 dark:border-primary-800/40 shadow-inner">
+            <span className="text-4xl">🎙️</span>
+            <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-[10px] text-white font-black border-2 border-white dark:border-warm-850">
+              LIVE
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="font-serif text-2xl font-extrabold text-warm-900 dark:text-white">
+              No Active Voice Stages
+            </h2>
+            <p className="text-sm text-warm-500 dark:text-warm-400 leading-relaxed max-w-sm mx-auto font-medium">
+              Host live story table-reads, AI roleplay listening lounges, or creator Q&amp;A sessions in real time.
+            </p>
+          </div>
+
           <button
             onClick={() => setShowCreateModal(true)}
-            className="btn-primary mt-4 py-2 px-6"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-purple-600 text-white font-bold text-sm rounded-2xl shadow-lg shadow-primary-500/25 hover:shadow-primary-500/35 hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
-            Create Room
+            <Plus size={16} />
+            Start First Voice Stage
           </button>
         </div>
       ) : (
