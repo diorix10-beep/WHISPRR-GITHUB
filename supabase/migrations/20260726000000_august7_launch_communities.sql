@@ -9,7 +9,7 @@ SELECT
   c.category, 
   c.emoji, 
   c.is_featured, 
-  p.id AS owner_id, 
+  u.id AS owner_id, 
   NOW()
 FROM (
   VALUES 
@@ -47,6 +47,6 @@ FROM (
     )
 ) AS c(name, description, interest, category, emoji, is_featured)
 CROSS JOIN (
-  SELECT id FROM public.profiles LIMIT 1
-) AS p
+  SELECT id FROM auth.users LIMIT 1
+) AS u
 ON CONFLICT DO NOTHING;
