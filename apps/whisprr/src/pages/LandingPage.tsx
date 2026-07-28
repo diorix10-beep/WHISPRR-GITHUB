@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
-import { Logo } from '../components/common/Logo';
+import { WhisprLogo } from '../components/common/Logo';
 import { ChimeraLogo } from '../components/common/ChimeraLogo';
 
 // ─── Brand Logo imported from common components ────────────────────────────────
@@ -171,6 +171,26 @@ export default function LandingPage() {
         .lp-fg { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
         .lp-ec { flex: 1; min-width: 280px; border-radius: 28px; padding: 40px 36px; backdrop-filter: blur(16px); transition: transform 0.3s ease; }
         .lp-ec:hover { transform: translateY(-6px); }
+        .lp-hero-logo {
+          height: 116px;
+          width: auto;
+          margin: 0 auto 32px;
+          display: block;
+          filter: drop-shadow(0 0 45px rgba(168,85,247,0.45));
+          transition: all 0.3s ease;
+        }
+        @media (max-width: 1024px) {
+          .lp-hero-logo {
+            height: 88px;
+            margin-bottom: 24px;
+          }
+        }
+        @media (max-width: 640px) {
+          .lp-hero-logo {
+            height: 64px;
+            margin-bottom: 20px;
+          }
+        }
         @media (max-width: 768px) {
           .lp-sec { padding: 64px 20px; }
           .lp-ecw { flex-direction: column !important; }
@@ -210,7 +230,7 @@ export default function LandingPage() {
             : 'bg-transparent'
         }`}>
           <div className="max-w-6xl mx-auto flex items-center justify-between h-16 sm:h-20">
-            <Logo variant="icon-only" size={28} />
+            <WhisprLogo size={42} />
             
             <div className="hidden md:flex items-center gap-8">
               <a href="#ecosystem" className="text-sm font-medium text-white/70 hover:text-white transition-colors">Ecosystem</a>
@@ -246,6 +266,11 @@ export default function LandingPage() {
           <span className="lp-sp5" style={{ position: 'absolute', bottom: '32%', right: '14%', fontSize: 12, color: '#c084fc', opacity: 0.4, pointerEvents: 'none' }}>✦</span>
 
           <div className="lp-con" style={{ maxWidth: 860 }}>
+            {/* Prominent WHISPRR Brand Anchor Logo */}
+            <div className="lp-a1 flex justify-center">
+              <WhisprLogo className="lp-hero-logo" />
+            </div>
+
             {/* Badge */}
             <div className="lp-a1" style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -333,7 +358,7 @@ export default function LandingPage() {
                 boxShadow: '0 0 60px rgba(168,85,247,0.08)',
               }}>
                 <div style={{ marginBottom: 24 }}>
-                  <Logo variant="icon-only" size={44} />
+                  <WhisprLogo size={64} />
                 </div>
                 <div style={{ display: 'inline-block', padding: '4px 12px', borderRadius: 100, background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.3)', fontSize: 11, fontWeight: 700, color: '#d8b4fe', marginBottom: 16, letterSpacing: '0.08em' }}>
                   WHISPRR
