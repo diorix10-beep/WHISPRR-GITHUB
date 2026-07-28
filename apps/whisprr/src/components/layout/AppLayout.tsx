@@ -108,7 +108,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               className="flex-1 flex justify-center items-center cursor-pointer" 
               onClick={() => navigate('/feed')}
             >
-              <Logo variant="icon-only" size={32} className="shrink-0" />
+              <Logo variant="icon-only" size={48} className="shrink-0 transition-transform duration-200 hover:scale-105" />
             </div>
 
             {/* Right side: Actions */}

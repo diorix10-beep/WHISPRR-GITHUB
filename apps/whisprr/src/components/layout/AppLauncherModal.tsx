@@ -6,6 +6,7 @@ import {
   ArrowUpRight, Zap
 } from 'lucide-react';
 import { ChimeraLogo } from '../common/ChimeraLogo';
+import { Logo } from '../common/Logo';
 
 interface AppLauncherModalProps {
   isOpen: boolean;
@@ -116,7 +117,7 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
                   }`}
                 >
                   <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-indigo-600 flex items-center justify-center shadow-md shadow-primary-500/30">
-                    <Zap size={16} className="text-white" fill="white" />
+                    <Logo variant="icon-only" size={24} />
                   </div>
                   <div>
                     <div className="text-sm font-bold text-warm-900 dark:text-warm-50 group-hover:text-primary-700 dark:group-hover:text-primary-300 transition-colors leading-none">

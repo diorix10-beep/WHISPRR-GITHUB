@@ -408,7 +408,7 @@ export default function AuthPage() {
 
             {/* Logo + tagline */}
             <div>
-              <WhisprLogo size={40} />
+              <WhisprLogo size={68} />
               <p style={{ color: '#c084fc', fontWeight: 700, fontSize: 20, marginTop: 12, letterSpacing: '-0.2px' }}>
                 The Home of Creators.
               </p>
@@ -473,7 +473,7 @@ export default function AuthPage() {
             {/* Mobile logo */}
             <style>{`@media (min-width: 1024px) { .auth-mobile-logo { display: none !important; } }`}</style>
             <div className="auth-mobile-logo" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 32 }}>
-              <WhisprLogo size={36} />
+              <WhisprLogo size={60} />
               <p style={{ color: '#c084fc', fontWeight: 600, fontSize: 13, marginTop: 8 }}>The Home of Creators.</p>
             </div>
 

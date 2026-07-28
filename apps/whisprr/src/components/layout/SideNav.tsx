@@ -63,8 +63,8 @@ export function SideNav() {
   return (
     <div className="flex flex-col h-full relative">
       {/* ── Brand header ────────────────────────────────────── */}
-      <div className="px-4 py-4 border-b border-warm-200/60 dark:border-warm-800 flex justify-center items-center">
-        <Logo variant="icon-only" size={36} className="shrink-0" />
+      <div className="px-4 py-5 border-b border-[var(--border-default-color)] flex justify-center items-center">
+        <Logo variant="icon-only" size={56} className="shrink-0 transition-transform duration-200 hover:scale-105" />
       </div>
 
       {/* Nav links */}

@@ -2,10 +2,10 @@ export type LogoVariant = 'primary' | 'light' | 'dark' | 'icon-only';
 
 /**
  * WhisprLogo — Official WHISPRR Single Source of Truth Brand Logo.
- * Uses the exact provided brand asset image file.
+ * Renders high-DPI crisp brand asset image with strong visual presence.
  */
 export function WhisprLogo({
-  size = 40,
+  size = 56,
   wordmark = true,
   className = '',
 }: {
@@ -22,15 +22,19 @@ export function WhisprLogo({
       alt="WHISPRR Logo"
       width={width}
       height={size}
-      className={`object-contain inline-block select-none ${className}`}
-      style={{ height: `${size}px`, width: wordmark ? 'auto' : `${size}px` }}
+      className={`object-contain inline-block select-none transition-all duration-200 hover:opacity-95 ${className}`}
+      style={{
+        height: `${size}px`,
+        width: wordmark ? 'auto' : `${size}px`,
+        maxWidth: '100%',
+      }}
     />
   );
 }
 
-/** Logo — backward-compatible alias pointing to the official brand mark asset. */
+/** Logo — backward-compatible alias pointing to official brand mark asset. */
 export function Logo({
-  size = 32,
+  size = 52,
   variant = 'primary',
   className = '',
 }: {
