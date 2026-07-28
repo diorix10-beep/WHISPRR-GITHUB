@@ -673,8 +673,7 @@ export default function ProfilePage() {
 
       <div className="content-shell content-shell-lg">
         {isEditMode ? (
-          // Edit Mode
-          <div className="bg-white dark:bg-warm-800 rounded-3xl shadow-sm p-6 sm:p-8 -mt-12 relative z-10 border border-warm-100 dark:border-warm-800 mb-8 space-y-6">
+          <div className="bg-white/95 dark:bg-warm-900/90 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 -mt-12 relative z-10 border border-[var(--border-default-color)] shadow-soft dark:shadow-none mb-8 space-y-6">
             <div className="flex items-center justify-between mb-2">
               <h1 className="font-serif text-2xl font-bold text-warm-900 dark:text-warm-50">Edit Profile</h1>
               <button

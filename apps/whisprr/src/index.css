@@ -4,14 +4,28 @@
 
 @layer base {
   :root {
-    /* Theme-aware Text Colors (Light Mode) */
+    /* ── Surface Tokens (Light Mode — Crisp, Elevated, Accessible) ── */
+    --surface-primary:      #F7F6F2;  /* Page canvas background              */
+    --surface-secondary:    #FFFFFF;  /* Cards, containers & modals          */
+    --surface-tertiary:     #F3F1EA;  /* Input fields, select boxes, chips   */
+    --surface-input:        #F3F1EA;  /* Dedicated theme-aware input bg      */
+    --surface-elevated:     #FFFFFF;  /* Hovered cards & elevated dropdowns  */
+
+    --text-primary-color:   #151412;  /* Heading & main body text (14:1)     */
+    --text-secondary-color: #47433C;  /* Secondary text / dates / handles    */
+    --text-subtle-color:    #706B62;  /* Captions & subtle icons             */
+
+    --border-default-color: #E2DFD7;  /* Defined, visible card border        */
+    --border-subtle-color:  #ECEAE3;  /* Subtle dividers                     */
+
+    /* Theme-aware Text Color mappings (Light Mode) */
     --text-warm-50:  #282520;
     --text-warm-100: #302D28;
     --text-warm-200: #3D3933;
     --text-warm-300: #47433C;
-    --text-warm-400: #565148;
-    --text-warm-500: #706B62;
-    --text-warm-600: #282520;
+    --text-warm-400: #565148;  /* Elevated for 7:1+ contrast in light */
+    --text-warm-500: #47433C;  /* Elevated for high contrast in light */
+    --text-warm-600: #302D28;
     --text-warm-700: #1E1B17;
     --text-warm-750: #151412;
     --text-warm-800: #151412;
@@ -44,7 +58,21 @@
   }
 
   .dark {
-    /* Theme-aware Text Colors (Dark Mode) */
+    /* ── Surface Tokens (Dark Mode — Deep Charcoal, Glassy, Elevated) ── */
+    --surface-primary:      #151412;  /* Deep warm charcoal page canvas      */
+    --surface-secondary:    #1E1B17;  /* Cards, containers & modals          */
+    --surface-tertiary:     #282520;  /* Input fields, select boxes, chips   */
+    --surface-input:        #282520;  /* Dedicated theme-aware input bg      */
+    --surface-elevated:     #302D28;  /* Hovered cards & elevated dropdowns  */
+
+    --text-primary-color:   #FAFAF8;  /* Heading & main body text            */
+    --text-secondary-color: #D9D5CB;  /* Secondary text / dates / handles    */
+    --text-subtle-color:    #B8B3A7;  /* Captions & subtle icons             */
+
+    --border-default-color: rgba(255, 255, 255, 0.10);
+    --border-subtle-color:  rgba(255, 255, 255, 0.05);
+
+    /* Theme-aware Text Color mappings (Dark Mode) */
     --text-warm-50:  #FAFAF8;
     --text-warm-100: #F5F4F0;
     --text-warm-200: #ECEAE3;
@@ -84,23 +112,17 @@
   }
 
   body {
-    @apply bg-warm-50 text-warm-900 font-sans antialiased selection:bg-primary-500/20 selection:text-primary-500;
+    @apply bg-[var(--surface-primary)] text-warm-900 dark:text-warm-50 font-sans antialiased selection:bg-primary-500/20 selection:text-primary-500 transition-colors duration-300;
     -webkit-tap-highlight-color: transparent;
   }
 
-  .dark body,
-  .dark {
-    @apply bg-warm-950 text-warm-100;
-  }
-
   *:focus-visible {
-    @apply outline-none ring-2 ring-primary-500/80 ring-offset-2 ring-offset-warm-50 dark:ring-offset-warm-950;
+    @apply outline-none ring-2 ring-primary-500/80 ring-offset-2 ring-offset-[var(--surface-primary)];
   }
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   WHISPRR Layout Foundation v1.0
-   Content Width Tokens — the permanent layout system
+   WHISPRR Layout Foundation & Surface Classes
    ═══════════════════════════════════════════════════════════════ */
 :root {
   --content-xs:   480px;  /* narrow dialogs, reply threads         */
@@ -112,20 +134,30 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   Glassmorphism & Premium UI Classes
+   Glassmorphism, Card & Form Components
    ═══════════════════════════════════════════════════════════════ */
 @layer components {
-  /* ── Cards ──────────────────────────────────────────────────── */
+  /* ── Cards & Containers ─────────────────────────────────────── */
   .card {
-    @apply bg-white/90 dark:bg-warm-900/80 backdrop-blur-xl border border-warm-200/60 dark:border-warm-800/70 rounded-2xl p-4 shadow-soft hover:shadow-md hover:border-primary-500/20 dark:hover:border-primary-500/20 transition-all duration-200;
+    @apply bg-white dark:bg-warm-900/90 backdrop-blur-xl border border-[var(--border-default-color)] rounded-2xl p-4 shadow-soft dark:shadow-none hover:border-primary-500/30 transition-all duration-200;
   }
 
   .glass-card {
-    @apply bg-white/90 dark:bg-warm-900/80 backdrop-blur-xl border border-warm-200/60 dark:border-warm-800/70 shadow-soft hover:shadow-md transition-all duration-200;
+    @apply bg-white/95 dark:bg-warm-900/85 backdrop-blur-xl border border-[var(--border-default-color)] shadow-soft dark:shadow-none transition-all duration-200;
   }
 
   .glass-card-hover {
-    @apply glass-card hover:-translate-y-0.5 hover:border-primary-500/30 dark:hover:border-primary-500/30 hover:shadow-lg hover:shadow-primary-500/5;
+    @apply glass-card hover:-translate-y-0.5 hover:border-primary-500/40 dark:hover:border-primary-500/40 hover:shadow-md;
+  }
+
+  /* ── Input Fields — Theme Aware Layered Surface ────────────── */
+  .input-field {
+    @apply w-full rounded-xl px-3.5 py-2.5 text-sm font-medium
+           bg-[var(--surface-input)] text-warm-900 dark:text-warm-50
+           border border-[var(--border-default-color)]
+           placeholder:text-warm-400 dark:placeholder:text-warm-500
+           focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500
+           transition-all duration-200;
   }
 
   /* ── Content Shell — universal page content container ────────
