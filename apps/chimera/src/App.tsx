@@ -10,6 +10,8 @@ import { ChimeraPlaceholderPage } from './components/common/ChimeraPlaceholderPa
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { PublicOnlyRoute } from './components/common/PublicOnlyRoute';
 import { ReloadPrompt } from './components/common/ReloadPrompt';
+import { PwaInstallBanner } from './components/common/PwaInstallBanner';
+import { OfflineStatusToast } from './components/common/OfflineStatusToast';
 import { EcosystemMaintenancePage } from './pages/EcosystemMaintenancePage';
 
 // ── Auth & Onboarding ──────────────────────────────────────
@@ -267,6 +269,8 @@ function App() {
             <AuthProvider>
               <ProjectProvider>
                 <ReloadPrompt />
+                <OfflineStatusToast />
+                <PwaInstallBanner />
                 <AppLoader />
               </ProjectProvider>
             </AuthProvider>

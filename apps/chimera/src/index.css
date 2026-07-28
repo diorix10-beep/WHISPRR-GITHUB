@@ -234,13 +234,12 @@
   }
 
   .input-field {
-    @apply w-full rounded-xl px-3.5 py-2.5 text-sm font-medium
-      bg-warm-100/70 text-warm-900 border border-warm-300/80
-      placeholder:text-warm-400
-      focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500
+    @apply w-full bg-warm-50 border border-warm-300 rounded-2xl px-4 py-3
+      text-warm-900 placeholder:text-warm-400
+      focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent
       transition-all duration-200
-      dark:bg-warm-850/80 dark:border-warm-700/80 dark:text-warm-50
-      dark:placeholder:text-warm-500;
+      dark:bg-warm-800 dark:border-warm-600 dark:text-warm-100
+      dark:placeholder:text-warm-500 dark:focus:ring-primary-500;
   }
 
   .input-field-error {

@@ -3,15 +3,16 @@ import {
   Sparkles, Crown, Play, CheckCircle2, Plus, ArrowRight,
   Loader2, ShieldCheck, Flame, Image as ImageIcon, Volume2, Zap,
   Gift, TrendingUp, Wallet, DollarSign, Award, Check, ExternalLink,
-  ChevronRight, Heart, Star, Lock
+  ChevronRight, Heart, Star, Lock, Share2
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { ShardsHubModal } from '../components/common/ShardsHubModal';
+import { ShareModal } from '../components/common/ShareModal';
 import { ShardCrystalImage } from '../components/common/ShardCrystalImage';
 
 export default function ShardsPage() {
-  const { shardsBalance, earnShards, spendShards, adFreePassActive, activateAdFreePass } = useAuth();
+  const { profile, shardsBalance, earnShards, spendShards, adFreePassActive, activateAdFreePass } = useAuth();
   const { showToast } = useToast();
 
   const [showBuyModal, setShowBuyModal] = useState(false);
@@ -19,6 +20,7 @@ export default function ShardsPage() {
   const [adSecondsLeft, setAdSecondsLeft] = useState(5);
   const [adCount, setAdCount] = useState(0);
   const [dailyClaimed, setDailyClaimed] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // Rewarded Video Ad Timer
   useEffect(() => {
@@ -330,6 +332,28 @@ export default function ShardsPage() {
               )}
             </div>
 
+            {/* Card 4: Invite Creators Referral */}
+            <div className="p-7 rounded-3xl bg-warm-900/60 backdrop-blur-xl border border-white/10 hover:border-emerald-500/40 transition-all flex flex-col justify-between space-y-6">
+              <div className="space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <Share2 size={24} />
+                </div>
+                <h3 className="font-serif text-xl font-bold text-white">Invite Creator Friends</h3>
+                <p className="text-xs text-warm-300 leading-relaxed">
+                  Earn +50 SHARDS for every creator friend who joins CHIMERA using your referral link.
+                </p>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  onClick={() => setIsShareModalOpen(true)}
+                  className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2"
+                >
+                  <Share2 size={16} />
+                  <span>Share Referral Link (+50 SHARDS)</span>
+                </button>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -542,6 +566,16 @@ export default function ShardsPage() {
 
       {/* Buy Shards Modal */}
       <ShardsHubModal isOpen={showBuyModal} onClose={() => setShowBuyModal(false)} />
+
+      {/* Creator Referral Share Modal */}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        title="Join CHIMERA - Interactive AI Creation Platform"
+        description="Build AI characters, write interactive novels, and earn real revenue with SHARDS!"
+        url={`${window.location.origin}/auth?ref=${profile?.username || 'creator'}`}
+        type="referral"
+      />
     </div>
   );
 }
