@@ -30,6 +30,7 @@ import { scanAndMatchLorebookEntries, parseJanitorLorebookJson, parseOocMessage 
 import { checkUserPromptSafety, CRISIS_HELPLINE_INFO } from '../lib/safetyGuard';
 import { useChatAesthetics } from '../hooks/useChatAesthetics';
 import { useVoice } from '../hooks/useVoice';
+import { RoleplaySafetyPauseCard } from '../components/chat/RoleplaySafetyPauseCard';
 import { Paperclip, AudioWaveform, Brain, Gamepad2, Users, Globe, UserCheck } from 'lucide-react';
 
 interface MessageWithProfile extends Message {
@@ -77,6 +78,9 @@ export default function ConversationPage() {
   const [showExporterModal, setShowExporterModal] = useState(false);
   const [targetLang, setTargetLang] = useState('en');
   const [showLangModal, setShowLangModal] = useState(false);
+
+  // Roleplay Safety Intervention State
+  const [isRoleplayPaused, setIsRoleplayPaused] = useState(false);
 
   // Lorebook & Janitor AI Engine State
   const [lorebookEntries, setLorebookEntries] = useState<LorebookEntry[]>([
@@ -421,13 +425,19 @@ export default function ConversationPage() {
 
     let content = messageInput.trim();
 
-    // Check Safety Guard for self-harm/suicide intent
+    // Check Safety Guard for self-harm/suicide or severe policy violations
     const safetyCheck = checkUserPromptSafety(content);
-    if (!safetyCheck.isSafe && safetyCheck.crisisTriggered) {
-      showToast(`💜 Help is available. Call/text ${CRISIS_HELPLINE_INFO.phone} (${CRISIS_HELPLINE_INFO.name}). You are not alone.`, 'error');
+    if (!safetyCheck.isSafe) {
+      if (safetyCheck.crisisTriggered) {
+        showToast(`💜 Help is available. Call/text ${CRISIS_HELPLINE_INFO.phone} (${CRISIS_HELPLINE_INFO.name}). You are not alone.`, 'error');
+      }
+      setIsRoleplayPaused(true);
       setMessageInput('');
       return;
     }
+
+    // Reset safety pause if user sends compliant message
+    setIsRoleplayPaused(false);
 
     if (isOocMode && content && !content.startsWith('(OOC:') && !content.startsWith('[OOC:')) {
       content = `(OOC: ${content})`;
@@ -1362,8 +1372,30 @@ export default function ConversationPage() {
               <span className="w-2 h-2 bg-warm-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
               <span className="w-2 h-2 bg-warm-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
-            <span className="text-xs text-warm-500">{getTypingDisplay()}</span>
+            <span className="text-xs text-warm-500 font-medium">{getTypingDisplay()}</span>
           </div>
+        )}
+
+        {/* Roleplay Safety Intervention System Card */}
+        {isRoleplayPaused && (
+          <RoleplaySafetyPauseCard
+            onEditPreviousMessage={() => {
+              const lastUserMsg = [...messages].reverse().find(m => m.sender_id === user?.id);
+              if (lastUserMsg) {
+                setEditingMessageId(lastUserMsg.id);
+                setEditContent(lastUserMsg.content || '');
+              }
+              setIsRoleplayPaused(false);
+            }}
+            onSendNewMessage={() => {
+              setIsRoleplayPaused(false);
+              msgInputRef.current?.focus();
+            }}
+            onReportError={() => {
+              showToast('Report submitted. Thank you for helping keep CHIMERA safe.', 'info');
+              setIsRoleplayPaused(false);
+            }}
+          />
         )}
 
             <div ref={messagesEndRef} className="h-4" />
