@@ -395,16 +395,20 @@ export default function ShardsPage() {
         {/* ── 6. SHARD STORE (Pricing Tier Matrix) ── */}
         <section className="space-y-8" id="store">
           <div className="text-center space-y-2">
-            <h2 className="font-serif text-3xl font-bold text-white">SHARD Store</h2>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase tracking-wider">
+              <Sparkles size={14} className="text-amber-400" />
+              <span>Unlocks August 7th World Launch</span>
+            </div>
+            <h2 className="font-serif text-3xl font-bold text-white">SHARD Store (Coming Soon)</h2>
             <p className="text-xs text-warm-400 max-w-md mx-auto">
-              Acquire SHARD packages to supercharge your creation engine and support independent authors.
+              All creators receive 20 FREE Welcome SHARDS! Paid packages unlock on August 7th.
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             
             {/* Pack 1: Starter */}
-            <div className="p-6 rounded-3xl bg-warm-900/60 backdrop-blur-xl border border-white/10 hover:border-blue-500/40 transition-all flex flex-col justify-between space-y-6">
+            <div className="p-6 rounded-3xl bg-warm-900/60 backdrop-blur-xl border border-white/10 opacity-80 flex flex-col justify-between space-y-6">
               <div className="space-y-3 text-center">
                 <div className="text-xs font-bold text-warm-400 uppercase tracking-wider">Starter Pack</div>
                 <div className="flex items-center justify-center gap-2">
@@ -415,18 +419,15 @@ export default function ShardsPage() {
               </div>
 
               <button
-                onClick={() => {
-                  earnShards(20, 'Purchased Starter Pack');
-                  showToast('🎉 Purchased Starter Pack (+20 SHARDS)!', 'success');
-                }}
-                className="w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/15 transition-all"
+                onClick={() => showToast('🎉 SHARD Store purchases unlock on August 7th World Launch!', 'info')}
+                className="w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-warm-300 font-bold text-xs border border-white/15 transition-all cursor-pointer"
               >
-                $1.99 USD
+                Coming Soon ($1.99)
               </button>
             </div>
 
             {/* Pack 2: Creator Pack (RECOMMENDED) */}
-            <div className="p-6 rounded-3xl bg-gradient-to-b from-blue-900/40 via-warm-900/80 to-warm-950 border-2 border-cyan-500/60 shadow-[0_0_30px_rgba(6,182,212,0.2)] transition-all flex flex-col justify-between space-y-6 relative overflow-hidden">
+            <div className="p-6 rounded-3xl bg-gradient-to-b from-blue-900/40 via-warm-900/80 to-warm-950 border-2 border-cyan-500/60 shadow-[0_0_30px_rgba(6,182,212,0.2)] opacity-85 flex flex-col justify-between space-y-6 relative overflow-hidden">
               <div className="absolute top-3 right-3 px-2.5 py-0.5 rounded-full bg-cyan-400 text-black text-[10px] font-extrabold uppercase tracking-wider">
                 Popular
               </div>
@@ -441,18 +442,15 @@ export default function ShardsPage() {
               </div>
 
               <button
-                onClick={() => {
-                  earnShards(55, 'Purchased Creator Pack');
-                  showToast('🎉 Purchased Creator Pack (+55 SHARDS)!', 'success');
-                }}
-                className="w-full py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-extrabold text-xs shadow-lg transition-all"
+                onClick={() => showToast('🎉 SHARD Store purchases unlock on August 7th World Launch!', 'info')}
+                className="w-full py-3 rounded-2xl bg-gradient-to-r from-blue-600/60 to-cyan-500/60 text-cyan-200 font-extrabold text-xs shadow-lg transition-all cursor-pointer"
               >
-                $4.99 USD
+                Coming Soon ($4.99)
               </button>
             </div>
 
             {/* Pack 3: Visionary Pack */}
-            <div className="p-6 rounded-3xl bg-warm-900/60 backdrop-blur-xl border border-white/10 hover:border-purple-500/40 transition-all flex flex-col justify-between space-y-6">
+            <div className="p-6 rounded-3xl bg-warm-900/60 backdrop-blur-xl border border-white/10 opacity-80 flex flex-col justify-between space-y-6">
               <div className="space-y-3 text-center">
                 <div className="text-xs font-bold text-purple-400 uppercase tracking-wider">Visionary Pack</div>
                 <div className="flex items-center justify-center gap-2">
@@ -463,18 +461,15 @@ export default function ShardsPage() {
               </div>
 
               <button
-                onClick={() => {
-                  earnShards(140, 'Purchased Visionary Pack');
-                  showToast('🎉 Purchased Visionary Pack (+140 SHARDS)!', 'success');
-                }}
-                className="w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/15 transition-all"
+                onClick={() => showToast('🎉 SHARD Store purchases unlock on August 7th World Launch!', 'info')}
+                className="w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-warm-300 font-bold text-xs border border-white/15 transition-all cursor-pointer"
               >
-                $9.99 USD
+                Coming Soon ($9.99)
               </button>
             </div>
 
             {/* Pack 4: Vault Pack */}
-            <div className="p-6 rounded-3xl bg-warm-900/60 backdrop-blur-xl border border-white/10 hover:border-amber-500/40 transition-all flex flex-col justify-between space-y-6">
+            <div className="p-6 rounded-3xl bg-warm-900/60 backdrop-blur-xl border border-white/10 opacity-80 flex flex-col justify-between space-y-6">
               <div className="space-y-3 text-center">
                 <div className="text-xs font-bold text-amber-400 uppercase tracking-wider">Vault Pack</div>
                 <div className="flex items-center justify-center gap-2">
@@ -485,13 +480,10 @@ export default function ShardsPage() {
               </div>
 
               <button
-                onClick={() => {
-                  earnShards(360, 'Purchased Vault Pack');
-                  showToast('🎉 Purchased Vault Pack (+360 SHARDS)!', 'success');
-                }}
-                className="w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/15 transition-all"
+                onClick={() => showToast('🎉 SHARD Store purchases unlock on August 7th World Launch!', 'info')}
+                className="w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-warm-300 font-bold text-xs border border-white/15 transition-all cursor-pointer"
               >
-                $19.99 USD
+                Coming Soon ($19.99)
               </button>
             </div>
 

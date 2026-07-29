@@ -136,42 +136,46 @@ export function ShardsHubModal({ isOpen, onClose }: ShardsHubModalProps) {
                 <p className="text-xs text-warm-500">Refill your balance instantly to generate selfies, voice lines, and tip creators.</p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-center text-xs font-semibold text-amber-300 flex items-center justify-center gap-2">
+                <Sparkles size={16} className="text-amber-400" />
+                <span>SHARD Store Launching August 7th! All new creators start with 20 FREE Welcome SHARDS.</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 {[
-                  { amount: 50, price: '$0.99', name: 'Starter Pouch 💎', tag: 'Great Value' },
-                  { amount: 250, price: '$4.99', name: 'Popular Chest 💎', tag: 'Most Popular', highlight: true },
-                  { amount: 700, price: '$9.99', name: 'Pro Creator Vault 💎', tag: 'Best Value' },
-                  { amount: 1500, price: '$19.99', name: 'Ultimate Sovereign 💎', tag: 'Mega Bonus' },
-                ].map((pack) => (
+                  { amount: 20, price: '$1.99', name: 'Starter Pack', desc: 'Unlock 30-Day VIP' },
+                  { amount: 60, price: '$4.99', name: 'Creator Pack', desc: 'Popular choice', popular: true },
+                  { amount: 150, price: '$9.99', name: 'Pro Author Pack', desc: 'Best value' },
+                  { amount: 400, price: '$24.99', name: 'Legend Vault', desc: 'Maximum SHARDS' },
+                ].map((pkg) => (
                   <div
-                    key={pack.amount}
-                    className={`p-4 rounded-2xl border-2 transition-all flex flex-col justify-between gap-3 relative ${
-                      pack.highlight
-                        ? 'border-purple-600 bg-purple-50/50 dark:bg-purple-950/30 shadow-md'
-                        : 'border-warm-200 dark:border-warm-800 bg-warm-50/50 dark:bg-warm-850 hover:border-purple-400'
+                    key={pkg.name}
+                    className={`p-4 rounded-2xl border transition-all flex flex-col justify-between relative opacity-85 ${
+                      pkg.popular
+                        ? 'bg-purple-500/10 border-purple-500/40 dark:bg-purple-950/30'
+                        : 'bg-warm-100 dark:bg-warm-850 border-warm-200 dark:border-warm-800'
                     }`}
                   >
-                    {pack.tag && (
-                      <span className="absolute -top-2.5 right-3 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase bg-purple-600 text-white shadow-sm">
-                        {pack.tag}
+                    {pkg.popular && (
+                      <span className="absolute -top-2.5 right-3 bg-purple-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                        Most Popular
                       </span>
                     )}
-
                     <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <Gem size={20} className="text-amber-500 fill-amber-500" />
-                        <span className="font-serif font-bold text-xl text-warm-900 dark:text-white">{pack.amount}</span>
-                        <span className="text-xs text-warm-500">Shards</span>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <ShardCrystalImage size={18} showGlow={false} />
+                        <span className="font-serif font-extrabold text-base text-warm-900 dark:text-white">
+                          {pkg.amount} SHARDS
+                        </span>
                       </div>
-                      <p className="text-xs font-bold text-warm-700 dark:text-warm-300">{pack.name}</p>
+                      <p className="text-[10px] text-warm-500 dark:text-warm-400 mb-3">{pkg.desc}</p>
                     </div>
 
                     <button
-                      onClick={() => handleBuyPackage(pack.amount, pack.price, pack.name)}
-                      className="w-full py-2 bg-warm-900 dark:bg-warm-800 hover:bg-purple-600 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1"
+                      onClick={() => showToast('🎉 SHARD Store purchases unlock on August 7th World Launch!', 'info')}
+                      className="w-full py-2 rounded-xl bg-warm-800 text-warm-300 font-bold text-xs hover:bg-warm-700 transition-colors flex items-center justify-center gap-1 cursor-pointer"
                     >
-                      <span>Buy for {pack.price}</span>
-                      <ArrowRight size={14} />
+                      <span>Coming Soon ({pkg.price})</span>
                     </button>
                   </div>
                 ))}

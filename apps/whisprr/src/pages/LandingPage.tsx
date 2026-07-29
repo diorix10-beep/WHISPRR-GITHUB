@@ -612,7 +612,7 @@ export default function LandingPage() {
           <div className="lp-con">
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 40, justifyContent: 'space-between', marginBottom: 40 }}>
               <div style={{ maxWidth: 280 }}>
-                <Logo variant="icon-only" size={28} />
+                <WhisprLogo size={28} wordmark={false} />
                 <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13, marginTop: 14, lineHeight: 1.6 }}>
                   The Home of Creators. Where writers, worldbuilders, and AI creators connect and build together.
                 </p>

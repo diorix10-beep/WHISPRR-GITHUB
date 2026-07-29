@@ -108,7 +108,7 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
               <div className="relative flex flex-col gap-2.5">
                 <div className="flex items-center justify-between">
                   <div className="w-9 h-9 rounded-xl bg-primary-100 dark:bg-primary-500/20 flex items-center justify-center">
-                    <WhisprrLogo size={28} />
+                    <WhisprrLogo size={22} />
                   </div>
                   <ArrowUpRight size={14} className="text-primary-400 opacity-50 group-hover:opacity-100 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all" />
                 </div>
