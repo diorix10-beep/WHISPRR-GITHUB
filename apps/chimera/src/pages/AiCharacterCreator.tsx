@@ -364,7 +364,6 @@ export default function AiCharacterCreator() {
               creator_id: profile?.user_id || (await supabase.auth.getUser()).data.user?.id,
               display_name: formData.name.trim(),
               username: tempUsername,
-              avatar_emoji: '🤖',
               greeting: formData.greeting.trim(),
               short_description: formData.shortDescription.trim(),
               long_description: formData.longDescription.trim(),
