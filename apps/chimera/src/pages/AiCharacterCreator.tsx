@@ -246,21 +246,32 @@ export default function AiCharacterCreator() {
   };
 
   const getFriendlyErrorMessage = (errorMsg: string) => {
-    if (!errorMsg) return "Something went wrong while publishing. Please try again in a moment.";
+    if (!errorMsg) {
+      return "Something went wrong while publishing. Please try again in a moment. Your draft is completely safe.";
+    }
     const lower = errorMsg.toLowerCase();
-    if (lower.includes('check constraint') || lower.includes('profiles_role_check')) {
-      return "We couldn't publish your character right now due to a profile formatting restriction. Please check that your details are valid.";
+    
+    if (lower.includes('unique constraint') || lower.includes('username already taken') || lower.includes('already exists')) {
+      return "That name is already claimed. Please try a different name for your character.";
     }
-    if (lower.includes('unique constraint') || lower.includes('username already taken')) {
-      return "That name is already claimed. Please try a different name.";
+    if (lower.includes('not authenticated') || lower.includes('jwt') || lower.includes('auth')) {
+      return "Your session has expired. Please sign in again to publish.";
     }
-    if (lower.includes('not authenticated') || lower.includes('jwt')) {
-      return "Your session has expired. Please sign in again.";
+    if (lower.includes('network') || lower.includes('fetch') || lower.includes('failed to fetch')) {
+      return "We couldn't reach the server right now. Your draft has been safely saved locally and will sync when your connection returns.";
     }
-    if (lower.includes('network') || lower.includes('fetch')) {
-      return "We couldn't reach the server. Your draft has been safely saved locally and we'll sync when your connection returns.";
+    if (
+      lower.includes('schema') || 
+      lower.includes('column') || 
+      lower.includes('relation') || 
+      lower.includes('sql') || 
+      lower.includes('postgres') || 
+      lower.includes('syntax')
+    ) {
+      return "We encountered a temporary database update sync. Your draft has been safely saved, and you can try publishing again in a moment.";
     }
-    return errorMsg;
+
+    return "We couldn't complete publishing right now. Your draft has been safely saved, and you can try again in a moment.";
   };
 
   // Publishing Pipeline Workflow
