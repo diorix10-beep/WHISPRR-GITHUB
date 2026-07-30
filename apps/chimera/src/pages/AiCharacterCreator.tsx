@@ -12,6 +12,7 @@ import { supabase } from '../lib/supabase';
 import { StructuredArchitectureForm } from '../components/character/StructuredArchitectureForm';
 import { compileCharacterSystemPrompt, type CharacterArchitecture } from '../lib/promptCompiler';
 import { UniversalCharacterImporterModal } from '../components/creator/UniversalCharacterImporterModal';
+import { RichTextEditor } from '../components/common/RichTextEditor';
 import { Upload } from 'lucide-react';
 
 export default function AiCharacterCreator() {
@@ -330,63 +331,59 @@ export default function AiCharacterCreator() {
           const tags = formData.tagsString.split(',').map(t => t.trim()).filter(Boolean);
 
           let publishError: any = null;
+          const currentUserId = profile?.user_id || (await supabase.auth.getUser()).data.user?.id;
 
-          const { error: rpcError } = await supabase.rpc('create_ai_character', {
-            p_name: formData.name.trim(),
-            p_username: tempUsername,
-            p_avatar_emoji: '🤖',
-            p_greeting: formData.greeting.trim(),
-            p_short_description: formData.shortDescription.trim(),
-            p_long_description: formData.longDescription.trim(),
-            p_personality: formData.personality.trim(),
-            p_scenario: formData.scenario.trim(),
-            p_example_dialogues: formData.exampleDialogues.trim(),
-            p_conversation_style: formData.conversationStyle.trim(),
-            p_knowledge: formData.knowledge.trim(),
-            p_tags: tags,
-            p_category: formData.category,
-            p_visibility: formData.visibility,
-            p_avatar_url: formData.avatarUrl.trim() || '',
-            p_banner_url: formData.avatarUrl.trim() || '',
-            p_content_rating: formData.contentRating,
-            p_creator_notes: formData.creatorNotes.trim(),
-            p_example_conversations: formData.exampleConversations.trim(),
-            p_rp_definition: formData.rpDefinition.trim(),
-            p_system_definition: formData.systemDefinition.trim(),
-            p_system_character_definition: formData.systemCharacterDefinition.trim()
-          });
+          // Direct table insert first (most reliable)
+          const { data: insertedChar, error: directError } = await supabase.from('ai_characters').insert({
+            creator_id: currentUserId,
+            display_name: formData.name.trim(),
+            username: tempUsername,
+            greeting: formData.greeting.trim(),
+            short_description: formData.shortDescription.trim(),
+            long_description: formData.longDescription.trim(),
+            personality: formData.personality.trim(),
+            scenario: formData.scenario.trim(),
+            example_dialogues: formData.exampleDialogues.trim(),
+            conversation_style: formData.conversationStyle.trim(),
+            knowledge: formData.knowledge.trim(),
+            tags: tags,
+            category: formData.category,
+            visibility: formData.visibility,
+            photo_url: formData.avatarUrl.trim() || '',
+            content_rating: formData.contentRating,
+            creator_notes: formData.creatorNotes.trim(),
+            example_conversations: formData.exampleConversations.trim(),
+            rp_definition: formData.rpDefinition.trim(),
+            system_definition: formData.systemDefinition.trim(),
+            system_character_definition: formData.systemCharacterDefinition.trim()
+          }).select().maybeSingle();
 
-          if (rpcError) {
-            console.warn('RPC create_ai_character failed, trying direct table insert fallback:', rpcError);
-            
-            // Direct table insert fallback
-            const { error: directError } = await supabase.from('ai_characters').insert({
-              creator_id: profile?.user_id || (await supabase.auth.getUser()).data.user?.id,
-              display_name: formData.name.trim(),
-              username: tempUsername,
-              greeting: formData.greeting.trim(),
-              short_description: formData.shortDescription.trim(),
-              long_description: formData.longDescription.trim(),
-              personality: formData.personality.trim(),
-              scenario: formData.scenario.trim(),
-              example_dialogues: formData.exampleDialogues.trim(),
-              conversation_style: formData.conversationStyle.trim(),
-              knowledge: formData.knowledge.trim(),
-              tags: tags,
-              category: formData.category,
-              visibility: formData.visibility,
-              photo_url: formData.avatarUrl.trim() || '',
-              content_rating: formData.contentRating,
-              creator_notes: formData.creatorNotes.trim(),
-              example_conversations: formData.exampleConversations.trim(),
-              rp_definition: formData.rpDefinition.trim(),
-              system_definition: formData.systemDefinition.trim(),
-              system_character_definition: formData.systemCharacterDefinition.trim()
+          if (directError) {
+            console.warn('Direct insert error, trying RPC fallback:', directError);
+            const { error: rpcError } = await supabase.rpc('create_ai_character', {
+              p_name: formData.name.trim(),
+              p_username: tempUsername,
+              p_greeting: formData.greeting.trim(),
+              p_short_description: formData.shortDescription.trim(),
+              p_long_description: formData.longDescription.trim(),
+              p_personality: formData.personality.trim(),
+              p_scenario: formData.scenario.trim(),
+              p_example_dialogues: formData.exampleDialogues.trim(),
+              p_conversation_style: formData.conversationStyle.trim(),
+              p_knowledge: formData.knowledge.trim(),
+              p_tags: tags,
+              p_category: formData.category,
+              p_visibility: formData.visibility,
+              p_avatar_url: formData.avatarUrl.trim() || '',
+              p_banner_url: formData.avatarUrl.trim() || '',
+              p_content_rating: formData.contentRating,
+              p_creator_notes: formData.creatorNotes.trim(),
+              p_example_conversations: formData.exampleConversations.trim(),
+              p_rp_definition: formData.rpDefinition.trim(),
+              p_system_definition: formData.systemDefinition.trim(),
+              p_system_character_definition: formData.systemCharacterDefinition.trim()
             });
-
-            if (directError) {
-              publishError = directError;
-            }
+            if (rpcError) publishError = rpcError;
           }
 
           if (publishError) throw publishError;
@@ -610,27 +607,13 @@ export default function AiCharacterCreator() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-warm-400 mb-2">Bio *</label>
-                    {/* Simulated Rich Text Editor toolbar for visual matching */}
-                    <div className="border border-warm-700 rounded-xl overflow-hidden bg-warm-800 focus-within:border-red-500 transition-colors">
-                      <div className="bg-warm-850 px-3 py-2 border-b border-warm-700 flex flex-wrap gap-2 text-warm-400 text-xs">
-                        <button className="px-2 py-1 hover:bg-warm-700 rounded font-bold">Paragraph ▾</button>
-                        <button className="px-2 py-1 hover:bg-warm-700 rounded font-bold">B</button>
-                        <button className="px-2 py-1 hover:bg-warm-700 rounded italic">I</button>
-                        <button className="px-2 py-1 hover:bg-warm-700 rounded underline">U</button>
-                        <span className="w-px h-4 bg-warm-700 my-auto mx-1"></span>
-                        <button className="px-2 py-1 hover:bg-warm-700 rounded text-sm">≡</button>
-                        <button className="px-2 py-1 hover:bg-warm-700 rounded text-sm">🔗</button>
-                      </div>
-                      <textarea
-                        name="shortDescription"
-                        value={formData.shortDescription}
-                        onChange={handleChange}
-                        rows={4}
-                        placeholder="Start writing..."
-                        className="w-full bg-transparent p-4 text-sm text-white focus:outline-none resize-none"
-                      />
-                    </div>
+                    <RichTextEditor
+                      label="Bio / Backstory *"
+                      value={formData.shortDescription}
+                      onChange={(val) => setFormData(prev => ({ ...prev, shortDescription: val }))}
+                      minHeightRows={6}
+                      placeholder="Write your character's bio, backstory, personality highlights, and world background..."
+                    />
                   </div>
 
                   <div>
