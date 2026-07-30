@@ -1009,6 +1009,7 @@ export default function AiCharacterCreator() {
         isOpen={showImporterModal}
         onClose={() => setShowImporterModal(false)}
         onImportSuccess={(data) => {
+          const rating = data.content_rating === 'NSFW' ? 'NSFW' : 'SFW';
           setFormData(prev => ({
             ...prev,
             name: data.name || prev.name,
@@ -1017,8 +1018,12 @@ export default function AiCharacterCreator() {
             personality: data.personality || prev.personality,
             greeting: data.first_mes || prev.greeting,
             scenario: data.scenario || prev.scenario,
+            contentRating: rating,
             tagsString: data.badges ? data.badges.join(', ') : prev.tagsString,
           }));
+          if (data.architectureData && Object.keys(data.architectureData).length > 0) {
+            setArchData(data.architectureData);
+          }
         }}
       />
 

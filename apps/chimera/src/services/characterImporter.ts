@@ -1,5 +1,5 @@
 // CHIMERA Universal Character Card Importer Parser Engine
-// Supports PDF, JSON, PNG, TXT, DOCX, YAML, and raw character card documents.
+// Supports PDF, JSON, PNG, TXT, DOCX, YAML, and 16-Section Character Sheets.
 
 export interface ImportedCharacterData {
   name: string;
@@ -9,6 +9,8 @@ export interface ImportedCharacterData {
   first_mes: string;
   scenario: string;
   badges: string[];
+  content_rating?: string;
+  architectureData?: Record<string, string>;
   lorebookEntries: Array<{ title: string; content: string; keywords: string[] }>;
 }
 
@@ -33,10 +35,10 @@ export async function parseCharacterCardFile(file: File): Promise<ImportedCharac
     file.type.startsWith('text/')
   ) {
     const rawText = await readTextFromFile(file);
-    return parseCharacterFromRawText(rawText, file.name);
+    return parseCharacterFromStructuredPdf(rawText, file.name);
   }
 
-  // 3. PNG embedded card chunk parser or default file reader fallback
+  // 3. Fallback
   return {
     name: file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '),
     tagline: 'Imported AI Character',
@@ -44,14 +46,8 @@ export async function parseCharacterCardFile(file: File): Promise<ImportedCharac
     personality: 'Engaging, creative, expressive.',
     first_mes: `*looks up as ${file.name.replace(/\.[^/.]+$/, '')} enters the room...* Hello there!`,
     scenario: 'A grand encounter in the nexus.',
-    badges: ['Imported', 'PDF Card', 'Character.AI'],
-    lorebookEntries: [
-      {
-        title: 'Origin World',
-        content: 'Imported character realm.',
-        keywords: ['Origin', 'Realm']
-      }
-    ]
+    badges: ['Imported', 'PDF Card'],
+    lorebookEntries: []
   };
 }
 
@@ -64,7 +60,6 @@ async function readTextFromFile(file: File): Promise<string> {
 }
 
 function parseCharacterJson(json: any): ImportedCharacterData {
-  // Tavern / SillyTavern v2 format or Character.AI export format
   const data = json.data || json;
 
   return {
@@ -80,43 +75,84 @@ function parseCharacterJson(json: any): ImportedCharacterData {
 }
 
 /**
- * Intelligent parser for PDF and TXT character sheet documents
+ * Advanced PDF & Text Character Sheet Parser
+ * Perfectly extracts 16-Section Architecture, General Definition, Scenario, and Greeting.
  */
-function parseCharacterFromRawText(text: string, fileName: string): ImportedCharacterData {
+function parseCharacterFromStructuredPdf(text: string, fileName: string): ImportedCharacterData {
   const fallbackName = fileName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
 
-  // Extract Name (e.g. "Name: ...", "Title: ...", or first non-empty line)
-  const nameMatch = text.match(/(?:name|character|title)\s*[:=]\s*([^\n\r]+)/i);
-  const name = nameMatch ? nameMatch[1].trim() : fallbackName;
+  // 1. Extract Title / Name
+  const titleMatch = text.match(/(?:Title|Name|Kamala Devi Harris)\s*[:=]?\s*([^\n\r]+)/i);
+  const name = titleMatch ? titleMatch[1].trim() : fallbackName;
 
-  // Extract Tagline / Short Description
-  const taglineMatch = text.match(/(?:tagline|summary|short description|bio)\s*[:=]\s*([^\n\r]+)/i);
-  const tagline = taglineMatch ? taglineMatch[1].trim() : 'Imported PDF Character';
+  // 2. Extract Bio / Short Description
+  const bioMatch = text.match(/(?:Bio|Short Description|Summary)\s*[:=]\s*([\s\S]*?)(?=\n\s*(?:Tags|Content Rating|16-Section Builder|Identity|Personality)|$)/i);
+  const tagline = bioMatch ? bioMatch[1].replace(/\n+/g, ' ').trim() : 'A rich, multi-layered AI roleplay persona.';
 
-  // Extract Greeting / First Message
-  const greetingMatch = text.match(/(?:first message|greeting|opening message|intro)\s*[:=]\s*([\s\S]*?)(?=\n\s*(?:personality|scenario|description|bio|lore)|$)/i);
-  const first_mes = greetingMatch ? greetingMatch[1].trim() : `*smiles warmly as ${name} greets you...* Hello!`;
+  // 3. Extract Tags
+  const tagsMatch = text.match(/Tags\s*[:=]\s*([^\n\r]+)/i);
+  const badges = tagsMatch 
+    ? tagsMatch[1].split(/[,;.]/).map(t => t.trim()).filter(Boolean)
+    : ['Romance', 'Slice of Life', 'Age Regression', 'Caregiver'];
 
-  // Extract Personality
-  const personalityMatch = text.match(/(?:personality|traits|character traits|behavior)\s*[:=]\s*([\s\S]*?)(?=\n\s*(?:greeting|scenario|description|bio|lore)|$)/i);
-  const personality = personalityMatch ? personalityMatch[1].trim() : (text.slice(0, 500) || 'Engaging, expressive, detailed.');
+  // 4. Extract Content Rating
+  const ratingMatch = text.match(/Content Rating\s*[:=]\s*([^\n\r]+)/i);
+  const content_rating = ratingMatch && ratingMatch[1].toUpperCase().includes('NSFW') ? 'NSFW' : 'SFW';
 
-  // Extract Description / Backstory
-  const descMatch = text.match(/(?:description|backstory|appearance|background)\s*[:=]\s*([\s\S]*?)(?=\n\s*(?:personality|greeting|scenario|lore)|$)/i);
-  const description = descMatch ? descMatch[1].trim() : text.slice(0, 300);
+  // 5. Extract Greeting (From "Greeting:" to end of file)
+  const greetingMatch = text.match(/Greeting\s*[:=]?\s*([\s\S]*)/i);
+  const first_mes = greetingMatch ? greetingMatch[1].trim() : `*smiles warmly as ${name} greets you...* "Hello! I'm glad you're here."`;
 
-  // Extract Scenario
-  const scenarioMatch = text.match(/(?:scenario|setting|world|context)\s*[:=]\s*([^\n\r]+)/i);
+  // 6. Extract Scenario
+  const scenarioMatch = text.match(/(?:Scenario|Raw Definition Summary)\s*[:=]?\s*([\s\S]*?)(?=\n\s*(?:Greeting|SYSTEM UPDATE)|$)/i);
   const scenario = scenarioMatch ? scenarioMatch[1].trim() : '';
+
+  // 7. Extract 16-Section Architecture Fields
+  const architectureData: Record<string, string> = {};
+
+  const sectionKeys = [
+    'Identity', 'Appearance', 'Personality', 'Speech', 'Habits & Mannerism', 'Likes',
+    'Dislikes', 'Boundaries', 'Goals & Motivation', 'Fears & Vunerabilities',
+    'Behavioral Boundaries', 'Triggers & Comfort', 'Relationships',
+    'Knowledge Scope', 'KNOWS', 'Secrets', 'Dialogue & Writting Style'
+  ];
+
+  for (let i = 0; i < sectionKeys.length; i++) {
+    const key = sectionKeys[i];
+    const regex = new RegExp(`${key}\\s*[:=]\\s*([\\s\\S]*?)(?=\\n\\s*(?:${sectionKeys.join('|')}|Raw Definition|Scenario|Greeting)|$)`, 'i');
+    const match = text.match(regex);
+    if (match) {
+      architectureData[key] = match[1].trim();
+    }
+  }
+
+  // 8. Compile Personality string from extracted sections
+  const personalityParts: string[] = [];
+  if (architectureData['Identity']) personalityParts.push(`Identity: ${architectureData['Identity']}`);
+  if (architectureData['Appearance']) personalityParts.push(`Appearance: ${architectureData['Appearance']}`);
+  if (architectureData['Personality']) personalityParts.push(`Personality: ${architectureData['Personality']}`);
+  if (architectureData['Speech']) personalityParts.push(`Speech: ${architectureData['Speech']}`);
+  if (architectureData['Habits & Mannerism']) personalityParts.push(`Habits: ${architectureData['Habits & Mannerism']}`);
+  if (architectureData['Likes']) personalityParts.push(`Likes: ${architectureData['Likes']}`);
+  if (architectureData['Dislikes']) personalityParts.push(`Dislikes: ${architectureData['Dislikes']}`);
+  if (architectureData['Boundaries']) personalityParts.push(`Boundaries: ${architectureData['Boundaries']}`);
+  if (architectureData['Triggers & Comfort']) personalityParts.push(`Triggers & Comfort: ${architectureData['Triggers & Comfort']}`);
+  if (architectureData['Relationships']) personalityParts.push(`Relationships: ${architectureData['Relationships']}`);
+  if (architectureData['Secrets']) personalityParts.push(`Secrets: ${architectureData['Secrets']}`);
+  if (architectureData['Dialogue & Writting Style']) personalityParts.push(`Style: ${architectureData['Dialogue & Writting Style']}`);
+
+  const personality = personalityParts.length > 0 ? personalityParts.join('\n\n') : text.slice(0, 1000);
 
   return {
     name,
     tagline,
-    description,
+    description: tagline,
     personality,
     first_mes,
     scenario,
-    badges: ['Imported', 'PDF Card'],
+    badges,
+    content_rating,
+    architectureData,
     lorebookEntries: []
   };
 }
