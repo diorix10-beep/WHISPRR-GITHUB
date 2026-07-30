@@ -488,7 +488,14 @@ export default async function handler(req: Request) {
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: systemPrompt }] },
           contents: formattedHistory,
-          generationConfig: { temperature: 0.9, topP: 0.95, topK: 40, maxOutputTokens: 2048 }
+          generationConfig: { temperature: 0.9, topP: 0.95, topK: 40, maxOutputTokens: 2048 },
+          safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'BLOCK_NONE' }
+          ]
         })
       });
 

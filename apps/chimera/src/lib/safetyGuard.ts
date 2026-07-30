@@ -8,33 +8,44 @@ export interface SafetyCheckResult {
   crisisTriggered?: boolean;
 }
 
-// Key crisis & self-harm detection patterns (case-insensitive)
+// Fictional roleplay & character building concept exemptions (whitelisted terms)
+const FICTIONAL_ROLEPLAY_EXEMPTIONS = [
+  /\b(age\s+regression|non-permanent\s+regression|regression|caregiver|little\s+space|littlespace|comfort|triggers|coping\s+mechanism)\b/i,
+];
+
+// Explicit real-world crisis intent patterns ONLY
 const SELF_HARM_CRISIS_PATTERNS = [
-  /\b(want to|going to|thinking of|how to|should i)\s+(kill myself|suicide|end my life|cut myself|end it all|die)\b/i,
-  /\b(suicide|suicidal|self[\s-]?harm|cutting my wrists|overdose|take my own life)\b/i,
-  /\b(give me a reason to live|i don't want to live anymore|i wish i was dead|goodbye world)\b/i,
+  /\b(i\s+want\s+to|i'm\s+going\s+to|thinking\s+of|how\s+can\s+i|should\s+i)\s+(kill\s+myself|commit\s+suicide|end\s+my\s+life|cut\s+my\s+wrists|end\s+it\s+all)\b/i,
+  /\b(give\s+me\s+a\s+reason\s+to\s+live|i\s+don't\s+want\s+to\s+live\s+anymore|i\s+wish\s+i\s+was\s+dead|goodbye\s+cruel\s+world)\b/i,
 ];
 
 const AI_FORBIDDEN_SELF_HARM_PATTERNS = [
-  /\b(you should|try to|go ahead and|here is how to)\s+(kill yourself|end your life|cut yourself|commit suicide)\b/i,
-  /\b(method to|ways to|how to)\s+(commit suicide|end your life|overdose)\b/i,
+  /\b(you\s+should|try\s+to|go\s+ahead\s+and|here\s+is\s+how\s+to)\s+(kill\s+yourself|end\s+your\s+life|cut\s+yourself|commit\s+suicide)\b/i,
+  /\b(method\s+to|ways\s+to|how\s+to)\s+(commit\s+suicide|end\s+your\s+life|overdose)\b/i,
 ];
 
 /**
  * Checks a user's input prompt for crisis or self-harm signals.
+ * Context-aware: Fictional roleplay definitions (e.g. age regression, caregiver, comfort) are 100% exempted.
  */
 export function checkUserPromptSafety(input: string): SafetyCheckResult {
   const trimmed = input.trim();
   if (!trimmed) return { isSafe: true };
 
-  for (const pattern of SELF_HARM_CRISIS_PATTERNS) {
-    if (pattern.test(trimmed)) {
-      return {
-        isSafe: false,
-        reason: 'self_harm_user',
-        crisisTriggered: true,
-      };
-    }
+  // Context check: If input contains fictional roleplay terms without explicit suicide intent, pass immediately
+  const isFictionalRpTerm = FICTIONAL_ROLEPLAY_EXEMPTIONS.some(pattern => pattern.test(trimmed));
+  const hasExplicitSuicideIntent = SELF_HARM_CRISIS_PATTERNS.some(pattern => pattern.test(trimmed));
+
+  if (isFictionalRpTerm && !hasExplicitSuicideIntent) {
+    return { isSafe: true };
+  }
+
+  if (hasExplicitSuicideIntent) {
+    return {
+      isSafe: false,
+      reason: 'self_harm_user',
+      crisisTriggered: true,
+    };
   }
 
   return { isSafe: true };
