@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Upload, FileText, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { X, Upload, FileText, Loader2 } from 'lucide-react';
 import { parseCharacterCardFile, ImportedCharacterData } from '../../services/characterImporter';
 import { useToast } from '../../contexts/ToastContext';
 
@@ -52,7 +52,7 @@ export function UniversalCharacterImporterModal({
           </div>
 
           <h3 className="font-serif text-2xl font-bold">Universal Character Card Importer</h3>
-          <p className="text-xs text-purple-100 mt-1">Import PNG or JSON character cards from any platform in 1 click</p>
+          <p className="text-xs text-purple-100 mt-1">Import PDF, PNG, JSON, or TXT character cards from any platform in 1 click</p>
         </div>
 
         {/* Dropzone */}
@@ -60,7 +60,7 @@ export function UniversalCharacterImporterModal({
           <label className="border-2 border-dashed border-purple-500/40 hover:border-purple-500 bg-purple-50/30 dark:bg-purple-950/20 p-8 rounded-3xl flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:scale-[1.01]">
             <input
               type="file"
-              accept=".json,.png,.charm,.card"
+              accept=".pdf,.json,.png,.txt,.docx,.yaml,.yml,.charm,.card"
               onChange={(e) => {
                 if (e.target.files && e.target.files[0]) {
                   handleFileUpload(e.target.files[0]);
@@ -78,7 +78,7 @@ export function UniversalCharacterImporterModal({
               <>
                 <FileText size={40} className="text-purple-500 mb-2" />
                 <h4 className="font-bold text-sm text-warm-900 dark:text-white mb-1">Click to Upload or Drag &amp; Drop Card</h4>
-                <p className="text-xs text-warm-500">Supports `.json`, `.png` character cards with embedded metadata.</p>
+                <p className="text-xs text-warm-500">Supports `.pdf`, `.json`, `.png`, `.txt` character cards and documents.</p>
               </>
             )}
           </label>
