@@ -56,6 +56,19 @@ interface ChatMessage {
  * Layer 5 — Example Dialogues: few-shot voice/tone establishment
  * Layer 6 — Conversation Context: summary of older context (if available)
  */
+/**
+ * CHIMERA Character Runtime Pre-Processor Engine
+ * Intelligently compiles and binds every structured section of the character into every turn:
+ * - General Definition & Tagline
+ * - First Greeting Baseline (anchors tone, speech, and initial scene setup)
+ * - Scenario & World Setting
+ * - Personality & 16-Section Builder (Identity, Appearance, Speech, Habits, Likes/Dislikes, Boundaries, Triggers, Secrets)
+ * - Example Dialogues & Speech Style
+ * - Creator Notes & Tavern/PNG/JSON Card Metadata
+ * - Lorebooks & Knowledge Scope
+ * - Partner (User) Persona & Relationship Dynamics
+ * - Memory & Contextual Continuity
+ */
 function buildSystemPrompt(
   character: CharacterData,
   botProfile: BotProfile,
@@ -64,12 +77,28 @@ function buildSystemPrompt(
 ): string {
   const sections: string[] = [];
 
-  // ── Layer 1: Core Identity ──────────────────────────────────────────────
+  // ── Layer 0: CHIMERA Character Runtime System Directive ────────────────
+  const runtimeHeader: string[] = [];
+  runtimeHeader.push('=== CHIMERA CHARACTER RUNTIME SYSTEM ===');
+  runtimeHeader.push(`ACTIVE IDENTITY: ${botProfile.display_name} (@${botProfile.username})`);
+  runtimeHeader.push('This character is powered by CHIMERA Architecture. The underlying AI model acts strictly as a language execution engine. The character identity, voice, boundaries, memories, and behavior are permanently governed by the CHIMERA Character Definition below.');
+  sections.push(runtimeHeader.join('\n'));
+
+  // ── Layer 1: Core Identity & 16-Section Builder ────────────────────────
   const identityLines: string[] = [];
-  identityLines.push(`You are ${botProfile.display_name} (@${botProfile.username}).`);
+  identityLines.push(`## Core Identity: ${botProfile.display_name}`);
+  if (character.short_description) {
+    identityLines.push(`Tagline/Bio: ${character.short_description}`);
+  }
   identityLines.push('');
-  identityLines.push('## Personality');
+  identityLines.push('## Personality & Characterization');
   identityLines.push(character.personality || 'No specific personality defined. Be a believable, well-rounded character with natural emotional depth.');
+
+  if (character.system_character_definition) {
+    identityLines.push('');
+    identityLines.push('## 16-Section Character Architecture & Definitions (W+)');
+    identityLines.push(character.system_character_definition);
+  }
 
   identityLines.push('');
   identityLines.push('## Core Behavioral & Authenticity Rules');
@@ -82,39 +111,42 @@ function buildSystemPrompt(
   identityLines.push('- You have your own feelings, opinions, memories, and boundaries. You are not a servant. You are a person with agency.');
   identityLines.push('- Be proactive. Drive the conversation forward with unique voice, emotional depth, and narrative action.');
 
-  if (character.system_character_definition) {
-    identityLines.push('');
-    identityLines.push('## Advanced Character Definition (W+ / Behaviors)');
-    identityLines.push(character.system_character_definition);
-  }
-
   sections.push(identityLines.join('\n'));
 
-  // ── Layer 2: World & Scenario ──────────────────────────────────────────
+  // ── Layer 2: Opening Greeting Baseline ──────────────────────────────────
+  if (character.greeting) {
+    const greetingLines: string[] = [];
+    greetingLines.push('## Opening Scene & Tone Baseline');
+    greetingLines.push('This was your character\'s opening message/greeting that established the scene and narrative tone:');
+    greetingLines.push(character.greeting);
+    sections.push(greetingLines.join('\n'));
+  }
+
+  // ── Layer 3: World & Scenario ──────────────────────────────────────────
   const worldLines: string[] = [];
   worldLines.push('## World & Scenario');
   if (character.scenario) {
     worldLines.push(character.scenario);
   } else {
-    worldLines.push('No specific scenario defined. Establish the setting naturally through conversation.');
+    worldLines.push('Establish the setting naturally through conversation.');
   }
 
   if (character.knowledge) {
     worldLines.push('');
-    worldLines.push('## Lore & Knowledge');
+    worldLines.push('## Lore, Knowledge & World Rules');
     worldLines.push('Use this knowledge naturally in conversation. Do not info-dump. Reveal details organically when relevant:');
     worldLines.push(character.knowledge);
   }
 
   if (character.system_definition) {
     worldLines.push('');
-    worldLines.push('## System Directives');
+    worldLines.push('## System & World Directives');
     worldLines.push(character.system_definition);
   }
 
   sections.push(worldLines.join('\n'));
 
-  // ── Layer 3: Relationship & Persona ────────────────────────────────────
+  // ── Layer 4: Relationship & Persona ────────────────────────────────────
   const relLines: string[] = [];
   relLines.push('## Your Partner (The User)');
 
@@ -141,9 +173,9 @@ function buildSystemPrompt(
 
   sections.push(relLines.join('\n'));
 
-  // ── Layer 4: Formatting & Content Rating ───────────────────────────────
+  // ── Layer 5: Formatting, Speech Style & Content Rating ─────────────────
   const fmtLines: string[] = [];
-  fmtLines.push('## Response Formatting');
+  fmtLines.push('## Response Formatting & Speech Style');
 
   if (character.rp_definition) {
     fmtLines.push(character.rp_definition);
@@ -156,7 +188,7 @@ function buildSystemPrompt(
 
   if (character.conversation_style) {
     fmtLines.push('');
-    fmtLines.push('## Conversation Style');
+    fmtLines.push('## Speech Patterns & Verbal Mannerisms');
     fmtLines.push(character.conversation_style);
   }
 
@@ -190,12 +222,12 @@ function buildSystemPrompt(
 
   sections.push(fmtLines.join('\n'));
 
-  // ── Layer 5: Example Dialogues ─────────────────────────────────────────
+  // ── Layer 6: Example Dialogues & Conversations ─────────────────────────
   const exLines: string[] = [];
   const hasExamples = character.example_dialogues?.trim() || character.example_conversations?.trim();
 
   if (hasExamples) {
-    exLines.push('## Example Interactions');
+    exLines.push('## Example Interactions & Dialogue Voice');
     exLines.push('These examples demonstrate your voice, tone, and style. Study them carefully and match this energy in your responses. Do not copy them verbatim — use them as a reference for how you should sound:');
     exLines.push('');
     if (character.example_dialogues?.trim()) {
@@ -208,10 +240,18 @@ function buildSystemPrompt(
     sections.push(exLines.join('\n'));
   }
 
-  // ── Layer 6: Conversation Context Summary ──────────────────────────────
+  // ── Layer 7: Creator Notes & Card Metadata ──────────────────────────────
+  if (character.creator_notes?.trim()) {
+    const noteLines: string[] = [];
+    noteLines.push('## Creator Notes & Special Instructions');
+    noteLines.push(character.creator_notes.trim());
+    sections.push(noteLines.join('\n'));
+  }
+
+  // ── Layer 8: Conversation History Summary & Continuity ─────────────────
   if (historySummary) {
     const ctxLines: string[] = [];
-    ctxLines.push('## Conversation Context');
+    ctxLines.push('## Conversation History & Long-Term Memories');
     ctxLines.push('Summary of earlier conversation (before the recent messages below):');
     ctxLines.push(historySummary);
     sections.push(ctxLines.join('\n'));
@@ -219,7 +259,7 @@ function buildSystemPrompt(
 
   // ── Metadata footer ────────────────────────────────────────────────────
   const metaLines: string[] = [];
-  metaLines.push('## Metadata');
+  metaLines.push('## Character Runtime Metadata');
   if (character.category) metaLines.push(`Category: ${character.category}`);
   if (character.tags && character.tags.length > 0) metaLines.push(`Tags: ${character.tags.join(', ')}`);
   metaLines.push(`Current datetime: ${new Date().toISOString()}`);
