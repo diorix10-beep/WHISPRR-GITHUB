@@ -328,7 +328,9 @@ export default function AiCharacterCreator() {
           const tempUsername = `bot_${Math.random().toString(36).substring(2, 10)}`;
           const tags = formData.tagsString.split(',').map(t => t.trim()).filter(Boolean);
 
-          const { error } = await supabase.rpc('create_ai_character', {
+          let publishError: any = null;
+
+          const { error: rpcError } = await supabase.rpc('create_ai_character', {
             p_name: formData.name.trim(),
             p_username: tempUsername,
             p_avatar_emoji: '🤖',
@@ -353,7 +355,41 @@ export default function AiCharacterCreator() {
             p_system_character_definition: formData.systemCharacterDefinition.trim()
           });
 
-          if (error) throw error;
+          if (rpcError) {
+            console.warn('RPC create_ai_character failed, trying direct table insert fallback:', rpcError);
+            
+            // Direct table insert fallback
+            const { error: directError } = await supabase.from('ai_characters').insert({
+              creator_id: profile?.user_id || (await supabase.auth.getUser()).data.user?.id,
+              display_name: formData.name.trim(),
+              username: tempUsername,
+              avatar_emoji: '🤖',
+              greeting: formData.greeting.trim(),
+              short_description: formData.shortDescription.trim(),
+              long_description: formData.longDescription.trim(),
+              personality: formData.personality.trim(),
+              scenario: formData.scenario.trim(),
+              example_dialogues: formData.exampleDialogues.trim(),
+              conversation_style: formData.conversationStyle.trim(),
+              knowledge: formData.knowledge.trim(),
+              tags: tags,
+              category: formData.category,
+              visibility: formData.visibility,
+              photo_url: formData.avatarUrl.trim() || '',
+              content_rating: formData.contentRating,
+              creator_notes: formData.creatorNotes.trim(),
+              example_conversations: formData.exampleConversations.trim(),
+              rp_definition: formData.rpDefinition.trim(),
+              system_definition: formData.systemDefinition.trim(),
+              system_character_definition: formData.systemCharacterDefinition.trim()
+            });
+
+            if (directError) {
+              publishError = directError;
+            }
+          }
+
+          if (publishError) throw publishError;
 
           // Step 5: Success
           setPublishPipeline(prev => ({ ...prev, step: 'success' }));
@@ -369,7 +405,7 @@ export default function AiCharacterCreator() {
           setPublishPipeline({ 
             isActive: true, 
             step: 'failed', 
-            error: getFriendlyErrorMessage(err.message || '')
+            error: getFriendlyErrorMessage(err.message || err.details || '')
           });
         }
       }, 1000);
