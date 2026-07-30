@@ -245,6 +245,7 @@ export default function AiCharacterCreator() {
   };
 
   const getFriendlyErrorMessage = (errorMsg: string) => {
+    if (!errorMsg) return "Something went wrong while publishing. Please try again in a moment.";
     const lower = errorMsg.toLowerCase();
     if (lower.includes('check constraint') || lower.includes('profiles_role_check')) {
       return "We couldn't publish your character right now due to a profile formatting restriction. Please check that your details are valid.";
@@ -258,7 +259,7 @@ export default function AiCharacterCreator() {
     if (lower.includes('network') || lower.includes('fetch')) {
       return "We couldn't reach the server. Your draft has been safely saved locally and we'll sync when your connection returns.";
     }
-    return "Something went wrong while publishing. Please try again in a moment. Your draft has been safely saved.";
+    return errorMsg;
   };
 
   // Publishing Pipeline Workflow
