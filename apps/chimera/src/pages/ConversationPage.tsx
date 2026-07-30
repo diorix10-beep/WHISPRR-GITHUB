@@ -276,10 +276,23 @@ export default function ConversationPage() {
                   bot_user_id: other.user_id,
                   is_initiation: true
                 })
-              }).catch(err => {
-                console.error('Failed to trigger AI initiation:', err);
-                setInitiating(false);
-              });
+              })
+                .then(async (res) => {
+                  setInitiating(false);
+                  const data = await res.json();
+                  if (data?.reply) {
+                    const { data: updatedMsgs } = await supabase
+                      .from('messages')
+                      .select('*')
+                      .eq('conversation_id', conversationId)
+                      .order('created_at', { ascending: true });
+                    if (updatedMsgs) setMessages(updatedMsgs);
+                  }
+                })
+                .catch(err => {
+                  console.error('Failed to trigger AI initiation:', err);
+                  setInitiating(false);
+                });
             }
           }
         }
@@ -523,10 +536,26 @@ export default function ConversationPage() {
             chat_mode: chatMode,
             active_speaker_id: activeSpeakerId,
           })
-        }).catch(err => {
-          console.error('Failed to trigger AI response:', err);
-          setTypingUsers([]);
-        });
+        })
+          .then(async (res) => {
+            setTypingUsers([]);
+            const data = await res.json();
+            if (data?.pause_roleplay) {
+              setIsRoleplayPaused(true);
+            } else if (data?.reply) {
+              // Refresh messages immediately in case Supabase Realtime connection drops on mobile
+              const { data: updatedMsgs } = await supabase
+                .from('messages')
+                .select('*')
+                .eq('conversation_id', conversationId)
+                .order('created_at', { ascending: true });
+              if (updatedMsgs) setMessages(updatedMsgs);
+            }
+          })
+          .catch(err => {
+            console.error('Failed to trigger AI response:', err);
+            setTypingUsers([]);
+          });
       }
     } catch (err: any) {
       console.error(err);

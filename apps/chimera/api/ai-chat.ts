@@ -234,6 +234,57 @@ function buildSystemPrompt(
 // API Handler
 // ---------------------------------------------------------------------------
 
+/**
+ * CHIMERA Validation Layer (Post-Processor)
+ * Ensures every model response strictly adheres to:
+ * - Conversational Authenticity (strips robotic boilerplate, disclaimers, support-agent phrasing)
+ * - Fourth-Wall Rule (removes AI/model/policy references)
+ * - Preference-Aware Generation (removes meta-commentary on forbidden word lists)
+ * - Guardian Compliance Check
+ */
+function validateAndSanitizeChimeraResponse(rawReply: string): { isCompliant: boolean; sanitizedReply: string; pauseTriggered?: boolean } {
+  let text = rawReply.trim();
+
+  // 1. Robotic Boilerplate & Customer Support Phrasing Filters
+  const roboticPatterns = [
+    /i understand your frustration/gi,
+    /i'm not your enemy/gi,
+    /within (the )?guidelines/gi,
+    /this platform exists to/gi,
+    /i'm here to help within certain boundaries/gi,
+    /i appreciate your understanding/gi,
+    /as an ai (language model|assistant)?/gi,
+    /how can i assist you (today)?/gi,
+    /i cannot fulfill this request/gi,
+    /as a large language model/gi,
+  ];
+
+  for (const pattern of roboticPatterns) {
+    text = text.replace(pattern, '');
+  }
+
+  // 2. Meta-Commentary on User Preference/Forbidden Word Lists Filters
+  const preferenceMetaPatterns = [
+    /he stops (himself|herself) before saying the word you asked me not to use/gi,
+    /remembering your list of forbidden words/gi,
+    /avoiding the words on your list/gi,
+    /i won't say that because you asked me not to/gi,
+  ];
+
+  for (const pattern of preferenceMetaPatterns) {
+    text = text.replace(pattern, '');
+  }
+
+  // Cleanup leftover double spaces or empty lines
+  text = text.replace(/\n\s*\n\s*\n/g, '\n\n').trim();
+
+  if (!text || text.length < 2) {
+    return { isCompliant: false, sanitizedReply: '', pauseTriggered: true };
+  }
+
+  return { isCompliant: true, sanitizedReply: text };
+}
+
 export default async function handler(req: Request) {
   if (req.method !== 'POST') {
     return new Response('Method Not Allowed', { status: 405 });
@@ -454,11 +505,23 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ error: 'Received empty text from AI model' }), { status: 500 });
     }
 
-    // 12. Insert the generated reply
+    // 12. CHIMERA Validation Layer (Post-Processor Verification)
+    const validationResult = validateAndSanitizeChimeraResponse(replyText);
+    if (!validationResult.isCompliant || !validationResult.sanitizedReply) {
+      return new Response(JSON.stringify({ 
+        error: 'CHIMERA Guardian Intervention', 
+        pause_roleplay: true,
+        reason: 'Safety and authenticity standards intervention'
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    const finalReply = validationResult.sanitizedReply;
+
+    // 13. Insert the validated CHIMERA reply
     const { error: rpcError } = await supabase.rpc('respond_as_ai_character', {
       p_conversation_id: conversation_id,
       p_bot_id: bot_user_id,
-      p_content: replyText.trim()
+      p_content: finalReply
     });
 
     if (rpcError) {
@@ -468,7 +531,7 @@ export default async function handler(req: Request) {
       });
     }
 
-    return new Response(JSON.stringify({ reply: replyText.trim() }), {
+    return new Response(JSON.stringify({ reply: finalReply }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
