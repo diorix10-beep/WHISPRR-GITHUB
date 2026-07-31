@@ -104,6 +104,21 @@ export function TranscriptsExporterModal({
     showToast('📋 Novel transcript copied to clipboard as Markdown!', 'success');
   };
 
+  // Action: Download File (.md or .txt)
+  const handleDownloadFile = (ext: 'md' | 'txt') => {
+    const content = getFullMarkdownText();
+    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${novelTitle.toLowerCase().replace(/[^a-z0-9]/g, '_')}.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`Downloaded novel as .${ext.toUpperCase()} file!`, 'success');
+  };
+
   // Action: Publish directly to CHIMERA Stories Mode
   const handlePublishToStories = async () => {
     if (!user) {
@@ -257,13 +272,23 @@ export function TranscriptsExporterModal({
         {/* Footer Actions */}
         <div className="p-4 bg-warm-50 dark:bg-warm-950 border-t border-warm-200 dark:border-warm-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
           
-          <button
-            onClick={handleCopyMarkdown}
-            className="px-4 py-2 rounded-xl bg-warm-200 dark:bg-warm-800 hover:bg-warm-300 dark:hover:bg-warm-750 text-warm-800 dark:text-warm-200 font-bold text-xs transition-all flex items-center gap-1.5"
-          >
-            <Copy size={15} />
-            <span>Copy Markdown</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCopyMarkdown}
+              className="px-3.5 py-2 rounded-xl bg-warm-200 dark:bg-warm-800 hover:bg-warm-300 dark:hover:bg-warm-750 text-warm-800 dark:text-warm-200 font-bold text-xs transition-all flex items-center gap-1.5"
+            >
+              <Copy size={15} />
+              <span>Copy Markdown</span>
+            </button>
+
+            <button
+              onClick={() => handleDownloadFile('md')}
+              className="px-3.5 py-2 rounded-xl bg-purple-950/40 hover:bg-purple-900/60 border border-purple-800/40 text-purple-300 font-bold text-xs transition-all flex items-center gap-1.5"
+            >
+              <Download size={15} />
+              <span>Download .MD</span>
+            </button>
+          </div>
 
           {publishedStoryId ? (
             <div className="flex items-center gap-2">
