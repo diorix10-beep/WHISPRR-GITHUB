@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { CharacterCard } from '../components/chimera/CharacterCard';
+import { CharacterDetailsModal } from '../components/chimera/CharacterDetailsModal';
 import { RichEmptyState } from '../components/common/RichEmptyState';
 
 interface CharacterItem {
@@ -60,6 +61,7 @@ export default function CharactersPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [tab, setTab] = useState<'mine' | 'drafts' | 'all'>('mine');
   const [sortBy, setSortBy] = useState('updated');
+  const [selectedDetailChar, setSelectedDetailChar] = useState<any | null>(null);
 
   const fetchCharacters = useCallback(async () => {
     if (!profile?.user_id) return;
@@ -322,11 +324,30 @@ export default function CharactersPage() {
                   key={character.id}
                   character={character as any}
                   onClick={() => navigate(`/conversations/new?characterId=${character.id}`)}
+                  onViewDetails={() => setSelectedDetailChar(character)}
+                  onEdit={() => navigate(`/characters/${character.id}/edit`)}
                 />
               ))}
             </div>
           )}
         </section>
+
+        {/* Character Details Modal */}
+        <CharacterDetailsModal
+          isOpen={!!selectedDetailChar}
+          onClose={() => setSelectedDetailChar(null)}
+          character={selectedDetailChar}
+          onStartChat={() => {
+            if (selectedDetailChar) {
+              navigate(`/conversations/new?characterId=${selectedDetailChar.id}`);
+            }
+          }}
+          onEdit={
+            selectedDetailChar?.creator_id === profile?.user_id || selectedDetailChar?.user_id === profile?.user_id
+              ? () => navigate(`/characters/${selectedDetailChar.id}/edit`)
+              : undefined
+          }
+        />
 
       </div>
     </div>

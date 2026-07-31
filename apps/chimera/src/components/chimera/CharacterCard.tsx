@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Eye, MessageSquare, User, Share2 } from 'lucide-react';
+import { Eye, MessageSquare, User, Share2, Edit3, Info } from 'lucide-react';
 import { ShareToWhisprrModal } from './ShareToWhisprrModal';
 
 interface CharacterCardProps {
   character: any;
   onClick?: () => void;
+  onViewDetails?: () => void;
+  onEdit?: () => void;
   actionMenu?: React.ReactNode;
 }
 
-export function CharacterCard({ character, onClick, actionMenu }: CharacterCardProps) {
+export function CharacterCard({ character, onClick, onViewDetails, onEdit, actionMenu }: CharacterCardProps) {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const profile = character.bot_profile || {};
   const creator = character.creator || {};
@@ -58,11 +59,31 @@ export function CharacterCard({ character, onClick, actionMenu }: CharacterCardP
             </span>
           )}
         </div>
-        {actionMenu && (
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
-            {actionMenu}
-          </div>
-        )}
+
+        {/* Action Controls */}
+        <div className="flex items-center gap-1.5 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+          {onViewDetails && (
+            <button
+              type="button"
+              onClick={onViewDetails}
+              className="p-1.5 rounded-lg bg-black/60 hover:bg-red-600 text-white backdrop-blur-md transition-colors"
+              title="View Character Details & Bio"
+            >
+              <Info size={13} />
+            </button>
+          )}
+          {onEdit && (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="p-1.5 rounded-lg bg-black/60 hover:bg-amber-600 text-white backdrop-blur-md transition-colors"
+              title="Edit Character Definition"
+            >
+              <Edit3 size={13} />
+            </button>
+          )}
+          {actionMenu}
+        </div>
       </div>
 
       <div className="flex-1" />
