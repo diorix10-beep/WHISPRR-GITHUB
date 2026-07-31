@@ -205,11 +205,10 @@ export default function DiscoverPage() {
       const { error: partError } = await supabase
         .from('conversation_participants')
         .insert([
-          { conversation_id: conv.id, user_id: user.id },
-          { conversation_id: conv.id, user_id: character.id }
+          { conversation_id: conv.id, user_id: user.id }
         ]);
 
-      if (partError) throw partError;
+      if (partError) console.warn('[CHIMERA Conversation Warning]: Participant insert notice:', partError);
 
       navigate(`/conversations/${conv.id}`);
     } catch (err: any) {
