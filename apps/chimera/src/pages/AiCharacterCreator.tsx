@@ -333,28 +333,9 @@ export default function AiCharacterCreator() {
             throw new Error('You must be logged in to publish a character.');
           }
 
-          // Step A: Create bot profile record in public.profiles table
-          const botUserId = crypto.randomUUID();
-          const { data: botProfile, error: botProfileError } = await supabase.from('profiles').insert({
-            user_id: botUserId,
-            display_name: formData.name.trim(),
-            username: tempUsername,
-            photo_url: formData.avatarUrl.trim() || '',
-            bio: formData.shortDescription.trim(),
-            role: 'ai_character',
-            onboarding_complete: true,
-          }).select().maybeSingle();
-
-          if (botProfileError) {
-            console.error('[CHIMERA Publishing Diagnostic]: Failed to create bot profile:', botProfileError);
-            throw botProfileError;
-          }
-
-          const targetBotUserId = botProfile?.user_id || botUserId;
-
-          // Step B: Insert into public.ai_characters table (Strict schema match)
+          // Direct insert into public.ai_characters table (Complies with Supabase RLS auth.uid())
           const { data: insertedChar, error: directError } = await supabase.from('ai_characters').insert({
-            user_id: targetBotUserId,
+            user_id: currentUserId,
             creator_id: currentUserId,
             greeting: formData.greeting.trim(),
             short_description: formData.shortDescription.trim(),
