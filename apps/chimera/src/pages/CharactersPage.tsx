@@ -96,6 +96,7 @@ export default function CharactersPage() {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         results = results.filter(c =>
+          c.name?.toLowerCase().includes(q) ||
           (c.bot_profile as any)?.display_name?.toLowerCase().includes(q) ||
           c.short_description?.toLowerCase().includes(q) ||
           c.category?.toLowerCase().includes(q)

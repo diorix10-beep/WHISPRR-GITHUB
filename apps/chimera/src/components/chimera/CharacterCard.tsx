@@ -14,15 +14,15 @@ export function CharacterCard({ character, onClick, actionMenu }: CharacterCardP
   const profile = character.bot_profile || {};
   const creator = character.creator || {};
   
-  const photoUrl = profile.photo_url;
+  const photoUrl = profile.photo_url || character.photo_url;
   const avatarEmoji = profile.avatar_emoji || '🎭';
-  const name = profile.display_name || 'Unnamed';
-  const creatorName = creator.username || 'unknown';
+  const name = character.name || profile.display_name || character.short_description?.slice(0, 20) || 'AI Character';
+  const creatorName = creator.username || 'creator';
   const description = character.short_description || 'No description provided.';
   const category = character.category || 'General';
   const chatsCount = character.chats_count || 0;
   const viewsCount = character.views_count || 0;
-  const isNSFW = character.rating === 'nsfw';
+  const isNSFW = character.rating === 'nsfw' || character.content_rating === 'NSFW';
 
   return (
     <div
