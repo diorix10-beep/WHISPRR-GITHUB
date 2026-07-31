@@ -334,10 +334,11 @@ export default function AiCharacterCreator() {
           }
 
           const cleanStr = (s: string) => (s || '').replace(/\u0000/g, '').replace(/\x00/g, '').trim();
+          const botId = crypto.randomUUID();
 
           // Direct insert into public.ai_characters table (Complies with Supabase RLS auth.uid())
           const { data: insertedChar, error: directError } = await supabase.from('ai_characters').insert({
-            user_id: currentUserId,
+            user_id: botId,
             creator_id: currentUserId,
             greeting: cleanStr(formData.greeting),
             short_description: cleanStr(formData.shortDescription),
