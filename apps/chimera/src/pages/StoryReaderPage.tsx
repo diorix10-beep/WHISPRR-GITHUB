@@ -335,18 +335,18 @@ export default function StoryReaderPage() {
                 <Bookmark size={20} className={inLibrary ? 'fill-current' : ''} />
               </button>
 
-              {/* Vote */}
+              {/* AO3 Kudos Button */}
               <button
                 onClick={handleToggleVote}
                 className={`flex items-center gap-2 px-4 py-3 rounded-xl border transition-all ${
                   hasVoted
-                    ? 'bg-purple-50 dark:bg-purple-950/20 text-purple-600 border-purple-200 dark:border-purple-900/30'
-                    : 'bg-white dark:bg-warm-800 text-warm-600 dark:text-warm-400 border-warm-250 dark:border-warm-700 hover:bg-warm-50 dark:hover:bg-warm-750'
+                    ? 'bg-rose-500/10 text-rose-500 border-rose-500/30 shadow-md shadow-rose-500/10'
+                    : 'bg-white dark:bg-warm-800 text-warm-600 dark:text-warm-400 border-warm-250 dark:border-warm-700 hover:bg-rose-50 dark:hover:bg-warm-750'
                 }`}
-                title={hasVoted ? 'Remove Vote' : 'Upvote Story'}
+                title={hasVoted ? 'Remove Kudos' : 'Give Kudos ❤️ (AO3 Style)'}
               >
-                <Heart size={20} className={hasVoted ? 'fill-current text-purple-500' : ''} />
-                <span className="text-xs font-bold">{story.votes_count || 0}</span>
+                <Heart size={20} className={hasVoted ? 'fill-current text-rose-500' : ''} />
+                <span className="text-xs font-bold">{story.votes_count || 0} Kudos</span>
               </button>
 
               {/* Co-Creators / Share Collaboration */}
