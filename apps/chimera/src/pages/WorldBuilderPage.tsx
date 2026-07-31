@@ -62,7 +62,7 @@ export default function WorldBuilderPage() {
       setDescription(data.description);
       setScenario(data.scenario);
       setTags((data.tags || []).join(', '));
-      setCoverUrl(data.cover_url || null);
+      setCoverUrl(data.cover_url || data.image_url || data.banner_url || null);
 
       // Check for local draft (Rules 25 & 26)
       const draftKey = `chimera_world_draft_${id}`;
@@ -122,15 +122,21 @@ export default function WorldBuilderPage() {
     if (!id) return;
     try {
       setSaving(true);
+      const cleanStr = (s: string) => (s || '').replace(/\u0000/g, '').replace(/\x00/g, '').trim();
+
       const { error } = await supabase.from('worlds').update({
-        name, description, scenario, visibility, cover_url: coverUrl,
+        name: cleanStr(name),
+        description: cleanStr(description),
+        scenario: cleanStr(scenario),
+        visibility,
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
       }).eq('id', id);
+
       if (error) throw error;
       localStorage.removeItem(`chimera_world_draft_${id}`);
-      showToast('World saved!', 'success');
+      showToast('World saved successfully!', 'success');
     } catch (err: any) {
-      showToast(err.message || 'Error saving', 'error');
+      showToast(err.message || 'Error saving world', 'error');
     } finally {
       setSaving(false);
     }
