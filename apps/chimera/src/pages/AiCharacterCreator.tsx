@@ -335,51 +335,80 @@ export default function AiCharacterCreator() {
 
           const cleanStr = (s: string) => (s || '').replace(/\u0000/g, '').replace(/\x00/g, '').trim();
 
-          // Step A: Create bot profile record in public.profiles table (Let Postgres generate user_id)
-          let botUserId = crypto.randomUUID();
-          
-          const { data: botProfile, error: botProfileError } = await supabase.from('profiles').insert({
-            display_name: formData.name.trim(),
-            username: tempUsername,
-            photo_url: formData.avatarUrl.trim() || '',
-            bio: cleanStr(formData.shortDescription),
-            role: 'ai_character',
-            onboarding_complete: true,
-          }).select().single();
+          // Step A: Try Supabase RPC 'create_ai_character' (Bypasses profile RLS in Postgres)
+          const { data: rpcData, error: rpcError } = await supabase.rpc('create_ai_character', {
+            p_name: formData.name.trim(),
+            p_username: tempUsername,
+            p_greeting: cleanStr(formData.greeting),
+            p_short_description: cleanStr(formData.shortDescription),
+            p_long_description: cleanStr(formData.longDescription),
+            p_personality: cleanStr(formData.personality),
+            p_scenario: cleanStr(formData.scenario),
+            p_example_dialogues: cleanStr(formData.exampleDialogues),
+            p_conversation_style: cleanStr(formData.conversationStyle),
+            p_knowledge: cleanStr(formData.knowledge),
+            p_tags: tags.map(cleanStr),
+            p_category: formData.category,
+            p_visibility: formData.visibility,
+            p_avatar_url: formData.avatarUrl.trim() || '',
+            p_banner_url: formData.avatarUrl.trim() || '',
+            p_content_rating: formData.contentRating,
+            p_creator_notes: cleanStr(formData.creatorNotes),
+            p_example_conversations: cleanStr(formData.exampleConversations),
+            p_rp_definition: cleanStr(formData.rpDefinition),
+            p_system_definition: cleanStr(formData.systemDefinition),
+            p_system_character_definition: cleanStr(formData.systemCharacterDefinition)
+          });
 
-          if (botProfile && (botProfile.user_id || botProfile.id)) {
-            botUserId = botProfile.user_id || botProfile.id;
-          } else if (botProfileError) {
-            console.warn('[CHIMERA Publishing Diagnostic]: Profile creation notice:', botProfileError);
-          }
+          if (rpcError) {
+            console.warn('[CHIMERA Publishing Diagnostic]: RPC create_ai_character failed, attempting profile fallback:', rpcError);
+            
+            // Fallback Step B: Create profile record with explicit user_id if RPC is absent
+            const botUserId = crypto.randomUUID();
+            const { error: botProfileError } = await supabase.from('profiles').insert({
+              id: botUserId,
+              user_id: botUserId,
+              display_name: formData.name.trim(),
+              username: tempUsername,
+              photo_url: formData.avatarUrl.trim() || '',
+              bio: cleanStr(formData.shortDescription),
+              role: 'ai_character',
+              onboarding_complete: true,
+            });
 
-          // Step B: Direct insert into public.ai_characters table
-          const { data: insertedChar, error: directError } = await supabase.from('ai_characters').insert({
-            user_id: botUserId,
-            creator_id: currentUserId,
-            greeting: cleanStr(formData.greeting),
-            short_description: cleanStr(formData.shortDescription),
-            long_description: cleanStr(formData.longDescription),
-            personality: cleanStr(formData.personality),
-            scenario: cleanStr(formData.scenario),
-            example_dialogues: cleanStr(formData.exampleDialogues),
-            conversation_style: cleanStr(formData.conversationStyle),
-            knowledge: cleanStr(formData.knowledge),
-            tags: tags.map(cleanStr),
-            category: formData.category,
-            visibility: formData.visibility,
-            content_rating: formData.contentRating,
-            creator_notes: cleanStr(formData.creatorNotes),
-            example_conversations: cleanStr(formData.exampleConversations),
-            rp_definition: cleanStr(formData.rpDefinition),
-            system_definition: cleanStr(formData.systemDefinition),
-            system_character_definition: cleanStr(formData.systemCharacterDefinition),
-            status: 'published'
-          }).select().maybeSingle();
+            if (botProfileError) {
+              console.error('[CHIMERA Publishing Diagnostic]: Profile creation failed:', botProfileError);
+              throw botProfileError;
+            }
 
-          if (directError) {
-            console.error('[CHIMERA Publishing Diagnostic]: Direct table insert error:', directError);
-            throw directError;
+            // Insert character definition referencing the new profile user_id
+            const { error: directError } = await supabase.from('ai_characters').insert({
+              user_id: botUserId,
+              creator_id: currentUserId,
+              greeting: cleanStr(formData.greeting),
+              short_description: cleanStr(formData.shortDescription),
+              long_description: cleanStr(formData.longDescription),
+              personality: cleanStr(formData.personality),
+              scenario: cleanStr(formData.scenario),
+              example_dialogues: cleanStr(formData.exampleDialogues),
+              conversation_style: cleanStr(formData.conversationStyle),
+              knowledge: cleanStr(formData.knowledge),
+              tags: tags.map(cleanStr),
+              category: formData.category,
+              visibility: formData.visibility,
+              content_rating: formData.contentRating,
+              creator_notes: cleanStr(formData.creatorNotes),
+              example_conversations: cleanStr(formData.exampleConversations),
+              rp_definition: cleanStr(formData.rpDefinition),
+              system_definition: cleanStr(formData.systemDefinition),
+              system_character_definition: cleanStr(formData.systemCharacterDefinition),
+              status: 'published'
+            });
+
+            if (directError) {
+              console.error('[CHIMERA Publishing Diagnostic]: Direct table insert failed:', directError);
+              throw directError;
+            }
           }
 
           // Step 5: Success
