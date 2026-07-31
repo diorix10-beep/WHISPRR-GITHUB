@@ -54,6 +54,18 @@ const ROLEPLAY_CATEGORIES = [
   'Supernatural'
 ];
 
+const AO3_TROPES = [
+  'All Tropes',
+  'Enemies to Lovers',
+  'Slow Burn',
+  'Isekai / Portal',
+  'Found Family',
+  'Fake Relationship',
+  'Time Travel',
+  'Dark Fantasy',
+  'Cyberpunk'
+];
+
 export default function DiscoverPage() {
   const outletContext = useOutletContext<{ creativeMode?: 'roleplay' | 'storytelling' }>();
   const creativeMode = outletContext?.creativeMode || 'roleplay';

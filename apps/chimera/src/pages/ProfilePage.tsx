@@ -256,6 +256,42 @@ export default function ProfilePage() {
           </div>
         </div>
 
+        {/* ── 3. ACHIEVEMENTS & BADGES SHOWCASE ── */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-warm-400 dark:text-warm-500">Achievements &amp; Badges</p>
+            <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 rounded-full">
+              4 Badges Unlocked
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="p-4 rounded-2xl bg-white dark:bg-warm-900 border border-amber-500/30 shadow-sm text-center space-y-1 relative overflow-hidden group">
+              <div className="text-2xl">🏆</div>
+              <h4 className="text-xs font-bold text-warm-900 dark:text-white">Pioneer Creator</h4>
+              <p className="text-[10px] text-warm-400">Created 1+ character in CHIMERA</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white dark:bg-warm-900 border border-blue-500/30 shadow-sm text-center space-y-1 relative overflow-hidden group">
+              <div className="text-2xl">💎</div>
+              <h4 className="text-xs font-bold text-warm-900 dark:text-white">Shard Holder</h4>
+              <p className="text-[10px] text-warm-400">Earned &amp; gifted SHARDS</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white dark:bg-warm-900 border border-purple-500/30 shadow-sm text-center space-y-1 relative overflow-hidden group">
+              <div className="text-2xl">🌌</div>
+              <h4 className="text-xs font-bold text-warm-900 dark:text-white">World Architect</h4>
+              <p className="text-[10px] text-warm-400">Built a custom World Nexus</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white dark:bg-warm-900 border border-pink-500/30 shadow-sm text-center space-y-1 relative overflow-hidden group">
+              <div className="text-2xl">✍️</div>
+              <h4 className="text-xs font-bold text-warm-900 dark:text-white">Grand Author</h4>
+              <p className="text-[10px] text-warm-400">Published web novel story</p>
+            </div>
+          </div>
+        </div>
+
         {/* ── Quick Links ── */}
         <div className="mb-6">
           <p className="text-[10px] font-black uppercase tracking-widest text-warm-400 dark:text-warm-500 mb-3">Creator Tools</p>
