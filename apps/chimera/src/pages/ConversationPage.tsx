@@ -78,6 +78,7 @@ export default function ConversationPage() {
   const [showExporterModal, setShowExporterModal] = useState(false);
   const [targetLang, setTargetLang] = useState('en');
   const [showLangModal, setShowLangModal] = useState(false);
+  const [swipesMap, setSwipesMap] = useState<Record<string, { variations: string[]; currentIndex: number }>>({});
 
   // Roleplay Safety Intervention State
   const [isRoleplayPaused, setIsRoleplayPaused] = useState(false);
@@ -726,20 +727,38 @@ export default function ConversationPage() {
     }
   };
 
-  // Regenerate AI Response
-  const handleRegenerateMessage = async (messageId: string) => {
+  // Response Swiping Engine (Janitor AI & SillyTavern Style)
+  const handleSwipeChange = async (messageId: string, direction: 'left' | 'right') => {
+    const current = swipesMap[messageId];
+    if (!current || current.variations.length <= 1) return;
+
+    let newIndex = direction === 'left' ? current.currentIndex - 1 : current.currentIndex + 1;
+    if (newIndex < 0) newIndex = current.variations.length - 1;
+    if (newIndex >= current.variations.length) newIndex = 0;
+
+    const newContent = current.variations[newIndex];
+    setSwipesMap(prev => ({
+      ...prev,
+      [messageId]: { ...current, currentIndex: newIndex }
+    }));
+
+    setMessages(prev => prev.map(m => m.id === messageId ? { ...m, content: newContent } : m));
+    await supabase.from('messages').update({ content: newContent }).eq('id', messageId);
+  };
+
+  const handleSwipeNew = async (messageId: string) => {
     if (!conversationId || !otherUser || (otherUser.role as string) !== 'ai_character') return;
     try {
-      // 1. Soft-delete the AI's last message
-      await supabase.from('messages').update({ deleted_at: new Date().toISOString() }).eq('id', messageId);
-      setMessages(prev => prev.filter(m => m.id !== messageId));
-      
-      // 2. Trigger new AI response
+      const targetMsg = messages.find(m => m.id === messageId);
+      if (!targetMsg) return;
+
+      showToast('Generating new response variation...', 'info');
       setTypingUsers([otherUser.user_id]);
+
       const sessionRes = await supabase.auth.getSession();
       const token = sessionRes.data.session?.access_token;
-      
-      fetch('/api/ai-chat', {
+
+      const res = await fetch('/api/ai-chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -747,16 +766,51 @@ export default function ConversationPage() {
         },
         body: JSON.stringify({
           conversation_id: conversationId,
-          bot_user_id: otherUser.user_id
+          bot_user_id: otherUser.user_id,
+          is_swipe: true
         })
-      }).catch(err => {
-        console.error('Failed to trigger AI response:', err);
-        setTypingUsers([]);
       });
-    } catch (error) {
-      console.error('Error regenerating message:', error);
-      showToast('Failed to regenerate response', 'error');
+
+      const data = await res.json();
+      if (data && data.reply) {
+        const newVariation = data.reply;
+        const existing = swipesMap[messageId] || { variations: [targetMsg.content || ''], currentIndex: 0 };
+        const updatedVariations = [...existing.variations, newVariation];
+        const newIdx = updatedVariations.length - 1;
+
+        setSwipesMap(prev => ({
+          ...prev,
+          [messageId]: { variations: updatedVariations, currentIndex: newIdx }
+        }));
+
+        setMessages(prev => prev.map(m => m.id === messageId ? { ...m, content: newVariation } : m));
+        await supabase.from('messages').update({ content: newVariation }).eq('id', messageId);
+        showToast(`Swiped variation (${newIdx + 1}/${updatedVariations.length})`, 'success');
+      }
+    } catch (err) {
+      console.error('Failed to swipe new variation:', err);
+      showToast('Failed to generate swipe variation', 'error');
+    } finally {
+      setTypingUsers([]);
     }
+  };
+
+  const handleBranchFromMessage = async (messageId: string) => {
+    const targetIdx = messages.findIndex(m => m.id === messageId);
+    if (targetIdx === -1) return;
+
+    showToast('Branching narrative from this point...', 'info');
+    const toDelete = messages.slice(targetIdx + 1).map(m => m.id);
+    if (toDelete.length > 0) {
+      await supabase.from('messages').update({ deleted_at: new Date().toISOString() }).in('id', toDelete);
+      setMessages(prev => prev.slice(0, targetIdx + 1));
+    }
+    showToast('Narrative branched!', 'success');
+  };
+
+  // Regenerate AI Response
+  const handleRegenerateMessage = async (messageId: string) => {
+    await handleSwipeNew(messageId);
   };
 
   // Group management: rename
@@ -1313,6 +1367,49 @@ export default function ConversationPage() {
                           ) : (
                             message.content
                           )}
+                        </div>
+                      )}
+
+                      {/* Swiping Toolbar & Branching Controls */}
+                      {isAI && (
+                        <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-warm-400">
+                          <div className="flex items-center gap-1 bg-warm-900/60 px-2 py-0.5 rounded-lg border border-warm-800">
+                            <button
+                              onClick={() => handleSwipeChange(message.id, 'left')}
+                              className="p-1 hover:text-white transition-colors font-bold"
+                              title="Previous response variation"
+                            >
+                              ◀
+                            </button>
+                            <span className="font-mono text-[11px] font-bold text-warm-200 px-1">
+                              {(swipesMap[message.id]?.currentIndex ?? 0) + 1} / {swipesMap[message.id]?.variations.length || 1}
+                            </span>
+                            <button
+                              onClick={() => handleSwipeChange(message.id, 'right')}
+                              className="p-1 hover:text-white transition-colors font-bold"
+                              title="Next response variation"
+                            >
+                              ▶
+                            </button>
+                          </div>
+
+                          <button
+                            onClick={() => handleSwipeNew(message.id)}
+                            className="p-1 px-2 rounded-lg bg-warm-800/60 hover:bg-warm-750 text-warm-300 hover:text-white transition-colors flex items-center gap-1 font-bold text-[11px] border border-warm-700/50"
+                            title="Generate new swipe variation"
+                          >
+                            <RotateCw size={11} />
+                            <span>Swipe New</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleBranchFromMessage(message.id)}
+                            className="p-1 px-2 rounded-lg bg-purple-950/40 hover:bg-purple-900/60 text-purple-300 hover:text-white transition-colors flex items-center gap-1 font-bold text-[11px] border border-purple-800/40"
+                            title="Branch conversation from here"
+                          >
+                            <Brain size={11} />
+                            <span>Branch</span>
+                          </button>
                         </div>
                       )}
                     </div>
