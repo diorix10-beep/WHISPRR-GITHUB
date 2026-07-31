@@ -129,7 +129,6 @@ export default function WorldBuilderPage() {
         description: cleanStr(description),
         scenario: cleanStr(scenario),
         visibility,
-        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
       }).eq('id', id);
 
       if (error) throw error;
