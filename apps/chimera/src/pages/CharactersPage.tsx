@@ -67,10 +67,10 @@ export default function CharactersPage() {
       setLoading(true);
       let query = supabase
         .from('ai_characters')
-        .select('*, bot_profile:profiles!ai_characters_user_id_fkey(display_name, username, avatar_emoji, photo_url), creator:profiles!ai_characters_creator_id_fkey(username, display_name)');
+        .select('*');
 
       if (tab === 'mine') {
-        query = query.eq('creator_id', profile.user_id).neq('visibility', 'private');
+        query = query.eq('creator_id', profile.user_id);
       } else if (tab === 'drafts') {
         query = query.eq('creator_id', profile.user_id).eq('visibility', 'private');
       } else {

@@ -59,9 +59,9 @@ export default function DiscoverPage() {
   const creativeMode = outletContext?.creativeMode || 'roleplay';
   const isStoryMode = creativeMode === 'storytelling';
 
-  const [characters, setCharacters] = useState<Profile[]>([]);
+  const [characters, setCharacters] = useState<any[]>([]);
   const [stories, setStories] = useState<StoryItem[]>([]);
-  const [selectedChar, setSelectedChar] = useState<Profile | null>(null);
+  const [selectedChar, setSelectedChar] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -85,32 +85,34 @@ export default function DiscoverPage() {
     try {
       const { data, error } = await supabase
         .from('ai_characters')
-        .select(`
-          user_id,
-          greeting,
-          short_description,
-          tags,
-          profiles:profiles!ai_characters_user_id_fkey!inner(
-            id,
-            display_name,
-            username,
-            avatar_emoji,
-            photo_url,
-            bio,
-            badges,
-            role,
-            personality_badges
-          )
-        `)
-        .eq('visibility', 'public')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
       const formattedCharacters = (data || []).map((char: any) => ({
-        ...char.profiles,
-        user_id: char.user_id,
-        bio: char.short_description || char.profiles?.bio,
+        id: char.id,
+        user_id: char.user_id || char.id,
+        display_name: char.name || char.display_name || 'AI Character',
+        username: char.username || 'bot',
+        photo_url: char.photo_url || null,
+        avatar_emoji: '🎭',
+        bio: char.short_description || char.long_description || '',
+        badges: char.tags || ['Roleplay'],
+        rating: char.content_rating || 'SFW',
+        scenario: char.scenario || '',
+        greeting: char.greeting || '',
+        mood: 'Ready to chat',
+        interests: char.tags || [],
+        location: 'CHIMERA Nexus',
+        occupation: 'AI Roleplay Identity',
+        pronouns: 'They/Them',
+        relationship_status: 'Available',
+        personality_type: 'Engaging',
+        chats_count: char.chats_count || 0,
+        followers_count: char.followers_count || 0,
+        likes_count: char.likes_count || 0,
+        role: 'ai_character'
       }));
       
       setCharacters(formattedCharacters);
