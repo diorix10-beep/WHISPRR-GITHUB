@@ -345,10 +345,12 @@ export default function AiCharacterCreator() {
             .from('ai_characters')
             .upsert({
               id: characterId,
-              user_id: currentUserId,
+              user_id: characterId,
               creator_id: currentUserId,
               name: cleanStr(formData.name),
+              display_name: cleanStr(formData.name),
               photo_url: formData.avatarUrl.trim() || '',
+              avatar_url: formData.avatarUrl.trim() || '',
               greeting: cleanStr(formData.greeting),
               short_description: cleanStr(formData.shortDescription),
               long_description: cleanStr(formData.longDescription),
@@ -366,7 +368,9 @@ export default function AiCharacterCreator() {
               rp_definition: cleanStr(formData.rpDefinition),
               system_definition: cleanStr(formData.systemDefinition),
               system_character_definition: cleanStr(formData.systemCharacterDefinition),
-              status: 'published'
+              status: 'published',
+              creator_username: currentUsername,
+              updated_at: new Date().toISOString()
             }, { onConflict: 'id' })
             .select()
             .maybeSingle();
