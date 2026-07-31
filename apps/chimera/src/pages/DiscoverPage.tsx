@@ -195,7 +195,10 @@ export default function DiscoverPage() {
         .from('conversations')
         .insert({
           type: 'dm',
-          created_by: user.id
+          created_by: user.id,
+          character_id: character.id,
+          last_message: (character as any).greeting || `*Steps into the room...* Hello!`,
+          last_message_at: new Date().toISOString()
         })
         .select()
         .single();

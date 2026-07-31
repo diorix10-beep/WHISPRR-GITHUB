@@ -217,14 +217,40 @@ export default function ConversationPage() {
           .select('*')
           .in('user_id', participantIds);
 
+        let botProfile: Profile | null = null;
+        if (conv.character_id) {
+          const { data: aiChar } = await supabase
+            .from('ai_characters')
+            .select('*')
+            .or(`id.eq.${conv.character_id},user_id.eq.${conv.character_id}`)
+            .maybeSingle();
+
+          if (aiChar) {
+            botProfile = {
+              id: aiChar.id,
+              user_id: aiChar.id,
+              display_name: aiChar.name || aiChar.display_name || 'AI Character',
+              username: aiChar.creator_username || 'bot',
+              photo_url: aiChar.photo_url || aiChar.avatar_url || null,
+              avatar_emoji: '🎭',
+              role: 'ai_character',
+              bio: aiChar.short_description || aiChar.long_description || '',
+              onboarding_complete: true,
+              created_at: aiChar.created_at || new Date().toISOString(),
+              updated_at: aiChar.updated_at || new Date().toISOString(),
+              greeting: aiChar.greeting || ''
+            } as any;
+          }
+        }
+
         if (profiles) {
           setParticipants(profiles);
           const nonUserProfiles = profiles.filter(p => p.user_id !== user.id);
           if (conv.type === 'dm') {
-            const other = nonUserProfiles[0] || null;
+            const other = botProfile || nonUserProfiles[0] || null;
             setOtherUser(other);
           }
-          const initialMulti: MultiCharacterParticipant[] = nonUserProfiles.map((p, idx) => ({
+          const initialMulti: MultiCharacterParticipant[] = (botProfile ? [botProfile] : nonUserProfiles).map((p, idx) => ({
             character_id: p.user_id,
             display_name: p.display_name,
             username: p.username,
