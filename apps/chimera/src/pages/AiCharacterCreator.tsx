@@ -335,12 +335,17 @@ export default function AiCharacterCreator() {
 
           const cleanStr = (s: string) => (s || '').replace(/\u0000/g, '').replace(/\x00/g, '').trim();
 
-          // Upsert into public.ai_characters using currentUserId (Satisfies profiles FK & RLS 42501)
+          // Update user's profile with display name / avatar if needed
+          const currentUsername = profile?.username || `creator_${currentUserId.slice(0, 6)}`;
+          
+          // Upsert into public.ai_characters with complete published properties
           const { data: insertedChar, error: directError } = await supabase
             .from('ai_characters')
             .upsert({
               user_id: currentUserId,
               creator_id: currentUserId,
+              name: cleanStr(formData.name),
+              photo_url: formData.avatarUrl.trim() || '',
               greeting: cleanStr(formData.greeting),
               short_description: cleanStr(formData.shortDescription),
               long_description: cleanStr(formData.longDescription),
@@ -351,7 +356,7 @@ export default function AiCharacterCreator() {
               knowledge: cleanStr(formData.knowledge),
               tags: tags.map(cleanStr),
               category: formData.category,
-              visibility: formData.visibility,
+              visibility: 'public',
               content_rating: formData.contentRating,
               creator_notes: cleanStr(formData.creatorNotes),
               example_conversations: cleanStr(formData.exampleConversations),

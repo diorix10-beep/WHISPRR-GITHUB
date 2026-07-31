@@ -321,7 +321,7 @@ export default function CharactersPage() {
                 <CharacterCard
                   key={character.id}
                   character={character as any}
-                  onClick={() => navigate(`/characters/${character.id}`)}
+                  onClick={() => navigate(`/conversations/new?characterId=${character.id}`)}
                 />
               ))}
             </div>
