@@ -92,15 +92,17 @@ export default function CreatorDashboardPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-center w-full sm:w-auto min-w-[140px]">
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-center w-full sm:w-auto min-w-[150px]">
               <span className="text-xs text-warm-400 font-medium block">Total Earned</span>
               <span className="font-serif text-2xl font-bold text-amber-400">350 💎</span>
               <span className="text-[11px] text-emerald-400 font-bold block mt-0.5">≈ $3.50 USD</span>
             </div>
 
             <button
-              onClick={() => alert('Payout requests unlock once you reach the $10 USD (1,000 Shards) minimum threshold!')}
-              className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs shadow-lg transition-all flex items-center justify-center gap-2"
+              onClick={() => {
+                alert('💰 Payout Request Submitted! Minimum threshold is $10.00 USD. Your payout request of $3.50 will process on the next 1st or 15th payout date.');
+              }}
+              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-400 hover:to-red-400 text-white font-extrabold text-xs shadow-lg transition-all flex items-center justify-center gap-2"
             >
               <span>Request Cash Payout</span>
               <ChevronRight size={16} />
