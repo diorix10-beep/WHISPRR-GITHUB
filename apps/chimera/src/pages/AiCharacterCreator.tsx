@@ -60,7 +60,8 @@ export default function AiCharacterCreator() {
     knowledge: '',
     creatorNotes: '',
     exampleConversations: '',
-    tagsString: ''
+    tagsString: '',
+    alternateGreetings: [] as string[]
   });
 
   const [archData, setArchData] = useState<CharacterArchitecture>({});
@@ -117,7 +118,8 @@ export default function AiCharacterCreator() {
               knowledge: data.knowledge || '',
               creatorNotes: data.creator_notes || '',
               exampleConversations: data.example_conversations || '',
-              tagsString: (data.tags || []).join(', ')
+              tagsString: (data.tags || []).join(', '),
+              alternateGreetings: data.alternate_greetings || []
             });
             showToast(`Loaded draft: ${data.display_name || 'Untitled Character'}`, 'info');
           }
@@ -236,7 +238,8 @@ export default function AiCharacterCreator() {
       knowledge: '',
       creatorNotes: '',
       exampleConversations: '',
-      tagsString: ''
+      tagsString: '',
+      alternateGreetings: []
     });
     setArchData({});
     showToast('Draft discarded', 'info');
@@ -368,6 +371,7 @@ export default function AiCharacterCreator() {
               rp_definition: cleanStr(formData.rpDefinition),
               system_definition: cleanStr(formData.systemDefinition),
               system_character_definition: cleanStr(formData.systemCharacterDefinition),
+              alternate_greetings: formData.alternateGreetings.map(cleanStr),
               status: 'published',
               creator_username: currentUsername,
               updated_at: new Date().toISOString()
@@ -680,8 +684,33 @@ export default function AiCharacterCreator() {
                     <div className={`bg-warm-800/50 border rounded-xl overflow-hidden transition-all ${
                       !formData.greeting.trim() && publishPipeline.step === 'failed' ? 'border-red-500 ring-2 ring-red-500/30' : 'border-warm-700'
                     }`}>
-                      <div className="flex bg-warm-800 border-b border-warm-700">
-                        <button type="button" className="px-4 py-2 text-xs font-bold text-white border-b-2 border-red-500 bg-warm-700/50">Write Opening Message</button>
+                      <div className="flex items-center justify-between bg-warm-800 border-b border-warm-700 px-3 py-1.5 flex-wrap gap-2">
+                        <span className="text-xs font-bold text-warm-200">First Opening Message</span>
+                        {/* Macro Helper Chips (Janitor AI Style) */}
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, greeting: prev.greeting + ' {{user}} ' }));
+                              greetingRef.current?.focus();
+                            }}
+                            className="px-2 py-0.5 rounded bg-warm-700 hover:bg-warm-600 text-warm-200 text-[10px] font-mono font-bold"
+                            title="Insert User Persona Name Macro"
+                          >
+                            + {'{{user}}'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, greeting: prev.greeting + ' {{char}} ' }));
+                              greetingRef.current?.focus();
+                            }}
+                            className="px-2 py-0.5 rounded bg-warm-700 hover:bg-warm-600 text-warm-200 text-[10px] font-mono font-bold"
+                            title="Insert Character Name Macro"
+                          >
+                            + {'{{char}}'}
+                          </button>
+                        </div>
                       </div>
                       <textarea
                         ref={greetingRef}
@@ -689,9 +718,74 @@ export default function AiCharacterCreator() {
                         value={formData.greeting}
                         onChange={handleChange}
                         rows={5}
-                        placeholder="Type your character's first opening message to the user... e.g. *smiles warmly* 'Welcome! How can I assist you today?'"
-                        className="w-full bg-transparent p-4 text-sm text-white focus:outline-none resize-none placeholder:text-warm-500"
+                        placeholder="Type your character's first opening message to the user... e.g. *smiles warmly at {{user}}* 'Welcome! How can I assist you today?'"
+                        className="w-full bg-transparent p-4 text-sm text-white focus:outline-none resize-none placeholder:text-warm-500 font-serif"
                       />
+                    </div>
+
+                    {/* Alternate Greetings Panel (Janitor AI Feature) */}
+                    <div className="mt-6 p-4 bg-warm-850 border border-warm-800 rounded-2xl space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs font-bold text-warm-200 flex items-center gap-2">
+                            <Sparkles size={14} className="text-amber-400" />
+                            <span>Alternate Greetings (Janitor AI Style)</span>
+                          </h4>
+                          <p className="text-[10px] text-warm-400 mt-0.5">
+                            Add alternative opening scenes so conversations can start in different settings or moods!
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (formData.alternateGreetings.length < 5) {
+                              setFormData(prev => ({
+                                ...prev,
+                                alternateGreetings: [...prev.alternateGreetings, '']
+                              }));
+                            }
+                          }}
+                          disabled={formData.alternateGreetings.length >= 5}
+                          className="px-3 py-1.5 rounded-xl bg-warm-750 hover:bg-warm-700 text-warm-200 hover:text-white text-xs font-bold border border-warm-700 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                        >
+                          <Plus size={14} />
+                          <span>Add Greeting</span>
+                        </button>
+                      </div>
+
+                      {formData.alternateGreetings.map((altGreeting, idx) => (
+                        <div key={idx} className="space-y-1.5 p-3 bg-warm-900 rounded-xl border border-warm-800 relative">
+                          <div className="flex items-center justify-between text-[11px] font-bold text-warm-400">
+                            <span>Alternate Scene #{idx + 1}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  alternateGreetings: prev.alternateGreetings.filter((_, i) => i !== idx)
+                                }));
+                              }}
+                              className="text-red-400 hover:text-red-300 text-[10px]"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                          <textarea
+                            value={altGreeting}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setFormData(prev => {
+                                const next = [...prev.alternateGreetings];
+                                next[idx] = val;
+                                return { ...prev, alternateGreetings: next };
+                              });
+                            }}
+                            rows={3}
+                            placeholder={`Alternate scene #${idx + 1}... e.g. *{{char}} crosses their arms...*`}
+                            className="w-full bg-warm-950 p-3 rounded-lg text-xs text-white border border-warm-800 focus:outline-none focus:border-purple-500 font-serif"
+                          />
+                        </div>
+                      ))}
                     </div>
                   </div>
 
