@@ -1290,6 +1290,31 @@ export default function ConversationPage() {
                   prev.map((p) => ({ ...p, is_active_speaker: p.character_id === id }))
                 );
               }}
+              onTriggerAiSpeaker={async () => {
+                const speakerId = activeSpeakerId || multiParticipants[0]?.character_id;
+                if (!speakerId || !conversationId) return;
+
+                showToast('Triggering character response...', 'info');
+                setTypingUsers([speakerId]);
+
+                const sessionRes = await supabase.auth.getSession();
+                const token = sessionRes.data.session?.access_token;
+
+                fetch('/api/ai-chat', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify({
+                    conversation_id: conversationId,
+                    bot_user_id: speakerId
+                  })
+                }).catch(err => {
+                  console.error('Error triggering AI speaker:', err);
+                  setTypingUsers([]);
+                });
+              }}
               onAddCharacter={() => navigate('/characters')}
               onRemoveCharacter={(id) => {
                 setMultiParticipants((prev) => prev.filter((p) => p.character_id !== id));

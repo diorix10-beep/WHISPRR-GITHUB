@@ -7,6 +7,7 @@ interface MultiCharacterHeaderProps {
   participants: MultiCharacterParticipant[];
   activeSpeakerId: string | null;
   onSelectActiveSpeaker: (characterId: string) => void;
+  onTriggerAiSpeaker: () => void;
   onAddCharacter: () => void;
   onRemoveCharacter: (characterId: string) => void;
 }
@@ -15,6 +16,7 @@ export const MultiCharacterHeader: React.FC<MultiCharacterHeaderProps> = ({
   participants,
   activeSpeakerId,
   onSelectActiveSpeaker,
+  onTriggerAiSpeaker,
   onAddCharacter,
   onRemoveCharacter,
 }) => {
@@ -78,15 +80,26 @@ export const MultiCharacterHeader: React.FC<MultiCharacterHeaderProps> = ({
         })}
       </div>
 
-      {/* Add Character CTA */}
-      <button
-        onClick={onAddCharacter}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-sm transition-all shrink-0"
-        title="Add another AI character into this story scene"
-      >
-        <Plus size={14} />
-        <span className="hidden sm:inline">Add Character</span>
-      </button>
+      {/* Actions */}
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          onClick={onTriggerAiSpeaker}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-sm transition-all"
+          title="Trigger selected AI character to speak next in scene"
+        >
+          <Sparkles size={14} />
+          <span>Speak Next</span>
+        </button>
+
+        <button
+          onClick={onAddCharacter}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-warm-800 hover:bg-warm-750 text-warm-200 hover:text-white text-xs font-bold border border-warm-700 transition-all"
+          title="Add another AI character into this story scene"
+        >
+          <Plus size={14} />
+          <span className="hidden sm:inline">Add Character</span>
+        </button>
+      </div>
 
     </div>
   );
