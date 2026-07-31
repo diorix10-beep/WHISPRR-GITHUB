@@ -61,6 +61,12 @@ export const ELEVENLABS_VOICE_ROSTER: ElevenLabsVoice[] = [
 export async function generateElevenLabsAudio(text: string, voiceId: string = '21m00Tcm4TlvDq8ikWAM'): Promise<string> {
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
   
+  // Clean text of markdown formatting (*actions*, quotes) for natural narration
+  const cleanText = text
+    .replace(/\*.*?\*/g, '') // remove action tags for voice
+    .replace(/[#_*`~]/g, '')
+    .trim() || text;
+
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -69,17 +75,20 @@ export async function generateElevenLabsAudio(text: string, voiceId: string = '2
       'xi-api-key': ELEVENLABS_API_KEY
     },
     body: JSON.stringify({
-      text: text,
-      model_id: 'eleven_monolingual_v1',
+      text: cleanText,
+      model_id: 'eleven_multilingual_v2', // Ultra-HD Human Emotion Model
       voice_settings: {
-        stability: 0.5,
-        similarity_boost: 0.75
+        stability: 0.35, // Lower stability = more expressive & human-like pitch variation
+        similarity_boost: 0.85,
+        style: 0.45, // High emotion & performance style
+        use_speaker_boost: true
       }
     })
   });
 
   if (!response.ok) {
     const errText = await response.text();
+    console.error('[ElevenLabs API Diagnostic Error]:', response.status, errText);
     throw new Error(`ElevenLabs API error (${response.status}): ${errText}`);
   }
 
