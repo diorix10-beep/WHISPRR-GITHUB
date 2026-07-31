@@ -10,6 +10,7 @@ import { useToast } from '../contexts/ToastContext';
 import { ShardsHubModal } from '../components/common/ShardsHubModal';
 import { ShareModal } from '../components/common/ShareModal';
 import { ShardCrystalImage } from '../components/common/ShardCrystalImage';
+import { GiftShardsModal } from '../components/common/GiftShardsModal';
 
 export default function ShardsPage() {
   const { profile, shardsBalance, earnShards, spendShards, adFreePassActive, activateAdFreePass } = useAuth();
@@ -21,6 +22,7 @@ export default function ShardsPage() {
   const [adCount, setAdCount] = useState(0);
   const [dailyClaimed, setDailyClaimed] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
 
   // Rewarded Video Ad Timer
   useEffect(() => {
@@ -158,7 +160,7 @@ export default function ShardsPage() {
           </button>
 
           <button
-            onClick={() => showToast('🎁 Gifting SHARDS to community members is available on character & author profiles!', 'info')}
+            onClick={() => setIsGiftModalOpen(true)}
             className="flex-1 min-w-[130px] py-3 px-4 rounded-2xl bg-white/5 hover:bg-pink-600/20 text-warm-100 hover:text-pink-300 border border-white/5 hover:border-pink-500/30 transition-all flex items-center justify-center gap-2 text-xs font-bold group"
           >
             <Heart size={16} className="text-pink-400 group-hover:scale-110 transition-transform" />
@@ -567,6 +569,13 @@ export default function ShardsPage() {
         description="Build AI characters, write interactive novels, and earn real revenue with SHARDS!"
         url={`${window.location.origin}/auth?ref=${profile?.username || 'creator'}`}
         type="referral"
+      />
+
+      {/* Gift SHARDS Modal */}
+      <GiftShardsModal
+        isOpen={isGiftModalOpen}
+        onClose={() => setIsGiftModalOpen(false)}
+        recipientName="Favorite Creator & Characters"
       />
     </div>
   );
