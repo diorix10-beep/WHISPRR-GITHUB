@@ -245,33 +245,20 @@ export default function AiCharacterCreator() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const getFriendlyErrorMessage = (errorMsg: string) => {
-    if (!errorMsg) {
-      return "Something went wrong while publishing. Please try again in a moment. Your draft is completely safe.";
-    }
-    const lower = errorMsg.toLowerCase();
+  const getFriendlyErrorMessage = (err: any) => {
+    if (!err) return "Publishing failed. Please try again.";
     
-    if (lower.includes('unique constraint') || lower.includes('username already taken') || lower.includes('already exists')) {
-      return "That name is already claimed. Please try a different name for your character.";
-    }
-    if (lower.includes('not authenticated') || lower.includes('jwt') || lower.includes('auth')) {
-      return "Your session has expired. Please sign in again to publish.";
-    }
-    if (lower.includes('network') || lower.includes('fetch') || lower.includes('failed to fetch')) {
-      return "We couldn't reach the server right now. Your draft has been safely saved locally and will sync when your connection returns.";
-    }
-    if (
-      lower.includes('schema') || 
-      lower.includes('column') || 
-      lower.includes('relation') || 
-      lower.includes('sql') || 
-      lower.includes('postgres') || 
-      lower.includes('syntax')
-    ) {
-      return "We encountered a temporary database update sync. Your draft has been safely saved, and you can try publishing again in a moment.";
-    }
+    // Diagnostic Mode: Always surface exact technical exception
+    if (typeof err === 'string') return err;
+    
+    const parts = [
+      err.message ? `Message: ${err.message}` : '',
+      err.details ? `Details: ${err.details}` : '',
+      err.hint ? `Hint: ${err.hint}` : '',
+      err.code ? `Postgres Code: ${err.code}` : ''
+    ].filter(Boolean);
 
-    return "We couldn't complete publishing right now. Your draft has been safely saved, and you can try again in a moment.";
+    return parts.length > 0 ? parts.join(' | ') : JSON.stringify(err);
   };
 
   // Publishing Pipeline Workflow
@@ -438,11 +425,11 @@ export default function AiCharacterCreator() {
           }, 1500);
 
         } catch (err: any) {
-          console.error('Publish error:', err);
+          console.error('[CHIMERA Final Diagnostic Error]:', err);
           setPublishPipeline({ 
             isActive: true, 
             step: 'failed', 
-            error: getFriendlyErrorMessage(err.message || err.details || '')
+            error: getFriendlyErrorMessage(err)
           });
         }
       }, 1000);
