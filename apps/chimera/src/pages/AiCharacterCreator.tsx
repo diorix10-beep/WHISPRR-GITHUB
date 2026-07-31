@@ -340,12 +340,33 @@ export default function AiCharacterCreator() {
         try {
           const tempUsername = `bot_${Math.random().toString(36).substring(2, 10)}`;
           const tags = formData.tagsString.split(',').map(t => t.trim()).filter(Boolean);
-
-          let publishError: any = null;
           const currentUserId = profile?.user_id || (await supabase.auth.getUser()).data.user?.id;
 
-          // Direct table insert first (most reliable)
+          if (!currentUserId) {
+            throw new Error('You must be logged in to publish a character.');
+          }
+
+          // Step A: Create bot profile record in public.profiles table
+          const botUserId = crypto.randomUUID();
+          const { data: botProfile, error: botProfileError } = await supabase.from('profiles').insert({
+            user_id: botUserId,
+            display_name: formData.name.trim(),
+            username: tempUsername,
+            photo_url: formData.avatarUrl.trim() || '',
+            bio: formData.shortDescription.trim(),
+            role: 'ai_character',
+            onboarding_complete: true,
+          }).select().maybeSingle();
+
+          if (botProfileError) {
+            console.error('[CHIMERA Publishing Diagnostic]: Failed to create bot profile:', botProfileError);
+          }
+
+          const targetBotUserId = botProfile?.user_id || botUserId;
+
+          // Step B: Insert into public.ai_characters table
           const { data: insertedChar, error: directError } = await supabase.from('ai_characters').insert({
+            user_id: targetBotUserId,
             creator_id: currentUserId,
             display_name: formData.name.trim(),
             username: tempUsername,
@@ -366,11 +387,17 @@ export default function AiCharacterCreator() {
             example_conversations: formData.exampleConversations.trim(),
             rp_definition: formData.rpDefinition.trim(),
             system_definition: formData.systemDefinition.trim(),
-            system_character_definition: formData.systemCharacterDefinition.trim()
+            system_character_definition: formData.systemCharacterDefinition.trim(),
+            status: 'published',
+            chats_count: 0,
+            likes_count: 0,
+            followers_count: 0
           }).select().maybeSingle();
 
           if (directError) {
-            console.warn('Direct insert error, trying RPC fallback:', directError);
+            console.error('[CHIMERA Publishing Diagnostic]: Direct table insert error:', directError);
+            
+            // Step C: Try RPC fallback if table direct insert is blocked by policy
             const { error: rpcError } = await supabase.rpc('create_ai_character', {
               p_name: formData.name.trim(),
               p_username: tempUsername,
@@ -394,10 +421,12 @@ export default function AiCharacterCreator() {
               p_system_definition: formData.systemDefinition.trim(),
               p_system_character_definition: formData.systemCharacterDefinition.trim()
             });
-            if (rpcError) publishError = rpcError;
-          }
 
-          if (publishError) throw publishError;
+            if (rpcError) {
+              console.error('[CHIMERA Publishing Diagnostic]: RPC fallback error:', rpcError);
+              throw directError || rpcError;
+            }
+          }
 
           // Step 5: Success
           setPublishPipeline(prev => ({ ...prev, step: 'success' }));
