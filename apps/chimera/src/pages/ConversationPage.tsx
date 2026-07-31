@@ -26,6 +26,7 @@ import { TranscriptsExporterModal } from '../components/chat/TranscriptsExporter
 import { LanguageSelectorModal } from '../components/common/LanguageSelectorModal';
 import { SUPPORTED_LANGUAGES, translateText } from '../services/translationEngine';
 import { createInitialMemoryNexusState, autoExtractMemoriesIfNeeded, formatMemoryNexusPromptContext } from '../services/memoryNexus';
+import { generateElevenLabsAudio } from '../lib/elevenlabs';
 import { scanAndMatchLorebookEntries, parseJanitorLorebookJson, parseOocMessage } from '../services/lorebookEngine';
 import { checkUserPromptSafety, CRISIS_HELPLINE_INFO } from '../lib/safetyGuard';
 import { useChatAesthetics } from '../hooks/useChatAesthetics';
@@ -1568,17 +1569,23 @@ export default function ConversationPage() {
                       {isAI && (
                         <>
                           <button
-                            onClick={() => {
-                              if ('speechSynthesis' in window) {
-                                window.speechSynthesis.cancel();
-                                const utt = new SpeechSynthesisUtterance(message.content || '');
-                                utt.pitch = 1.0;
-                                utt.rate = 1.0;
-                                window.speechSynthesis.speak(utt);
+                            onClick={async () => {
+                              showToast('🎙️ Generating ElevenLabs Voice Audio...', 'info');
+                              try {
+                                const audioUrl = await generateElevenLabsAudio(message.content || '');
+                                const audio = new Audio(audioUrl);
+                                audio.play();
+                              } catch (err) {
+                                console.warn('ElevenLabs API error, falling back to Web Speech API:', err);
+                                if ('speechSynthesis' in window) {
+                                  window.speechSynthesis.cancel();
+                                  const utt = new SpeechSynthesisUtterance(message.content || '');
+                                  window.speechSynthesis.speak(utt);
+                                }
                               }
                             }}
-                            className="p-1.5 text-warm-500 hover:text-red-600 dark:hover:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                            title="Speak dialogue out loud"
+                            className="p-1.5 text-warm-500 hover:text-purple-600 dark:hover:text-purple-400 rounded-md hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                            title="Play ElevenLabs Ultra-HD Voice"
                           >
                             <Volume2 size={14} />
                           </button>

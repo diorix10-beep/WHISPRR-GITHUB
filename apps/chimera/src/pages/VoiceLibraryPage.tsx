@@ -3,6 +3,7 @@ import { Volume2, VolumeX, Play, Pause, Mic, Sliders, CheckCircle2, Sparkles, Us
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
+import { generateElevenLabsAudio, ELEVENLABS_VOICE_ROSTER } from '../lib/elevenlabs';
 
 interface VoiceOption {
   id: string;
@@ -94,27 +95,57 @@ export default function VoiceLibraryPage() {
     } catch (e) {}
   };
 
-  const handlePlaySample = (voice: VoiceOption) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      showToast('Speech synthesis not supported on this browser', 'error');
-      return;
-    }
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
 
+  const handlePlaySample = async (voice: VoiceOption) => {
     if (playingId === voice.id) {
-      window.speechSynthesis.cancel();
+      if (currentAudio) {
+        currentAudio.pause();
+        setCurrentAudio(null);
+      }
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
       setPlayingId(null);
       return;
     }
 
+    setPlayingId(voice.id);
+    showToast('✨ Generating Ultra-HD ElevenLabs Voice...', 'info');
+
+    try {
+      const elevenlabsVoiceId = ELEVENLABS_VOICE_ROSTER.find(v => v.id.includes(voice.id.split('-')[1]))?.voiceId || '21m00Tcm4TlvDq8ikWAM';
+      const audioUrl = await generateElevenLabsAudio(voice.sampleText, elevenlabsVoiceId);
+      
+      const audio = new Audio(audioUrl);
+      setCurrentAudio(audio);
+      audio.play();
+      audio.onended = () => {
+        setPlayingId(null);
+        setCurrentAudio(null);
+      };
+      audio.onerror = () => {
+        // Fallback to Web Speech API if offline
+        fallbackWebSpeech(voice);
+      };
+    } catch (err) {
+      console.warn('ElevenLabs API error, falling back to Web Speech API:', err);
+      fallbackWebSpeech(voice);
+    }
+  };
+
+  const fallbackWebSpeech = (voice: VoiceOption) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      showToast('Speech synthesis not supported on this browser', 'error');
+      setPlayingId(null);
+      return;
+    }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(voice.sampleText);
     utterance.pitch = voice.pitch * pitch;
     utterance.rate = voice.rate * rate;
-
     utterance.onend = () => setPlayingId(null);
     utterance.onerror = () => setPlayingId(null);
-
-    setPlayingId(voice.id);
     window.speechSynthesis.speak(utterance);
   };
 
