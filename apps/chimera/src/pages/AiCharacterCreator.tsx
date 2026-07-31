@@ -334,11 +334,28 @@ export default function AiCharacterCreator() {
           }
 
           const cleanStr = (s: string) => (s || '').replace(/\u0000/g, '').replace(/\x00/g, '').trim();
-          const botId = crypto.randomUUID();
 
-          // Direct insert into public.ai_characters table (Complies with Supabase RLS auth.uid())
+          // Step A: Create bot profile record in public.profiles table (Let Postgres generate user_id)
+          let botUserId = crypto.randomUUID();
+          
+          const { data: botProfile, error: botProfileError } = await supabase.from('profiles').insert({
+            display_name: formData.name.trim(),
+            username: tempUsername,
+            photo_url: formData.avatarUrl.trim() || '',
+            bio: cleanStr(formData.shortDescription),
+            role: 'ai_character',
+            onboarding_complete: true,
+          }).select().single();
+
+          if (botProfile && (botProfile.user_id || botProfile.id)) {
+            botUserId = botProfile.user_id || botProfile.id;
+          } else if (botProfileError) {
+            console.warn('[CHIMERA Publishing Diagnostic]: Profile creation notice:', botProfileError);
+          }
+
+          // Step B: Direct insert into public.ai_characters table
           const { data: insertedChar, error: directError } = await supabase.from('ai_characters').insert({
-            user_id: botId,
+            user_id: botUserId,
             creator_id: currentUserId,
             greeting: cleanStr(formData.greeting),
             short_description: cleanStr(formData.shortDescription),
