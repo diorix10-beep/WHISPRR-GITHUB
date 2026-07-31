@@ -355,7 +355,7 @@ export default function AiCharacterCreator() {
           const { data: insertedChar, error: directError } = await supabase.from('ai_characters').insert({
             user_id: targetBotUserId,
             creator_id: currentUserId,
-            display_name: formData.name.trim(),
+            name: formData.name.trim(),
             username: tempUsername,
             greeting: formData.greeting.trim(),
             short_description: formData.shortDescription.trim(),
