@@ -51,9 +51,15 @@ export async function parseCharacterCardFile(file: File): Promise<ImportedCharac
   };
 }
 
+function cleanText(str: string): string {
+  if (!str) return '';
+  return str.replace(/\u0000/g, '').replace(/\x00/g, '').trim();
+}
+
 async function readTextFromFile(file: File): Promise<string> {
   try {
-    return await file.text();
+    const raw = await file.text();
+    return cleanText(raw);
   } catch (err) {
     return '';
   }

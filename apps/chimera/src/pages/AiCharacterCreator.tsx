@@ -333,27 +333,29 @@ export default function AiCharacterCreator() {
             throw new Error('You must be logged in to publish a character.');
           }
 
+          const cleanStr = (s: string) => (s || '').replace(/\u0000/g, '').replace(/\x00/g, '').trim();
+
           // Direct insert into public.ai_characters table (Complies with Supabase RLS auth.uid())
           const { data: insertedChar, error: directError } = await supabase.from('ai_characters').insert({
             user_id: currentUserId,
             creator_id: currentUserId,
-            greeting: formData.greeting.trim(),
-            short_description: formData.shortDescription.trim(),
-            long_description: formData.longDescription.trim(),
-            personality: formData.personality.trim(),
-            scenario: formData.scenario.trim(),
-            example_dialogues: formData.exampleDialogues.trim(),
-            conversation_style: formData.conversationStyle.trim(),
-            knowledge: formData.knowledge.trim(),
-            tags: tags,
+            greeting: cleanStr(formData.greeting),
+            short_description: cleanStr(formData.shortDescription),
+            long_description: cleanStr(formData.longDescription),
+            personality: cleanStr(formData.personality),
+            scenario: cleanStr(formData.scenario),
+            example_dialogues: cleanStr(formData.exampleDialogues),
+            conversation_style: cleanStr(formData.conversationStyle),
+            knowledge: cleanStr(formData.knowledge),
+            tags: tags.map(cleanStr),
             category: formData.category,
             visibility: formData.visibility,
             content_rating: formData.contentRating,
-            creator_notes: formData.creatorNotes.trim(),
-            example_conversations: formData.exampleConversations.trim(),
-            rp_definition: formData.rpDefinition.trim(),
-            system_definition: formData.systemDefinition.trim(),
-            system_character_definition: formData.systemCharacterDefinition.trim(),
+            creator_notes: cleanStr(formData.creatorNotes),
+            example_conversations: cleanStr(formData.exampleConversations),
+            rp_definition: cleanStr(formData.rpDefinition),
+            system_definition: cleanStr(formData.systemDefinition),
+            system_character_definition: cleanStr(formData.systemCharacterDefinition),
             status: 'published'
           }).select().maybeSingle();
 
