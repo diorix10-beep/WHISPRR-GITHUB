@@ -347,16 +347,15 @@ export default function AiCharacterCreator() {
 
           if (botProfileError) {
             console.error('[CHIMERA Publishing Diagnostic]: Failed to create bot profile:', botProfileError);
+            throw botProfileError;
           }
 
           const targetBotUserId = botProfile?.user_id || botUserId;
 
-          // Step B: Insert into public.ai_characters table
+          // Step B: Insert into public.ai_characters table (Strict schema match)
           const { data: insertedChar, error: directError } = await supabase.from('ai_characters').insert({
             user_id: targetBotUserId,
             creator_id: currentUserId,
-            name: formData.name.trim(),
-            username: tempUsername,
             greeting: formData.greeting.trim(),
             short_description: formData.shortDescription.trim(),
             long_description: formData.longDescription.trim(),
@@ -368,51 +367,18 @@ export default function AiCharacterCreator() {
             tags: tags,
             category: formData.category,
             visibility: formData.visibility,
-            photo_url: formData.avatarUrl.trim() || '',
             content_rating: formData.contentRating,
             creator_notes: formData.creatorNotes.trim(),
             example_conversations: formData.exampleConversations.trim(),
             rp_definition: formData.rpDefinition.trim(),
             system_definition: formData.systemDefinition.trim(),
             system_character_definition: formData.systemCharacterDefinition.trim(),
-            status: 'published',
-            chats_count: 0,
-            likes_count: 0,
-            followers_count: 0
+            status: 'published'
           }).select().maybeSingle();
 
           if (directError) {
             console.error('[CHIMERA Publishing Diagnostic]: Direct table insert error:', directError);
-            
-            // Step C: Try RPC fallback if table direct insert is blocked by policy
-            const { error: rpcError } = await supabase.rpc('create_ai_character', {
-              p_name: formData.name.trim(),
-              p_username: tempUsername,
-              p_greeting: formData.greeting.trim(),
-              p_short_description: formData.shortDescription.trim(),
-              p_long_description: formData.longDescription.trim(),
-              p_personality: formData.personality.trim(),
-              p_scenario: formData.scenario.trim(),
-              p_example_dialogues: formData.exampleDialogues.trim(),
-              p_conversation_style: formData.conversationStyle.trim(),
-              p_knowledge: formData.knowledge.trim(),
-              p_tags: tags,
-              p_category: formData.category,
-              p_visibility: formData.visibility,
-              p_avatar_url: formData.avatarUrl.trim() || '',
-              p_banner_url: formData.avatarUrl.trim() || '',
-              p_content_rating: formData.contentRating,
-              p_creator_notes: formData.creatorNotes.trim(),
-              p_example_conversations: formData.exampleConversations.trim(),
-              p_rp_definition: formData.rpDefinition.trim(),
-              p_system_definition: formData.systemDefinition.trim(),
-              p_system_character_definition: formData.systemCharacterDefinition.trim()
-            });
-
-            if (rpcError) {
-              console.error('[CHIMERA Publishing Diagnostic]: RPC fallback error:', rpcError);
-              throw directError || rpcError;
-            }
+            throw directError;
           }
 
           // Step 5: Success
