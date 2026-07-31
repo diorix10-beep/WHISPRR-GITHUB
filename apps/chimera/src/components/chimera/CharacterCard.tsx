@@ -17,7 +17,7 @@ export function CharacterCard({ character, onClick, onViewDetails, onEdit, actio
   
   const photoUrl = profile.photo_url || character.photo_url || character.avatar_url;
   const avatarEmoji = profile.avatar_emoji || '🎭';
-  const name = character.name || profile.display_name || character.display_name || character.short_description?.slice(0, 20) || 'AI Character';
+  const name = character.name || profile.display_name || character.display_name || character.short_description?.slice(0, 20) || 'Character Persona';
   const creatorName = creator.username || character.creator_username || profile.username || 'creator';
   const description = character.short_description || character.bio || 'No description provided.';
   const category = character.category || 'General';

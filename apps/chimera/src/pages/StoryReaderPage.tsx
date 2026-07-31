@@ -283,11 +283,14 @@ export default function StoryReaderPage() {
               </h1>
 
               {/* Author Row */}
-              <div className="flex items-center gap-2 mt-3">
+              <div className="flex items-center gap-2 mt-3 flex-wrap">
                 <span className="text-xl">{author?.avatar_emoji || '✍️'}</span>
                 <p className="text-sm text-warm-650 dark:text-warm-350">
                   by <span className="font-bold text-warm-800 dark:text-white">@{author?.username || 'creator'}</span>
                 </p>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                  ✨ Human Authored
+                </span>
               </div>
 
               {/* Tags */}
