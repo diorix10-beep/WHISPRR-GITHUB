@@ -17,7 +17,6 @@ interface CharacterData {
   greeting?: string;
   first_mes?: string;
   creator_notes?: string;
-  tags?: string[];
   scenario: string;
   conversation_style: string;
   knowledge: string;
