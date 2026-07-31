@@ -16,58 +16,11 @@ interface VoiceOption {
   rate: number;
 }
 
-const VOICE_ROSTER: VoiceOption[] = [
-  {
-    id: 'voice-narrator-1',
-    name: 'Aurelia — Warm Narrator',
-    category: 'Narrator',
-    description: 'Warm, steady, and immersive tone ideal for epic web novels and world introductions.',
-    gender: 'Female',
-    sampleText: 'Deep within the mountains of Maison Verity, ancient legends whisper of forgotten magic.',
-    pitch: 1.0,
-    rate: 0.95
-  },
-  {
-    id: 'voice-heroic-1',
-    name: 'Kael — Heroic Lead',
-    category: 'Heroic',
-    description: 'Bold, resonant, and confident voice suited for protagonists and commanders.',
-    gender: 'Male',
-    sampleText: 'Stand firm! We push forward together, no matter the cost.',
-    pitch: 0.9,
-    rate: 1.05
-  },
-  {
-    id: 'voice-mystic-1',
-    name: 'Seraphina — Arcane Mystic',
-    category: 'Mystic',
-    description: 'Enigmatic, poetic, and soothing cadence for sorcerers and ancient scholars.',
-    gender: 'Female',
-    sampleText: 'Listen closely... the stars do not lie, though few know how to decipher their light.',
-    pitch: 1.15,
-    rate: 0.9
-  },
-  {
-    id: 'voice-dark-1',
-    name: 'Malakor — Shadow Sovereign',
-    category: 'Dark',
-    description: 'Deep, gravelly, and commanding tone for antagonists, demons, and dark lords.',
-    gender: 'Male',
-    sampleText: 'You enter my domain uninvited. Speak your last words before the shadows claim you.',
-    pitch: 0.6,
-    rate: 0.85
-  },
-  {
-    id: 'voice-vibrant-1',
-    name: 'Zephyr — Playful Companion',
-    category: 'Vibrant',
-    description: 'Upbeat, energetic, and expressive voice perfect for lively roleplay companions.',
-    gender: 'Neutral',
-    sampleText: 'Hey there! Ready for our next wild adventure? Let us get moving!',
-    pitch: 1.2,
-    rate: 1.1
-  }
-];
+const VOICE_ROSTER: VoiceOption[] = ELEVENLABS_VOICE_ROSTER.map(v => ({
+  ...v,
+  pitch: 1.0,
+  rate: 1.0
+}));
 
 export default function VoiceLibraryPage() {
   const { user } = useAuth();
@@ -114,7 +67,7 @@ export default function VoiceLibraryPage() {
     showToast('✨ Generating Ultra-HD ElevenLabs Voice...', 'info');
 
     try {
-      const elevenlabsVoiceId = ELEVENLABS_VOICE_ROSTER.find(v => v.id.includes(voice.id.split('-')[1]))?.voiceId || '21m00Tcm4TlvDq8ikWAM';
+      const elevenlabsVoiceId = (voice as any).voiceId || ELEVENLABS_VOICE_ROSTER.find(v => v.id === voice.id)?.voiceId || '21m00Tcm4TlvDq8ikWAM';
       const audioUrl = await generateElevenLabsAudio(voice.sampleText, elevenlabsVoiceId);
       
       const audio = new Audio(audioUrl);
