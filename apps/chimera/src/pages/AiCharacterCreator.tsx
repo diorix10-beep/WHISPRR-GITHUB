@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { 
   ArrowLeft, Save, Bot, Check, RefreshCw, 
   Settings, AlertTriangle, User, FileText, UploadCloud, Plus, Sparkles, Menu
@@ -18,7 +18,9 @@ import { Upload } from 'lucide-react';
 export default function AiCharacterCreator() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const editId = searchParams.get('id') || searchParams.get('draftId');
+  const { id: routeId } = useParams<{ id?: string }>();
+  const [characterId] = useState<string>(() => routeId || searchParams.get('id') || searchParams.get('draftId') || crypto.randomUUID());
+  const editId = searchParams.get('id') || searchParams.get('draftId') || routeId;
   const { profile } = useAuth();
   const { showToast } = useToast();
 
@@ -342,6 +344,7 @@ export default function AiCharacterCreator() {
           const { data: insertedChar, error: directError } = await supabase
             .from('ai_characters')
             .upsert({
+              id: characterId,
               user_id: currentUserId,
               creator_id: currentUserId,
               name: cleanStr(formData.name),
@@ -364,7 +367,7 @@ export default function AiCharacterCreator() {
               system_definition: cleanStr(formData.systemDefinition),
               system_character_definition: cleanStr(formData.systemCharacterDefinition),
               status: 'published'
-            }, { onConflict: 'user_id' })
+            }, { onConflict: 'id' })
             .select()
             .maybeSingle();
 
