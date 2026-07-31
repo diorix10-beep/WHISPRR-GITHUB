@@ -31,6 +31,8 @@ import { checkUserPromptSafety, CRISIS_HELPLINE_INFO } from '../lib/safetyGuard'
 import { useChatAesthetics } from '../hooks/useChatAesthetics';
 import { useVoice } from '../hooks/useVoice';
 import { RoleplaySafetyPauseCard } from '../components/chat/RoleplaySafetyPauseCard';
+import { CharacterExpressionAvatar } from '../components/character/CharacterExpressionAvatar';
+import { CharacterExpressionManagerModal } from '../components/character/CharacterExpressionManagerModal';
 import { Paperclip, AudioWaveform, Brain, Gamepad2, Users, Globe, UserCheck } from 'lucide-react';
 
 interface MessageWithProfile extends Message {
@@ -79,6 +81,8 @@ export default function ConversationPage() {
   const [targetLang, setTargetLang] = useState('en');
   const [showLangModal, setShowLangModal] = useState(false);
   const [swipesMap, setSwipesMap] = useState<Record<string, { variations: string[]; currentIndex: number }>>({});
+  const [showExpressionModal, setShowExpressionModal] = useState(false);
+  const [characterExpressions, setCharacterExpressions] = useState<Record<string, string>>({});
 
   // Roleplay Safety Intervention State
   const [isRoleplayPaused, setIsRoleplayPaused] = useState(false);
@@ -979,7 +983,13 @@ export default function ConversationPage() {
                 className={`flex items-center min-w-0 cursor-pointer hover:bg-warm-50 dark:hover:bg-warm-800/50 p-1 -ml-1 rounded-xl transition-colors ${isPhoneLayout ? 'flex-col gap-1' : 'gap-3'}`}
                 onClick={() => setShowSettingsDrawer(true)}
               >
-                <Avatar emoji={otherUser.avatar_emoji} photoUrl={otherUser.photo_url} size={isPhoneLayout ? "sm" : "md"} />
+                <CharacterExpressionAvatar
+                  defaultEmoji={otherUser.avatar_emoji}
+                  defaultPhotoUrl={otherUser.photo_url}
+                  expressions={characterExpressions}
+                  lastMessageContent={messages[messages.length - 1]?.content}
+                  size={isPhoneLayout ? "sm" : "md"}
+                />
                 <div className={`min-w-0 ${isPhoneLayout ? 'text-center' : ''}`}>
                   <h1 className="font-serif font-bold text-lg text-warm-900 dark:text-warm-50 truncate flex items-center gap-1.5">
                     {otherUser.display_name}
@@ -1015,6 +1025,19 @@ export default function ConversationPage() {
           <div className="flex items-center gap-2">
             {conversation?.type === 'dm' && (
               <>
+                {/* Expressions Avatars Manager Button */}
+                {otherUser?.role === 'ai_character' && (
+                  <button 
+                    onClick={() => setShowExpressionModal(true)}
+                    className="p-2 rounded-xl hover:bg-amber-500/10 text-amber-600 dark:text-amber-400 transition-colors flex items-center gap-1"
+                    title="Manage Emotion Expression Avatars"
+                  >
+                    <Smile size={20} />
+                    <span className="text-[10px] font-bold uppercase tracking-wider hidden lg:inline bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                      Expressions
+                    </span>
+                  </button>
+                )}
                 {/* Memory Nexus 2D Visualizer Button */}
                 <button 
                   onClick={() => setShowMemoryVisualizer(true)}
@@ -1825,6 +1848,15 @@ export default function ConversationPage() {
         onClose={() => setShowPersonaDrawer(false)}
         activePersonaId={activePersona?.id}
         onSelectPersona={(p) => setActivePersona(p)}
+      />
+
+      {/* Character Expression Manager Modal */}
+      <CharacterExpressionManagerModal
+        isOpen={showExpressionModal}
+        onClose={() => setShowExpressionModal(false)}
+        characterName={otherUser?.display_name || 'AI Character'}
+        expressions={characterExpressions}
+        onSaveExpressions={(updated) => setCharacterExpressions(updated)}
       />
 
       {/* World Relationship Network Modal */}
