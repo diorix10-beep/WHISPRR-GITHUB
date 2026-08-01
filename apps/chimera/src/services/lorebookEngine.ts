@@ -109,6 +109,23 @@ export function compileLorebookPromptContext(entries: LorebookEntry[]): string {
 }
 
 /**
+ * Automatically extracts lorebook entries (locations, artifacts, factions, key concepts)
+ * from conversation dialogue.
+ */
+export function extractLorebookFromText(text: string): Partial<LorebookEntry>[] {
+  const words = text.match(/[A-Z][a-z]{3,}/g) || [];
+  const uniqueCapitalized = Array.from(new Set(words)).filter(w => !['The', 'That', 'This', 'What', 'With', 'From', 'Have', 'When', 'They', 'Your', 'Their', 'There'].includes(w));
+
+  return uniqueCapitalized.slice(0, 3).map(name => ({
+    title: name,
+    keywords: [name.toLowerCase(), name],
+    content: `${name} is an entity or landmark introduced in the roleplay narrative.`,
+    is_constant: false,
+    enabled: true
+  }));
+}
+
+/**
  * Parses Janitor AI, Character.AI, or SillyTavern JSON export format into Lorebook structure.
  */
 export function parseJanitorLorebookJson(jsonString: string): {
