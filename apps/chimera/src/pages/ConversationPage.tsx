@@ -289,27 +289,52 @@ export default function ConversationPage() {
           if (other && (other.role as string) === 'ai_character') {
             if (loadedMsgs.length === 0) {
               // Fetch character greeting from ai_characters table if available
-              const { data: charData } = await supabase
-                .from('ai_characters')
-                .select('greeting, name, short_description')
-                .or(`user_id.eq.${other.user_id},id.eq.${other.user_id}`)
-                .maybeSingle();
+              let greetingText = '';
+              try {
+                const { data: charData } = await supabase
+                  .from('ai_characters')
+                  .select('greeting, name, short_description')
+                  .or(`user_id.eq.${other.user_id},id.eq.${other.user_id}`)
+                  .maybeSingle();
 
-              const greetingText = charData?.greeting || other.bio || `*Steps into the room...* Hello! I am ${other.display_name}.`;
+                greetingText = charData?.greeting || '';
+              } catch {}
+
+              if (!greetingText) {
+                greetingText = other.bio || `*Steps into the room...* Hello! I am ${other.display_name}. How can I assist you today?`;
+              }
               
-              const { data: newGreetingMsg } = await supabase
-                .from('messages')
-                .insert({
-                  conversation_id: conversationId,
-                  sender_id: other.user_id,
-                  content: greetingText,
-                  read: true
-                })
-                .select('*, profiles:sender_id(*)')
-                .single();
+              const syntheticGreeting: MessageWithProfile = {
+                id: crypto.randomUUID(),
+                conversation_id: conversationId,
+                sender_id: other.user_id,
+                content: greetingText,
+                created_at: new Date().toISOString(),
+                read: true,
+                image_url: null,
+                deleted_at: null,
+                profiles: other as any
+              };
 
-              if (newGreetingMsg) {
-                setMessages([newGreetingMsg]);
+              try {
+                const { data: newGreetingMsg } = await supabase
+                  .from('messages')
+                  .insert({
+                    conversation_id: conversationId,
+                    sender_id: other.user_id,
+                    content: greetingText,
+                    read: true
+                  })
+                  .select('*, profiles:sender_id(*)')
+                  .single();
+
+                if (newGreetingMsg) {
+                  setMessages([newGreetingMsg]);
+                } else {
+                  setMessages([syntheticGreeting]);
+                }
+              } catch {
+                setMessages([syntheticGreeting]);
               }
             } else {
               const lastMsg = loadedMsgs[loadedMsgs.length - 1];
