@@ -196,13 +196,24 @@ export default function CharactersPage() {
             Build, roleplay, and manage persistent AI character identities with customizable personalities, greetings, and memory.
           </p>
 
-          <button
-            onClick={() => navigate('/characters/new')}
-            className="px-6 py-3 rounded-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-extrabold text-xs shadow-lg shadow-red-600/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
-          >
-            <Plus size={16} strokeWidth={3} />
-            <span>Create New Character</span>
-          </button>
+          <div className="flex items-center gap-3 pt-2 flex-wrap justify-center">
+            <button
+              onClick={() => navigate('/characters/new')}
+              className="px-6 py-3 rounded-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-extrabold text-xs shadow-lg shadow-red-600/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+            >
+              <Plus size={16} strokeWidth={3} />
+              <span>Create New Character</span>
+            </button>
+
+            <button
+              onClick={() => navigate('/characters/new?import=true')}
+              className="px-5 py-3 rounded-full bg-white/10 dark:bg-warm-800/80 hover:bg-white/20 text-warm-800 dark:text-white font-bold text-xs border border-warm-200 dark:border-warm-700 transition-all flex items-center gap-2"
+              title="Import Character Card (.json or .png from Character.AI / Janitor AI)"
+            >
+              <Sparkles size={15} className="text-amber-500" />
+              <span>Import Character Card</span>
+            </button>
+          </div>
         </section>
 
 
