@@ -95,9 +95,9 @@ export default function ChimeraChatsPage() {
         })
       );
 
-      // Display all group chats and DM conversations
+      // Display only CHIMERA AI Character roleplay chats & group rooms (exclude human WHISPRR user DMs)
       const chimeraChats = conversationsWithProfiles.filter(
-        (c) => c.type === 'group' || (c.type === 'dm' && c.other_user !== undefined)
+        (c) => c.type === 'group' || (c.type === 'dm' && c.other_user !== undefined && (c.other_user.role === 'ai_character' || (c as any).character_id))
       );
 
       setConversations(chimeraChats);
@@ -180,7 +180,7 @@ export default function ChimeraChatsPage() {
           }));
         setSearchResults(formatted);
       } else {
-        const { data: profs } = await supabase.from('profiles').select('*').limit(20);
+        const { data: profs } = await supabase.from('profiles').select('*').eq('role', 'ai_character').limit(20);
         setSearchResults(profs || []);
       }
     } catch (err) {
