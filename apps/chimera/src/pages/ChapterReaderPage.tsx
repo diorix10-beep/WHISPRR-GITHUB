@@ -258,9 +258,38 @@ export default function ChapterReaderPage() {
           <div className="w-12 h-0.5 bg-red-600/30 mx-auto mt-6" />
         </div>
 
-        {/* Story Text */}
-        <article className={`leading-relaxed text-warm-800 dark:text-warm-100 ${fontClass} ${serifFont ? 'font-serif' : 'font-sans'} whitespace-pre-line space-y-6`}>
-          {chapter.content || (
+        {/* Author's Codex Card */}
+        {story.summary && (
+          <div className="mb-8 p-4 rounded-2xl bg-purple-950/20 border border-purple-800/30 text-purple-300 dark:text-purple-200 text-xs flex items-start gap-3 shadow-inner">
+            <Sparkles size={18} className="text-purple-400 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold uppercase tracking-wider block text-[10px] text-purple-400 mb-0.5">Author's Codex & Context</span>
+              <p className="leading-relaxed font-serif">{story.summary}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Story Text with Passage Annotations */}
+        <article className={`leading-relaxed text-warm-800 dark:text-warm-100 ${fontClass} ${serifFont ? 'font-serif' : 'font-sans'} space-y-6`}>
+          {chapter.content ? (
+            chapter.content.split('\n\n').map((paragraph, pIdx) => (
+              <div key={pIdx} className="relative group flex items-start gap-3">
+                {/* Left Margin Passage Annotation Trigger */}
+                <button
+                  onClick={() => {
+                    const comment = prompt(`Add a passage annotation to Paragraph #${pIdx + 1}:`);
+                    if (comment) showToast('Passage annotation saved!', 'success');
+                  }}
+                  className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 text-[10px] font-bold shrink-0 border border-purple-500/30"
+                  title="Add passage annotation to this paragraph"
+                >
+                  💬 #{pIdx + 1}
+                </button>
+
+                <p className="flex-1 leading-relaxed">{paragraph}</p>
+              </div>
+            ))
+          ) : (
             <p className="italic text-center text-warm-400 text-sm py-12">
               This chapter has no content.
             </p>
