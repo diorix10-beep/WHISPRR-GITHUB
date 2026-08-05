@@ -61,7 +61,9 @@ export default function AiCharacterCreator() {
     creatorNotes: '',
     exampleConversations: '',
     tagsString: '',
-    alternateGreetings: [] as string[]
+    alternateGreetings: [] as string[],
+    bannedWords: '',
+    suggestedPersonaName: ''
   });
 
   const [archData, setArchData] = useState<CharacterArchitecture>({});
@@ -119,7 +121,9 @@ export default function AiCharacterCreator() {
               creatorNotes: data.creator_notes || '',
               exampleConversations: data.example_conversations || '',
               tagsString: (data.tags || []).join(', '),
-              alternateGreetings: data.alternate_greetings || []
+              alternateGreetings: data.alternate_greetings || [],
+              bannedWords: data.banned_words || '',
+              suggestedPersonaName: data.suggested_persona_name || ''
             });
             showToast(`Loaded draft: ${data.display_name || 'Untitled Character'}`, 'info');
           }
@@ -239,7 +243,9 @@ export default function AiCharacterCreator() {
       creatorNotes: '',
       exampleConversations: '',
       tagsString: '',
-      alternateGreetings: []
+      alternateGreetings: [],
+      bannedWords: '',
+      suggestedPersonaName: ''
     });
     setArchData({});
     showToast('Draft discarded', 'info');

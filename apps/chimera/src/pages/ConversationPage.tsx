@@ -110,6 +110,24 @@ export default function ConversationPage() {
   const [showPersonaDrawer, setShowPersonaDrawer] = useState<boolean>(false);
   const [showWorldModal, setShowWorldModal] = useState<boolean>(false);
   const [activePersona, setActivePersona] = useState<any>(null);
+  const [suggestedPersona, setSuggestedPersona] = useState<any>(null);
+
+  // Lore-Style Response Length & Pinned Messages Controls
+  const [responseLength, setResponseLength] = useState<'short' | 'balanced' | 'detailed'>('balanced');
+  const [pinnedMessageIds, setPinnedMessageIds] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem(`pinned_msgs_${conversationId}`);
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
+
+  const togglePinMessage = (msgId: string) => {
+    setPinnedMessageIds(prev => {
+      const next = prev.includes(msgId) ? prev.filter(id => id !== msgId) : [...prev, msgId];
+      try { localStorage.setItem(`pinned_msgs_${conversationId}`, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
 
   // Chat Modes & Multi-Character Pool
   const [chatMode, setChatMode] = useState<ChatMode>('one_on_one');
@@ -1561,6 +1579,13 @@ export default function ConversationPage() {
 
                     {/* Hover Actions */}
                     <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-white/90 dark:bg-warm-800/90 backdrop-blur-sm px-2 py-1 rounded-lg border border-warm-200 dark:border-warm-700 shadow-sm">
+                      <button
+                        onClick={() => togglePinMessage(message.id)}
+                        className={`p-1.5 rounded-md transition-colors ${pinnedMessageIds.includes(message.id) ? 'text-amber-500 bg-amber-500/10' : 'text-warm-500 hover:text-amber-500 hover:bg-warm-100 dark:hover:bg-warm-700'}`}
+                        title={pinnedMessageIds.includes(message.id) ? 'Unpin message from memory' : 'Pin message to permanent memory'}
+                      >
+                        📌
+                      </button>
                       <button 
                         className="p-1.5 text-warm-500 hover:text-warm-900 dark:hover:text-white rounded-md hover:bg-warm-100 dark:hover:bg-warm-700 transition-colors"
                         title="Copy message"
@@ -1744,6 +1769,21 @@ export default function ConversationPage() {
                     title="Toggle Out Of Character (OOC) Mode"
                   >
                     <span>OOC</span>
+                  </button>
+
+                  {/* Lore-Style Response Length Selector */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setResponseLength(prev => prev === 'short' ? 'balanced' : prev === 'balanced' ? 'detailed' : 'short');
+                    }}
+                    className="px-2.5 py-1 rounded-full text-xs font-bold bg-warm-200 dark:bg-warm-800 text-warm-700 dark:text-warm-300 hover:bg-warm-300 dark:hover:bg-warm-750 transition-all flex items-center gap-1 border border-warm-300 dark:border-warm-700"
+                    disabled={sending}
+                    title="Response Length Target"
+                  >
+                    {responseLength === 'short' && <span>⚡ Short</span>}
+                    {responseLength === 'balanced' && <span>⚖️ Balanced</span>}
+                    {responseLength === 'detailed' && <span>📖 Novel</span>}
                   </button>
                 </div>
 
