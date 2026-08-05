@@ -39,7 +39,13 @@ interface AuthContextType extends AuthState {
   spendShards: (amount: number, reason: string) => boolean;
   earnShards: (amount: number, reason: string) => void;
   adFreePassActive: boolean;
+  roleplayVipActive: boolean;
+  storytellingVipActive: boolean;
+  multiverseVipActive: boolean;
   activateAdFreePass: () => boolean;
+  activateRoleplayVipPass: () => boolean;
+  activateStorytellingVipPass: () => boolean;
+  activateMultiverseVipPass: () => boolean;
   systemSettings: any;
   fetchSystemSettings: () => Promise<void>;
   updateSystemSettings: (updates: any) => Promise<void>;
@@ -313,6 +319,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return false;
   });
 
+  const [roleplayVipActive, setRoleplayVipActive] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('chimera_roleplay_vip') === 'true' || localStorage.getItem('chimera_multiverse_vip') === 'true';
+    } catch {}
+    return false;
+  });
+
+  const [storytellingVipActive, setStorytellingVipActive] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('chimera_storytelling_vip') === 'true' || localStorage.getItem('chimera_multiverse_vip') === 'true';
+    } catch {}
+    return false;
+  });
+
+  const [multiverseVipActive, setMultiverseVipActive] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('chimera_multiverse_vip') === 'true';
+    } catch {}
+    return false;
+  });
+
   const spendShards = useCallback((amount: number, reason: string): boolean => {
     if (shardsBalance < amount) return false;
     const newBal = shardsBalance - amount;
@@ -338,6 +365,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (spendShards(20, 'Ad-Free Pass Activation')) {
       setAdFreePassActive(true);
       try {
+        localStorage.setItem('chimera_ad_free_pass', 'true');
+      } catch {}
+      return true;
+    }
+    return false;
+  }, [shardsBalance, spendShards]);
+
+  const activateRoleplayVipPass = useCallback((): boolean => {
+    if (shardsBalance < 15) return false;
+    if (spendShards(15, 'Roleplay VIP Pass Activation')) {
+      setRoleplayVipActive(true);
+      try {
+        localStorage.setItem('chimera_roleplay_vip', 'true');
+      } catch {}
+      return true;
+    }
+    return false;
+  }, [shardsBalance, spendShards]);
+
+  const activateStorytellingVipPass = useCallback((): boolean => {
+    if (shardsBalance < 15) return false;
+    if (spendShards(15, 'Storytelling VIP Pass Activation')) {
+      setStorytellingVipActive(true);
+      try {
+        localStorage.setItem('chimera_storytelling_vip', 'true');
+      } catch {}
+      return true;
+    }
+    return false;
+  }, [shardsBalance, spendShards]);
+
+  const activateMultiverseVipPass = useCallback((): boolean => {
+    if (shardsBalance < 25) return false;
+    if (spendShards(25, 'Multiverse All-Access VIP Pass Activation')) {
+      setMultiverseVipActive(true);
+      setRoleplayVipActive(true);
+      setStorytellingVipActive(true);
+      setAdFreePassActive(true);
+      try {
+        localStorage.setItem('chimera_multiverse_vip', 'true');
+        localStorage.setItem('chimera_roleplay_vip', 'true');
+        localStorage.setItem('chimera_storytelling_vip', 'true');
         localStorage.setItem('chimera_ad_free_pass', 'true');
       } catch {}
       return true;
@@ -387,7 +456,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       spendShards,
       earnShards,
       adFreePassActive,
+      roleplayVipActive,
+      storytellingVipActive,
+      multiverseVipActive,
       activateAdFreePass,
+      activateRoleplayVipPass,
+      activateStorytellingVipPass,
+      activateMultiverseVipPass,
       systemSettings,
       fetchSystemSettings,
       updateSystemSettings,

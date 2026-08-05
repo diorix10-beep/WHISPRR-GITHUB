@@ -13,7 +13,19 @@ interface ShardsHubModalProps {
 }
 
 export function ShardsHubModal({ isOpen, onClose }: ShardsHubModalProps) {
-  const { shardsBalance, earnShards, spendShards, adFreePassActive, activateAdFreePass } = useAuth();
+  const { 
+    shardsBalance, 
+    earnShards, 
+    spendShards, 
+    adFreePassActive, 
+    roleplayVipActive,
+    storytellingVipActive,
+    multiverseVipActive,
+    activateAdFreePass,
+    activateRoleplayVipPass,
+    activateStorytellingVipPass,
+    activateMultiverseVipPass
+  } = useAuth();
   const { showToast } = useToast();
 
   const [activeTab, setActiveTab] = useState<'buy' | 'earn' | 'vip'>('buy');
@@ -240,39 +252,90 @@ export function ShardsHubModal({ isOpen, onClose }: ShardsHubModalProps) {
               <div className="text-center space-y-1">
                 <h3 className="font-serif font-bold text-lg text-warm-900 dark:text-white flex items-center justify-center gap-2">
                   <Crown size={22} className="text-amber-500" />
-                  <span>CHIMERA VIP Pass</span>
+                  <span>CHIMERA VIP Subscriptions</span>
                 </h3>
-                <p className="text-xs text-warm-500">100% Ad-free experience with unlimited roleplay &amp; writing energy.</p>
+                <p className="text-xs text-warm-500">Choose the dedicated pass tailored to your creative mode.</p>
               </div>
 
-              <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-purple-500/10 to-warm-900 border border-amber-500/30 space-y-4">
-                <ul className="space-y-2 text-xs font-semibold text-warm-800 dark:text-warm-200">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-emerald-500" />
-                    <span>100% Ad-Free across Web &amp; Mobile</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-emerald-500" />
-                    <span>Unlimited Writer's Energy in Storytelling Mode</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-emerald-500" />
-                    <span>Daily +20 Shards VIP allowance</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-emerald-500" />
-                    <span>Priority GPU response speed for AI characters</span>
-                  </li>
-                </ul>
+              {/* 3 Dedicated VIP Pass Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                {/* 1. Roleplay VIP Pass */}
+                <div className="p-4 rounded-2xl bg-gradient-to-b from-red-950/20 to-warm-900 border border-red-500/30 flex flex-col justify-between space-y-3">
+                  <div>
+                    <span className="text-xs uppercase font-extrabold text-red-400 bg-red-500/10 px-2.5 py-1 rounded-md inline-block mb-2">
+                      🎭 Roleplay VIP Pass
+                    </span>
+                    <h4 className="font-serif font-bold text-sm text-white">For Roleplayers</h4>
+                    <p className="text-[11px] text-warm-400 mt-1">Unlimited AI character messaging, mood halos, and voice telepathy.</p>
+                    <div className="mt-3 text-lg font-serif font-bold text-red-400">15 💎 Shards <span className="text-xs text-warm-500">/ $4.99</span></div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (activateRoleplayVipPass()) {
+                        showToast('Roleplay VIP Pass Activated! 🎭', 'success');
+                      } else {
+                        showToast('Insufficient Shards balance!', 'error');
+                      }
+                    }}
+                    disabled={roleplayVipActive}
+                    className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs shadow-md transition-all"
+                  >
+                    {roleplayVipActive ? 'Pass Active ✨' : 'Activate Pass'}
+                  </button>
+                </div>
 
-                <button
-                  onClick={handleRedeemAdFreePass}
-                  disabled={adFreePassActive}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold text-xs shadow-lg transition-all flex items-center justify-center gap-2"
-                >
-                  <Crown size={16} />
-                  <span>{adFreePassActive ? 'VIP Pass Active ✨' : 'Activate 30-Day VIP Pass (20 💎 Shards or $9.99)'}</span>
-                </button>
+                {/* 2. Storytelling VIP Pass */}
+                <div className="p-4 rounded-2xl bg-gradient-to-b from-purple-950/20 to-warm-900 border border-purple-500/30 flex flex-col justify-between space-y-3">
+                  <div>
+                    <span className="text-xs uppercase font-extrabold text-purple-400 bg-purple-500/10 px-2.5 py-1 rounded-md inline-block mb-2">
+                      📖 Storytelling VIP Pass
+                    </span>
+                    <h4 className="font-serif font-bold text-sm text-white">For Authors & Readers</h4>
+                    <p className="text-[11px] text-warm-400 mt-1">Unlimited writer energy, AI author co-pilot, and passage annotations.</p>
+                    <div className="mt-3 text-lg font-serif font-bold text-purple-400">15 💎 Shards <span className="text-xs text-warm-500">/ $4.99</span></div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (activateStorytellingVipPass()) {
+                        showToast('Storytelling VIP Pass Activated! 📖', 'success');
+                      } else {
+                        showToast('Insufficient Shards balance!', 'error');
+                      }
+                    }}
+                    disabled={storytellingVipActive}
+                    className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs shadow-md transition-all"
+                  >
+                    {storytellingVipActive ? 'Pass Active ✨' : 'Activate Pass'}
+                  </button>
+                </div>
+
+                {/* 3. Multiverse All-Access VIP Pass */}
+                <div className="p-4 rounded-2xl bg-gradient-to-b from-amber-500/20 via-purple-500/10 to-warm-900 border border-amber-500/50 flex flex-col justify-between space-y-3 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 bg-amber-500 text-black text-[9px] font-black uppercase px-2 py-0.5 rounded-bl-md">Best Value</div>
+                  <div>
+                    <span className="text-xs uppercase font-extrabold text-amber-300 bg-amber-500/20 px-2.5 py-1 rounded-md inline-block mb-2">
+                      ✨ Multiverse All-Access
+                    </span>
+                    <h4 className="font-serif font-bold text-sm text-white">All Features Unlocked</h4>
+                    <p className="text-[11px] text-warm-400 mt-1">Roleplay + Storytelling + Ad-Free + Priority GPU speed.</p>
+                    <div className="mt-3 text-lg font-serif font-bold text-amber-400">25 💎 Shards <span className="text-xs text-warm-500">/ $7.99</span></div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (activateMultiverseVipPass()) {
+                        showToast('Multiverse VIP Pass Activated! ✨', 'success');
+                      } else {
+                        showToast('Insufficient Shards balance!', 'error');
+                      }
+                    }}
+                    disabled={multiverseVipActive}
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-black font-extrabold text-xs shadow-md transition-all"
+                  >
+                    {multiverseVipActive ? 'All-Access Active ✨' : 'Activate All-Access'}
+                  </button>
+                </div>
+
               </div>
             </div>
           )}
