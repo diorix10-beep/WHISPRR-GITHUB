@@ -218,11 +218,11 @@ export default function ChapterReaderPage() {
             <button
               onClick={handleStepIntoRoleplay}
               disabled={steppingIntoRoleplay}
-              className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-red-650/10 text-red-650 hover:bg-red-650 hover:text-white transition-colors"
-              title="Step into Roleplay Mode"
+              className="flex items-center gap-1.5 text-xs font-extrabold px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-500 hover:to-purple-500 text-white shadow-md transition-all hover:scale-103 active:scale-97"
+              title="Step inside this exact chapter scene and talk with the characters in live roleplay!"
             >
-              {steppingIntoRoleplay ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-              <span className="hidden sm:inline">Roleplay Mode</span>
+              {steppingIntoRoleplay ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} className="text-amber-300 fill-amber-300" />}
+              <span>Step Inside Scene 🌀</span>
             </button>
             <button
               onClick={() => setSerifFont(!serifFont)}
