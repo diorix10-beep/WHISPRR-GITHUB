@@ -10,10 +10,10 @@ export function BottomNav() {
 
   const chimeraItems = [
     { path: '/discover', icon: Compass, label: 'Discover' },
+    { path: '/characters', icon: Users, label: 'Characters' },
     { path: '/conversations', icon: MessageCircle, label: 'Chats', badge: true },
-    { path: '/studio', icon: Plus, label: 'Create' },
     { path: '/personas', icon: User, label: 'Personas' },
-    { path: '#menu', icon: Menu, label: 'Menu', isAction: true },
+    { path: '/studio', icon: Plus, label: 'Studio' },
   ];
 
   const items = chimeraItems;

@@ -129,6 +129,21 @@ export default function ConversationPage() {
     });
   };
 
+  // Mobile Touch Swipe Gesture Handling
+  const touchStartXRef = useRef<number>(0);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const endX = e.changedTouches[0].clientX;
+    const diff = endX - touchStartXRef.current;
+    if (diff > 80) {
+      setShowSettingsDrawer(true);
+    } else if (diff < -80) {
+      setShowMemoryModal(true);
+    }
+  };
+
   // Chat Modes & Multi-Character Pool
   const [chatMode, setChatMode] = useState<ChatMode>('one_on_one');
   const [multiParticipants, setMultiParticipants] = useState<MultiCharacterParticipant[]>([]);
@@ -1064,8 +1079,11 @@ export default function ConversationPage() {
   return (
     <div className={`h-screen flex flex-col font-sans ${getStyleClasses()} ${isPhoneLayout ? 'bg-warm-100 dark:bg-black items-center justify-center p-0 sm:p-4' : 'bg-white dark:bg-warm-950'}`}>
       
-      {/* Phone Wrapper (only active on larger screens if phone layout is selected) */}
-      <div className={`w-full h-full flex flex-col relative overflow-hidden bg-white dark:bg-warm-950 transition-all ${
+      {/* Phone Wrapper & Touch Swipe Area */}
+      <div 
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        className={`w-full h-full flex flex-col relative overflow-hidden bg-white dark:bg-warm-950 transition-all ${
         isPhoneLayout ? 'sm:max-w-[400px] sm:h-[850px] sm:max-h-[90vh] sm:rounded-[3rem] sm:border-[12px] sm:border-black sm:shadow-2xl sm:ring-1 sm:ring-warm-800' : ''
       }`}>
 
