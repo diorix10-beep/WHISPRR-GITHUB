@@ -963,9 +963,38 @@ export default function AiCharacterCreator() {
                       name="exampleDialogues"
                       value={formData.exampleDialogues}
                       onChange={handleChange}
-                      rows={8}
-                      className="w-full bg-warm-800 border border-warm-700 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-red-500"
+                      rows={6}
+                      className="w-full bg-warm-800 border border-warm-700 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-red-500 font-serif"
                     />
+                  </div>
+
+                  {/* Dialogue Style Guardrails & Suggested Companion Role */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+                    <div>
+                      <label className="block text-xs font-bold text-warm-400 mb-1">Dialogue Style Guardrails (Forbidden Clichés)</label>
+                      <p className="text-[10px] text-warm-500 mb-2">Comma-separated phrases to ban (e.g. *a pang of*, *can I ask you something?*).</p>
+                      <textarea
+                        name="bannedWords"
+                        value={formData.bannedWords}
+                        onChange={handleChange}
+                        rows={3}
+                        placeholder="a pang of, can I ask you something?, chuckles softly"
+                        className="w-full bg-warm-800 border border-warm-700 rounded-xl py-2.5 px-3 text-xs text-white focus:outline-none focus:border-red-500 font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-warm-400 mb-1">Recommended Companion Role / Persona</label>
+                      <p className="text-[10px] text-warm-500 mb-2">Default persona role suggested to users when starting a chat (e.g. *Gotham Detective*, *Rival Sorcerer*).</p>
+                      <input
+                        type="text"
+                        name="suggestedPersonaName"
+                        value={formData.suggestedPersonaName}
+                        onChange={handleChange}
+                        placeholder="e.g. Apprentice Knight, Detective Companion"
+                        className="w-full bg-warm-800 border border-warm-700 rounded-xl py-2.5 px-3 text-xs text-white focus:outline-none focus:border-red-500"
+                      />
+                    </div>
                   </div>
 
                   {/* Definition Tab Bottom Step Controls */}
