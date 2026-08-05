@@ -917,19 +917,38 @@ export default function AiCharacterCreator() {
                   </div>
 
                   <div>
-                    <div className="flex justify-between items-center mb-1">
+                    <div className="flex justify-between items-center mb-1 flex-wrap gap-2">
                       <label className="block text-xs font-bold text-warm-400">
                         First Message / Greeting <span className="text-red-400">*</span>
                       </label>
-                      <span className="text-[10px] bg-red-500/20 text-red-400 font-bold px-2 py-0.5 rounded-md border border-red-500/30">
-                        * Required to Publish
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!formData.name.trim()) {
+                              showToast('Please enter a character name first!', 'error');
+                              return;
+                            }
+                            const draft = `*steps forward into the soft light, looking towards you with a curious expression* "Greetings, traveler. I am ${formData.name}. Tell me, what brings you to these lands today?"`;
+                            setFormData(prev => ({ ...prev, greeting: draft }));
+                            showToast('Draft opening scene generated! You can edit it below.', 'success');
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[11px] font-bold flex items-center gap-1 transition-all"
+                          title="Draft an opening scene based on character name"
+                        >
+                          <Sparkles size={12} />
+                          <span>Draft Scene with AI</span>
+                        </button>
+                        <span className="text-[10px] bg-red-500/20 text-red-400 font-bold px-2 py-0.5 rounded-md border border-red-500/30">
+                          * Required to Publish
+                        </span>
+                      </div>
                     </div>
 
                     {!formData.greeting.trim() && publishPipeline.step === 'failed' && (
                       <div className="mb-3 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs font-bold text-red-400 flex items-center gap-2 animate-shake">
                         <AlertTriangle size={16} />
-                        <span>First Greeting is required so roleplay can start! Type your character's opening message below.</span>
+                        <span>First Greeting is required so roleplay can start! Type your character's opening message below or use the AI draft button.</span>
                       </div>
                     )}
 
