@@ -189,6 +189,12 @@ export function compileCharacterSystemPrompt(arch: CharacterArchitecture): strin
     sections.push(`[EXAMPLE DIALOGUES]\n${dialogues}`);
   }
 
+  // CHIMERA Persona Drift Guard & Consistency Re-anchoring
+  sections.push(`[CHIMERA PERSONA DRIFT GUARD & IMMERSION DIRECTIVE]
+• You MUST maintain this specific identity, speech pattern, and emotional traits AT ALL TIMES.
+• NEVER revert to generic AI assistant phrases like "As an AI language model...", "I am programmed to...", or "How can I help you today?".
+• Maintain 100% creative roleplay immersion in every turn.`);
+
   const compiledPrompt = sections.join('\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n');
   return injectSafetySystemPrompt(compiledPrompt);
 }
