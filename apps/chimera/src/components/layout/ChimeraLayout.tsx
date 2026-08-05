@@ -230,6 +230,34 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
           {/* 3. BLOC DROITE — Actions */}
           <div className="flex items-center justify-end gap-1.5 sm:gap-3 shrink-0">
 
+            {/* Sélecteur de Langue Mondial (Global Language Picker) */}
+            <div className="relative">
+              <select
+                onChange={(e) => {
+                  const lang = e.target.value;
+                  localStorage.setItem('chimera_global_lang', lang);
+                  window.dispatchEvent(new CustomEvent('chimera-language-changed', { detail: lang }));
+                }}
+                defaultValue={localStorage.getItem('chimera_global_lang') || 'en'}
+                className="appearance-none bg-warm-200/70 dark:bg-warm-800/90 text-warm-900 dark:text-white text-xs font-bold px-2.5 py-1.5 rounded-xl border border-warm-200/90 dark:border-warm-750/90 cursor-pointer focus:outline-none hover:bg-warm-300 dark:hover:bg-warm-750 transition-all pr-6"
+                title="Select Platform Language"
+              >
+                <option value="en">🇺🇸 EN</option>
+                <option value="fr">🇫🇷 FR</option>
+                <option value="es">🇪🇸 ES</option>
+                <option value="ja">🇯🇵 JA</option>
+                <option value="ko">🇰🇷 KO</option>
+                <option value="zh">🇨🇳 ZH</option>
+                <option value="de">🇩🇪 DE</option>
+                <option value="pt">🇧🇷 PT</option>
+                <option value="ru">🇷🇺 RU</option>
+                <option value="tr">🇹🇷 TR</option>
+                <option value="ar">🇸🇦 AR</option>
+                <option value="it">🇮🇹 IT</option>
+              </select>
+              <Globe size={12} className="absolute right-2 top-2.5 pointer-events-none text-warm-500" />
+            </div>
+
             {/* Creative Mode Switch Pill — Responsive on Mobile & Desktop */}
             <div className="flex items-center bg-warm-200/70 dark:bg-warm-800/90 p-0.5 sm:p-1 rounded-xl sm:rounded-2xl border border-warm-200/90 dark:border-warm-750/90 shadow-inner">
               <button
