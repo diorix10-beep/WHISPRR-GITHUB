@@ -1116,13 +1116,21 @@ export default function ConversationPage() {
                 className={`flex items-center min-w-0 cursor-pointer hover:bg-warm-50 dark:hover:bg-warm-800/50 p-1 -ml-1 rounded-xl transition-colors ${isPhoneLayout ? 'flex-col gap-1' : 'gap-3'}`}
                 onClick={() => setShowSettingsDrawer(true)}
               >
-                <CharacterExpressionAvatar
-                  defaultEmoji={otherUser.avatar_emoji}
-                  defaultPhotoUrl={otherUser.photo_url}
-                  expressions={characterExpressions}
-                  lastMessageContent={messages[messages.length - 1]?.content}
-                  size={isPhoneLayout ? "sm" : "md"}
-                />
+                <div className="relative group">
+                  {/* Mood Halo Effect */}
+                  <div className="absolute -inset-1.5 rounded-full bg-gradient-to-r from-red-600 via-purple-600 to-indigo-600 opacity-70 blur-sm group-hover:opacity-100 transition-all animate-pulse pointer-events-none" />
+                  <CharacterExpressionAvatar
+                    defaultEmoji={otherUser.avatar_emoji}
+                    defaultPhotoUrl={otherUser.photo_url}
+                    expressions={characterExpressions}
+                    lastMessageContent={messages[messages.length - 1]?.content}
+                    size={isPhoneLayout ? "sm" : "md"}
+                  />
+                  {/* Voice Telepathy Stream Indicator */}
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white dark:border-warm-900 flex items-center justify-center text-[8px] text-white font-bold shadow-md" title="Voice Telepathy Active">
+                    🎙️
+                  </div>
+                </div>
                 <div className={`min-w-0 ${isPhoneLayout ? 'text-center' : ''}`}>
                   <h1 className="font-serif font-bold text-lg text-warm-900 dark:text-warm-50 truncate flex items-center gap-1.5">
                     {otherUser.display_name}
