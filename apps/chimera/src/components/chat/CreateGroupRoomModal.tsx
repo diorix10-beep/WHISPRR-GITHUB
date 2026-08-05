@@ -144,16 +144,42 @@ export function CreateGroupRoomModal({ isOpen, onClose, onRoomCreated }: CreateG
         {/* Form Fields */}
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-warm-700 dark:text-warm-300 mb-1">
-              Group Room Name
+            <label className="block text-xs font-bold uppercase tracking-wider text-warm-400 mb-1.5">
+              Group Room Name *
             </label>
             <input
               type="text"
+              placeholder="e.g., Tavern of Champions / Sci-Fi Away Team"
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
-              placeholder="e.g. Verity High Council, Mountain Expedition"
-              className="w-full text-xs bg-warm-50 dark:bg-warm-900 border border-warm-200 dark:border-warm-800 rounded-xl px-3 py-2 text-warm-900 dark:text-white"
+              className="w-full px-4 py-2.5 rounded-xl border border-warm-200 dark:border-warm-800 bg-warm-50 dark:bg-warm-900 text-warm-900 dark:text-white text-sm focus:outline-none focus:border-red-500"
+              required
             />
+          </div>
+
+          {/* RPG Turn-Order Strategy */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-warm-400 mb-1.5">
+              RPG Interaction Mode
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setScenario(prev => prev.includes('[TURN:DYNAMIC]') ? prev.replace('[TURN:DYNAMIC]', '[TURN:ROUND_ROBIN]') : prev + ' [TURN:ROUND_ROBIN]')}
+                className="p-3 rounded-xl border border-red-500/30 bg-red-500/10 text-left text-xs text-warm-900 dark:text-white hover:bg-red-500/20 transition-colors"
+              >
+                <span className="font-bold block text-red-600 dark:text-red-400">🔄 Round-Robin</span>
+                <span className="text-[10px] text-warm-500">Characters respond in sequential turns.</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setScenario(prev => prev.includes('[TURN:ROUND_ROBIN]') ? prev.replace('[TURN:ROUND_ROBIN]', '[TURN:DYNAMIC]') : prev + ' [TURN:DYNAMIC]')}
+                className="p-3 rounded-xl border border-purple-500/30 bg-purple-500/10 text-left text-xs text-warm-900 dark:text-white hover:bg-purple-500/20 transition-colors"
+              >
+                <span className="font-bold block text-purple-600 dark:text-purple-400">⚡ Dynamic Party</span>
+                <span className="text-[10px] text-warm-500">Characters interject naturally.</span>
+              </button>
+            </div>
           </div>
 
           <div>
