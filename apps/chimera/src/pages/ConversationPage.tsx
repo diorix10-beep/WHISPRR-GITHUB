@@ -23,6 +23,7 @@ import { LorebookDrawer } from '../components/chat/LorebookDrawer';
 import { InChatPersonaDrawer } from '../components/chat/InChatPersonaDrawer';
 import { WorldRelationshipModal } from '../components/world/WorldRelationshipModal';
 import { TranscriptsExporterModal } from '../components/chat/TranscriptsExporterModal';
+import { AddCharacterToGroupModal } from '../components/chat/AddCharacterToGroupModal';
 import { voiceEngine } from '../services/voiceEngine';
 import { LanguageSelectorModal } from '../components/common/LanguageSelectorModal';
 import { SUPPORTED_LANGUAGES, translateText } from '../services/translationEngine';
@@ -84,6 +85,7 @@ export default function ConversationPage() {
   const [targetLang, setTargetLang] = useState('en');
   const [showLangModal, setShowLangModal] = useState(false);
   const [swipesMap, setSwipesMap] = useState<Record<string, { variations: string[]; currentIndex: number }>>({});
+  const [showAddCharModal, setShowAddCharModal] = useState(false);
   const [showExpressionModal, setShowExpressionModal] = useState(false);
   const [characterExpressions, setCharacterExpressions] = useState<Record<string, string>>({});
 
@@ -1458,9 +1460,10 @@ export default function ConversationPage() {
                   setTypingUsers([]);
                 });
               }}
-              onAddCharacter={() => navigate('/characters')}
+              onAddCharacter={() => setShowAddCharModal(true)}
               onRemoveCharacter={(id) => {
                 setMultiParticipants((prev) => prev.filter((p) => p.character_id !== id));
+                showToast('Character removed from scene', 'info');
               }}
             />
           )}
@@ -2102,6 +2105,27 @@ export default function ConversationPage() {
         onClose={() => setShowLangModal(false)}
         currentLanguage={targetLang}
         onSelectLanguage={(lang) => setTargetLang(lang)}
+      />
+
+      {/* Add AI Character to Group Room Modal */}
+      <AddCharacterToGroupModal
+        isOpen={showAddCharModal}
+        onClose={() => setShowAddCharModal(false)}
+        existingIds={multiParticipants.map(p => p.character_id)}
+        onSelectCharacter={(char) => {
+          setMultiParticipants(prev => [
+            ...prev,
+            {
+              character_id: char.id,
+              display_name: char.display_name,
+              avatar_emoji: char.avatar_emoji || '🎭',
+              photo_url: char.photo_url || undefined,
+              is_active_speaker: false,
+              role: 'ai_character'
+            }
+          ]);
+          showToast(`Invited ${char.display_name} to the group scene!`, 'success');
+        }}
       />
 
       {/* End Phone Wrapper */}
