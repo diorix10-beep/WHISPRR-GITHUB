@@ -292,42 +292,42 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               </button>
             </div>
 
-            {/* Shards Currency Pill — Active Balance & Store Trigger */}
+            {/* Shards Currency Pill — Bright White/Cyan visible numbers in all themes */}
             <button
               onClick={() => navigate('/shards')}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-gradient-to-r from-blue-500/10 via-cyan-500/10 to-indigo-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 hover:border-cyan-400 transition-all font-bold text-xs shadow-sm hover:shadow-[0_0_15px_rgba(6,182,212,0.25)] hover:scale-105 active:scale-95 group"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl bg-cyan-950/40 dark:bg-cyan-950/60 text-cyan-300 dark:text-cyan-300 border border-cyan-500/50 hover:border-cyan-400 transition-all font-bold text-xs shadow-sm hover:shadow-[0_0_15px_rgba(6,182,212,0.35)] hover:scale-105 active:scale-95 group shrink-0"
               title="CHIMERA SHARDS Economy & Store"
             >
-              <ShardCrystalImage size={20} showGlow={false} />
-              <span className="font-serif font-extrabold text-sm">{shardsBalance}</span>
+              <ShardCrystalImage size={18} showGlow={false} />
+              <span className="font-serif font-black text-sm text-cyan-300 dark:text-cyan-200 drop-shadow-sm">{shardsBalance}</span>
             </button>
 
-            {/* Search — icon only, no text label on smaller screens */}
+            {/* Search — icon only */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="p-2 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-850 text-warm-500 hover:border-warm-300 dark:hover:border-warm-650 transition-colors"
+              className="p-2 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-850 text-warm-500 hover:border-warm-300 dark:hover:border-warm-650 transition-colors shrink-0"
               aria-label="Search"
             >
               <Search size={16} />
             </button>
 
-            {/* Mode-Specific Primary CTA — Identical Fixed Layout width */}
+            {/* Mode-Specific Primary CTA */}
             <button
               onClick={() => navigate(creativeMode === 'storytelling' ? '/write/desk' : '/studio')}
-              className={`min-w-[130px] justify-center flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs text-white shadow-md active:scale-[0.98] transition-all ${
+              className={`px-3 py-2 rounded-xl font-bold text-xs text-white shadow-md active:scale-[0.98] transition-all shrink-0 flex items-center gap-1.5 ${
                 creativeMode === 'storytelling'
                   ? 'bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 shadow-purple-600/20'
                   : 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 shadow-red-600/20'
               }`}
             >
               <Plus size={16} strokeWidth={2.5} />
-              <span>
+              <span className="hidden sm:inline">
                 {creativeMode === 'storytelling' ? 'Write Story' : 'Create Character'}
               </span>
             </button>
 
             {/* Theme Toggle */}
-            <div className="relative hidden sm:block" ref={themeMenuRef}>
+            <div className="relative hidden sm:block shrink-0" ref={themeMenuRef}>
               <button
                 onClick={() => setShowThemeMenu(!showThemeMenu)}
                 className="p-2 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
@@ -366,12 +366,13 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               )}
             </div>
 
-            {/* Profile Dropdown */}
+            {/* Profile Avatar Dropdown — 100% Guaranteed Visible & Unclipped */}
             {profile ? (
-              <div className="relative" ref={profileMenuRef}>
+              <div className="relative shrink-0" ref={profileMenuRef}>
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex items-center gap-2 p-1 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
+                  className="flex items-center gap-2 p-1 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors border border-transparent hover:border-warm-200 dark:hover:border-warm-750"
+                  title="User Profile Menu"
                 >
                   <Avatar
                     photoUrl={profile.photo_url}
