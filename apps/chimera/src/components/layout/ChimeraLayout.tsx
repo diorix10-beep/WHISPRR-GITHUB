@@ -311,17 +311,17 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               <Search size={16} />
             </button>
 
-            {/* Mode-Specific Primary CTA — text hidden until xl */}
+            {/* Mode-Specific Primary CTA — Identical Fixed Layout width */}
             <button
               onClick={() => navigate(creativeMode === 'storytelling' ? '/write/desk' : '/studio')}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs text-white shadow-md active:scale-[0.98] transition-all ${
+              className={`min-w-[130px] justify-center flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs text-white shadow-md active:scale-[0.98] transition-all ${
                 creativeMode === 'storytelling'
                   ? 'bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 shadow-purple-600/20'
                   : 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 shadow-red-600/20'
               }`}
             >
               <Plus size={16} strokeWidth={2.5} />
-              <span className="hidden xl:inline">
+              <span>
                 {creativeMode === 'storytelling' ? 'Write Story' : 'Create Character'}
               </span>
             </button>
