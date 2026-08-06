@@ -36,7 +36,7 @@ const STORYTELLING_NAV_LINKS: NavLinkItem[] = [
   { path: '/stories', label: 'Stories', icon: BookOpen },
   { path: '/worlds', label: 'Worlds', icon: Globe },
   { path: '/lorebooks', label: 'Lorebooks', icon: BookOpen },
-  { path: '/write/desk', label: "Writer's Desk", icon: PenTool },
+  { path: '/write/desk', label: 'Writer', icon: PenTool },
 ];
 
 export function ChimeraLayout({ children }: ChimeraLayoutProps) {
@@ -150,7 +150,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
           end={link.path === '/'}
           onClick={link.comingSoon ? (e) => e.preventDefault() : undefined}
           className={({ isActive }) =>
-            `relative px-1.5 xl:px-3 py-1.5 text-xs xl:text-sm font-semibold transition-all whitespace-nowrap inline-flex items-center shrink-0 ${
+            `relative px-1 xl:px-2 py-1.5 text-xs xl:text-sm font-semibold transition-all whitespace-nowrap inline-flex items-center justify-center shrink-0 w-full ${
               link.comingSoon
                 ? 'text-warm-400 dark:text-warm-600 cursor-default opacity-60'
                 : isActive
@@ -164,7 +164,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
           {({ isActive }) => {
             const Icon = link.icon;
             return (
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center justify-center gap-1.5 w-full">
                 {Icon && <Icon size={15} className="shrink-0 opacity-80" />}
                 <span>{link.label}</span>
                 {link.comingSoon && (
@@ -226,9 +226,9 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             </Link>
           </div>
 
-          {/* 2. BLOC MILIEU — Navigation */}
-          <div className="hidden lg:flex flex-1 min-w-0 items-center justify-center px-1 sm:px-2">
-            <nav className="flex items-center gap-1 xl:gap-3 whitespace-nowrap shrink-0">
+          {/* 2. BLOC MILIEU — Navigation à Largeur Fixe Absolue (460px) */}
+          <div className="hidden lg:flex items-center justify-center">
+            <nav className="w-[460px] grid grid-cols-5 gap-1 text-center whitespace-nowrap shrink-0">
               {renderNavLinks()}
             </nav>
           </div>
