@@ -188,9 +188,9 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
   return (
     <div className="min-h-screen bg-warm-50 dark:bg-warm-900 transition-colors duration-300 flex flex-col font-sans">
-      {/* Top Navigation Header — CSS Grid 3-column layout */}
+      {/* Top Navigation Header */}
       <header className="sticky top-0 z-40 w-full bg-white/80 dark:bg-warm-900/80 backdrop-blur-xl border-b border-warm-200/80 dark:border-warm-800/80 shadow-sm transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 grid grid-cols-[auto_1fr_auto] lg:grid-cols-[220px_1fr_auto] items-center gap-4">
+        <div className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* 1. BLOC GAUCHE — Logo */}
           <div className="flex items-center gap-2 sm:gap-3">
@@ -292,17 +292,17 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               </button>
             </div>
 
-            {/* Shards Currency Pill — Bright White/Cyan visible numbers in all themes */}
+            {/* Shards Currency Pill — Glowing Bright Text */}
             <button
               onClick={() => navigate('/shards')}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl bg-cyan-950/40 dark:bg-cyan-950/60 text-cyan-300 dark:text-cyan-300 border border-cyan-500/50 hover:border-cyan-400 transition-all font-bold text-xs shadow-sm hover:shadow-[0_0_15px_rgba(6,182,212,0.35)] hover:scale-105 active:scale-95 group shrink-0"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-gradient-to-r from-blue-500/20 via-cyan-500/20 to-indigo-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 text-cyan-300 border border-cyan-400/40 hover:border-cyan-300 transition-all font-bold text-xs shadow-md hover:shadow-[0_0_15px_rgba(6,182,212,0.35)] hover:scale-105 active:scale-95 group shrink-0"
               title="CHIMERA SHARDS Economy & Store"
             >
               <ShardCrystalImage size={18} showGlow={false} />
-              <span className="font-serif font-black text-sm text-cyan-300 dark:text-cyan-200 drop-shadow-sm">{shardsBalance}</span>
+              <span className="font-serif font-black text-sm text-cyan-300 dark:text-cyan-200 drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]">{shardsBalance}</span>
             </button>
 
-            {/* Search — icon only */}
+            {/* Search — icon only, no text label on smaller screens */}
             <button
               onClick={() => setSearchOpen(true)}
               className="p-2 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-850 text-warm-500 hover:border-warm-300 dark:hover:border-warm-650 transition-colors shrink-0"
@@ -311,17 +311,17 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               <Search size={16} />
             </button>
 
-            {/* Mode-Specific Primary CTA */}
+            {/* Mode-Specific Primary CTA — Identical Fixed Layout width */}
             <button
               onClick={() => navigate(creativeMode === 'storytelling' ? '/write/desk' : '/studio')}
-              className={`px-3 py-2 rounded-xl font-bold text-xs text-white shadow-md active:scale-[0.98] transition-all shrink-0 flex items-center gap-1.5 ${
+              className={`min-w-[125px] justify-center flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs text-white shadow-md active:scale-[0.98] transition-all shrink-0 ${
                 creativeMode === 'storytelling'
                   ? 'bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 shadow-purple-600/20'
                   : 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 shadow-red-600/20'
               }`}
             >
               <Plus size={16} strokeWidth={2.5} />
-              <span className="hidden sm:inline">
+              <span>
                 {creativeMode === 'storytelling' ? 'Write Story' : 'Create Character'}
               </span>
             </button>
@@ -366,13 +366,12 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               )}
             </div>
 
-            {/* Profile Avatar Dropdown — 100% Guaranteed Visible & Unclipped */}
+            {/* Profile Dropdown — Unclipped with Margin Right */}
             {profile ? (
-              <div className="relative shrink-0" ref={profileMenuRef}>
+              <div className="relative shrink-0 mr-1 sm:mr-2" ref={profileMenuRef}>
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex items-center gap-2 p-1 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors border border-transparent hover:border-warm-200 dark:hover:border-warm-750"
-                  title="User Profile Menu"
+                  className="flex items-center gap-2 p-1 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors focus:outline-none"
                 >
                   <Avatar
                     photoUrl={profile.photo_url}
