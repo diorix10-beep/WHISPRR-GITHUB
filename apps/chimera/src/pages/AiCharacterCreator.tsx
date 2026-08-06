@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { 
   ArrowLeft, Save, Bot, Check, RefreshCw, 
-  Settings, AlertTriangle, User, FileText, UploadCloud, Plus, Sparkles, Menu
+  Settings, AlertTriangle, User, FileText, UploadCloud, Plus, Sparkles, Menu, Volume2, Upload
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -13,7 +13,7 @@ import { StructuredArchitectureForm } from '../components/character/StructuredAr
 import { compileCharacterSystemPrompt, type CharacterArchitecture } from '../lib/promptCompiler';
 import { UniversalCharacterImporterModal } from '../components/creator/UniversalCharacterImporterModal';
 import { RichTextEditor } from '../components/common/RichTextEditor';
-import { Upload } from 'lucide-react';
+import { voiceEngine, PRESET_CHARACTER_VOICES } from '../services/voiceEngine';
 
 export default function AiCharacterCreator() {
   const navigate = useNavigate();
@@ -795,6 +795,55 @@ export default function AiCharacterCreator() {
                     </div>
                   </div>
 
+                  {/* ── CHARACTER VOICE STUDIO (Character.ai Style) ── */}
+                  <div className="p-6 rounded-2xl bg-warm-900 border border-warm-800 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
+                          <Volume2 size={18} />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-white text-sm">Character Voice Signature</h3>
+                          <p className="text-xs text-warm-400">Select an AI voice for spoken roleplay audio dialogue (Character.ai style).</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {PRESET_CHARACTER_VOICES.map((v) => (
+                        <div
+                          key={v.id}
+                          onClick={() => setFormData(prev => ({ ...prev, voiceId: v.id }))}
+                          className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
+                            (formData as any).voiceId === v.id || (! (formData as any).voiceId && v.id === 'voice_gentle_female')
+                              ? 'bg-purple-500/15 border-purple-500 text-white shadow-md'
+                              : 'bg-warm-950/60 border-warm-800 text-warm-300 hover:border-warm-700'
+                          }`}
+                        >
+                          <div>
+                            <div className="font-bold text-xs flex items-center gap-1.5">
+                              <span>{v.name}</span>
+                            </div>
+                            <div className="text-[11px] text-warm-400 mt-0.5">{v.tone}</div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              voiceEngine.speak(`Hello! I am ${formData.name || 'your character'}. This is how my voice sounds in roleplay!`, v.id);
+                            }}
+                            className="p-2 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 font-bold text-xs flex items-center gap-1 transition-all shrink-0 ml-2"
+                            title="Audition Voice"
+                          >
+                            <Volume2 size={14} />
+                            <span className="text-[10px]">Preview</span>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Tab Navigation Controls */}
                   <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-warm-800">
                     <button
@@ -1131,7 +1180,7 @@ export default function AiCharacterCreator() {
       <UniversalCharacterImporterModal
         isOpen={showImporterModal}
         onClose={() => setShowImporterModal(false)}
-        onImportSuccess={(data) => {
+        onImportSuccess={(data: any) => {
           const rating = data.content_rating === 'NSFW' ? 'NSFW' : 'SFW';
           setFormData(prev => ({
             ...prev,

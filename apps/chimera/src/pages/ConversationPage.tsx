@@ -23,6 +23,7 @@ import { LorebookDrawer } from '../components/chat/LorebookDrawer';
 import { InChatPersonaDrawer } from '../components/chat/InChatPersonaDrawer';
 import { WorldRelationshipModal } from '../components/world/WorldRelationshipModal';
 import { TranscriptsExporterModal } from '../components/chat/TranscriptsExporterModal';
+import { voiceEngine } from '../services/voiceEngine';
 import { LanguageSelectorModal } from '../components/common/LanguageSelectorModal';
 import { SUPPORTED_LANGUAGES, translateText } from '../services/translationEngine';
 import { createInitialMemoryNexusState, autoExtractMemoriesIfNeeded, formatMemoryNexusPromptContext } from '../services/memoryNexus';
@@ -65,6 +66,7 @@ export default function ConversationPage() {
   const [editingName, setEditingName] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [showAddMembers, setShowAddMembers] = useState(false);
   const [followedUsers, setFollowedUsers] = useState<Profile[]>([]);
@@ -1589,6 +1591,30 @@ export default function ConversationPage() {
                           >
                             <RotateCw size={11} />
                             <span>Swipe New</span>
+                          </button>
+
+                          {/* Character.ai Audio Voice Playback Speaker */}
+                          <button
+                            onClick={() => {
+                              if (speakingMessageId === message.id) {
+                                voiceEngine.stop();
+                                setSpeakingMessageId(null);
+                              } else {
+                                setSpeakingMessageId(message.id);
+                                voiceEngine.speak(message.content, (sender as any)?.voice_id, () => {
+                                  setSpeakingMessageId(null);
+                                });
+                              }
+                            }}
+                            className={`p-1.5 px-2 rounded-lg font-bold text-[11px] flex items-center gap-1 transition-all border ${
+                              speakingMessageId === message.id
+                                ? 'bg-purple-600 text-white border-purple-400 shadow-md animate-pulse'
+                                : 'bg-purple-950/40 hover:bg-purple-900/60 text-purple-300 hover:text-white border-purple-800/40'
+                            }`}
+                            title="Play character voice audio (Character.ai style)"
+                          >
+                            <Volume2 size={13} className={speakingMessageId === message.id ? 'animate-bounce' : ''} />
+                            <span>{speakingMessageId === message.id ? 'Stop Voice' : 'Listen Voice'}</span>
                           </button>
 
                           <button
