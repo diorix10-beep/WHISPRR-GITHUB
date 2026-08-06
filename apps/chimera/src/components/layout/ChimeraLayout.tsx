@@ -35,6 +35,8 @@ const STORYTELLING_NAV_LINKS: NavLinkItem[] = [
   { path: '/', label: 'Home', icon: Compass },
   { path: '/stories', label: 'Stories', icon: BookOpen },
   { path: '/worlds', label: 'Worlds', icon: Globe },
+  { path: '/lorebooks', label: 'Lorebooks', icon: BookOpen },
+  { path: '/write/desk', label: "Writer's Desk", icon: PenTool },
 ];
 
 export function ChimeraLayout({ children }: ChimeraLayoutProps) {
@@ -159,22 +161,26 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             } ${isMobile ? 'flex w-full rounded-lg hover:bg-warm-100 dark:hover:bg-warm-800' : ''}`
           }
         >
-          {({ isActive }) => (
-            <>
-              {link.label}
-              {link.comingSoon && (
-                <span className="ml-1.5 text-[9px] uppercase tracking-wider font-bold text-warm-400 dark:text-warm-600 bg-warm-100 dark:bg-warm-800 px-1.5 py-0.5 rounded-md">
-                  Soon
-                </span>
-              )}
-              {/* Active underline indicator for desktop */}
-              {!isMobile && isActive && !link.comingSoon && (
-                <span className={`absolute bottom-0 left-0 w-full h-0.5 rounded-t-md ${
-                  creativeMode === 'storytelling' ? 'bg-purple-600 dark:bg-purple-500' : 'bg-red-600 dark:bg-red-500'
-                }`} />
-              )}
-            </>
-          )}
+          {({ isActive }) => {
+            const Icon = link.icon;
+            return (
+              <span className="flex items-center gap-1.5">
+                {Icon && <Icon size={15} className="shrink-0 opacity-80" />}
+                <span>{link.label}</span>
+                {link.comingSoon && (
+                  <span className="ml-1.5 text-[9px] uppercase tracking-wider font-bold text-warm-400 dark:text-warm-600 bg-warm-100 dark:bg-warm-800 px-1.5 py-0.5 rounded-md">
+                    Soon
+                  </span>
+                )}
+                {/* Active underline indicator for desktop */}
+                {!isMobile && isActive && !link.comingSoon && (
+                  <span className={`absolute bottom-0 left-0 w-full h-0.5 rounded-t-md ${
+                    creativeMode === 'storytelling' ? 'bg-purple-600 dark:bg-purple-500' : 'bg-red-600 dark:bg-red-500'
+                  }`} />
+                )}
+              </span>
+            );
+          }}
         </NavLink>
       ))}
     </>
