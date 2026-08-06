@@ -420,7 +420,8 @@ export type BadgeType =
   | 'mentor'
   | 'translator'
   | 'volunteer'
-  | 'featured_creator';
+  | 'featured_creator'
+  | 'pioneer_creator';
 
 export interface ChimeraProfile {
   id: string;

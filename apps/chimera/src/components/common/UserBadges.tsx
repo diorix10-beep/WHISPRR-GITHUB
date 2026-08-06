@@ -111,6 +111,12 @@ const BADGE_CONFIG: Record<BadgeType, BadgeConfig> = {
     tooltip: 'Highlighted by the community for outstanding work.',
     className: 'text-yellow-400',
   },
+  pioneer_creator: {
+    icon: '🔮',
+    label: 'Pioneer Creator 2026',
+    tooltip: 'World Launch Pioneer who published creative content before August 31st 2026.',
+    className: 'text-purple-400 animate-pulse font-extrabold shadow-purple-500/50',
+  },
 };
 
 interface UserBadgesProps {
