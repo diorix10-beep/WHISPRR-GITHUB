@@ -19,7 +19,10 @@ export default function ChapterReaderPage() {
 
   // Styling settings
   const [fontSize, setFontSize] = useState<'sm' | 'base' | 'lg' | 'xl'>('lg');
-  const [serifFont, setSerifFont] = useState(true);
+  const [themeMode, setThemeMode] = useState<'dark' | 'sepia' | 'light'>('dark');
+  const [fontFamily, setFontFamily] = useState<'serif' | 'sans' | 'mono'>('serif');
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [isSummarizing, setIsSummarizing] = useState(false);
 
   const chapNum = parseInt(chapterNumber || '1', 10);
 
@@ -132,6 +135,18 @@ export default function ChapterReaderPage() {
     xl: 'text-xl sm:text-2xl'
   }[fontSize];
 
+  const themeBgClass = {
+    dark: 'bg-[#0F0F12] text-warm-100',
+    sepia: 'bg-[#FBF0D9] text-[#2C221E]',
+    light: 'bg-white text-warm-900'
+  }[themeMode];
+
+  const fontFamilyClass = {
+    serif: 'font-serif',
+    sans: 'font-sans',
+    mono: 'font-mono'
+  }[fontFamily];
+
   const [steppingIntoRoleplay, setSteppingIntoRoleplay] = useState(false);
   const handleStepIntoRoleplay = async () => {
     if (!profile?.user_id || !story || !chapter) return;
@@ -213,8 +228,8 @@ export default function ChapterReaderPage() {
             </span>
           </div>
 
-          {/* Reader Preferences Bar */}
-          <div className="flex items-center gap-2">
+          {/* Reader Preferences Bar (AO3 / Wattpad Style) */}
+          <div className="flex items-center gap-2 flex-wrap justify-end">
             <button
               onClick={handleStepIntoRoleplay}
               disabled={steppingIntoRoleplay}
@@ -224,20 +239,44 @@ export default function ChapterReaderPage() {
               {steppingIntoRoleplay ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} className="text-amber-300 fill-amber-300" />}
               <span>Step Inside Scene 🌀</span>
             </button>
+
+            {/* Theme Selector: Dark, Sepia, Light */}
+            <div className="flex items-center bg-warm-900/60 p-1 rounded-xl border border-warm-800 gap-1">
+              <button
+                onClick={() => setThemeMode('dark')}
+                className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${themeMode === 'dark' ? 'bg-purple-600 text-white shadow' : 'text-warm-400 hover:text-white'}`}
+                title="Night Dark Theme"
+              >
+                Dark
+              </button>
+              <button
+                onClick={() => setThemeMode('sepia')}
+                className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${themeMode === 'sepia' ? 'bg-amber-600 text-white shadow' : 'text-warm-400 hover:text-white'}`}
+                title="Paper Sepia Theme"
+              >
+                Sepia
+              </button>
+              <button
+                onClick={() => setThemeMode('light')}
+                className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${themeMode === 'light' ? 'bg-white text-black shadow' : 'text-warm-400 hover:text-white'}`}
+                title="Crisp Light Theme"
+              >
+                Light
+              </button>
+            </div>
+
+            {/* Font Family Selector */}
             <button
-              onClick={() => setSerifFont(!serifFont)}
-              className={`p-2 rounded-lg border transition-colors ${
-                serifFont 
-                  ? 'bg-red-50 dark:bg-red-950/20 text-red-650 border-red-200 dark:border-red-900/30'
-                  : 'bg-white dark:bg-warm-850 text-warm-500 border-warm-200 dark:border-warm-750'
-              }`}
-              title="Toggle Serif Font"
+              onClick={() => setFontFamily(prev => prev === 'serif' ? 'sans' : prev === 'sans' ? 'mono' : 'serif')}
+              className="px-2.5 py-1.5 rounded-xl border bg-warm-900/60 text-warm-200 border-warm-800 text-xs font-bold uppercase tracking-wider"
+              title="Toggle Font Family (Serif / Sans / Mono)"
             >
-              <Type size={14} />
+              {fontFamily}
             </button>
+
             <button
               onClick={() => setFontSize(prev => prev === 'sm' ? 'base' : prev === 'base' ? 'lg' : prev === 'lg' ? 'xl' : 'sm')}
-              className="p-2 rounded-lg border bg-white dark:bg-warm-850 text-warm-500 border-warm-200 dark:border-warm-750 text-xs font-bold"
+              className="px-2.5 py-1.5 rounded-xl border bg-warm-900/60 text-warm-200 border-warm-800 text-xs font-bold"
               title="Change Font Size"
             >
               A+
@@ -270,7 +309,7 @@ export default function ChapterReaderPage() {
         )}
 
         {/* Story Text with Passage Annotations */}
-        <article className={`leading-relaxed text-warm-800 dark:text-warm-100 ${fontClass} ${serifFont ? 'font-serif' : 'font-sans'} space-y-6`}>
+        <article className={`leading-relaxed p-6 rounded-3xl transition-colors ${themeBgClass} ${fontClass} ${fontFamilyClass} space-y-6 shadow-xl border border-warm-800/40`}>
           {chapter.content ? (
             chapter.content.split('\n\n').map((paragraph, pIdx) => (
               <div key={pIdx} className="relative group flex items-start gap-3">
