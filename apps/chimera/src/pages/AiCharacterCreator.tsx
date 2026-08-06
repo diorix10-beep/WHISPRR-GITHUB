@@ -53,7 +53,7 @@ export default function AiCharacterCreator() {
     personality: '',
     scenario: '',
     exampleDialogues: '',
-    conversationStyle: 'Warm, conversational, structured.',
+    conversationStyle: '',
     rpDefinition: '',
     systemDefinition: '',
     systemCharacterDefinition: '',
