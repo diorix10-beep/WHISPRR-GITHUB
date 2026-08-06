@@ -112,7 +112,7 @@ export function StructuredArchitectureForm({ value, onChange }: StructuredArchit
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-warm-700 dark:text-warm-300 mb-1">Name</label>
-                      <input type="text" value={value.name || ''} onChange={e => updateField('name', e.target.value)} placeholder="e.g. Kamala Harris" className="w-full text-sm bg-white dark:bg-warm-900 border border-warm-200 dark:border-warm-800 rounded-xl px-3 py-2 text-warm-900 dark:text-white" />
+                      <input type="text" value={value.name || ''} onChange={e => updateField('name', e.target.value)} placeholder="e.g. Character Name" className="w-full text-sm bg-white dark:bg-warm-900 border border-warm-200 dark:border-warm-800 rounded-xl px-3 py-2 text-warm-900 dark:text-white" />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-warm-700 dark:text-warm-300 mb-1">Age</label>
@@ -265,7 +265,7 @@ export function StructuredArchitectureForm({ value, onChange }: StructuredArchit
                     ) : (
                       (value.relationships || []).map((rel, idx) => (
                         <div key={idx} className="flex gap-2 items-center">
-                          <input type="text" value={rel.name} onChange={e => updateRelationship(idx, 'name', e.target.value)} placeholder="Name (e.g. Kamala)" className="flex-1 text-sm bg-white dark:bg-warm-900 border border-warm-200 dark:border-warm-800 rounded-xl px-3 py-2 text-warm-900 dark:text-white" />
+                          <input type="text" value={rel.name} onChange={e => updateRelationship(idx, 'name', e.target.value)} placeholder="Name (e.g. Companion)" className="flex-1 text-sm bg-white dark:bg-warm-900 border border-warm-200 dark:border-warm-800 rounded-xl px-3 py-2 text-warm-900 dark:text-white" />
                           <input type="text" value={rel.role} onChange={e => updateRelationship(idx, 'role', e.target.value)} placeholder="Role (e.g. Girlfriend)" className="flex-1 text-sm bg-white dark:bg-warm-900 border border-warm-200 dark:border-warm-800 rounded-xl px-3 py-2 text-warm-900 dark:text-white" />
                           <button type="button" onClick={() => removeRelationship(idx)} className="p-2 text-warm-400 hover:text-red-500 transition-colors">
                             <Trash2 size={16} />

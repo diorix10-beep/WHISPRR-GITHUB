@@ -88,7 +88,7 @@ function parseCharacterFromStructuredPdf(text: string, fileName: string): Import
   const fallbackName = fileName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
 
   // 1. Extract Title / Name
-  const titleMatch = text.match(/(?:Title|Name|Kamala Devi Harris)\s*[:=]?\s*([^\n\r]+)/i);
+  const titleMatch = text.match(/(?:Title|Name|Character Name)\s*[:=]?\s*([^\n\r]+)/i);
   const name = titleMatch ? titleMatch[1].trim() : fallbackName;
 
   // 2. Extract Bio / Short Description
