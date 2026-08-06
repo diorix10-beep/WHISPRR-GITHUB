@@ -11,6 +11,7 @@ import { AppLauncherModal } from './AppLauncherModal';
 import { MobileNavDrawer } from './MobileNavDrawer';
 import { ShardsHubModal } from '../common/ShardsHubModal';
 import { ShardCrystalImage } from '../common/ShardCrystalImage';
+import { getUITranslation } from '../../services/translationEngine';
 
 interface ChimeraLayoutProps {
   children?: ReactNode;
@@ -51,10 +52,21 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [showAppLauncher, setShowAppLauncher] = useState(false);
   const [showShardsHub, setShowShardsHub] = useState(false);
-
+  const [currentLang, setCurrentLang] = useState(() => localStorage.getItem('chimera_preferred_language') || 'en');
   const [creativeMode, setCreativeMode] = useState<'roleplay' | 'storytelling'>(() => {
     return (localStorage.getItem('chimera_creative_mode') as 'roleplay' | 'storytelling') || 'roleplay';
   });
+
+  useEffect(() => {
+    function handleLanguageChanged(e: any) {
+      if (e.detail?.code) {
+        setCurrentLang(e.detail.code);
+        localStorage.setItem('chimera_preferred_language', e.detail.code);
+      }
+    }
+    window.addEventListener('chimera-language-changed', handleLanguageChanged);
+    return () => window.removeEventListener('chimera-language-changed', handleLanguageChanged);
+  }, []);
 
   const toggleCreativeMode = (targetMode?: 'roleplay' | 'storytelling') => {
     const nextMode = targetMode || (creativeMode === 'roleplay' ? 'storytelling' : 'roleplay');
@@ -166,7 +178,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             return (
               <span className="flex items-center justify-center gap-1.5 w-full">
                 {Icon && <Icon size={15} className="shrink-0 opacity-80" />}
-                <span>{link.label}</span>
+                <span>{getUITranslation(link.label, currentLang)}</span>
                 {link.comingSoon && (
                   <span className="ml-1.5 text-[9px] uppercase tracking-wider font-bold text-warm-400 dark:text-warm-600 bg-warm-100 dark:bg-warm-800 px-1.5 py-0.5 rounded-md">
                     Soon

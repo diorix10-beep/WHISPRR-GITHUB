@@ -29,11 +29,60 @@ export const SUPPORTED_LANGUAGES: SupportedLanguage[] = [
   { code: 'th', name: 'ไทย', flag: '🇹🇭' },
 ];
 
+export const I18N_DICTIONARY: Record<string, Record<string, string>> = {
+  fr: {
+    'Discover': 'Découvrir',
+    'Characters': 'Personnages',
+    'Chats': 'Discussions',
+    'Personas': 'Personas',
+    'Studio': 'Studio',
+    'Home': 'Accueil',
+    'Stories': 'Histoires',
+    'Worlds': 'Mondes',
+    'Lorebooks': 'Grimoires',
+    'Writer': 'Écrivain',
+    'SHARDS Hub': 'Réserve de SHARDS',
+    'Create': 'Créer',
+    'Search': 'Rechercher',
+    'Roleplay': 'Jeu de Rôle',
+    'Story': 'Histoire',
+    'Roleplay Mode': 'Mode Jeu de Rôle',
+    'Storytelling Mode': 'Mode Narration',
+    'Sign Out': 'Se Déconnecter',
+    'Profile': 'Profil',
+    'Settings': 'Paramètres',
+    'Theme': 'Thème',
+    'SHARDS Reserve': 'Réserve de SHARDS',
+    'Creative Energy': 'Énergie Créative',
+  },
+  es: {
+    'Discover': 'Descubrir',
+    'Characters': 'Personajes',
+    'Chats': 'Chats',
+    'Personas': 'Personajes',
+    'Studio': 'Estudio',
+    'Home': 'Inicio',
+    'Stories': 'Historias',
+    'Worlds': 'Mundos',
+    'Lorebooks': 'Grimorios',
+    'Writer': 'Escritor',
+  }
+};
+
+export function getUITranslation(key: string, langCode: string): string {
+  if (langCode === 'en' || !langCode) return key;
+  return I18N_DICTIONARY[langCode]?.[key] || key;
+}
+
 export async function translateText(text: string, targetLangCode: string): Promise<string> {
   if (!text || targetLangCode === 'en') return text;
 
+  // Check dictionary first
+  if (I18N_DICTIONARY[targetLangCode]?.[text]) {
+    return I18N_DICTIONARY[targetLangCode][text];
+  }
+
   try {
-    // Call MyMemory / Free Translation API or local transformer fallback
     const res = await fetch(
       `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0, 500))}&langpair=autodetect|${targetLangCode}`
     );
