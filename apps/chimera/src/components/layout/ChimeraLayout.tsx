@@ -11,7 +11,7 @@ import { AppLauncherModal } from './AppLauncherModal';
 import { MobileNavDrawer } from './MobileNavDrawer';
 import { ShardsHubModal } from '../common/ShardsHubModal';
 import { ShardCrystalImage } from '../common/ShardCrystalImage';
-import { getUITranslation } from '../../services/translationEngine';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface ChimeraLayoutProps {
   children?: ReactNode;
@@ -19,25 +19,25 @@ interface ChimeraLayoutProps {
 
 interface NavLinkItem {
   path: string;
-  label: string;
+  token: string;
   icon?: any;
   comingSoon?: boolean;
 }
 
 const ROLEPLAY_NAV_LINKS: NavLinkItem[] = [
-  { path: '/discover', label: 'Discover', icon: Compass },
-  { path: '/characters', label: 'Characters', icon: Users },
-  { path: '/conversations', label: 'Chats', icon: MessageSquare },
-  { path: '/personas', label: 'Personas', icon: UserCheck },
-  { path: '/studio', label: 'Studio', icon: Sparkles },
+  { path: '/discover', token: 'navigation.discover', icon: Compass },
+  { path: '/characters', token: 'navigation.characters', icon: Users },
+  { path: '/conversations', token: 'navigation.chats', icon: MessageSquare },
+  { path: '/personas', token: 'navigation.personas', icon: UserCheck },
+  { path: '/studio', token: 'navigation.studio', icon: Sparkles },
 ];
 
 const STORYTELLING_NAV_LINKS: NavLinkItem[] = [
-  { path: '/', label: 'Home', icon: Compass },
-  { path: '/stories', label: 'Stories', icon: BookOpen },
-  { path: '/worlds', label: 'Worlds', icon: Globe },
-  { path: '/lorebooks', label: 'Lorebooks', icon: BookOpen },
-  { path: '/write/desk', label: 'Writer', icon: PenTool },
+  { path: '/', token: 'navigation.home', icon: Compass },
+  { path: '/stories', token: 'navigation.stories', icon: BookOpen },
+  { path: '/worlds', token: 'navigation.worlds', icon: Globe },
+  { path: '/lorebooks', token: 'navigation.lorebooks', icon: BookOpen },
+  { path: '/write/desk', token: 'navigation.writer', icon: PenTool },
 ];
 
 export function ChimeraLayout({ children }: ChimeraLayoutProps) {
@@ -45,6 +45,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
   const location = useLocation();
   const { profile, signOut, shardsBalance } = useAuth();
   const { preference, setPreference } = useTheme();
+  const { t, formatNumber, locale, setLocale, supportedLocales } = useTranslation();
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
@@ -178,7 +179,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             return (
               <span className="flex items-center justify-center gap-1.5 w-full">
                 {Icon && <Icon size={15} className="shrink-0 opacity-80" />}
-                <span>{getUITranslation(link.label, currentLang)}</span>
+                <span>{t(link.token)}</span>
                 {link.comingSoon && (
                   <span className="ml-1.5 text-[9px] uppercase tracking-wider font-bold text-warm-400 dark:text-warm-600 bg-warm-100 dark:bg-warm-800 px-1.5 py-0.5 rounded-md">
                     Soon
@@ -251,27 +252,16 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             {/* Sélecteur de Langue Mondial (Global Language Picker) */}
             <div className="relative">
               <select
-                onChange={(e) => {
-                  const lang = e.target.value;
-                  localStorage.setItem('chimera_global_lang', lang);
-                  window.dispatchEvent(new CustomEvent('chimera-language-changed', { detail: lang }));
-                }}
-                defaultValue={localStorage.getItem('chimera_global_lang') || 'en'}
+                onChange={(e) => setLocale(e.target.value)}
+                value={supportedLocales.some(l => l.code === (locale || 'en')) ? (locale || 'en') : 'en'}
                 className="appearance-none bg-warm-200/70 dark:bg-warm-800/90 text-warm-900 dark:text-white text-xs font-bold px-2.5 py-1.5 rounded-xl border border-warm-200/90 dark:border-warm-750/90 cursor-pointer focus:outline-none hover:bg-warm-300 dark:hover:bg-warm-750 transition-all pr-6"
-                title="Select Platform Language"
+                title={t('settings.language')}
               >
-                <option value="en">🇺🇸 EN</option>
-                <option value="fr">🇫🇷 FR</option>
-                <option value="es">🇪🇸 ES</option>
-                <option value="ja">🇯🇵 JA</option>
-                <option value="ko">🇰🇷 KO</option>
-                <option value="zh">🇨🇳 ZH</option>
-                <option value="de">🇩🇪 DE</option>
-                <option value="pt">🇧🇷 PT</option>
-                <option value="ru">🇷🇺 RU</option>
-                <option value="tr">🇹🇷 TR</option>
-                <option value="ar">🇸🇦 AR</option>
-                <option value="it">🇮🇹 IT</option>
+                {supportedLocales.map((l) => (
+                  <option key={l.code} value={l.code}>
+                    {l.flag} {l.code.toUpperCase()}
+                  </option>
+                ))}
               </select>
               <Globe size={12} className="absolute right-2 top-2.5 pointer-events-none text-warm-500" />
             </div>
@@ -285,10 +275,10 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
                     ? 'bg-red-600 text-white shadow-md shadow-red-600/30' 
                     : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
-                title="Switch to Roleplay Mode"
+                title={t('common.roleplay')}
               >
                 <MessageSquare size={12} className="sm:w-3.5 sm:h-3.5" />
-                <span className="hidden sm:inline">Roleplay</span>
+                <span className="hidden sm:inline">{t('common.roleplay')}</span>
               </button>
               <button
                 onClick={() => toggleCreativeMode('storytelling')}
@@ -297,10 +287,10 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
                     ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30' 
                     : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
-                title="Switch to Storytelling Mode"
+                title={t('common.storytelling')}
               >
                 <PenTool size={12} className="sm:w-3.5 sm:h-3.5" />
-                <span className="hidden sm:inline">Story</span>
+                <span className="hidden sm:inline">{t('common.story')}</span>
               </button>
             </div>
 
@@ -308,17 +298,17 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             <button
               onClick={() => navigate('/shards')}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-gradient-to-r from-blue-500/20 via-cyan-500/20 to-indigo-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 text-cyan-300 border border-cyan-400/40 hover:border-cyan-300 transition-all font-bold text-xs shadow-md hover:shadow-[0_0_15px_rgba(6,182,212,0.35)] hover:scale-105 active:scale-95 group shrink-0"
-              title="CHIMERA SHARDS Economy & Store"
+              title={t('navigation.shards_hub')}
             >
               <ShardCrystalImage size={18} showGlow={false} />
-              <span className="font-serif font-black text-sm text-cyan-300 dark:text-cyan-200 drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]">{shardsBalance}</span>
+              <span className="font-serif font-black text-sm text-cyan-300 dark:text-cyan-200 drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]">{formatNumber(shardsBalance)}</span>
             </button>
 
             {/* Search — icon only, no text label on smaller screens */}
             <button
               onClick={() => setSearchOpen(true)}
               className="p-2 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-850 text-warm-500 hover:border-warm-300 dark:hover:border-warm-650 transition-colors shrink-0"
-              aria-label="Search"
+              aria-label={t('common.search')}
             >
               <Search size={16} />
             </button>
@@ -328,14 +318,12 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               onClick={() => navigate(creativeMode === 'storytelling' ? '/write/desk' : '/studio')}
               className={`min-w-[125px] justify-center flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs text-white shadow-md active:scale-[0.98] transition-all shrink-0 ${
                 creativeMode === 'storytelling'
-                  ? 'bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 shadow-purple-600/20'
-                  : 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 shadow-red-600/20'
+                  ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-600/30'
+                  : 'bg-red-600 hover:bg-red-500 shadow-red-600/30'
               }`}
             >
-              <Plus size={16} strokeWidth={2.5} />
-              <span>
-                {creativeMode === 'storytelling' ? 'Write Story' : 'Create Character'}
-              </span>
+              <Plus size={16} />
+              <span>{t('common.create')}</span>
             </button>
 
             {/* Theme Toggle */}

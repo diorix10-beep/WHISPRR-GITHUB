@@ -34,3 +34,14 @@ This document defines the permanent engineering principles governing CHIMERA and
 
 ### Rule 20 — Accessibility is Mandatory
 - Keyboard navigation, visible focus rings (`focus-visible`), touch targets (44x44px min), screen reader labels, and contrast standards are required.
+
+---
+
+## SECTION XVII — LOCALIZATION & INTERNATIONALIZATION (i18n)
+
+### Rule 58 — Universal i18n & Tokenized Localization Architecture (Mandatory)
+- Hardcoded user-facing strings are strictly forbidden across the CHIMERA ecosystem.
+- All UI text (buttons, navigation, dialogs, empty states, form labels, tooltips, notifications, SHARDS vault, and settings) must consume semantic language tokens via the centralized i18n system.
+- Adding a new language must require ONLY adding a single translation JSON file without altering application source code.
+- Language switching must be instantaneous and zero-reload across the entire application.
+- Right-to-Left (RTL) layout direction, locale-aware date/time formats, currency values, and pluralizations are mandatory.

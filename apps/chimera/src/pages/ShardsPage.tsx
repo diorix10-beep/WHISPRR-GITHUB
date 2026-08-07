@@ -13,6 +13,8 @@ import { ShareModal } from '../components/common/ShareModal';
 import { ShardCrystalImage } from '../components/common/ShardCrystalImage';
 import { GiftShardsModal } from '../components/common/GiftShardsModal';
 
+import { useTranslation } from '../hooks/useTranslation';
+
 interface ReferralRecord {
   id: string;
   username: string;
@@ -32,6 +34,7 @@ interface CreatorMilestone {
 export default function ShardsPage() {
   const { profile, shardsBalance, earnShards, spendShards, adFreePassActive, activateAdFreePass } = useAuth();
   const { showToast } = useToast();
+  const { t, formatNumber } = useTranslation();
 
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [isPlayingAd, setIsPlayingAd] = useState(false);

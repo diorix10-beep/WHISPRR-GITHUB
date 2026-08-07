@@ -1,28 +1,28 @@
-import { useState } from 'react';
-import { X, Globe, Check, Sparkles } from 'lucide-react';
-import { SUPPORTED_LANGUAGES, SupportedLanguage } from '../../services/translationEngine';
+import { X, Globe, Check } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { useToast } from '../../contexts/ToastContext';
 
 interface LanguageSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentLanguage: string;
-  onSelectLanguage: (langCode: string) => void;
+  currentLanguage?: string;
+  onSelectLanguage?: (langCode: string) => void;
 }
 
 export function LanguageSelectorModal({
   isOpen,
   onClose,
-  currentLanguage,
   onSelectLanguage
 }: LanguageSelectorModalProps) {
   const { showToast } = useToast();
+  const { locale, setLocale, supportedLocales, t } = useTranslation();
 
   if (!isOpen) return null;
 
-  const handleSelect = (lang: SupportedLanguage) => {
-    onSelectLanguage(lang.code);
-    showToast(`🌐 Roleplay Chat Translation set to ${lang.flag} ${lang.name}!`, 'success');
+  const handleSelect = (lang: any) => {
+    setLocale(lang.code);
+    if (onSelectLanguage) onSelectLanguage(lang.code);
+    showToast(`🌐 Platform Language set to ${lang.flag} ${lang.name}!`, 'success');
     onClose();
   };
 
@@ -50,8 +50,8 @@ export function LanguageSelectorModal({
         {/* Language Grid */}
         <div className="p-6 space-y-3">
           <div className="grid grid-cols-2 gap-2.5">
-            {SUPPORTED_LANGUAGES.map((lang) => {
-              const isSelected = currentLanguage === lang.code;
+            {supportedLocales.map((lang) => {
+              const isSelected = locale === lang.code;
 
               return (
                 <button

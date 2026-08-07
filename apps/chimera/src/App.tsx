@@ -1,8 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { I18nProvider } from './contexts/I18nContext';
 import { ProjectProvider } from './contexts/ProjectContext';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { ChimeraLayout } from './components/layout/ChimeraLayout';
@@ -264,18 +265,20 @@ function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <ThemeProvider>
-          <ToastProvider>
-            <AuthProvider>
-              <ProjectProvider>
-                <ReloadPrompt />
-                <OfflineStatusToast />
-                <PwaInstallBanner />
-                <AppLoader />
-              </ProjectProvider>
-            </AuthProvider>
-          </ToastProvider>
-        </ThemeProvider>
+        <I18nProvider>
+          <ThemeProvider>
+            <ToastProvider>
+              <AuthProvider>
+                <ProjectProvider>
+                  <ReloadPrompt />
+                  <OfflineStatusToast />
+                  <PwaInstallBanner />
+                  <AppLoader />
+                </ProjectProvider>
+              </AuthProvider>
+            </ToastProvider>
+          </ThemeProvider>
+        </I18nProvider>
       </BrowserRouter>
     </ErrorBoundary>
   );
