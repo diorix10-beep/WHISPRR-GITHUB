@@ -32,7 +32,14 @@
     "empty_state": "Rien ici pour le moment",
     "retry": "Réessayer",
     "refresh": "Actualiser",
-    "home": "Accueil"
+    "home": "Accueil",
+    "all": "Tout",
+    "actions": "Actions",
+    "details": "Voir les détails",
+    "start_chat": "Démarrer la discussion",
+    "manage": "Gérer",
+    "recent_activity": "Activité récente de l'espace de travail",
+    "no_recent_activity": "Aucune activité créative récente enregistrée."
   },
   "navigation": {
     "discover": "Découvrir",
@@ -51,6 +58,31 @@
     "sign_out": "Se Déconnecter",
     "creator_dashboard": "Tableau de Bord Créateur"
   },
+  "creator_studio": {
+    "title": "Studio Créateur",
+    "subtitle": "Espace de Travail Créateur Professionnel",
+    "manual_writing": "Mode Écriture Manuelle",
+    "ai_characters": "Personnages IA",
+    "universes_worlds": "Univers & Mondes",
+    "stories_novels": "Histoires & Romans",
+    "lorebooks_reference": "Grimoires & Références",
+    "manage_studio": "Gérer l'Espace de Travail",
+    "recent_workspace_activity": "Activité Récente de l'Espace de Travail",
+    "quick_actions": "Outils de Création Rapide",
+    "total_created": "Total Créé",
+    "published_works": "Œuvres Publiées"
+  },
+  "discover": {
+    "title": "Découvrir & Explorer",
+    "subtitle": "Explorez des personnages IA, des histoires et des mondes créatifs",
+    "search_input": "Rechercher des personnages par nom, catégorie ou personnalité...",
+    "categories": "Catégories & Genres",
+    "trending": "Tendance Actuelle",
+    "top_characters": "Personnages IA à la Une",
+    "top_stories": "Histoires & Romans Populaires",
+    "no_characters_found": "Aucun personnage IA trouvé correspondant à votre recherche.",
+    "no_stories_found": "Aucune histoire trouvée correspondant à votre requête."
+  },
   "character": {
     "create_character": "Créer un Personnage IA",
     "edit_character": "Modifier le Personnage",
@@ -65,7 +97,11 @@
     "voice_preview": "Écouter la Voix",
     "voice_selected": "Voix Sélectionnée",
     "import_card": "Importer une Fiche Personnage",
-    "system_prompt": "Prompt Système Compilé"
+    "system_prompt": "Prompt Système Compilé",
+    "basic_info": "Informations de Base",
+    "personality_architecture": "Architecture de Personnalité",
+    "dialogue_examples": "Exemples de Dialogues",
+    "knowledge_base": "Base de Connaissances & Contexte"
   },
   "story": {
     "create_story": "Créer une Histoire",
@@ -78,7 +114,28 @@
     "distraction_free": "Mode Sans Distraction",
     "theme_dark": "Nuit",
     "theme_sepia": "Sépia",
-    "theme_light": "Clair"
+    "theme_light": "Clair",
+    "writers_desk": "Bureau de l'Écrivain",
+    "my_stories": "Mes Histoires",
+    "community_stories": "Bibliothèque Communautaire"
+  },
+  "world": {
+    "worlds_universes": "Mondes & Univers",
+    "create_world": "Créer un Monde",
+    "interactive_map": "Carte 2D Interactive & Arbre des Factions",
+    "locations": "Lieux",
+    "factions": "Factions & Guildes",
+    "world_name": "Nom du Monde",
+    "world_description": "Histoire & Contexte du Monde",
+    "inspect_network": "Inspecter le Réseau de Connexions"
+  },
+  "persona": {
+    "personas_title": "Personas Utilisateur",
+    "create_persona": "Créer un Persona",
+    "active_persona": "Persona Actif",
+    "persona_name": "Nom du Persona",
+    "persona_desc": "Description & Apparence du Persona",
+    "set_active": "Définir comme Persona Actif"
   },
   "roleplay": {
     "active_speaker": "Intervenant Actif",

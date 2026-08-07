@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Settings, User, Edit2, Trash2, CheckCircle, ShieldAlert, Sparkles, UserCheck, Flame } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { supabase } from '../lib/supabase';
 import type { Persona } from '../types';
 import { RichEmptyState } from '../components/common/RichEmptyState';
@@ -10,6 +11,7 @@ import { RichEmptyState } from '../components/common/RichEmptyState';
 export default function PersonasPage() {
   const { user, profile } = useAuth();
   const { showToast } = useToast();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,15 +99,15 @@ export default function PersonasPage() {
         <section className="flex flex-col items-center text-center pt-6 sm:pt-8 space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-bold uppercase tracking-wider">
             <UserCheck size={14} />
-            <span>Identity Management Studio</span>
+            <span>{t('persona.personas_title')}</span>
           </div>
 
           <h1 className="font-serif text-4xl sm:text-5xl font-extrabold tracking-tight text-warm-900 dark:text-white">
-            Roleplay Personas
+            {t('persona.personas_title')}
           </h1>
 
           <p className="text-sm sm:text-base text-warm-600 dark:text-warm-300 max-w-xl mx-auto leading-relaxed">
-            A Persona is the character you play in a story. AI characters respond to your persona, allowing you to roleplay as different identities, genders, ages, or fictional entities.
+            {t('persona.persona_desc')}
           </p>
 
           <button
@@ -113,7 +115,7 @@ export default function PersonasPage() {
             className="px-6 py-3 rounded-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-extrabold text-xs shadow-lg shadow-red-600/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
           >
             <Plus size={16} strokeWidth={3} />
-            <span>Create New Persona</span>
+            <span>{t('persona.create_persona')}</span>
           </button>
         </section>
 
@@ -126,7 +128,7 @@ export default function PersonasPage() {
               <div className="space-y-4 max-w-xl">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-extrabold uppercase tracking-wider">
                   <CheckCircle size={14} />
-                  <span>Active Default Persona</span>
+                  <span>{t('persona.active_persona')}</span>
                 </div>
 
                 <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white leading-tight">

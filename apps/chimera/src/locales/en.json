@@ -32,7 +32,14 @@
     "empty_state": "Nothing here yet",
     "retry": "Retry",
     "refresh": "Refresh",
-    "home": "Home"
+    "home": "Home",
+    "all": "All",
+    "actions": "Actions",
+    "details": "View Details",
+    "start_chat": "Start Chat",
+    "manage": "Manage",
+    "recent_activity": "Recent Workspace Activity",
+    "no_recent_activity": "No recent creative activity recorded."
   },
   "navigation": {
     "discover": "Discover",
@@ -51,6 +58,31 @@
     "sign_out": "Sign Out",
     "creator_dashboard": "Creator Dashboard"
   },
+  "creator_studio": {
+    "title": "Creator Studio",
+    "subtitle": "Professional Creator Workspace",
+    "manual_writing": "Manual Writing Mode",
+    "ai_characters": "AI Characters",
+    "universes_worlds": "Universes & Worlds",
+    "stories_novels": "Stories & Novels",
+    "lorebooks_reference": "Lorebooks & Reference",
+    "manage_studio": "Manage Workspace",
+    "recent_workspace_activity": "Recent Workspace Activity",
+    "quick_actions": "Quick Creation Tools",
+    "total_created": "Total Created",
+    "published_works": "Published Works"
+  },
+  "discover": {
+    "title": "Discover & Explore",
+    "subtitle": "Explore AI Characters, Stories & Creative Worlds",
+    "search_input": "Search characters by name, category, or personality...",
+    "categories": "Categories & Genres",
+    "trending": "Trending Now",
+    "top_characters": "Featured AI Characters",
+    "top_stories": "Popular Stories & Novels",
+    "no_characters_found": "No AI characters found matching your search.",
+    "no_stories_found": "No stories found matching your query."
+  },
   "character": {
     "create_character": "Create AI Character",
     "edit_character": "Edit Character",
@@ -65,7 +97,11 @@
     "voice_preview": "Preview Voice",
     "voice_selected": "Voice Selected",
     "import_card": "Import Character Card",
-    "system_prompt": "Compiled System Prompt"
+    "system_prompt": "Compiled System Prompt",
+    "basic_info": "Basic Information",
+    "personality_architecture": "Personality Architecture",
+    "dialogue_examples": "Example Dialogues",
+    "knowledge_base": "Knowledge Base & Context"
   },
   "story": {
     "create_story": "Create Story",
@@ -78,7 +114,28 @@
     "distraction_free": "Distraction-Free Mode",
     "theme_dark": "Dark",
     "theme_sepia": "Sepia",
-    "theme_light": "Light"
+    "theme_light": "Light",
+    "writers_desk": "Writer's Desk",
+    "my_stories": "My Stories",
+    "community_stories": "Community Library"
+  },
+  "world": {
+    "worlds_universes": "Worlds & Universes",
+    "create_world": "Create World",
+    "interactive_map": "Interactive 2D World Map & Faction Tree",
+    "locations": "Locations",
+    "factions": "Factions & Guilds",
+    "world_name": "World Name",
+    "world_description": "World Lore & Background",
+    "inspect_network": "Inspect Connection Network"
+  },
+  "persona": {
+    "personas_title": "User Personas",
+    "create_persona": "Create Persona",
+    "active_persona": "Active Persona",
+    "persona_name": "Persona Name",
+    "persona_desc": "Persona Description & Appearance",
+    "set_active": "Set as Active Persona"
   },
   "roleplay": {
     "active_speaker": "Active Speaker",

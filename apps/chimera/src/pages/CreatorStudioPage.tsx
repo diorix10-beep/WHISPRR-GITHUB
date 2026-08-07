@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { supabase } from '../lib/supabase';
 import { RichEmptyState } from '../components/common/RichEmptyState';
 
@@ -24,49 +25,50 @@ interface RecentItem {
   updated_at: string;
 }
 
-const MODULE_CARDS = [
-  {
-    id: 'characters',
-    title: 'AI Characters',
-    description: 'Build persistent AI identities, OCs, and roleplay companions.',
-    icon: Users,
-    color: 'red',
-    href: '/characters',
-    createHref: '/characters/new',
-  },
-  {
-    id: 'worlds',
-    title: 'Universes & Worlds',
-    description: 'Construct locations, cultures, factions, and story timelines.',
-    icon: Globe,
-    color: 'blue',
-    href: '/worlds',
-    createHref: '/worlds',
-  },
-  {
-    id: 'stories',
-    title: 'Stories & Novels',
-    description: 'Write fiction, original sagas, and multi-chapter books.',
-    icon: PenTool,
-    color: 'purple',
-    href: '/stories',
-    createHref: '/write/desk',
-  },
-  {
-    id: 'lorebooks',
-    title: 'Lorebooks & Reference',
-    description: 'Knowledge bases for world lore, magic systems, and canon.',
-    icon: BookOpen,
-    color: 'amber',
-    href: '/lorebooks',
-    createHref: '/lorebooks',
-  },
-];
-
 export default function CreatorStudioPage() {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const { showToast } = useToast();
+  const { t, formatNumber } = useTranslation();
+
+  const MODULE_CARDS = [
+    {
+      id: 'characters',
+      title: t('creator_studio.ai_characters'),
+      description: t('character.create_character'),
+      icon: Users,
+      color: 'red',
+      href: '/characters',
+      createHref: '/characters/new',
+    },
+    {
+      id: 'worlds',
+      title: t('creator_studio.universes_worlds'),
+      description: t('world.worlds_universes'),
+      icon: Globe,
+      color: 'blue',
+      href: '/worlds',
+      createHref: '/worlds',
+    },
+    {
+      id: 'stories',
+      title: t('creator_studio.stories_novels'),
+      description: t('story.create_story'),
+      icon: PenTool,
+      color: 'purple',
+      href: '/stories',
+      createHref: '/write/desk',
+    },
+    {
+      id: 'lorebooks',
+      title: t('creator_studio.lorebooks_reference'),
+      description: t('navigation.lorebooks'),
+      icon: BookOpen,
+      color: 'amber',
+      href: '/lorebooks',
+      createHref: '/lorebooks',
+    },
+  ];
 
   const [stats, setStats] = useState<StudioStats>({ characters: 0, worlds: 0, stories: 0, lorebooks: 0, conversations: 0 });
   const [recentItems, setRecentItems] = useState<RecentItem[]>([]);
@@ -189,15 +191,15 @@ export default function CreatorStudioPage() {
         <section className="flex flex-col items-center text-center pt-6 sm:pt-8 space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
             <Sparkles size={14} />
-            <span>Professional Creator Workspace</span>
+            <span>{t('creator_studio.subtitle')}</span>
           </div>
 
           <h1 className="font-serif text-4xl sm:text-5xl font-extrabold tracking-tight text-warm-900 dark:text-white">
-            Creator Studio
+            {t('creator_studio.title')}
           </h1>
 
           <p className="text-sm sm:text-base text-warm-600 dark:text-warm-300 max-w-xl mx-auto leading-relaxed">
-            The heart of creation inside CHIMERA. Build characters, worlds, stories, and lorebooks in one unified creative engine.
+            {t('creator_studio.subtitle')}
           </p>
 
           {/* Mode Switch Pill */}
@@ -209,12 +211,12 @@ export default function CreatorStudioPage() {
               {writingMode === 'manual' ? (
                 <>
                   <PenLine size={15} className="text-amber-500" />
-                  <span>Manual Writing Mode</span>
+                  <span>{t('creator_studio.manual_writing')}</span>
                 </>
               ) : (
                 <>
                   <Wand2 size={15} className="text-purple-500" />
-                  <span>AI-Assisted Co-Authoring Mode</span>
+                  <span>{t('story.ai_cowriter')}</span>
                 </>
               )}
             </button>
@@ -240,7 +242,7 @@ export default function CreatorStudioPage() {
                       <Icon size={24} />
                     </div>
                     <span className="font-serif text-2xl font-extrabold text-warm-900 dark:text-white">
-                      {count}
+                      {formatNumber(count)}
                     </span>
                   </div>
 
@@ -263,11 +265,11 @@ export default function CreatorStudioPage() {
                     className="px-3.5 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs shadow-md transition-all flex items-center gap-1"
                   >
                     <Plus size={14} />
-                    <span>Create</span>
+                    <span>{t('common.create')}</span>
                   </button>
 
                   <span className="text-xs text-warm-400 group-hover:translate-x-1 transition-transform flex items-center gap-1 font-bold">
-                    <span>Manage</span>
+                    <span>{t('common.manage')}</span>
                     <ArrowRight size={12} />
                   </span>
                 </div>
@@ -282,7 +284,7 @@ export default function CreatorStudioPage() {
           <div className="flex items-center justify-between">
             <h2 className="font-serif text-xl font-bold text-warm-900 dark:text-white flex items-center gap-2">
               <Clock size={20} className="text-amber-500" />
-              <span>Recent Workspace Activity</span>
+              <span>{t('creator_studio.recent_workspace_activity')}</span>
             </h2>
           </div>
 

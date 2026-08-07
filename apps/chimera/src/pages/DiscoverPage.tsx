@@ -9,6 +9,7 @@ import { RichEmptyState } from '../components/common/RichEmptyState';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { Avatar } from '../components/common/Avatar';
 import { UserBadges } from '../components/common/UserBadges';
 import type { Profile } from '../types';
@@ -80,6 +81,7 @@ export default function DiscoverPage() {
   
   const { user } = useAuth();
   const { showToast } = useToast();
+  const { t, formatNumber } = useTranslation();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -325,7 +327,7 @@ export default function DiscoverPage() {
             className="flex-1 min-w-[130px] py-3 px-4 rounded-2xl bg-warm-100/50 dark:bg-warm-800/50 hover:bg-red-500/10 text-warm-800 dark:text-warm-200 hover:text-red-600 dark:hover:text-red-400 border border-transparent hover:border-red-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold group"
           >
             <Users size={16} className="text-red-500 group-hover:scale-110 transition-transform" />
-            <span>Characters</span>
+            <span>{t('navigation.characters')}</span>
           </button>
 
           <button
@@ -333,7 +335,7 @@ export default function DiscoverPage() {
             className="flex-1 min-w-[130px] py-3 px-4 rounded-2xl bg-warm-100/50 dark:bg-warm-800/50 hover:bg-purple-500/10 text-warm-800 dark:text-warm-200 hover:text-purple-600 dark:hover:text-purple-400 border border-transparent hover:border-purple-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold group"
           >
             <BookOpen size={16} className="text-purple-500 group-hover:scale-110 transition-transform" />
-            <span>Stories</span>
+            <span>{t('navigation.stories')}</span>
           </button>
 
           <button
@@ -341,7 +343,7 @@ export default function DiscoverPage() {
             className="flex-1 min-w-[130px] py-3 px-4 rounded-2xl bg-warm-100/50 dark:bg-warm-800/50 hover:bg-cyan-500/10 text-warm-800 dark:text-warm-200 hover:text-cyan-600 dark:hover:text-cyan-400 border border-transparent hover:border-cyan-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold group"
           >
             <Globe size={16} className="text-cyan-500 group-hover:scale-110 transition-transform" />
-            <span>Worlds</span>
+            <span>{t('navigation.worlds')}</span>
           </button>
 
           <button
@@ -349,7 +351,7 @@ export default function DiscoverPage() {
             className="flex-1 min-w-[130px] py-3 px-4 rounded-2xl bg-warm-100/50 dark:bg-warm-800/50 hover:bg-amber-500/10 text-warm-800 dark:text-warm-200 hover:text-amber-600 dark:hover:text-amber-400 border border-transparent hover:border-amber-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold group"
           >
             <Sparkles size={16} className="text-amber-500 group-hover:scale-110 transition-transform" />
-            <span>Studio</span>
+            <span>{t('navigation.studio')}</span>
           </button>
 
           <button
@@ -357,7 +359,7 @@ export default function DiscoverPage() {
             className="flex-1 min-w-[130px] py-3 px-4 rounded-2xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold group"
           >
             <Award size={16} className="text-blue-500 group-hover:scale-110 transition-transform" />
-            <span>SHARDS Hub</span>
+            <span>{t('navigation.shards_hub')}</span>
           </button>
         </section>
 
@@ -370,7 +372,7 @@ export default function DiscoverPage() {
           <div className="flex items-center justify-between">
             <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-white flex items-center gap-2">
               <Filter size={18} className={isStoryMode ? 'text-purple-500' : 'text-red-500'} />
-              <span>Explore Categories &amp; Genres</span>
+              <span>{t('discover.categories')}</span>
             </h3>
           </div>
 

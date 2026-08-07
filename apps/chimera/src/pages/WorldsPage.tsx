@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Globe, Lock, Eye, Map, Users, Clock, MoreHorizontal, Copy, Trash2, Compass, BookOpen, Layers, Sparkles, Flame } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { supabase } from '../lib/supabase';
 import type { World } from '../types';
 import { WorldRelationshipModal } from '../components/world/WorldRelationshipModal';
@@ -12,6 +13,7 @@ export default function WorldsPage() {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const { showToast } = useToast();
+  const { t } = useTranslation();
 
   const [worlds, setWorlds] = useState<World[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,15 +112,15 @@ export default function WorldsPage() {
         <section className="flex flex-col items-center text-center pt-6 sm:pt-8 space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-600 dark:text-purple-400 text-xs font-bold uppercase tracking-wider">
             <Globe size={14} />
-            <span>Worldbuilding Studio &amp; Universes</span>
+            <span>{t('world.worlds_universes')}</span>
           </div>
 
           <h1 className="font-serif text-4xl sm:text-5xl font-extrabold tracking-tight text-warm-900 dark:text-white">
-            Explorable Universes
+            {t('world.worlds_universes')}
           </h1>
 
           <p className="text-sm sm:text-base text-warm-600 dark:text-warm-300 max-w-xl mx-auto leading-relaxed">
-            Design rich locations, magic systems, factions, timelines, and lorebooks that bring your characters and stories to life.
+            {t('world.world_description')}
           </p>
 
           <button
@@ -126,7 +128,7 @@ export default function WorldsPage() {
             className="px-6 py-3 rounded-full bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white font-extrabold text-xs shadow-lg shadow-purple-600/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
           >
             <Plus size={16} strokeWidth={3} />
-            <span>Build New World</span>
+            <span>{t('world.create_world')}</span>
           </button>
         </section>
 
