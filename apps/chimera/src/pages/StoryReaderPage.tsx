@@ -309,7 +309,7 @@ export default function StoryReaderPage() {
             <div className="flex flex-wrap items-center gap-3 mt-8 pt-6 border-t border-warm-150 dark:border-warm-800">
               {chapters.length > 0 ? (
                 <button
-                  onClick={() => navigate(`/story/${story.id}/chapter/1`)}
+                  onClick={() => navigate(`/stories/${story.id}/chapter/1`)}
                   className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-bold px-6 py-3 rounded-xl shadow-md transition-all hover:scale-103 active:scale-97"
                 >
                   <BookOpen size={18} />
