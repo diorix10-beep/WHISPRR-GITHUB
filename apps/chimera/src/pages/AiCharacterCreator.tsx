@@ -25,6 +25,9 @@ export default function AiCharacterCreator() {
 
   const greetingRef = useRef<HTMLTextAreaElement>(null);
   const [activeTab, setActiveTab] = useState<'general' | 'architecture' | 'definition'>('general');
+  const [studioMode, setStudioMode] = useState<'simple' | 'creator' | 'advanced'>(() => {
+    return (localStorage.getItem('chimera_creator_mode') as 'simple' | 'creator' | 'advanced') || 'creator';
+  });
   const [loading, setLoading] = useState(false);
 
   // Sync / Network States
@@ -496,9 +499,56 @@ export default function AiCharacterCreator() {
           <div className="space-y-8">
             {activeTab === 'general' ? (
               <>
+                {/* Layered Experience Mode Switcher (Simple | Creator | Advanced) */}
+                <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-warm-950 border border-warm-800 mb-8">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStudioMode('simple');
+                      localStorage.setItem('chimera_creator_mode', 'simple');
+                    }}
+                    className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
+                      studioMode === 'simple'
+                        ? 'bg-emerald-600 text-white shadow-md'
+                        : 'text-warm-400 hover:text-white hover:bg-warm-800'
+                    }`}
+                  >
+                    <span>🌱 Simple Mode</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStudioMode('creator');
+                      localStorage.setItem('chimera_creator_mode', 'creator');
+                    }}
+                    className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
+                      studioMode === 'creator'
+                        ? 'bg-purple-600 text-white shadow-md'
+                        : 'text-warm-400 hover:text-white hover:bg-warm-800'
+                    }`}
+                  >
+                    <span>🎨 Creator Mode</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStudioMode('advanced');
+                      localStorage.setItem('chimera_creator_mode', 'advanced');
+                    }}
+                    className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
+                      studioMode === 'advanced'
+                        ? 'bg-amber-600 text-white shadow-md'
+                        : 'text-warm-400 hover:text-white hover:bg-warm-800'
+                    }`}
+                  >
+                    <span>⚙️ Advanced Mode</span>
+                  </button>
+                </div>
+
                 {/* Guided Studio Experience Banner */}
                 <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-red-500/10 border border-amber-500/30 space-y-3 mb-8">
-                  <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
                         <Sparkles size={20} />
@@ -552,7 +602,6 @@ export default function AiCharacterCreator() {
                       + Cyberpunk Specialist
                     </button>
                   </div>
-                </div>
 
                 {/* Preview & Image Upload Block */}
                 <div className="flex flex-col sm:flex-row gap-8 mb-8">
@@ -880,7 +929,6 @@ export default function AiCharacterCreator() {
                       <span>Publish Character</span>
                     </button>
                   </div>
-
                 </div>
               </>
             ) : (
