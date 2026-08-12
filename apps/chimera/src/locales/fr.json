@@ -43,6 +43,7 @@
   },
   "navigation": {
     "discover": "Découvrir",
+    "workspace": "Espace",
     "characters": "Personnages",
     "chats": "Discussions",
     "personas": "Personas",
@@ -52,6 +53,7 @@
     "worlds": "Mondes",
     "lorebooks": "Grimoires",
     "writer": "Écrivain",
+    "me": "Moi",
     "shards_hub": "Réserve de SHARDS",
     "settings": "Paramètres",
     "profile": "Profil",

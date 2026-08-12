@@ -227,9 +227,9 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             </Link>
           </div>
 
-          {/* 2. BLOC MILIEU — Navigation à Largeur Fixe Absolue (460px) */}
+          {/* 2. BLOC MILIEU — Clean Fluid Primary Navigation */}
           <div className="hidden lg:flex items-center justify-center">
-            <nav className="w-[460px] grid grid-cols-5 gap-1 text-center whitespace-nowrap shrink-0">
+            <nav className="flex items-center gap-1 xl:gap-2 text-center whitespace-nowrap shrink-0">
               {renderNavLinks()}
             </nav>
           </div>

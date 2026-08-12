@@ -43,6 +43,7 @@
   },
   "navigation": {
     "discover": "Discover",
+    "workspace": "Workspace",
     "characters": "Characters",
     "chats": "Chats",
     "personas": "Personas",
@@ -52,6 +53,7 @@
     "worlds": "Worlds",
     "lorebooks": "Lorebooks",
     "writer": "Writer",
+    "me": "Me",
     "shards_hub": "SHARDS Hub",
     "settings": "Settings",
     "profile": "Profile",
