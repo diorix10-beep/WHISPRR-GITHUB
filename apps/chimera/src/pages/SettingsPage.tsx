@@ -331,11 +331,10 @@ export default function SettingsPage() {
         <div className="space-y-4 bg-warm-50 dark:bg-warm-800 p-4 rounded-2xl">
           <div>
             <p className="text-sm text-warm-600 dark:text-warm-400 mb-3">
-              <span className="font-semibold text-warm-900 dark:text-warm-50">WHISPRR</span>{' '}v1.0.0
+              <span className="font-semibold text-warm-900 dark:text-warm-50">CHIMERA</span> Studio v1.0.0
             </p>
             <p className="text-sm text-warm-700 dark:text-warm-300">
-              A platform for authentic self-expression where thoughts are cherished,
-              conversations are meaningful, and connections are genuine.
+              A beautiful studio where people create characters, worlds, and stories that feel alive.
             </p>
           </div>
           <div className="pt-4 border-t border-warm-200 dark:border-warm-700 space-y-2">

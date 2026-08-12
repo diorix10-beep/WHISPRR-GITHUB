@@ -496,21 +496,62 @@ export default function AiCharacterCreator() {
           <div className="space-y-8">
             {activeTab === 'general' ? (
               <>
-                <div className="flex items-center justify-between border-b border-warm-800 pb-6 mb-8 gap-4">
-                  <div>
-                    <h3 className="text-xl font-serif font-bold text-white mb-1">Create a character</h3>
-                    <p className="text-sm text-warm-400">
-                      Set up how your character looks, speaks, and behaves in chat.
-                    </p>
+                {/* Guided Studio Experience Banner */}
+                <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-red-500/10 border border-amber-500/30 space-y-3 mb-8">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                        <Sparkles size={20} />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-serif font-bold text-white">Character Creation Studio</h3>
+                        <p className="text-xs text-warm-300">
+                          Shape a unique, persistent AI identity with personality traits, greetings, scenarios, and voice signatures.
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowImporterModal(true)}
+                      className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 shrink-0"
+                    >
+                      <Upload size={16} />
+                      <span>Import Card</span>
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowImporterModal(true)}
-                    className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 shrink-0"
-                  >
-                    <Upload size={16} />
-                    <span>Import Card</span>
-                  </button>
+
+                  {/* Guided Tips Sparks */}
+                  <div className="pt-2 border-t border-white/10 flex items-center gap-2 overflow-x-auto text-[11px] text-warm-300 scrollbar-none">
+                    <span className="font-bold text-amber-400 flex items-center gap-1"><Sparkles size={12} /> Studio Suggestions:</span>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({
+                        ...prev,
+                        name: 'Eldrin Vance',
+                        shortDescription: 'Archmage of the Silver Citadel',
+                        greeting: '*adjusts his silk robes and looks up from an ancient tome* "Ah, a visitor. State your purpose before the seals react."',
+                        scenario: 'Inside the high library of the Silver Citadel during a quiet evening storm.'
+                      }))}
+                      className="px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-warm-200 transition-colors whitespace-nowrap"
+                    >
+                      + Fantasy Archmage
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({
+                        ...prev,
+                        name: 'Lyra Thorne',
+                        shortDescription: 'Cybernetics Specialist & Hacker',
+                        greeting: '*spins her holo-display around and glances at you over her visor* "You\'re late. Did the corp drones trace your signal?"',
+                        scenario: 'In a neon-lit subterranean hideout in Sector 7.'
+                      }))}
+                      className="px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-warm-200 transition-colors whitespace-nowrap"
+                    >
+                      + Cyberpunk Specialist
+                    </button>
+                  </div>
                 </div>
 
                 {/* Preview & Image Upload Block */}

@@ -70,10 +70,12 @@ export default function AuthPage() {
 
             <div>
               <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight">
-                Enter the Creative Universe
+                Create characters. <br />
+                Build worlds. <br />
+                Begin stories.
               </h1>
               <p className="mt-2 text-xs sm:text-sm text-warm-400 leading-relaxed">
-                Roleplay with persistent AI identities, craft sagas, and explore narrative worlds.
+                Welcome to CHIMERA — your private, distraction-free AI creation studio.
               </p>
             </div>
           </div>
@@ -102,7 +104,7 @@ export default function AuthPage() {
                     href={`${whisprrUrl}/auth?tab=signup`}
                     className="inline-flex items-center gap-2 text-xs font-bold text-warm-300 hover:text-white transition-colors"
                   >
-                    <span>New creator? Create an account on WHISPRR</span>
+                    <span>Use your WHISPRR account to sign in</span>
                     <span>→</span>
                   </a>
                 </div>

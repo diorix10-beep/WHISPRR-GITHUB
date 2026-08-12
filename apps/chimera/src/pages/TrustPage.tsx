@@ -124,10 +124,10 @@ export default function TrustPage() {
         return (
           <div className="space-y-4">
             <p>
-              At WHISPRR, our primary commitment is to safeguard your digital autonomy. We unequivocally guarantee that your personal information is never commodified, sold to advertisers, or distributed to data brokers under any circumstances. We recognize that private communication must remain fundamentally private; therefore, your direct messages and group chats are strictly confidential, actively shielded from internal review, and never utilized to train artificial intelligence models.
+              At CHIMERA, our primary commitment is to safeguard your creative autonomy and digital privacy. We unequivocally guarantee that your personal information, character creations, and stories are never commodified, sold to advertisers, or distributed to data brokers under any circumstances.
             </p>
             <p>
-              Furthermore, we operate on the principle that you inherently own the intellectual property you generate on our platform. Every whisper, interaction, and post remains your exclusive property, granting you the sovereign right to permanently delete your content and exercise your right to be forgotten at any given moment, without friction or interrogation. Finally, we pledge to communicate our policies in transparent, accessible language, entirely free of predatory legal jargon designed to obfuscate our actual practices.
+              Furthermore, you inherently own the intellectual property you generate on CHIMERA. Every character card, lorebook, world entry, and story remains your exclusive creative property, granting you the sovereign right to modify, export, or permanently delete your content at any moment.
             </p>
           </div>
         );
@@ -136,7 +136,7 @@ export default function TrustPage() {
           <div className="space-y-6 prose dark:prose-invert max-w-none text-xs leading-relaxed text-warm-700 dark:text-warm-300">
             <div>
               <h4 className="font-bold text-warm-900 dark:text-warm-100 text-sm mb-1">1. Acceptance of Terms</h4>
-              <p>By using the WHISPRR platform ("the Service"), you agree to be bound by these Terms of Service. This agreement constitutes a legally binding contract. If you do not accept these terms, you must discontinue access immediately.</p>
+              <p>By using the CHIMERA studio platform ("the Service"), you agree to be bound by these Terms of Service. If you do not accept these terms, you must discontinue access immediately.</p>
             </div>
             <div>
               <h4 className="font-bold text-warm-900 dark:text-warm-100 text-sm mb-1">2. Eligibility</h4>
