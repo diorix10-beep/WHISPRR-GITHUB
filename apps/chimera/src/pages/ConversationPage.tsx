@@ -1797,119 +1797,92 @@ export default function ConversationPage() {
 
               <div className="flex items-end gap-3 bg-warm-50 dark:bg-warm-900 border border-warm-200 dark:border-warm-700 rounded-3xl p-2 shadow-sm focus-within:border-red-400 dark:focus-within:border-red-600 focus-within:ring-4 focus-within:ring-red-500/10 transition-all">
                 
-                <div className="flex items-center gap-1 pl-1">
+                {/* Studio Action Bar Pills (+ Narrate, Actions, Thoughts, OOC) */}
+                <div className="flex items-center gap-2 px-3 pt-2.5 overflow-x-auto text-xs font-bold border-b border-warm-800/40 pb-2 scrollbar-none select-none">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMessageInput(prev => `*narrates scene details* ${prev}`);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition-all flex items-center gap-1 shrink-0"
+                  >
+                    <span>+ Narrate</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMessageInput(prev => `*takes action* ${prev}`);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 transition-all flex items-center gap-1 shrink-0"
+                  >
+                    <span>🪄 Actions</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMessageInput(prev => `(thinks silently: ${prev})`);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/30 transition-all flex items-center gap-1 shrink-0"
+                  >
+                    <span>💭 Thoughts</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsOocMode(p => !p)}
+                    className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 shrink-0 ${
+                      isOocMode
+                        ? 'bg-amber-500 text-white shadow-md'
+                        : 'bg-warm-800/80 hover:bg-warm-750 text-warm-300 border border-warm-700/60'
+                    }`}
+                  >
+                    <span>💬 OOC</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3 p-3">
                   <input type="file" ref={fileInputRef} accept="image/*" onChange={handleImageSelect} className="hidden" />
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-2.5 rounded-full hover:bg-warm-200 dark:hover:bg-warm-800 text-warm-500 transition-colors"
+                    className="p-2 rounded-xl text-warm-400 hover:text-white hover:bg-warm-800 transition-colors"
                     disabled={sending}
                     title="Attach image"
                   >
-                    <ImageIcon size={20} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowEmojiPicker(p => !p)}
-                    className="p-2.5 rounded-full hover:bg-warm-200 dark:hover:bg-warm-800 text-warm-500 transition-colors"
-                    disabled={sending}
-                    title="Insert emoji"
-                  >
-                    <Smile size={20} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsOocMode(p => !p)}
-                    className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1 ${
-                      isOocMode
-                        ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-400/40'
-                        : 'bg-warm-200 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:bg-warm-300 dark:hover:bg-warm-700'
-                    }`}
-                    disabled={sending}
-                    title="Toggle Out Of Character (OOC) Mode"
-                  >
-                    <span>OOC</span>
+                    <ImageIcon size={18} />
                   </button>
 
-                  {/* Story Tone Selector */}
-                  <select
-                    value={storyTone}
-                    onChange={(e) => setStoryTone(e.target.value as any)}
-                    className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-500/10 text-purple-300 border border-purple-500/30 cursor-pointer focus:outline-none"
-                    disabled={sending}
-                    title="Story Tone"
-                  >
-                    <option value="Fantasy" className="bg-warm-900 text-white">✨ Fantasy Tone</option>
-                    <option value="Romantic" className="bg-warm-900 text-white">🌹 Romantic Tone</option>
-                    <option value="Dark" className="bg-warm-900 text-white">🌑 Dark Tone</option>
-                    <option value="Comedy" className="bg-warm-900 text-white">🎭 Comedy Tone</option>
-                    <option value="Mystery" className="bg-warm-900 text-white">🔍 Mystery Tone</option>
-                    <option value="Slice of Life" className="bg-warm-900 text-white">☕ Slice of Life</option>
-                  </select>
-
-                  {/* POV Selector */}
-                  <select
-                    value={storyPov}
-                    onChange={(e) => setStoryPov(e.target.value as any)}
-                    className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30 cursor-pointer focus:outline-none"
-                    disabled={sending}
-                    title="Narrative POV"
-                  >
-                    <option value="Third Person" className="bg-warm-900 text-white">👁️ Third Person POV</option>
-                    <option value="First Person" className="bg-warm-900 text-white">👤 First Person POV</option>
-                    <option value="Character POV" className="bg-warm-900 text-white">🎭 Character POV</option>
-                  </select>
-
-                  {/* Lore-Style Response Length Selector */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setResponseLength(prev => prev === 'short' ? 'balanced' : prev === 'balanced' ? 'detailed' : 'short');
+                  <textarea
+                    ref={msgInputRef}
+                    value={messageInput}
+                    onChange={e => handleInputChange(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage(e as any);
+                      }
                     }}
-                    className="px-2.5 py-1 rounded-full text-xs font-bold bg-warm-200 dark:bg-warm-800 text-warm-700 dark:text-warm-300 hover:bg-warm-300 dark:hover:bg-warm-750 transition-all flex items-center gap-1 border border-warm-300 dark:border-warm-700"
+                    placeholder={isOocMode ? "Out of Character (OOC) mode: Talk to the AI author or instruct lore updates..." : "Write your message..."}
+                    className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 resize-none py-1.5 text-sm sm:text-base text-white placeholder:text-warm-500 font-serif leading-relaxed"
+                    style={{ minHeight: '2.5rem', maxHeight: '10rem' }}
+                    maxLength={MSG_LIMIT}
                     disabled={sending}
-                    title="Response Length Target"
-                  >
-                    {responseLength === 'short' && <span>⚡ Short</span>}
-                    {responseLength === 'balanced' && <span>⚖️ Balanced</span>}
-                    {responseLength === 'detailed' && <span>📖 Novel</span>}
-                  </button>
-                </div>
+                    rows={1}
+                  />
 
-                <textarea
-                  ref={msgInputRef}
-                  value={messageInput}
-                  onChange={e => handleInputChange(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage(e as any);
-                    }
-                  }}
-                  placeholder={isOocMode ? "Out of Character (OOC) mode: Talk to the AI author or instruct lore updates..." : "Type your response... (Shift+Enter for new line)"}
-                  className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 resize-none py-3 text-[15px] text-warm-900 dark:text-warm-50 placeholder:text-warm-400 font-serif leading-relaxed"
-                  style={{ minHeight: '3rem', maxHeight: '12rem' }}
-                  maxLength={MSG_LIMIT}
-                  disabled={sending}
-                  rows={1}
-                  onInput={e => {
-                    const el = e.currentTarget;
-                    el.style.height = 'auto';
-                    el.style.height = `${Math.min(el.scrollHeight, 192)}px`;
-                  }}
-                />
-
-                <div className="pr-1 pb-1">
+                  {/* Gold Metallic Send Feather Button */}
                   <button
                     type="submit"
                     disabled={sending || (!messageInput.trim() && !imageFile)}
-                    className="bg-red-600 hover:bg-red-500 text-white rounded-full p-3 flex items-center justify-center disabled:opacity-50 disabled:hover:bg-red-600 transition-colors shadow-md"
+                    className="bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-warm-950 font-bold rounded-2xl p-3 flex items-center justify-center disabled:opacity-40 transition-all shadow-lg shadow-amber-500/20 active:scale-95 shrink-0"
                     title="Send message"
                   >
                     {sending || uploadingImage ? (
-                      <Loader2 size={18} className="animate-spin" />
+                      <Loader2 size={18} className="animate-spin text-warm-950" />
                     ) : (
-                      <Send size={18} className="ml-0.5" />
+                      <Send size={18} />
                     )}
                   </button>
                 </div>
@@ -1977,6 +1950,83 @@ export default function ConversationPage() {
                     })}
                   </div>
                 )}
+              </div>
+
+              <hr className="border-warm-800" />
+
+              {/* Model Settings & Sliders Inspector (Matching Mockup) */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-xs text-warm-400 uppercase tracking-wider">Model Settings</h3>
+                  <button onClick={() => setShowSettingsDrawer(true)} className="text-[11px] text-amber-400 font-bold hover:underline">
+                    Advanced Settings ›
+                  </button>
+                </div>
+
+                {/* Model Dropdown */}
+                <div className="space-y-1">
+                  <label className="text-[11px] text-warm-400 font-bold">Model</label>
+                  <select
+                    className="w-full bg-warm-950 border border-warm-800 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
+                  >
+                    <option value="chimera-1.5">⚡ Chimera-1.5 (Default)</option>
+                    <option value="chimera-2.0-pro">✨ Chimera-2.0 Pro</option>
+                    <option value="claude-3-5-sonnet">🎭 Claude 3.5 Sonnet</option>
+                  </select>
+                </div>
+
+                {/* Context Window Slider */}
+                <div className="space-y-1 pt-1">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-warm-400">Context Window</span>
+                    <span className="text-white font-mono">32K</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="4000"
+                    max="64000"
+                    step="4000"
+                    defaultValue="32000"
+                    className="w-full accent-amber-500 bg-warm-800 h-1.5 rounded-lg cursor-pointer"
+                  />
+                </div>
+
+                {/* Temperature Slider */}
+                <div className="space-y-1 pt-1">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-warm-400">Temperature</span>
+                    <span className="text-amber-400 font-mono">0.78</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1.5"
+                    step="0.02"
+                    defaultValue="0.78"
+                    className="w-full accent-amber-500 bg-warm-800 h-1.5 rounded-lg cursor-pointer"
+                  />
+                </div>
+
+                {/* Response Style Slider */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-warm-400">Response Style</span>
+                    <span className="text-purple-300 font-bold">Balanced</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="3"
+                    step="1"
+                    defaultValue="2"
+                    className="w-full accent-purple-500 bg-warm-800 h-1.5 rounded-lg cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[10px] text-warm-500 font-bold pt-0.5">
+                    <span>Concise</span>
+                    <span>Balanced</span>
+                    <span>Descriptive</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
