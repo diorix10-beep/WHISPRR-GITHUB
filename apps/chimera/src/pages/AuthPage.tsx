@@ -58,11 +58,15 @@ export default function AuthPage() {
           {/* Main Celestial Card Container matching Mockup */}
           <div className="bg-[#121215]/85 backdrop-blur-2xl border border-[#2D2A26] p-7 sm:p-9 rounded-3xl shadow-2xl relative space-y-6 text-center">
             
-            {/* Top Celestial Compass Logo & CHIMERA Branding */}
+            {/* Top Celestial Emblem Logo & CHIMERA Branding */}
             <div className="flex flex-col items-center gap-3">
               <div className="relative flex items-center justify-center">
-                <div className="absolute w-12 h-12 bg-amber-500/10 rounded-full blur-md" />
-                <Compass size={36} className="text-[#D9A353] relative z-10 animate-pulse-slow" />
+                <div className="absolute w-14 h-14 bg-amber-500/10 rounded-full blur-md" />
+                <img
+                  src="/chimera_logo.png"
+                  alt="CHIMERA Emblem"
+                  className="w-12 h-12 object-contain relative z-10 drop-shadow-md"
+                />
               </div>
               <span className="font-serif text-xl sm:text-2xl font-bold tracking-[0.25em] text-[#D9A353] uppercase">
                 CHIMERA
