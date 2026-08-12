@@ -188,9 +188,9 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
   );
 
   return (
-    <div className="min-h-screen bg-warm-50 dark:bg-warm-900 transition-colors duration-300 flex flex-col font-sans">
+    <div className="min-h-screen bg-transparent transition-colors duration-300 flex flex-col font-sans relative">
       {/* Top Navigation Header */}
-      <header className="sticky top-0 z-40 w-full bg-white/80 dark:bg-warm-900/80 backdrop-blur-xl border-b border-warm-200/80 dark:border-warm-800/80 shadow-sm transition-colors duration-300">
+      <header className="sticky top-0 z-40 w-full bg-warm-950/70 dark:bg-warm-950/80 backdrop-blur-2xl border-b border-warm-800/60 shadow-lg transition-colors duration-300">
         <div className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* 1. BLOC GAUCHE — Logo */}
