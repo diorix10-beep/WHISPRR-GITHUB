@@ -9,7 +9,6 @@ import { useToast } from '../contexts/ToastContext';
 import { checkUserPromptSafety, CRISIS_HELPLINE_INFO } from '../lib/safetyGuard';
 import { UniversalImagePicker } from '../components/common/UniversalImagePicker';
 import { supabase } from '../lib/supabase';
-import { StructuredArchitectureForm } from '../components/character/StructuredArchitectureForm';
 import { compileCharacterSystemPrompt, type CharacterArchitecture } from '../lib/promptCompiler';
 import { UniversalCharacterImporterModal } from '../components/creator/UniversalCharacterImporterModal';
 import { RichTextEditor } from '../components/common/RichTextEditor';
@@ -441,17 +440,6 @@ export default function AiCharacterCreator() {
               General
             </button>
             <button
-              onClick={() => setActiveTab('architecture')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === 'architecture' 
-                  ? 'bg-warm-800 text-white' 
-                  : 'text-warm-400 hover:bg-warm-800/50 hover:text-white'
-              }`}
-            >
-              <Bot size={16} />
-              16-Section Architecture
-            </button>
-            <button
               onClick={() => setActiveTab('definition')}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === 'definition' 
@@ -489,18 +477,6 @@ export default function AiCharacterCreator() {
             >
               <User size={16} />
               <span>General & Greeting</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('architecture')}
-              className={`flex-1 min-w-[160px] py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${
-                activeTab === 'architecture'
-                  ? 'bg-red-600 text-white shadow-md'
-                  : 'text-warm-400 hover:text-white hover:bg-warm-800'
-              }`}
-            >
-              <Bot size={16} />
-              <span>16-Section Builder</span>
             </button>
             <button
               type="button"
@@ -848,74 +824,6 @@ export default function AiCharacterCreator() {
                   <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-warm-800">
                     <button
                       type="button"
-                      onClick={() => setActiveTab('architecture')}
-                      className="w-full sm:w-auto px-6 py-3 rounded-xl bg-warm-800 hover:bg-warm-700 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 border border-warm-700"
-                    >
-                      <span>Next: 16-Section Builder</span>
-                      <Bot size={16} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleFinalPublish}
-                      className="w-full sm:w-auto px-8 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-lg"
-                    >
-                      <Sparkles size={16} />
-                      <span>Publish Character</span>
-                    </button>
-                  </div>
-
-                </div>
-              </>
-            ) : activeTab === 'architecture' ? (
-              <>
-                <div className="flex items-center justify-between mb-4 border-b border-warm-800 pb-4">
-                  <div>
-                    <h3 className="text-xl font-serif font-bold text-white">16-Section Persona Architecture</h3>
-                    <p className="text-xs text-warm-400 mt-1">
-                      Fill out dedicated sections to build a bullet-proof, consistent AI character. CHIMERA will automatically compile this into an optimal system prompt.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const compiled = compileCharacterSystemPrompt(archData);
-                      setFormData(prev => ({ ...prev, personality: compiled }));
-                      showToast('Compiled 16-section architecture into System Prompt!', 'success');
-                    }}
-                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center gap-1.5 shrink-0"
-                  >
-                    <Sparkles size={14} />
-                    Compile to System Prompt
-                  </button>
-                </div>
-
-                <StructuredArchitectureForm
-                  value={archData}
-                  onChange={(updated) => {
-                    setArchData(updated);
-                    // Automatically compile and sync personality field
-                    const compiled = compileCharacterSystemPrompt(updated);
-                    setFormData(prev => ({
-                      ...prev,
-                      name: updated.name || prev.name,
-                      personality: compiled
-                    }));
-                  }}
-                />
-
-                {/* Architecture Tab Bottom Step Controls */}
-                <div className="pt-6 mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-warm-800">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('general')}
-                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-warm-800 hover:bg-warm-700 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 border border-warm-700"
-                  >
-                    <User size={16} />
-                    <span>Back: General & Greeting</span>
-                  </button>
-                  <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                    <button
-                      type="button"
                       onClick={() => setActiveTab('definition')}
                       className="w-full sm:w-auto px-6 py-3 rounded-xl bg-warm-800 hover:bg-warm-700 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 border border-warm-700"
                     >
@@ -931,6 +839,7 @@ export default function AiCharacterCreator() {
                       <span>Publish Character</span>
                     </button>
                   </div>
+
                 </div>
               </>
             ) : (

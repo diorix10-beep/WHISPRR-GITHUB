@@ -6,7 +6,6 @@ import { useToast } from '../contexts/ToastContext';
 import { UniversalImagePicker } from '../components/common/UniversalImagePicker';
 import { supabase } from '../lib/supabase';
 import type { Persona } from '../types';
-import { StructuredArchitectureForm } from '../components/character/StructuredArchitectureForm';
 import { compileCharacterSystemPrompt, type CharacterArchitecture } from '../lib/promptCompiler';
 
 import { BookOpen } from 'lucide-react';
@@ -352,46 +351,6 @@ export default function PersonaEditorPage() {
           )}
         </div>
 
-        {/* 16-Section Persona Architecture */}
-        <div className="bg-white dark:bg-warm-900 rounded-3xl border border-warm-200 dark:border-warm-800 p-8 shadow-sm space-y-4">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center font-bold">
-              16
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-warm-900 dark:text-warm-50">Structured Persona Architecture</h2>
-              <p className="text-xs text-warm-500">
-                Provide structured fields so AI characters understand your speech style, boundaries, goals, and habits.
-              </p>
-            </div>
-          </div>
-
-          <StructuredArchitectureForm
-            value={{
-              name: formData.name,
-              gender: formData.gender || undefined,
-              age: formData.age ? String(formData.age) : undefined,
-              pronouns: formData.pronouns || undefined,
-              occupation: formData.occupation || undefined,
-              personality_traits: formData.personality || undefined,
-              clothing: formData.appearance || undefined,
-              habits: formData.backstory || undefined,
-            }}
-            onChange={(updated) => {
-              const compiled = compileCharacterSystemPrompt(updated);
-              setFormData(prev => ({
-                ...prev,
-                name: updated.name || prev.name,
-                gender: updated.gender || prev.gender,
-                age: updated.age || prev.age,
-                pronouns: updated.pronouns || prev.pronouns,
-                occupation: updated.occupation || prev.occupation,
-                personality: compiled,
-                appearance: updated.clothing || prev.appearance,
-              }));
-            }}
-          />
-        </div>
         <div className="bg-white dark:bg-warm-900 rounded-3xl border border-warm-200 dark:border-warm-800 p-8 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-xl flex items-center justify-center">
