@@ -191,15 +191,15 @@ export default function CreatorStudioPage() {
         <section className="flex flex-col items-center text-center pt-6 sm:pt-8 space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
             <Sparkles size={14} />
-            <span>{t('creator_studio.subtitle')}</span>
+            <span>Creative Workspace</span>
           </div>
 
           <h1 className="font-serif text-4xl sm:text-5xl font-extrabold tracking-tight text-warm-900 dark:text-white">
-            {t('creator_studio.title')}
+            Workspace
           </h1>
 
           <p className="text-sm sm:text-base text-warm-600 dark:text-warm-300 max-w-xl mx-auto leading-relaxed">
-            {t('creator_studio.subtitle')}
+            Your centralized creative home for projects, worlds, stories, characters, and lorebooks.
           </p>
 
           {/* Mode Switch Pill */}

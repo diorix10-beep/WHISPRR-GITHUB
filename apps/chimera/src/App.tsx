@@ -233,7 +233,8 @@ function AppLoader() {
             {/* Media / Image Studio */}
             <Route path="/media" element={<ChimeraPlaceholderPage title="Image Studio" description="Generate avatars, expressions, outfits, scenes, and location art for your characters and worlds." />} />
 
-            {/* Creator Studio (unified workspace) */}
+            {/* Creator Workspace (unified workspace) */}
+            <Route path="/workspace" element={<CreatorStudioPage />} />
             <Route path="/studio" element={<CreatorStudioPage />} />
 
             {/* Personas */}

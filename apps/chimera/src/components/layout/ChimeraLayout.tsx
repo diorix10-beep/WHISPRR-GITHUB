@@ -26,18 +26,18 @@ interface NavLinkItem {
 
 const ROLEPLAY_NAV_LINKS: NavLinkItem[] = [
   { path: '/discover', token: 'navigation.discover', icon: Compass },
-  { path: '/characters', token: 'navigation.characters', icon: Users },
+  { path: '/workspace', token: 'navigation.workspace', icon: Sparkles },
+  { path: '/stories', token: 'navigation.stories', icon: BookOpen },
   { path: '/conversations', token: 'navigation.chats', icon: MessageSquare },
-  { path: '/personas', token: 'navigation.personas', icon: UserCheck },
-  { path: '/studio', token: 'navigation.studio', icon: Sparkles },
+  { path: '/profile', token: 'navigation.me', icon: UserCheck },
 ];
 
 const STORYTELLING_NAV_LINKS: NavLinkItem[] = [
-  { path: '/', token: 'navigation.home', icon: Compass },
+  { path: '/discover', token: 'navigation.discover', icon: Compass },
+  { path: '/workspace', token: 'navigation.workspace', icon: Sparkles },
   { path: '/stories', token: 'navigation.stories', icon: BookOpen },
-  { path: '/worlds', token: 'navigation.worlds', icon: Globe },
-  { path: '/lorebooks', token: 'navigation.lorebooks', icon: BookOpen },
-  { path: '/write/desk', token: 'navigation.writer', icon: PenTool },
+  { path: '/conversations', token: 'navigation.chats', icon: MessageSquare },
+  { path: '/profile', token: 'navigation.me', icon: UserCheck },
 ];
 
 export function ChimeraLayout({ children }: ChimeraLayoutProps) {

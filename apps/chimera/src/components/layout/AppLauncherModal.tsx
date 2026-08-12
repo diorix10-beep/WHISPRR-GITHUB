@@ -40,13 +40,10 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
   };
 
   const tools = [
-    { label: 'AI Characters', desc: 'Create & manage characters', path: '/characters', icon: Users, accent: 'text-red-400 group-hover:text-red-300' },
-    { label: 'Personas', desc: 'Your roleplay identities', path: '/personas', icon: User, accent: 'text-purple-400 group-hover:text-purple-300' },
-    { label: 'Worlds', desc: 'Build & explore universes', path: '/worlds', icon: Globe, accent: 'text-cyan-400 group-hover:text-cyan-300' },
-    { label: 'Creator Studio', desc: 'Publish & monetize', path: '/studio', icon: Sparkles, accent: 'text-amber-400 group-hover:text-amber-300' },
-    { label: 'Voice Library', desc: 'AI voice personas', path: '/voice-library', icon: Volume2, accent: 'text-emerald-400 group-hover:text-emerald-300' },
-    { label: 'Settings', desc: 'Account & preferences', path: '/settings', icon: Settings, accent: 'text-warm-400 group-hover:text-warm-300' },
-    { label: 'Trust & Privacy', desc: 'Safety & data control', path: '/trust', icon: Shield, accent: 'text-indigo-400 group-hover:text-indigo-300' },
+    { label: 'CHIMERA Studio', desc: 'Creative roleplay & novel workspace', path: '/workspace', icon: Sparkles, accent: 'text-amber-400 group-hover:text-amber-300' },
+    { label: 'WHISPRR Ecosystem', desc: 'Main platform & identity', path: whisprrUrl, external: true, icon: Globe, accent: 'text-purple-400 group-hover:text-purple-300' },
+    { label: 'Account Settings', desc: 'Profile & preferences', path: '/settings', icon: Settings, accent: 'text-warm-400 group-hover:text-warm-300' },
+    { label: 'Trust & Safety', desc: 'Privacy & content controls', path: '/trust', icon: Shield, accent: 'text-indigo-400 group-hover:text-indigo-300' },
   ];
 
   return (
