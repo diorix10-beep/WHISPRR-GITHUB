@@ -69,10 +69,11 @@ export default function AuthPage() {
             </Link>
 
             <div>
-              <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight">
-                Create characters. <br />
-                Build worlds. <br />
-                Begin stories.
+              <h1 className="font-serif text-2xl sm:text-3xl font-extrabold text-white leading-tight">
+                Characters with a pulse. <br />
+                <span className="bg-gradient-to-r from-amber-400 via-rose-400 to-purple-400 bg-clip-text text-transparent">
+                  Worlds with a soul.
+                </span>
               </h1>
               <p className="mt-2 text-xs sm:text-sm text-warm-400 leading-relaxed">
                 Welcome to CHIMERA — your private, distraction-free AI creation studio.

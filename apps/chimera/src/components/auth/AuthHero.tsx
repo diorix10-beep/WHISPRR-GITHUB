@@ -66,10 +66,15 @@ export function AuthHero() {
   return (
     <div className="relative w-full h-full overflow-hidden hidden lg:flex flex-col justify-between p-12 bg-warm-950 text-white select-none hero-fade-in">
       
-      {/* Deep Studio Ambient Glows */}
-      <div className="absolute inset-0 bg-gradient-to-br from-warm-950 via-warm-900 to-warm-950 pointer-events-none" />
-      <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-gradient-to-br from-red-600/20 via-purple-600/15 to-transparent rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-gradient-to-tr from-amber-600/15 via-purple-600/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+      {/* Full-Screen Dark Atmospheric Castle Background — Castle on Right */}
+      <div 
+        className="absolute inset-0 bg-cover bg-[position:right_center] bg-no-repeat transition-all duration-1000 scale-105"
+        style={{ backgroundImage: `url('/images/chimera_castle_hero_bg.jpg')` }}
+      />
+
+      {/* Dark Gradient Overlay for Readability */}
+      <div className="absolute inset-0 bg-gradient-to-r from-warm-950 via-warm-950/80 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-warm-950/30 backdrop-blur-[1px] pointer-events-none" />
 
       {/* Floating Ember & Star Particles */}
       {particles.map((p) => (
@@ -96,7 +101,7 @@ export function AuthHero() {
           <span>CHIMERA Creative Studio</span>
         </div>
 
-        <div className="flex items-center gap-4 text-xs text-warm-400 font-medium">
+        <div className="flex items-center gap-4 text-xs text-warm-300 font-medium">
           <span className="flex items-center gap-1.5"><Bot size={14} className="text-red-400" /> AI Characters</span>
           <span className="flex items-center gap-1.5"><Globe size={14} className="text-purple-400" /> Universes</span>
           <span className="flex items-center gap-1.5"><PenTool size={14} className="text-amber-400" /> Stories</span>
@@ -108,15 +113,11 @@ export function AuthHero() {
         
         {/* Main Headline */}
         <div className="space-y-3 text-center">
-          <h2 className="font-serif text-4xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
-            Create characters. <br />
-            Build worlds. <br />
-            <span className="bg-gradient-to-r from-red-400 via-purple-400 to-amber-300 bg-clip-text text-transparent">
-              Begin stories.
-            </span>
+          <h2 className="font-serif text-4xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight drop-shadow-md">
+            CHIMERA
           </h2>
-          <p className="text-sm text-warm-300 leading-relaxed max-w-md mx-auto">
-            A beautiful, unified creative studio where persistent AI identities, lorebooks, and interactive narratives come alive.
+          <p className="text-lg sm:text-xl font-serif italic text-amber-300 font-medium leading-relaxed max-w-md mx-auto drop-shadow">
+            Characters with a pulse. Worlds with a soul.
           </p>
         </div>
 
