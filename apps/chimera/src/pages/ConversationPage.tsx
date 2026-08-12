@@ -116,7 +116,12 @@ export default function ConversationPage() {
   const [activePersona, setActivePersona] = useState<any>(null);
   const [suggestedPersona, setSuggestedPersona] = useState<any>(null);
 
-  // Lore-Style Response Length & Pinned Messages Controls
+  // Lore-Style Response Length, Story Tone, POV & Pinned Messages Controls
+  const [creativeMode, setCreativeModeState] = useState<'roleplay' | 'storytelling'>(() => {
+    return (localStorage.getItem('chimera_creative_mode') as 'roleplay' | 'storytelling') || 'roleplay';
+  });
+  const [storyTone, setStoryTone] = useState<'Romantic' | 'Dark' | 'Comedy' | 'Mystery' | 'Fantasy' | 'Slice of Life'>('Fantasy');
+  const [storyPov, setStoryPov] = useState<'First Person' | 'Third Person' | 'Character POV'>('Third Person');
   const [responseLength, setResponseLength] = useState<'short' | 'balanced' | 'detailed'>('balanced');
   const [pinnedMessageIds, setPinnedMessageIds] = useState<string[]>(() => {
     try {
@@ -1825,6 +1830,35 @@ export default function ConversationPage() {
                   >
                     <span>OOC</span>
                   </button>
+
+                  {/* Story Tone Selector */}
+                  <select
+                    value={storyTone}
+                    onChange={(e) => setStoryTone(e.target.value as any)}
+                    className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-500/10 text-purple-300 border border-purple-500/30 cursor-pointer focus:outline-none"
+                    disabled={sending}
+                    title="Story Tone"
+                  >
+                    <option value="Fantasy" className="bg-warm-900 text-white">✨ Fantasy Tone</option>
+                    <option value="Romantic" className="bg-warm-900 text-white">🌹 Romantic Tone</option>
+                    <option value="Dark" className="bg-warm-900 text-white">🌑 Dark Tone</option>
+                    <option value="Comedy" className="bg-warm-900 text-white">🎭 Comedy Tone</option>
+                    <option value="Mystery" className="bg-warm-900 text-white">🔍 Mystery Tone</option>
+                    <option value="Slice of Life" className="bg-warm-900 text-white">☕ Slice of Life</option>
+                  </select>
+
+                  {/* POV Selector */}
+                  <select
+                    value={storyPov}
+                    onChange={(e) => setStoryPov(e.target.value as any)}
+                    className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30 cursor-pointer focus:outline-none"
+                    disabled={sending}
+                    title="Narrative POV"
+                  >
+                    <option value="Third Person" className="bg-warm-900 text-white">👁️ Third Person POV</option>
+                    <option value="First Person" className="bg-warm-900 text-white">👤 First Person POV</option>
+                    <option value="Character POV" className="bg-warm-900 text-white">🎭 Character POV</option>
+                  </select>
 
                   {/* Lore-Style Response Length Selector */}
                   <button
