@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { LOCALES, DEFAULT_LOCALE, SUPPORTED_LOCALES, type LocaleMeta } from '../locales';
+import { supabase } from '../lib/supabase';
 
 interface I18nContextType {
   locale: string;
@@ -18,26 +19,72 @@ const I18nContext = createContext<I18nContextType | undefined>(undefined);
 const STORAGE_KEY = 'chimera_preferred_language';
 
 export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // Synchronously initialize language from localStorage to eliminate FOUC (flash of wrong language)
   const [locale, setLocaleState] = useState<string>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved && LOCALES[saved] ? saved : DEFAULT_LOCALE;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved && LOCALES[saved] ? saved : DEFAULT_LOCALE;
+    } catch {
+      return DEFAULT_LOCALE;
+    }
   });
 
   const activeMeta = LOCALES[locale]?.meta || LOCALES[DEFAULT_LOCALE].meta;
   const isRTL = activeMeta.dir === 'rtl';
 
   useEffect(() => {
-    // Update HTML dir attribute for RTL support
+    // Update HTML root attributes for direction and language
     document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
     document.documentElement.lang = locale;
   }, [locale, isRTL]);
 
+  // Sync with user's profile asynchronously if logged in
+  useEffect(() => {
+    let isMounted = true;
+    async function syncProfileLanguage() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.id) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('preferred_language')
+            .eq('id', session.user.id)
+            .single();
+
+          if (isMounted && profile?.preferred_language && LOCALES[profile.preferred_language]) {
+            const localSaved = localStorage.getItem(STORAGE_KEY);
+            // Only update if local state differs and profile has explicit preference
+            if (!localSaved) {
+              setLocaleState(profile.preferred_language);
+              localStorage.setItem(STORAGE_KEY, profile.preferred_language);
+            }
+          }
+        }
+      } catch (err) {
+        // Quiet non-blocking fallback
+      }
+    }
+    syncProfileLanguage();
+    return () => { isMounted = false; };
+  }, []);
+
   const setLocale = useCallback((code: string) => {
     if (LOCALES[code]) {
       setLocaleState(code);
-      localStorage.setItem(STORAGE_KEY, code);
-      // Dispatch event for legacy listeners if any
-      window.dispatchEvent(new CustomEvent('chimera-language-changed', { detail: { code } }));
+      try {
+        localStorage.setItem(STORAGE_KEY, code);
+      } catch {}
+
+      // Asynchronously push preference to user profile if authenticated
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user?.id) {
+          supabase
+            .from('profiles')
+            .update({ preferred_language: code })
+            .eq('id', session.user.id)
+            .then();
+        }
+      }).catch(() => {});
     }
   }, []);
 
@@ -55,7 +102,7 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     }
 
-    // Fallback to English catalog if missing in target locale
+    // Robust Fallback to English (DEFAULT_LOCALE) if key missing in target locale
     if (value === undefined && locale !== DEFAULT_LOCALE) {
       let fallbackCatalog = LOCALES[DEFAULT_LOCALE].catalog;
       let fbValue: any = fallbackCatalog;
@@ -74,7 +121,7 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return key; // Return raw token key as ultimate fallback
     }
 
-    // Interpolate variables {{variable_name}}
+    // Variable interpolation {{variable_name}}
     if (params) {
       Object.entries(params).forEach(([paramKey, paramVal]) => {
         value = (value as string).replace(new RegExp(`\\{\\{${paramKey}\\}\\}`, 'g'), String(paramVal));

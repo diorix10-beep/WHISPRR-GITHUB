@@ -53,21 +53,9 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [showAppLauncher, setShowAppLauncher] = useState(false);
   const [showShardsHub, setShowShardsHub] = useState(false);
-  const [currentLang, setCurrentLang] = useState(() => localStorage.getItem('chimera_preferred_language') || 'en');
   const [creativeMode, setCreativeMode] = useState<'roleplay' | 'storytelling'>(() => {
     return (localStorage.getItem('chimera_creative_mode') as 'roleplay' | 'storytelling') || 'roleplay';
   });
-
-  useEffect(() => {
-    function handleLanguageChanged(e: any) {
-      if (e.detail?.code) {
-        setCurrentLang(e.detail.code);
-        localStorage.setItem('chimera_preferred_language', e.detail.code);
-      }
-    }
-    window.addEventListener('chimera-language-changed', handleLanguageChanged);
-    return () => window.removeEventListener('chimera-language-changed', handleLanguageChanged);
-  }, []);
 
   const toggleCreativeMode = (targetMode?: 'roleplay' | 'storytelling') => {
     const nextMode = targetMode || (creativeMode === 'roleplay' ? 'storytelling' : 'roleplay');
