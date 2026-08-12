@@ -141,16 +141,16 @@
     --text-accent-900: #FDF2F5;
   }
 
-  body {
-    @apply bg-warm-950 text-warm-900 font-sans antialiased bg-fixed bg-cover bg-[position:right_center] bg-no-repeat;
-    background-image: linear-gradient(to right, rgba(15, 14, 13, 0.95), rgba(15, 14, 13, 0.75), rgba(15, 14, 13, 0.6)), url('/images/chimera_castle_hero_bg.jpg');
+  html, body, #root {
+    @apply bg-warm-950 text-warm-100 font-sans antialiased min-h-screen bg-fixed bg-cover bg-[position:right_center] bg-no-repeat;
+    background-image: linear-gradient(to right, rgba(9, 9, 11, 0.94), rgba(9, 9, 11, 0.78), rgba(9, 9, 11, 0.55)), url('/images/chimera_castle_hero_bg.jpg') !important;
     -webkit-tap-highlight-color: transparent;
   }
 
   .dark body,
   .dark {
     @apply bg-warm-950 text-warm-100 bg-fixed bg-cover bg-[position:right_center] bg-no-repeat;
-    background-image: linear-gradient(to right, rgba(9, 9, 11, 0.96), rgba(9, 9, 11, 0.82), rgba(9, 9, 11, 0.65)), url('/images/chimera_castle_hero_bg.jpg');
+    background-image: linear-gradient(to right, rgba(9, 9, 11, 0.94), rgba(9, 9, 11, 0.78), rgba(9, 9, 11, 0.55)), url('/images/chimera_castle_hero_bg.jpg') !important;
   }
 
   *:focus-visible {
