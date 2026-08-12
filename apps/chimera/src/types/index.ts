@@ -357,6 +357,7 @@ export interface Persona {
   backstory?: string | null;
   relationships?: string | null;
   tags?: string[];
+  lorebook_ids?: string[];
   is_default?: boolean;
   is_public?: boolean;
   created_at: string;

@@ -1905,14 +1905,44 @@ export default function ConversationPage() {
 
               <hr className="border-warm-200 dark:border-warm-800" />
 
-              {/* Memory / Lore Section Placeholder */}
+              {/* Memory / Lore Section Placeholder & Live SillyTavern Lore Trigger Inspector */}
               <div className="space-y-3">
                 <h3 className="font-bold text-sm text-warm-900 dark:text-warm-100 uppercase tracking-wider flex items-center gap-2">
-                  <BookOpen size={14} className="text-red-500" /> Active Context
+                  <BookOpen size={14} className="text-amber-500" /> Triggered Lore &amp; Context
                 </h3>
-                <p className="text-xs text-warm-500 leading-relaxed bg-white dark:bg-warm-800 p-3 rounded-xl border border-warm-200 dark:border-warm-700">
-                  This space is reserved for the CHIMERA Memory Manager. Pinned memories, active lorebooks, and dynamic context will appear here.
-                </p>
+
+                {loreTriggerResult.triggeredEntries.length === 0 ? (
+                  <p className="text-xs text-warm-500 leading-relaxed bg-white dark:bg-warm-800 p-3.5 rounded-xl border border-warm-200 dark:border-warm-700 italic">
+                    No lorebook entries triggered yet. Mention keywords from your world or persona lorebooks to inject them into chat context.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {loreTriggerResult.triggeredEntries.map((entry) => {
+                      const matches = loreTriggerResult.matchedKeywordsMap[entry.id] || [];
+                      return (
+                        <div key={entry.id} className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs space-y-1">
+                          <div className="flex items-center justify-between font-bold">
+                            <span className="truncate">{entry.title}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">
+                              Order: {entry.insertion_order}
+                            </span>
+                          </div>
+                          <p className="text-[11px] opacity-80 line-clamp-2">{entry.content}</p>
+                          {matches.length > 0 && (
+                            <div className="flex items-center gap-1 flex-wrap pt-1">
+                              <span className="text-[10px] opacity-60">Matched:</span>
+                              {matches.map((m, idx) => (
+                                <span key={idx} className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-400/20 text-amber-200 font-mono">
+                                  {m}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>

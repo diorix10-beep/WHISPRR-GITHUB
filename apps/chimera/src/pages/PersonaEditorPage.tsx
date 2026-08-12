@@ -9,6 +9,9 @@ import type { Persona } from '../types';
 import { StructuredArchitectureForm } from '../components/character/StructuredArchitectureForm';
 import { compileCharacterSystemPrompt, type CharacterArchitecture } from '../lib/promptCompiler';
 
+import { BookOpen } from 'lucide-react';
+import type { Lorebook } from '../types';
+
 export default function PersonaEditorPage() {
   const { id } = useParams();
   const isEditing = Boolean(id);
@@ -18,6 +21,7 @@ export default function PersonaEditorPage() {
 
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
+  const [userLorebooks, setUserLorebooks] = useState<Lorebook[]>([]);
   
   const [formData, setFormData] = useState<Partial<Persona>>({
     name: '',
@@ -32,9 +36,18 @@ export default function PersonaEditorPage() {
     greeting: '',
     relationships: '',
     tags: [],
+    lorebook_ids: [],
     is_public: false,
     is_default: false
   });
+
+  useEffect(() => {
+    if (user) {
+      supabase.from('lorebooks').select('*').eq('user_id', user.id).then(({ data }) => {
+        if (data) setUserLorebooks(data);
+      });
+    }
+  }, [user]);
 
   useEffect(() => {
     if (isEditing && user) {
@@ -288,6 +301,55 @@ export default function PersonaEditorPage() {
               />
             </div>
           </div>
+        </div>
+
+        {/* Persona-Bound Lorebooks (SillyTavern Feature) */}
+        <div className="bg-white dark:bg-warm-900 rounded-3xl border border-warm-200 dark:border-warm-800 p-8 shadow-sm space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-amber-500/10 text-amber-500 rounded-xl flex items-center justify-center font-bold">
+              <BookOpen size={20} />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-warm-900 dark:text-warm-50">Persona-Bound Lorebooks</h2>
+              <p className="text-xs text-warm-500">
+                Link lorebooks (inventory, secret backstory, personal lore) directly to this Persona. Bound lore auto-injects across all chats!
+              </p>
+            </div>
+          </div>
+
+          {userLorebooks.length === 0 ? (
+            <p className="text-xs text-warm-400 italic">No lorebooks created yet. Create lorebooks in the Lorebooks Studio to link them to your Persona.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              {userLorebooks.map((lb) => {
+                const isSelected = (formData.lorebook_ids || []).includes(lb.id);
+                return (
+                  <button
+                    key={lb.id}
+                    type="button"
+                    onClick={() => {
+                      const current = formData.lorebook_ids || [];
+                      const next = isSelected ? current.filter(id => id !== lb.id) : [...current, lb.id];
+                      setFormData({ ...formData, lorebook_ids: next });
+                    }}
+                    className={`p-3.5 rounded-2xl border text-left flex items-center justify-between transition-all ${
+                      isSelected
+                        ? 'bg-amber-500/10 border-amber-500/50 text-amber-400 font-bold'
+                        : 'bg-warm-50 dark:bg-warm-950 border-warm-200 dark:border-warm-800 text-warm-600 dark:text-warm-300 hover:border-warm-600'
+                    }`}
+                  >
+                    <div className="truncate">
+                      <p className="text-xs font-bold truncate">{lb.title}</p>
+                      <p className="text-[10px] opacity-70">{lb.entry_count || 0} lore entries</p>
+                    </div>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${isSelected ? 'bg-amber-500 text-black' : 'bg-warm-800 text-warm-400'}`}>
+                      {isSelected ? 'Bound' : 'Bind'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* 16-Section Persona Architecture */}
