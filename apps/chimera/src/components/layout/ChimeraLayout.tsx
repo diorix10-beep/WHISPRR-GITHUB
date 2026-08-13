@@ -187,8 +187,46 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
     </>
   );
 
+  const getPageBackground = (path: string) => {
+    if (path.startsWith('/discover')) {
+      return { url: '/images/bg_discover.png', pos: 'right center' }; // 1st pic: Discover
+    }
+    if (path.startsWith('/characters')) {
+      return { url: '/images/bg_characters.png', pos: 'right center' }; // 2nd pic: Characters
+    }
+    if (path.startsWith('/worlds')) {
+      return { url: '/images/bg_worlds.jpg', pos: 'center' }; // 3rd pic: Worlds
+    }
+    if (path.startsWith('/stories')) {
+      return { url: '/images/bg_stories.jpg', pos: 'right center' }; // 4th pic: Stories
+    }
+    if (path.startsWith('/workspace') || path.startsWith('/lorebooks')) {
+      return { url: '/images/bg_library.jpg', pos: 'right center' }; // 5th pic: Library / Workspace
+    }
+    if (path.startsWith('/profile')) {
+      return { url: '/images/bg_profile.png', pos: 'right center' }; // 6th pic: Profile
+    }
+    if (path.startsWith('/settings')) {
+      return { url: '/images/bg_settings.png', pos: 'center' }; // 7th pic: Settings
+    }
+    // Default for Home, Login, and root routes (8th pic)
+    return { url: '/images/bg_home.jpg', pos: 'right center' };
+  };
+
+  const bgConfig = getPageBackground(location.pathname);
+
   return (
     <div className="min-h-screen bg-transparent transition-colors duration-300 flex flex-col font-sans relative">
+      {/* Full-Page Fixed Dynamic Artwork Background with Dark Overlay */}
+      <div 
+        className="fixed inset-0 bg-cover bg-no-repeat transition-all duration-700 pointer-events-none z-[-1]"
+        style={{ 
+          backgroundImage: `linear-gradient(to right, rgba(9, 9, 11, 0.92), rgba(9, 9, 11, 0.78), rgba(9, 9, 11, 0.6)), url('${bgConfig.url}')`,
+          backgroundPosition: bgConfig.pos,
+          backgroundAttachment: 'fixed',
+        }}
+      />
+
       {/* Top Navigation Header */}
       <header className="sticky top-0 z-40 w-full bg-warm-950/70 dark:bg-warm-950/80 backdrop-blur-2xl border-b border-warm-800/60 shadow-lg transition-colors duration-300">
         <div className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
