@@ -79,6 +79,9 @@ export default function ConversationPage() {
   const [showContextDrawer, setShowContextDrawer] = useState(false);
   const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
   const [showMemoryModal, setShowMemoryModal] = useState(false);
+  const [showSceneCanon, setShowSceneCanon] = useState(false);
+  const [sceneCanon, setSceneCanon] = useState('');
+  const [sceneCanonDraft, setSceneCanonDraft] = useState('');
   const [isPhoneOpen, setIsPhoneOpen] = useState(false);
 
   // Memory Nexus State & Visualizer Modal
@@ -255,6 +258,8 @@ export default function ConversationPage() {
         if (!isParticipant) { navigate('/messages'); return; }
 
         setConversation(conv);
+        setSceneCanon(conv.memory_summary || '');
+        setSceneCanonDraft(conv.memory_summary || '');
 
         // Get profiles for all participants
         const participantIds = (conv.conversation_participants || []).map((p: { user_id: string }) => p.user_id);
@@ -524,6 +529,16 @@ export default function ConversationPage() {
     broadcastTyping(true);
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => broadcastTyping(false), 2000);
+  };
+
+  const saveSceneCanon = async () => {
+    if (!conversationId) return;
+    const next = sceneCanonDraft.trim();
+    const { error } = await supabase.from('conversations').update({ memory_summary: next }).eq('id', conversationId);
+    if (error) { showToast('Could not save the scene canon.', 'error'); return; }
+    setSceneCanon(next);
+    setShowSceneCanon(false);
+    showToast('This scene will remember that.', 'success');
   };
 
   // Image selection
@@ -1493,6 +1508,22 @@ export default function ConversationPage() {
 
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 space-y-6 scroll-smooth">
+            {conversation?.type === 'dm' && otherUser?.role === 'ai_character' && (
+              <section className="rounded-2xl border border-purple-500/20 bg-purple-500/5 dark:bg-purple-950/20 px-4 py-3">
+                <button onClick={() => setShowSceneCanon(v => !v)} className="w-full flex items-center justify-between gap-3 text-left">
+                  <span className="flex items-center gap-2 text-xs font-bold text-purple-700 dark:text-purple-200"><Brain size={15} /> This scene remembers</span>
+                  <span className="text-[11px] text-warm-500">{showSceneCanon ? 'Close' : 'View & edit'}</span>
+                </button>
+                {!showSceneCanon && sceneCanon && <p className="mt-2 text-xs leading-relaxed text-warm-600 dark:text-warm-300 line-clamp-2">{sceneCanon.replace(/^•\s*/gm, '• ')}</p>}
+                {showSceneCanon && (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-[11px] text-warm-500">Facts, scene rules, tone, promises, and writing preferences the character should quietly honor.</p>
+                    <textarea value={sceneCanonDraft} onChange={(e) => setSceneCanonDraft(e.target.value)} placeholder="• Paris, in the rain\n• Keep the tone slow and romantic\n• He never uses that nickname" rows={6} className="w-full rounded-xl border border-warm-200 dark:border-warm-700 bg-white/80 dark:bg-warm-950/40 p-3 text-sm text-warm-800 dark:text-warm-100 focus:outline-none focus:ring-2 focus:ring-purple-500/40" />
+                    <div className="flex justify-end gap-2"><button onClick={() => { setSceneCanonDraft(sceneCanon); setShowSceneCanon(false); }} className="text-xs font-bold text-warm-500 px-3 py-2">Cancel</button><button onClick={saveSceneCanon} className="rounded-lg bg-purple-600 px-3 py-2 text-xs font-bold text-white">Save scene</button></div>
+                  </div>
+                )}
+              </section>
+            )}
             
             {/* RPG Game Master Overlay */}
             {chatMode === 'game_mode' && (
