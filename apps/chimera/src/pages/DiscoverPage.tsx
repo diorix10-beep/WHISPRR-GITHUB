@@ -12,7 +12,6 @@ import { useToast } from '../contexts/ToastContext';
 import { useTranslation } from '../hooks/useTranslation';
 import { Avatar } from '../components/common/Avatar';
 import { UserBadges } from '../components/common/UserBadges';
-import type { Profile } from '../types';
 
 interface StoryItem {
   id: string;
@@ -196,40 +195,6 @@ export default function DiscoverPage() {
       showToast(`Failed to load story feed: ${err.message || 'Unknown error'}`, 'error');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleStartChat = async (character: Profile) => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-    try {
-      const { data: conv, error: convError } = await supabase
-        .from('conversations')
-        .insert({
-          type: 'dm',
-          created_by: user.id,
-          character_id: character.id,
-          last_message: (character as any).greeting || `*Steps into the room...* Hello!`,
-          last_message_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (convError) throw convError;
-
-      const { error: partError } = await supabase
-        .from('conversation_participants')
-        .insert([
-          { conversation_id: conv.id, user_id: user.id }
-        ]);
-
-      if (partError) console.warn('[CHIMERA Conversation Warning]: Participant insert notice:', partError);
-
-      navigate(`/conversations/${conv.id}`);
-    } catch (err: any) {
-      showToast('Error creating conversation: ' + err.message, 'error');
     }
   };
 
@@ -460,12 +425,12 @@ export default function DiscoverPage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleStartChat(char);
+                          navigate(`/characters/${char.id}`);
                         }}
                         className="px-4 py-1.5 rounded-full bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1"
                       >
                         <MessageSquare size={13} />
-                        <span>Chat</span>
+                        <span>Enter their story</span>
                       </button>
                     </div>
                   </div>

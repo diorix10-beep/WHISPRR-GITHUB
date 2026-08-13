@@ -334,7 +334,7 @@ export default function CharactersPage() {
                 <CharacterCard
                   key={character.id}
                   character={character as any}
-                  onClick={() => navigate(`/conversations/new?characterId=${character.id}`)}
+                  onClick={() => navigate(`/characters/${character.id}`)}
                   onViewDetails={() => setSelectedDetailChar(character)}
                   onEdit={() => navigate(`/characters/${character.id}/edit`)}
                 />
@@ -350,7 +350,7 @@ export default function CharactersPage() {
           character={selectedDetailChar}
           onStartChat={() => {
             if (selectedDetailChar) {
-              navigate(`/conversations/new?characterId=${selectedDetailChar.id}`);
+              navigate(`/characters/${selectedDetailChar.id}`);
             }
           }}
           onEdit={

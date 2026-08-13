@@ -47,6 +47,7 @@ const CreatorStudioPage = lazy(() => import('./pages/CreatorStudioPage'));
 // ── Characters Module ──────────────────────────────────────
 const CharactersPage     = lazy(() => import('./pages/CharactersPage'));
 const AiCharacterCreator = lazy(() => import('./pages/AiCharacterCreator'));
+const CharacterProfilePage = lazy(() => import('./pages/CharacterProfilePage'));
 
 // ── Worlds Module ──────────────────────────────────────────
 const WorldsPage        = lazy(() => import('./pages/WorldsPage'));
@@ -191,7 +192,7 @@ function AppLoader() {
             {/* Characters Module */}
             <Route path="/characters" element={<CharactersPage />} />
             <Route path="/characters/new" element={<AiCharacterCreator />} />
-            <Route path="/characters/:id" element={<AiCharacterCreator />} />
+            <Route path="/characters/:id" element={<CharacterProfilePage />} />
             <Route path="/characters/:id/edit" element={<AiCharacterCreator />} />
 
             {/* Worlds Module */}
