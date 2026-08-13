@@ -187,46 +187,8 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
     </>
   );
 
-  const getPageBackground = (path: string) => {
-    if (path.startsWith('/discover')) {
-      return { url: '/images/bg_discover.png', pos: 'right center' }; // 1st pic: Discover
-    }
-    if (path.startsWith('/characters')) {
-      return { url: '/images/bg_characters.png', pos: 'right center' }; // 2nd pic: Characters
-    }
-    if (path.startsWith('/worlds')) {
-      return { url: '/images/bg_worlds.jpg', pos: 'center' }; // 3rd pic: Worlds
-    }
-    if (path.startsWith('/stories')) {
-      return { url: '/images/bg_stories.jpg', pos: 'right center' }; // 4th pic: Stories
-    }
-    if (path.startsWith('/workspace') || path.startsWith('/lorebooks')) {
-      return { url: '/images/bg_library.jpg', pos: 'right center' }; // 5th pic: Library / Workspace
-    }
-    if (path.startsWith('/profile')) {
-      return { url: '/images/bg_profile.png', pos: 'right center' }; // 6th pic: Profile
-    }
-    if (path.startsWith('/settings')) {
-      return { url: '/images/bg_settings.jpg', pos: 'center' }; // 7th pic: Settings (Full Moon Cliff Castle)
-    }
-    // Default for Home, Login, and root routes (8th pic)
-    return { url: '/images/bg_home.jpg', pos: 'right center' };
-  };
-
-  const bgConfig = getPageBackground(location.pathname);
-
   return (
     <div className="min-h-screen bg-transparent transition-colors duration-300 flex flex-col font-sans relative">
-      {/* Full-Page Fixed Dynamic Artwork Background with Dark Overlay */}
-      <div 
-        className="fixed inset-0 bg-cover bg-no-repeat transition-all duration-700 pointer-events-none z-[-1]"
-        style={{ 
-          backgroundImage: `linear-gradient(to right, rgba(9, 9, 11, 0.92), rgba(9, 9, 11, 0.78), rgba(9, 9, 11, 0.6)), url('${bgConfig.url}')`,
-          backgroundPosition: bgConfig.pos,
-          backgroundAttachment: 'fixed',
-        }}
-      />
-
       {/* Top Navigation Header */}
       <header className="sticky top-0 z-40 w-full bg-warm-950/70 dark:bg-warm-950/80 backdrop-blur-2xl border-b border-warm-800/60 shadow-lg transition-colors duration-300">
         <div className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
@@ -320,14 +282,14 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               </button>
             </div>
 
-            {/* Shards Currency Pill — Glowing Bright Text */}
+            {/* Amethyst & Gold Parchment SHARDS Balance Chip */}
             <button
               onClick={() => navigate('/shards')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-gradient-to-r from-blue-500/20 via-cyan-500/20 to-indigo-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 text-cyan-300 border border-cyan-400/40 hover:border-cyan-300 transition-all font-bold text-xs shadow-md hover:shadow-[0_0_15px_rgba(6,182,212,0.35)] hover:scale-105 active:scale-95 group shrink-0"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-950/60 backdrop-blur-md hover:bg-purple-900/70 text-amber-200 border border-amber-500/40 hover:border-amber-400 transition-all font-bold text-xs shadow-lg hover:shadow-purple-900/30 hover:scale-105 active:scale-95 group shrink-0"
               title={t('navigation.shards_hub')}
             >
-              <ShardCrystalImage size={18} showGlow={false} />
-              <span className="font-serif font-black text-sm text-cyan-300 dark:text-cyan-200 drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]">{formatNumber(shardsBalance)}</span>
+              <img src="/images/shards_amethyst_logo.png" alt="SHARDS" className="w-4 h-4 object-contain drop-shadow-[0_0_8px_rgba(168,85,247,0.6)]" />
+              <span className="font-serif font-black text-xs text-amber-200 tracking-wide">{formatNumber(shardsBalance)} SHARDS</span>
             </button>
 
             {/* Search — icon only, no text label on smaller screens */}

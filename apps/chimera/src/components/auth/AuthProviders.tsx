@@ -68,9 +68,9 @@ export function AuthProviders({ mode, onEmailClick }: AuthProvidersProps) {
       <button
         onClick={handleGoogle}
         disabled={loadingProvider !== null}
-        className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-[#18181C]/90 hover:bg-[#222228] border border-[#2D2A26] rounded-xl transition-all duration-200 text-white font-medium text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed group cursor-pointer"
+        className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all duration-200 text-white font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed group"
       >
-        <svg className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
+        <svg className="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
           <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
           <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
@@ -81,14 +81,13 @@ export function AuthProviders({ mode, onEmailClick }: AuthProvidersProps) {
 
       {/* Apple */}
       <button
-        onClick={handleApple}
-        disabled={loadingProvider !== null}
-        className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-[#18181C]/90 hover:bg-[#222228] border border-[#2D2A26] rounded-xl transition-all duration-200 text-white font-medium text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed group cursor-pointer"
+        disabled={true}
+        className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white/5 border border-white/10 rounded-xl transition-all duration-200 text-white/50 font-medium text-sm cursor-not-allowed"
       >
-        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor">
+        <svg className="w-5 h-5 opacity-50" viewBox="0 0 24 24" fill="currentColor">
           <path d="M17.05 12.04c-.03-2.07 1.69-3.07 1.77-3.12-.97-1.41-2.47-1.6-3-1.62-1.27-.13-2.49.75-3.14.75-.65 0-1.65-.73-2.72-.71-1.4.02-2.69.81-3.41 2.06-1.45 2.52-.37 6.24 1.04 8.28.69.99 1.51 2.11 2.58 2.07 1.04-.04 1.43-.67 2.69-.67 1.26 0 1.61.67 2.71.65 1.12-.02 1.83-1.01 2.51-2.01.79-1.15 1.12-2.27 1.14-2.33-.03-.01-2.19-.84-2.22-3.33M14.63 5.5c.57-.7.96-1.66.85-2.62-.83.03-1.83.55-2.42 1.25-.53.62-.99 1.59-.87 2.53.92.07 1.87-.47 2.44-1.16" />
         </svg>
-        {loadingProvider === 'apple' ? 'Connecting...' : 'Continue with Apple'}
+        Continue with Apple <span className="text-[10px] uppercase tracking-wider bg-white/10 px-2 py-0.5 rounded-full text-white/70 ml-1">Coming Soon</span>
       </button>
 
       {/* Email */}

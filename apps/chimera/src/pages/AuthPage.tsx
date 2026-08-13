@@ -6,7 +6,7 @@ import { SignInForm } from '../components/auth/SignInForm';
 import { ForgotPasswordForm } from '../components/auth/ForgotPasswordForm';
 import { AuthProviders } from '../components/auth/AuthProviders';
 import { brand } from '../brand/brandConfig';
-import { Info, Sparkles, X, ShieldCheck, CheckCircle2, ArrowRight, Layers, Users, Globe, Compass } from 'lucide-react';
+import { Info, Sparkles, X, ShieldCheck, CheckCircle2, ArrowRight, Layers, Users, Globe } from 'lucide-react';
 import { WhisprrLogo } from '../components/common/WhisprrLogo';
 
 const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
@@ -53,59 +53,83 @@ export default function AuthPage() {
           <div className="absolute bottom-[-10%] right-[-5%] w-[55%] h-[55%] bg-purple-600/10 rounded-full blur-[100px]" />
         </div>
 
-        <div className="w-full max-w-[420px] relative space-y-6">
+        <div className="w-full max-w-md relative space-y-6">
           
-          {/* Main Celestial Card Container matching Mockup */}
-          <div className="bg-[#121215]/85 backdrop-blur-2xl border border-[#2D2A26] p-7 sm:p-9 rounded-3xl shadow-2xl relative space-y-6 text-center">
-            
-            {/* Top Celestial Emblem Logo & CHIMERA Branding */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="relative flex items-center justify-center">
-                <div className="absolute w-14 h-14 bg-amber-500/10 rounded-full blur-md" />
-                <img
-                  src="/chimera_logo.png"
-                  alt="CHIMERA Emblem"
-                  className="w-12 h-12 object-contain relative z-10 drop-shadow-md"
-                />
-              </div>
-              <span className="font-serif text-xl sm:text-2xl font-bold tracking-[0.25em] text-[#D9A353] uppercase">
+          {/* Header Branding */}
+          <div className="text-center lg:text-left space-y-3">
+            <Link to="/" className="inline-flex items-center gap-3 group">
+              <img
+                src="/chimera_logo.png"
+                alt="CHIMERA"
+                className="w-10 h-10 object-contain drop-shadow-md group-hover:scale-105 transition-transform"
+              />
+              <span className="font-serif text-2xl font-extrabold tracking-wider bg-gradient-to-r from-red-500 via-rose-400 to-amber-400 bg-clip-text text-transparent drop-shadow-sm">
                 CHIMERA
               </span>
-              <div className="flex items-center gap-3 w-full my-1">
-                <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-[#3D3830] to-transparent" />
-                <span className="text-[#D9A353]/60 text-xs">✦</span>
-                <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-[#3D3830] to-transparent" />
+            </Link>
+
+            <div>
+              <h1 className="font-serif text-2xl sm:text-3xl font-extrabold text-white leading-tight">
+                Characters with a pulse. <br />
+                <span className="bg-gradient-to-r from-amber-400 via-rose-400 to-purple-400 bg-clip-text text-transparent">
+                  Worlds with a soul.
+                </span>
+              </h1>
+              <p className="mt-2 text-xs sm:text-sm text-warm-400 leading-relaxed">
+                Welcome to CHIMERA — your private, distraction-free AI creation studio.
+              </p>
+            </div>
+          </div>
+
+          {/* Form Surface */}
+          <div className="bg-warm-900/60 backdrop-blur-2xl border border-white/10 p-6 sm:p-8 rounded-3xl shadow-2xl relative space-y-5">
+            
+            {showProviders && (
+              <div className="flex flex-col gap-4">
+                <AuthProviders mode="signin" onEmailClick={() => setView('signin')} />
+                
+                <p className="text-center text-warm-400 text-[11px] leading-relaxed pt-2">
+                  By continuing, you agree to our{' '}
+                  <Link to="/terms" className="text-warm-200 hover:text-white underline underline-offset-2 transition-colors">
+                    Terms of Service
+                  </Link>{' '}
+                  and{' '}
+                  <Link to="/privacy" className="text-warm-200 hover:text-white underline underline-offset-2 transition-colors">
+                    Privacy Policy
+                  </Link>
+                  .
+                </p>
+
+                <div className="border-t border-white/10 pt-4 text-center">
+                  <a
+                    href={`${whisprrUrl}/auth?tab=signup`}
+                    className="inline-flex items-center gap-2 text-xs font-bold text-warm-300 hover:text-white transition-colors"
+                  >
+                    <span>Use your WHISPRR account to sign in</span>
+                    <span>→</span>
+                  </a>
+                </div>
               </div>
-              <h2 className="font-serif text-2xl sm:text-3xl font-semibold text-[#E6DFD5] tracking-tight">
-                Welcome back, storyteller.
-              </h2>
-            </div>
+            )}
 
-            {/* Email + Password Form */}
-            <SignInForm onForgotPassword={() => setView('forgot')} />
+            {view === 'signin' && (
+              <div className="flex flex-col gap-5">
+                <div className="flex items-center justify-between mb-1">
+                  <button
+                    onClick={() => setView('providers')}
+                    className="text-warm-400 hover:text-white text-xs font-bold transition-colors flex items-center gap-1.5"
+                  >
+                    <span>← Back to all options</span>
+                  </button>
+                </div>
+                <h2 className="text-lg font-serif font-extrabold text-white">Sign in with Email</h2>
+                <SignInForm onForgotPassword={() => setView('forgot')} />
+              </div>
+            )}
 
-            {/* Separator OR */}
-            <div className="flex items-center gap-3 w-full my-4">
-              <div className="h-[1px] flex-1 bg-[#2D2A26]" />
-              <span className="text-xs font-medium text-warm-500/70 lowercase">or</span>
-              <div className="h-[1px] flex-1 bg-[#2D2A26]" />
-            </div>
-
-            {/* Social Login Buttons (Google + Apple) */}
-            <AuthProviders mode="signin" onEmailClick={() => {}} />
-
-            {/* Newcomers Footer Link -> WHISPRR Account Registration / SSO */}
-            <div className="pt-3 border-t border-[#2D2A26]/80 text-center">
-              <a
-                href={`${whisprrUrl}/auth?tab=signup`}
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-warm-400 hover:text-[#D9A353] transition-colors group"
-              >
-                <span>New here?</span>
-                <span className="font-serif italic font-semibold text-[#D9A353] group-hover:underline">Begin your story</span>
-                <ArrowRight size={13} className="text-[#D9A353] group-hover:translate-x-0.5 transition-transform" />
-              </a>
-            </div>
-
+            {isForgot && (
+              <ForgotPasswordForm onBack={() => setView('signin')} />
+            )}
           </div>
 
           {/* Bottom Interactive Ecosystem Note */}
