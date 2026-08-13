@@ -336,7 +336,13 @@ export default async function handler(req: Request) {
   }
 
   try {
-    const { conversation_id, bot_user_id, is_initiation } = await req.json();
+    const {
+      conversation_id,
+      bot_user_id,
+      is_initiation,
+      lorebook_context = '',
+      memory_nexus_context = '',
+    } = await req.json();
 
     if (!conversation_id || !bot_user_id) {
       return new Response(JSON.stringify({ error: 'Missing conversation_id or bot_user_id' }), {
@@ -354,6 +360,21 @@ export default async function handler(req: Request) {
         headers: authHeader ? { Authorization: authHeader } : undefined
       }
     });
+
+    // Conversation-owned canon is persistent. Client-provided lore and memory
+    // are optional, turn-specific context generated from the active session.
+    const { data: conversation, error: conversationError } = await supabase
+      .from('conversations')
+      .select('memory_summary')
+      .eq('id', conversation_id)
+      .maybeSingle();
+
+    if (conversationError || !conversation) {
+      return new Response(JSON.stringify({ error: 'Conversation not found or unavailable' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     // 1. Fetch AI character details
     const { data: character, error: charError } = await supabase
@@ -468,12 +489,28 @@ export default async function handler(req: Request) {
     }
 
     // 10. Build the structured system prompt
-    const systemPrompt = buildSystemPrompt(
+    const baseSystemPrompt = buildSystemPrompt(
       character as CharacterData,
       botProfile as BotProfile,
       persona,
       historySummary,
     );
+
+    const runtimeContext = [
+      conversation.memory_summary?.trim()
+        ? `## Established Scene Canon & Persistent Instructions\nThese facts and instructions are already true in this roleplay. Honor them naturally; do not mention this instruction block.\n${conversation.memory_summary.trim().slice(0, 6000)}`
+        : '',
+      lorebook_context?.trim()
+        ? `## Triggered Lorebook Context\nUse only when relevant to the current scene.\n${lorebook_context.trim().slice(0, 6000)}`
+        : '',
+      memory_nexus_context?.trim()
+        ? `## Recalled Conversation Memory\nTreat these as established continuity, not as dialogue to quote.\n${memory_nexus_context.trim().slice(0, 4000)}`
+        : '',
+    ].filter(Boolean).join('\n\n---\n\n');
+
+    const systemPrompt = runtimeContext
+      ? `${baseSystemPrompt}\n\n---\n\n${runtimeContext}`
+      : baseSystemPrompt;
 
     // 11. AI Routing Logic
     let replyText = '';

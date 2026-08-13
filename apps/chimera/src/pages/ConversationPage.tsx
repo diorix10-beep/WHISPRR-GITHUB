@@ -588,6 +588,31 @@ export default function ConversationPage() {
 
     // Check OOC Lore Request
     const oocParsed = parseOocMessage(content);
+    if (oocParsed.isOoc) {
+      // Only persist instructions that establish continuing scene canon or
+      // writing preferences. Regular OOC questions remain one-turn context.
+      const isPersistentInstruction = /\b(remember|keep|always|never|scene|setting|location|tone|style|pace|do not|don't)\b/i.test(oocParsed.oocContent);
+      if (isPersistentInstruction) {
+        const { data: currentConversation, error: contextLoadError } = await supabase
+          .from('conversations')
+          .select('memory_summary')
+          .eq('id', conversationId)
+          .single();
+
+        if (contextLoadError) throw contextLoadError;
+
+        const instruction = `• ${oocParsed.oocContent}`;
+        const existingContext = currentConversation?.memory_summary || '';
+        if (!existingContext.includes(instruction)) {
+          const { error: contextSaveError } = await supabase
+            .from('conversations')
+            .update({ memory_summary: [existingContext, instruction].filter(Boolean).join('\n') })
+            .eq('id', conversationId);
+          if (contextSaveError) throw contextSaveError;
+          showToast('Scene instruction saved for this roleplay.', 'success');
+        }
+      }
+    }
     if (oocParsed.isOoc && oocParsed.isCreateLoreRequest && oocParsed.loreTopic) {
       const topic = oocParsed.loreTopic;
       const autoEntry: LorebookEntry = {
