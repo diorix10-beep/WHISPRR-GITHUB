@@ -207,7 +207,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
       return { url: '/images/bg_profile.png', pos: 'right center' }; // 6th pic: Profile
     }
     if (path.startsWith('/settings')) {
-      return { url: '/images/bg_settings.png', pos: 'center' }; // 7th pic: Settings
+      return { url: '/images/bg_settings.jpg', pos: 'center' }; // 7th pic: Settings (Full Moon Cliff Castle)
     }
     // Default for Home, Login, and root routes (8th pic)
     return { url: '/images/bg_home.jpg', pos: 'right center' };
