@@ -69,10 +69,26 @@ export default function CharacterProfilePage() {
         .single();
       if (error) throw error;
 
+      // A roleplay is a real two-party conversation: the human and the
+      // character's bot profile. The AI response RPC also validates this
+      // relationship before it may write on behalf of the character.
       const { error: participantError } = await supabase
         .from('conversation_participants')
-        .insert({ conversation_id: conversation.id, user_id: user.id });
+        .insert([
+          { conversation_id: conversation.id, user_id: user.id },
+          { conversation_id: conversation.id, user_id: character.user_id },
+        ]);
       if (participantError) throw participantError;
+
+      // Persist the authored opening instead of showing a local-only greeting.
+      // This makes the first scene visible after a refresh and part of the
+      // context that the character receives on its next turn.
+      const { error: greetingError } = await supabase.rpc('respond_as_ai_character', {
+        p_conversation_id: conversation.id,
+        p_bot_id: character.user_id,
+        p_content: details.greeting,
+      });
+      if (greetingError) throw greetingError;
 
       navigate(`/conversations/${conversation.id}`);
     } catch (error) {

@@ -48,7 +48,10 @@ interface ConversationData extends Conversation {
 
 export default function ConversationPage() {
   const navigate = useNavigate();
-  const { conversationId } = useParams<{ conversationId: string }>();
+  // The route is `/conversations/:id`; retaining the same local name keeps
+  // the rest of the chat runtime readable while ensuring the page actually
+  // receives the route parameter.
+  const { id: conversationId } = useParams<{ id: string }>();
   const { user, profile, spendShards } = useAuth();
   const { showToast } = useToast();
 
@@ -271,7 +274,9 @@ export default function ConversationPage() {
           if (aiChar) {
             botProfile = {
               id: aiChar.id,
-              user_id: aiChar.id,
+              // Messages and conversation participants are keyed to the bot's
+              // profile user id, not the separate ai_characters record id.
+              user_id: aiChar.user_id,
               display_name: aiChar.name || aiChar.display_name || 'AI Character',
               username: aiChar.creator_username || 'bot',
               photo_url: aiChar.photo_url || aiChar.avatar_url || null,
@@ -663,8 +668,14 @@ export default function ConversationPage() {
           })
         })
           .then(async (res) => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              throw new Error(data?.error || 'The character could not generate a reply.');
+            }
+            return data;
+          })
+          .then(async (data) => {
             setTypingUsers([]);
-            const data = await res.json();
             if (data?.pause_roleplay) {
               setIsRoleplayPaused(true);
             } else if (data?.reply) {
@@ -677,28 +688,10 @@ export default function ConversationPage() {
               if (updatedMsgs) setMessages(updatedMsgs);
             }
           })
-          .catch(async (err) => {
-            console.warn('API endpoint unavailable, generating AI response client-side:', err);
-            
-            // Client-side fallback AI response generator
-            const charName = otherUser.display_name;
-            const fallbackReply = `*${charName} listens intently and turns to you.* "I hear your words clearly. Let us continue our roleplay story together!"`;
-
-            const { data: aiMsg } = await supabase
-              .from('messages')
-              .insert({
-                conversation_id: conversationId,
-                sender_id: otherUser.user_id,
-                content: fallbackReply,
-                read: true
-              })
-              .select('*, profiles:sender_id(*)')
-              .single();
-
-            if (aiMsg) {
-              setMessages(prev => [...prev, aiMsg]);
-            }
+          .catch((err) => {
+            console.error('AI reply generation failed:', err);
             setTypingUsers([]);
+            showToast('Your message was saved, but the character could not reply. Please try again.', 'error');
           });
       }
     } catch (err: any) {
