@@ -26,18 +26,18 @@ interface NavLinkItem {
 
 const ROLEPLAY_NAV_LINKS: NavLinkItem[] = [
   { path: '/discover', token: 'navigation.discover', icon: Compass },
-  { path: '/workspace', token: 'navigation.workspace', icon: Sparkles },
-  { path: '/stories', token: 'navigation.stories', icon: BookOpen },
+  { path: '/characters', token: 'navigation.characters', icon: Users },
   { path: '/conversations', token: 'navigation.chats', icon: MessageSquare },
-  { path: '/profile', token: 'navigation.me', icon: UserCheck },
+  { path: '/personas', token: 'navigation.personas', icon: UserCheck },
+  { path: '/workspace', token: 'navigation.studio', icon: Sparkles },
 ];
 
 const STORYTELLING_NAV_LINKS: NavLinkItem[] = [
-  { path: '/discover', token: 'navigation.discover', icon: Compass },
   { path: '/workspace', token: 'navigation.workspace', icon: Sparkles },
   { path: '/stories', token: 'navigation.stories', icon: BookOpen },
-  { path: '/conversations', token: 'navigation.chats', icon: MessageSquare },
-  { path: '/profile', token: 'navigation.me', icon: UserCheck },
+  { path: '/worlds', token: 'navigation.worlds', icon: Globe },
+  { path: '/lorebooks', token: 'navigation.lorebooks', icon: BookOpen },
+  { path: '/studio', token: 'navigation.studio', icon: Users },
 ];
 
 export function ChimeraLayout({ children }: ChimeraLayoutProps) {
@@ -151,7 +151,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
           end={link.path === '/'}
           onClick={link.comingSoon ? (e) => e.preventDefault() : undefined}
           className={({ isActive }) =>
-            `relative px-1 xl:px-2 py-1.5 text-xs xl:text-sm font-semibold transition-all whitespace-nowrap inline-flex items-center justify-center shrink-0 w-full ${
+            `relative min-w-0 px-2 py-2 text-xs xl:text-sm font-semibold transition-all whitespace-nowrap inline-flex items-center justify-center ${
               link.comingSoon
                 ? 'text-warm-400 dark:text-warm-600 cursor-default opacity-60'
                 : isActive
@@ -228,8 +228,8 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
           </div>
 
           {/* 2. BLOC MILIEU — Clean Fluid Primary Navigation */}
-          <div className="hidden lg:flex items-center justify-center">
-            <nav className="flex items-center gap-1 xl:gap-2 text-center whitespace-nowrap shrink-0">
+          <div className="hidden lg:flex min-w-0 flex-1 items-center justify-center px-2 xl:px-5">
+            <nav className="grid w-full max-w-[660px] grid-cols-5 items-center gap-1 rounded-2xl border border-warm-800/50 bg-warm-900/20 p-1 text-center">
               {renderNavLinks()}
             </nav>
           </div>
