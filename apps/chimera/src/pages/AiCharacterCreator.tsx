@@ -25,9 +25,7 @@ export default function AiCharacterCreator() {
 
   const greetingRef = useRef<HTMLTextAreaElement>(null);
   const [activeTab, setActiveTab] = useState<'general' | 'architecture' | 'definition'>('general');
-  const [studioMode, setStudioMode] = useState<'simple' | 'creator' | 'advanced'>(() => {
-    return (localStorage.getItem('chimera_creator_mode') as 'simple' | 'creator' | 'advanced') || 'creator';
-  });
+  const [creationStart, setCreationStart] = useState<'spark' | 'import' | 'idea'>('spark');
   const [loading, setLoading] = useState(false);
 
   // Sync / Network States
@@ -414,149 +412,64 @@ export default function AiCharacterCreator() {
   };
 
   return (
-    <div className="min-h-screen bg-warm-900 flex text-warm-100 font-sans">
-      
-      {/* LEFT SIDEBAR NAVIGATION */}
-      <aside className="w-64 border-r border-warm-800 bg-warm-900 hidden md:flex flex-col flex-shrink-0">
-        <div className="p-4 border-b border-warm-800">
-          <button 
-            onClick={() => navigate('/')}
-            className="flex items-center gap-2 text-sm text-warm-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft size={16} />
-            My Characters
-          </button>
-        </div>
-        
-        <div className="p-4">
-          <h2 className="font-serif text-xl font-bold text-white mb-6">New Character</h2>
-          <nav className="space-y-1">
-            <button
-              onClick={() => setActiveTab('general')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === 'general' 
-                  ? 'bg-warm-800 text-white' 
-                  : 'text-warm-400 hover:bg-warm-800/50 hover:text-white'
-              }`}
-            >
-              <User size={16} />
-              General
-            </button>
-            <button
-              onClick={() => setActiveTab('definition')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === 'definition' 
-                  ? 'bg-warm-800 text-white' 
-                  : 'text-warm-400 hover:bg-warm-800/50 hover:text-white'
-              }`}
-            >
-              <FileText size={16} />
-              Raw Definition
-            </button>
+    <div className="min-h-screen bg-[#100b17] text-warm-100 font-sans">
+      <main className="min-h-screen overflow-y-auto pb-36 md:pb-24 bg-[radial-gradient(circle_at_50%_0%,rgba(113,73,151,0.22),transparent_28%),radial-gradient(circle_at_15%_40%,rgba(192,151,75,0.07),transparent_24%),#100b17]">
+        <div className="max-w-5xl mx-auto p-5 sm:p-8 lg:p-10">
+          <button onClick={() => navigate('/')} className="mb-6 flex items-center gap-2 text-sm text-warm-400 hover:text-[#f0d48d] transition-colors"><ArrowLeft size={16} /> My characters</button>
+
+          <header className="text-center mb-8 sm:mb-10">
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.28em] text-[#d6ad56]">Character creation</p>
+            <h1 className="font-serif text-3xl sm:text-5xl font-semibold text-[#fff3d8]">Bring someone into CHIMERA</h1>
+            <p className="mt-3 text-sm sm:text-base text-[#cfc1d6]">A voice, a history, a first moment waiting to happen.</p>
+          </header>
+
+          <section className="mb-7 rounded-[2rem] border border-[#d8b56a]/35 bg-[#1b1323]/90 p-4 sm:p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)]">
+            <div className="grid gap-5 md:grid-cols-[190px_1fr] md:items-center">
+              <div className="mx-auto w-full max-w-[190px] aspect-[4/5] overflow-hidden rounded-2xl border border-[#d8b56a]/35 bg-[radial-gradient(circle_at_50%_25%,rgba(167,113,211,0.35),transparent_35%),linear-gradient(145deg,#30203d,#100c18)] relative">
+                {formData.avatarUrl ? <img src={formData.avatarUrl} alt="Character preview" className="h-full w-full object-cover" /> : <div className="absolute inset-0 flex items-center justify-center"><User size={54} className="text-[#c5a3df]/70" /></div>}
+                <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-[#0f0914] to-transparent" />
+              </div>
+              <div>
+                <label className="block font-serif text-xl text-[#fff3d8]">Who is stepping into your world?</label>
+                <input type="text" name="name" value={formData.name} onChange={handleChange} placeholder="Give them a name…" className="mt-3 w-full rounded-xl border border-[#d8b56a]/25 bg-[#110c18] px-4 py-3 text-base text-white outline-none placeholder:text-warm-500 focus:border-[#d8b56a]/70" />
+                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                  {([
+                    ['spark', 'Start with a spark', Sparkles],
+                    ['import', 'Import a character card', Upload],
+                    ['idea', 'Shape from an idea', Bot],
+                  ] as const).map(([kind, label, Icon]) => (
+                    <button key={kind} type="button" onClick={() => { setCreationStart(kind); if (kind === 'import') setShowImporterModal(true); }} className={`min-h-[104px] rounded-2xl border p-4 text-center transition-all ${creationStart === kind ? 'border-[#d8b56a] bg-[#5b3b75]/35 shadow-[0_0_28px_rgba(171,110,222,0.17)]' : 'border-white/10 bg-black/10 hover:border-[#d8b56a]/45'}`}>
+                      <Icon size={21} className={`mx-auto mb-2 ${creationStart === kind ? 'text-[#f0d48d]' : 'text-[#bda6cb]'}`} />
+                      <span className="text-xs font-bold text-[#f4ead5]">{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <nav className="mb-8 overflow-x-auto">
+            <div className="flex min-w-[680px] items-start justify-between px-1">
+              {[
+                ['Identity', 'general', User], ['The Story They Carry', 'definition', FileText], ['First Scene', 'general', Sparkles], ['Their Voice', 'general', Volume2], ['Creator’s Room', 'definition', Settings], ['Publish', 'general', Check],
+              ].map(([label, tab, Icon], index) => <button key={label} type="button" onClick={() => setActiveTab(tab as 'general' | 'definition')} className="group flex w-[105px] flex-col items-center gap-2 text-center"><span className={`flex h-9 w-9 items-center justify-center rounded-full border text-xs font-bold transition-colors ${activeTab === tab ? 'border-[#e4c476] bg-[#5c3c77] text-[#fff0bf]' : 'border-[#8a6c43] bg-[#16101e] text-[#b8a98e] group-hover:border-[#d8b56a]'}`}>{index + 1}</span><span className={`text-[11px] font-semibold leading-tight ${activeTab === tab ? 'text-[#f7df9f]' : 'text-[#afa2b4]'}`}><Icon size={12} className="mx-auto mb-1" />{label}</span></button>)}
+            </div>
           </nav>
-        </div>
-      </aside>
-
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 overflow-y-auto bg-warm-900 pb-36 md:pb-24 relative">
-        <div className="max-w-4xl mx-auto p-6 sm:p-10">
-          
-          {/* Top Mobile Header */}
-          <div className="md:hidden flex items-center mb-8 gap-4 border-b border-warm-800 pb-4">
-            <button onClick={() => navigate('/')} className="text-warm-400"><ArrowLeft size={20} /></button>
-            <h1 className="font-serif text-xl font-bold text-white">New Character</h1>
-          </div>
-
-          {/* Top Responsive Tab Selector for Mobile & Desktop */}
-          <div className="flex items-center gap-2 mb-6 bg-warm-850 p-1.5 rounded-2xl border border-warm-800 w-full overflow-x-auto select-none">
-            <button
-              type="button"
-              onClick={() => setActiveTab('general')}
-              className={`flex-1 min-w-[140px] py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${
-                activeTab === 'general'
-                  ? 'bg-red-600 text-white shadow-md'
-                  : 'text-warm-400 hover:text-white hover:bg-warm-800'
-              }`}
-            >
-              <User size={16} />
-              <span>General & Greeting</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('definition')}
-              className={`flex-1 min-w-[130px] py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${
-                activeTab === 'definition'
-                  ? 'bg-red-600 text-white shadow-md'
-                  : 'text-warm-400 hover:text-white hover:bg-warm-800'
-              }`}
-            >
-              <FileText size={16} />
-              <span>Raw Definition</span>
-            </button>
-          </div>
 
           {/* Form Content */}
           <div className="space-y-8">
             {activeTab === 'general' ? (
               <>
-                {/* Layered Experience Mode Switcher (Simple | Creator | Advanced) */}
-                <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-warm-950 border border-warm-800 mb-8">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStudioMode('simple');
-                      localStorage.setItem('chimera_creator_mode', 'simple');
-                    }}
-                    className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
-                      studioMode === 'simple'
-                        ? 'bg-emerald-600 text-white shadow-md'
-                        : 'text-warm-400 hover:text-white hover:bg-warm-800'
-                    }`}
-                  >
-                    <span>🌱 Simple Mode</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStudioMode('creator');
-                      localStorage.setItem('chimera_creator_mode', 'creator');
-                    }}
-                    className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
-                      studioMode === 'creator'
-                        ? 'bg-purple-600 text-white shadow-md'
-                        : 'text-warm-400 hover:text-white hover:bg-warm-800'
-                    }`}
-                  >
-                    <span>🎨 Creator Mode</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStudioMode('advanced');
-                      localStorage.setItem('chimera_creator_mode', 'advanced');
-                    }}
-                    className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
-                      studioMode === 'advanced'
-                        ? 'bg-amber-600 text-white shadow-md'
-                        : 'text-warm-400 hover:text-white hover:bg-warm-800'
-                    }`}
-                  >
-                    <span>⚙️ Advanced Mode</span>
-                  </button>
-                </div>
-
                 {/* Guided Studio Experience Banner */}
-                <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-red-500/10 border border-amber-500/30 space-y-3 mb-8">
+                <div className="p-6 rounded-3xl bg-gradient-to-r from-[#b98a37]/12 via-[#724896]/16 to-[#291b38]/30 border border-[#d5aa57]/30 space-y-3 mb-8">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
                         <Sparkles size={20} />
                       </div>
                       <div>
-                        <h3 className="text-lg font-serif font-bold text-white">Character Creation Studio</h3>
+                        <h3 className="text-lg font-serif font-bold text-[#fff3d8]">Start with a spark</h3>
                         <p className="text-xs text-warm-300">
-                          Shape a unique, persistent AI identity with personality traits, greetings, scenarios, and voice signatures.
+                          Begin with the feeling of them. CHIMERA will keep every detail you add alive in their character definition.
                         </p>
                       </div>
                     </div>
@@ -567,7 +480,7 @@ export default function AiCharacterCreator() {
                       className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 shrink-0"
                     >
                       <Upload size={16} />
-                      <span>Import Card</span>
+                      <span>Import a card</span>
                     </button>
                   </div>
 
@@ -585,7 +498,7 @@ export default function AiCharacterCreator() {
                       }))}
                       className="px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-warm-200 transition-colors whitespace-nowrap"
                     >
-                      + Fantasy Archmage
+                      + Moonlit archmage
                     </button>
 
                     <button
@@ -599,7 +512,7 @@ export default function AiCharacterCreator() {
                       }))}
                       className="px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-warm-200 transition-colors whitespace-nowrap"
                     >
-                      + Cyberpunk Specialist
+                      + Neon confidant
                     </button>
                   </div>
 
@@ -645,7 +558,7 @@ export default function AiCharacterCreator() {
                     </ul>
                   </div>
                     <ul className="text-[10px] text-warm-400 mt-3 space-y-1 list-disc list-inside">
-                      <li>Select an image as bot avatar, or you can import a Tavern PNG file.</li>
+                      <li>You can begin with an avatar now, or bring in a compatible character-card file.</li>
                       <li>Please make sure your image/character does not violate our guidelines.</li>
                       <li>Important: updating the image on a public character can take up to 30 seconds to verify.</li>
                     </ul>
@@ -654,19 +567,19 @@ export default function AiCharacterCreator() {
 
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-xs font-bold text-warm-400 mb-2">Title *</label>
+                    <label className="block text-xs font-bold text-warm-400 mb-2">Character name *</label>
                     <input
                       type="text"
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
-                      placeholder="A unique title for your character"
+                      placeholder="What do others call them?"
                       className="w-full bg-warm-800 border border-warm-700 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-red-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-warm-400 mb-2">Chat name</label>
+                    <label className="block text-xs font-bold text-warm-400 mb-2">Name inside chats</label>
                     <input
                       type="text"
                       placeholder="Optional nickname shown in chats instead of the character's name"
@@ -676,11 +589,11 @@ export default function AiCharacterCreator() {
 
                   <div>
                     <RichTextEditor
-                      label="Bio / Backstory *"
+                      label="The story they carry *"
                       value={formData.shortDescription}
                       onChange={(val) => setFormData(prev => ({ ...prev, shortDescription: val }))}
                       minHeightRows={6}
-                      placeholder="Write your character's bio, backstory, personality highlights, and world background..."
+                      placeholder="Write the history, longing, contradictions, and world that shaped them…"
                     />
                   </div>
 
@@ -732,7 +645,7 @@ export default function AiCharacterCreator() {
                       <li>Please ensure your bot adheres to these guidelines to maintain a safe and respectful environment.</li>
                     </ul>
                   </div>
-                  {/* First Greeting Block in General Tab */}
+                  {/* First Scene */}
                   <div className="pt-6 border-t border-warm-800">
                     <div className="flex justify-between items-center mb-1">
                       <label className="block text-xs font-bold text-warm-400">
@@ -758,7 +671,7 @@ export default function AiCharacterCreator() {
                     }`}>
                       <div className="flex items-center justify-between bg-warm-800 border-b border-warm-700 px-3 py-1.5 flex-wrap gap-2">
                         <span className="text-xs font-bold text-warm-200">First Opening Message</span>
-                        {/* Macro Helper Chips (Janitor AI Style) */}
+                        {/* Character and player name tokens */}
                         <div className="flex items-center gap-1.5">
                           <button
                             type="button"
@@ -795,13 +708,13 @@ export default function AiCharacterCreator() {
                       />
                     </div>
 
-                    {/* Alternate Greetings Panel (Janitor AI Feature) */}
+                    {/* Other opening scenes */}
                     <div className="mt-6 p-4 bg-warm-850 border border-warm-800 rounded-2xl space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
                           <h4 className="text-xs font-bold text-warm-200 flex items-center gap-2">
                             <Sparkles size={14} className="text-amber-400" />
-                            <span>Alternate Greetings (Janitor AI Style)</span>
+                        <span>Other Ways In</span>
                           </h4>
                           <p className="text-[10px] text-warm-400 mt-0.5">
                             Add alternative opening scenes so conversations can start in different settings or moods!
@@ -828,7 +741,7 @@ export default function AiCharacterCreator() {
                       {formData.alternateGreetings.map((altGreeting, idx) => (
                         <div key={idx} className="space-y-1.5 p-3 bg-warm-900 rounded-xl border border-warm-800 relative">
                           <div className="flex items-center justify-between text-[11px] font-bold text-warm-400">
-                            <span>Alternate Scene #{idx + 1}</span>
+                            <span>Opening scene #{idx + 1}</span>
                             <button
                               type="button"
                               onClick={() => {
@@ -853,7 +766,7 @@ export default function AiCharacterCreator() {
                               });
                             }}
                             rows={3}
-                            placeholder={`Alternate scene #${idx + 1}... e.g. *{{char}} crosses their arms...*`}
+                            placeholder={`Another way in #${idx + 1}… e.g. *{{char}} waits beneath the station clock…*`}
                             className="w-full bg-warm-950 p-3 rounded-lg text-xs text-white border border-warm-800 focus:outline-none focus:border-purple-500 font-serif"
                           />
                         </div>
@@ -861,7 +774,7 @@ export default function AiCharacterCreator() {
                     </div>
                   </div>
 
-                  {/* ── CHARACTER VOICE STUDIO (Character.ai Style) ── */}
+                  {/* ── CHARACTER VOICE STUDIO ── */}
                   <div className="p-6 rounded-2xl bg-warm-900 border border-warm-800 space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -869,8 +782,8 @@ export default function AiCharacterCreator() {
                           <Volume2 size={18} />
                         </div>
                         <div>
-                          <h3 className="font-bold text-white text-sm">Character Voice Signature</h3>
-                          <p className="text-xs text-warm-400">Select an AI voice for spoken roleplay audio dialogue (Character.ai style).</p>
+                          <h3 className="font-bold text-white text-sm">Their Voice</h3>
+                          <p className="text-xs text-warm-400">Choose an optional spoken voice for roleplay audio dialogue.</p>
                         </div>
                       </div>
                     </div>
@@ -917,7 +830,7 @@ export default function AiCharacterCreator() {
                       onClick={() => setActiveTab('definition')}
                       className="w-full sm:w-auto px-6 py-3 rounded-xl bg-warm-800 hover:bg-warm-700 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 border border-warm-700"
                     >
-                      <span>Next: Raw Definition</span>
+                      <span>Enter the Creator’s Room</span>
                       <FileText size={16} />
                     </button>
                     <button
@@ -926,16 +839,16 @@ export default function AiCharacterCreator() {
                       className="w-full sm:w-auto px-8 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-lg"
                     >
                       <Sparkles size={16} />
-                      <span>Publish Character</span>
+                      <span>Bring them into CHIMERA</span>
                     </button>
                   </div>
                 </div>
               </>
             ) : (
               <>
-                <h3 className="text-xl font-serif font-bold text-white mb-2">Definition</h3>
+                <h3 className="text-xl font-serif font-bold text-white mb-2">Creator’s Room</h3>
                 <p className="text-sm text-warm-400 mb-8 border-b border-warm-800 pb-6">
-                  The heart of your character — how they speak, behave, and what they know.
+                  The Inner Script: the details that make their voice, behavior, memory, and world feel consistent.
                 </p>
 
                 <div className="space-y-6">
