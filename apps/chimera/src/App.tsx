@@ -41,6 +41,7 @@ const TrustPage                = lazy(() => import('./pages/TrustPage'));
 const CreatorDashboardPage = lazy(() => import('./pages/CreatorDashboardPage'));
 const DiscoverPage = lazy(() => import('./pages/DiscoverPage'));
 const ShardsPage = lazy(() => import('./pages/ShardsPage'));
+const VellumPage = lazy(() => import('./pages/VellumPage'));
 
 // ── Creator Studio ─────────────────────────────────────────
 const CreatorStudioPage = lazy(() => import('./pages/CreatorStudioPage'));
@@ -213,6 +214,7 @@ function AppLoader() {
             <Route path="/" element={<ChimeraHomeRedirect />} />
             <Route path="/discover" element={<DiscoverPage />} />
             <Route path="/shards" element={<ShardsPage />} />
+            <Route path="/vellum" element={<VellumPage />} />
 
             {/* Characters Module */}
             <Route path="/characters" element={<CharactersPage />} />

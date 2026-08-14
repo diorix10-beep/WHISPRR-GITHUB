@@ -217,7 +217,7 @@ function MobileNavDrawerContent({
           <button
             onClick={() => {
               onClose();
-              navigate(creativeMode === 'storytelling' ? '/workspace' : '/shards');
+              navigate(creativeMode === 'storytelling' ? '/vellum' : '/shards');
             }}
             className={`w-full mt-2.5 p-2.5 rounded-xl border flex items-center justify-between text-xs font-bold transition-all shadow-sm ${creativeMode === 'storytelling' ? 'bg-[#10213b]/80 hover:bg-[#173050]/90 border-[#c89d57]/40 text-[#f1d9aa]' : 'bg-gradient-to-r from-blue-500/10 via-cyan-500/10 to-indigo-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 border-cyan-500/30 text-cyan-600 dark:text-cyan-400'}`}
           >

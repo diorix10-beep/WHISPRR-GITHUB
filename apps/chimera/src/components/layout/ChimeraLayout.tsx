@@ -70,7 +70,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
     const path = location.pathname;
     const isRoleplayRoute = /^(\/discover|\/shards|\/characters|\/conversations|\/chats|\/chat|\/lorebooks|\/models|\/memory|\/voices|\/media|\/personas|\/studio|\/roleplay|\/create)/.test(path);
-    const isStorytellingRoute = /^(\/workspace|\/worlds|\/stories|\/write|\/library)/.test(path);
+    const isStorytellingRoute = /^(\/workspace|\/vellum|\/worlds|\/stories|\/write|\/library)/.test(path);
 
     if (creativeMode === 'storytelling' && isRoleplayRoute) {
       navigate('/workspace', { replace: true });
@@ -318,7 +318,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
             {/* Mode-aware creative reserve: real VELLUM in Storytelling, SHARDS in Roleplay. */}
             <button
-              onClick={() => navigate(creativeMode === 'storytelling' ? '/workspace' : '/shards')}
+              onClick={() => navigate(creativeMode === 'storytelling' ? '/vellum' : '/shards')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-md transition-all font-bold text-xs shadow-lg hover:scale-105 active:scale-95 group shrink-0 ${creativeMode === 'storytelling' ? 'bg-[#10213b]/80 hover:bg-[#173050]/90 text-[#f1d9aa] border border-[#c89d57]/50 hover:border-[#f1d9aa]' : 'bg-purple-950/60 hover:bg-purple-900/70 text-amber-200 border border-amber-500/40 hover:border-amber-400 hover:shadow-purple-900/30'}`}
               title={creativeMode === 'storytelling' ? 'VELLUM story reserve' : t('navigation.shards_hub')}
             >
