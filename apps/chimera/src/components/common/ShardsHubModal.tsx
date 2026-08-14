@@ -1,347 +1,127 @@
-import { useState, useEffect } from 'react';
-import {
-  X, Gem, Plus, Sparkles, CheckCircle2, Play, ShieldCheck,
-  Gift, Zap, Image as ImageIcon, Volume2, ArrowRight, Loader2, Crown, DollarSign
-} from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useToast } from '../../contexts/ToastContext';
+import { Crown, Gem, Heart, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { ShardCrystalImage } from './ShardCrystalImage';
 
 interface ShardsHubModalProps {
   isOpen: boolean;
   onClose: () => void;
+  view?: 'shards' | 'patron';
 }
 
-export function ShardsHubModal({ isOpen, onClose }: ShardsHubModalProps) {
-  const { 
-    shardsBalance, 
-    earnShards, 
-    spendShards, 
-    adFreePassActive, 
-    roleplayVipActive,
-    storytellingVipActive,
-    multiverseVipActive,
-    activateAdFreePass,
-    activateRoleplayVipPass,
-    activateStorytellingVipPass,
-    activateMultiverseVipPass
-  } = useAuth();
-  const { showToast } = useToast();
+const PatronPrinciple = ({ children }: { children: React.ReactNode }) => (
+  <li className="flex gap-3 text-sm leading-relaxed text-warm-300">
+    <ShieldCheck size={17} className="mt-0.5 shrink-0 text-amber-300" />
+    <span>{children}</span>
+  </li>
+);
 
-  const [activeTab, setActiveTab] = useState<'buy' | 'earn' | 'vip'>('buy');
-  
-  // Rewarded Video Ad Player State
-  const [isPlayingAd, setIsPlayingAd] = useState(false);
-  const [adSecondsLeft, setAdSecondsLeft] = useState(5);
-
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null;
-    if (isPlayingAd && adSecondsLeft > 0) {
-      interval = setInterval(() => {
-        setAdSecondsLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (isPlayingAd && adSecondsLeft === 0) {
-      setIsPlayingAd(false);
-      earnShards(5, 'Watched Rewarded Video Ad');
-      showToast('🎁 Earned +5 Shards for watching rewarded ad!', 'success');
-      setAdSecondsLeft(5);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isPlayingAd, adSecondsLeft, earnShards, showToast]);
-
+/**
+ * A truthful information surface for SHARDS and the future Patron membership.
+ * It deliberately has no purchases, ad rewards, balances, or local-only VIP state.
+ */
+export function ShardsHubModal({ isOpen, onClose, view = 'shards' }: ShardsHubModalProps) {
   if (!isOpen) return null;
 
-  const handleBuyPackage = (amount: number, price: string, name: string) => {
-    earnShards(amount, `Purchased ${name}`);
-    showToast(`🎉 Successfully acquired ${amount} Shards (${name} - ${price})!`, 'success');
-  };
-
-  const handleRedeemAdFreePass = () => {
-    if (adFreePassActive) {
-      showToast('VIP Ad-Free Pass is already active!', 'info');
-      return;
-    }
-    const success = activateAdFreePass();
-    if (success) {
-      showToast('✨ VIP Ad-Free Pass activated for 30 days!', 'success');
-    } else {
-      showToast('Insufficient Shards balance! Need 20 Shards.', 'error');
-    }
-  };
+  const isPatron = view === 'patron';
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 font-sans animate-fade-in">
-      <div className="w-full max-w-xl bg-white dark:bg-warm-900 rounded-3xl shadow-2xl border border-warm-200 dark:border-warm-800 overflow-hidden relative animate-scale-in">
-        
-        {/* Top Decorative Banner */}
-        <div className="bg-gradient-to-r from-blue-700 via-cyan-600 to-indigo-700 p-6 text-white text-center relative overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-md flex items-center justify-center p-4 font-sans animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="shards-information-title"
+    >
+      <section className="w-full max-w-2xl overflow-hidden rounded-3xl border border-amber-500/35 bg-warm-950 shadow-2xl animate-scale-in">
+        <header className="relative overflow-hidden border-b border-amber-500/20 bg-gradient-to-br from-purple-950 via-warm-950 to-amber-950/70 px-6 py-8 sm:px-9">
+          <div className="absolute -right-16 -top-16 h-52 w-52 rounded-full bg-purple-500/20 blur-3xl" />
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors"
+            aria-label="Close"
+            className="absolute right-4 top-4 rounded-full border border-white/10 bg-black/20 p-2 text-warm-100 transition-colors hover:bg-black/45"
           >
             <X size={20} />
           </button>
 
-          <div className="inline-flex p-2.5 rounded-2xl bg-black/30 backdrop-blur-md mb-2 ring-1 ring-white/20">
-            <ShardCrystalImage size={48} />
+          <div className="relative flex items-start gap-4 pr-10">
+            <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-amber-400/35 bg-black/25 shadow-inner">
+              {isPatron ? <Crown size={28} className="text-amber-300" /> : <ShardCrystalImage size={38} />}
+            </div>
+            <div>
+              <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-300">
+                {isPatron ? 'Optional membership' : 'The CHIMERA economy'}
+              </p>
+              <h2 id="shards-information-title" className="font-serif text-2xl font-bold text-white sm:text-3xl">
+                {isPatron ? 'What it means to be a Chimera Patron' : 'About SHARDS'}
+              </h2>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-warm-300">
+                {isPatron
+                  ? 'A future, optional way to support CHIMERA and help shape its creative tools.'
+                  : 'SHARDS are CHIMERA’s creative currency, designed for clearly described, opt-in actions.'}
+              </p>
+            </div>
           </div>
+        </header>
 
-          <h2 className="font-serif text-2xl font-bold">CHIMERA Shards Hub &amp; VIP</h2>
-          <p className="text-xs text-cyan-100 mt-1">Unlock premium AI magic, character selfies, and VIP ad-free creation</p>
-
-          {/* Balance Pill */}
-          <div className="mt-4 inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-black/30 backdrop-blur-md ring-1 ring-white/30 text-sm font-bold shadow-inner">
-            <ShardCrystalImage size={22} showGlow={false} />
-            <span>Balance: {shardsBalance} Shards</span>
-            {adFreePassActive && (
-              <span className="ml-2 text-[10px] bg-cyan-400 text-black px-2.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold flex items-center gap-1">
-                <Crown size={12} /> VIP Active
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Navigation Tabs */}
-        <div className="flex border-b border-warm-200 dark:border-warm-800 bg-warm-50 dark:bg-warm-950 text-xs font-bold">
-          <button
-            onClick={() => setActiveTab('buy')}
-            className={`flex-1 py-3 text-center border-b-2 transition-colors flex items-center justify-center gap-1.5 ${
-              activeTab === 'buy'
-                ? 'border-purple-600 text-purple-600 dark:text-purple-400 bg-white dark:bg-warm-900'
-                : 'border-transparent text-warm-500 hover:text-warm-900 dark:hover:text-warm-200'
-            }`}
-          >
-            <DollarSign size={14} /> Buy Shards
-          </button>
-          <button
-            onClick={() => setActiveTab('earn')}
-            className={`flex-1 py-3 text-center border-b-2 transition-colors flex items-center justify-center gap-1.5 ${
-              activeTab === 'earn'
-                ? 'border-purple-600 text-purple-600 dark:text-purple-400 bg-white dark:bg-warm-900'
-                : 'border-transparent text-warm-500 hover:text-warm-900 dark:hover:text-warm-200'
-            }`}
-          >
-            <Gift size={14} /> Free Rewards
-          </button>
-          <button
-            onClick={() => setActiveTab('vip')}
-            className={`flex-1 py-3 text-center border-b-2 transition-colors flex items-center justify-center gap-1.5 ${
-              activeTab === 'vip'
-                ? 'border-purple-600 text-purple-600 dark:text-purple-400 bg-white dark:bg-warm-900'
-                : 'border-transparent text-warm-500 hover:text-warm-900 dark:hover:text-warm-200'
-            }`}
-          >
-            <Crown size={14} className="text-amber-500" /> VIP Subscription
-          </button>
-        </div>
-
-        {/* Modal Body Content */}
-        <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
-          
-          {/* TAB 1: BUY SHARDS */}
-          {activeTab === 'buy' && (
-            <div className="space-y-4">
-              <div className="text-center space-y-1">
-                <h3 className="font-serif font-bold text-lg text-warm-900 dark:text-white">Choose a Shards Package</h3>
-                <p className="text-xs text-warm-500">Refill your balance instantly to generate selfies, voice lines, and tip creators.</p>
+        <div className="space-y-6 p-6 sm:p-9">
+          {isPatron ? (
+            <>
+              <div className="rounded-2xl border border-purple-400/25 bg-purple-950/30 p-5">
+                <div className="flex items-center gap-2 text-amber-200">
+                  <Sparkles size={18} />
+                  <h3 className="font-serif text-lg font-bold">Built with creators, not around pressure</h3>
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-warm-300">
+                  Patron is being designed as an optional membership for people who want to support the platform more closely. It will never be required to write, roleplay, create worlds, or continue the stories you love.
+                </p>
               </div>
 
-              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-center text-xs font-semibold text-amber-300 flex items-center justify-center gap-2">
-                <Sparkles size={16} className="text-amber-400" />
-                <span>SHARD Store Launching August 7th! All new creators start with 20 FREE Welcome SHARDS.</span>
+              <div>
+                <h3 className="mb-3 font-serif text-lg font-bold text-white">What Patron is intended to make possible</h3>
+                <ul className="space-y-3">
+                  <PatronPrinciple>Thoughtful early access to new creative tools, only when they are ready.</PatronPrinciple>
+                  <PatronPrinciple>More room to shape creator-focused features through feedback and testing.</PatronPrinciple>
+                  <PatronPrinciple>A transparent way to help sustain the stories, worlds, and characters built in CHIMERA.</PatronPrinciple>
+                </ul>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { amount: 20, price: '$1.99', name: 'Starter Pack', desc: 'Unlock 30-Day VIP' },
-                  { amount: 60, price: '$4.99', name: 'Creator Pack', desc: 'Popular choice', popular: true },
-                  { amount: 150, price: '$9.99', name: 'Pro Author Pack', desc: 'Best value' },
-                  { amount: 400, price: '$24.99', name: 'Legend Vault', desc: 'Maximum SHARDS' },
-                ].map((pkg) => (
-                  <div
-                    key={pkg.name}
-                    className={`p-4 rounded-2xl border transition-all flex flex-col justify-between relative opacity-85 ${
-                      pkg.popular
-                        ? 'bg-purple-500/10 border-purple-500/40 dark:bg-purple-950/30'
-                        : 'bg-warm-100 dark:bg-warm-850 border-warm-200 dark:border-warm-800'
-                    }`}
-                  >
-                    {pkg.popular && (
-                      <span className="absolute -top-2.5 right-3 bg-purple-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                        Most Popular
-                      </span>
-                    )}
-                    <div>
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <ShardCrystalImage size={18} showGlow={false} />
-                        <span className="font-serif font-extrabold text-base text-warm-900 dark:text-white">
-                          {pkg.amount} SHARDS
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-warm-500 dark:text-warm-400 mb-3">{pkg.desc}</p>
-                    </div>
-
-                    <button
-                      onClick={() => showToast('🎉 SHARD Store purchases unlock on August 7th World Launch!', 'info')}
-                      className="w-full py-2 rounded-xl bg-warm-800 text-warm-300 font-bold text-xs hover:bg-warm-700 transition-colors flex items-center justify-center gap-1 cursor-pointer"
-                    >
-                      <span>Coming Soon ({pkg.price})</span>
-                    </button>
-                  </div>
-                ))}
+              <div className="rounded-2xl border border-dashed border-amber-400/35 bg-amber-500/5 p-5 text-sm leading-relaxed text-warm-300">
+                <p className="font-bold text-amber-200">Not open for purchase yet</p>
+                <p className="mt-1">There is no price, billing, recurring SHARDS bonus, or membership checkout active today. CHIMERA will publish the exact benefits, limits, and terms before Patron launches.</p>
               </div>
-            </div>
+            </>
+          ) : (
+            <>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-purple-400/20 bg-purple-950/25 p-4">
+                  <Gem size={19} className="text-purple-300" />
+                  <h3 className="mt-2 font-bold text-white">Clear value</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-warm-400">Every future SHARDS use will say what it unlocks and what it costs.</p>
+                </div>
+                <div className="rounded-2xl border border-purple-400/20 bg-purple-950/25 p-4">
+                  <Heart size={19} className="text-amber-300" />
+                  <h3 className="mt-2 font-bold text-white">Creator-first</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-warm-400">Creator support and rewards will appear only when their underlying systems are live.</p>
+                </div>
+                <div className="rounded-2xl border border-purple-400/20 bg-purple-950/25 p-4">
+                  <ShieldCheck size={19} className="text-emerald-300" />
+                  <h3 className="mt-2 font-bold text-white">No pretend economy</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-warm-400">No fake balances, fake progress, ads, purchases, or rewards are shown as real.</p>
+                </div>
+              </div>
+              <div className="rounded-2xl border border-dashed border-amber-400/35 bg-amber-500/5 p-5 text-sm leading-relaxed text-warm-300">
+                <p className="font-bold text-amber-200">What is live now</p>
+                <p className="mt-1">Every human account receives a one-time welcome credit of 1,000 SHARDS in the secure wallet ledger. The interface is being connected to that live ledger next; purchasing, tipping, payout, and Patron membership are not live yet.</p>
+              </div>
+            </>
           )}
 
-          {/* TAB 2: EARN FREE SHARDS & REWARDED ADS */}
-          {activeTab === 'earn' && (
-            <div className="space-y-5">
-              <div className="text-center space-y-1">
-                <h3 className="font-serif font-bold text-lg text-warm-900 dark:text-white">Earn Free Shards</h3>
-                <p className="text-xs text-warm-500">Watch short ads or complete daily challenges to earn free Shards.</p>
-              </div>
-
-              {/* Rewarded Video Ad Card */}
-              <div className="p-5 rounded-2xl border-2 border-red-500/30 bg-gradient-to-r from-red-950/20 via-warm-900 to-warm-900 text-white space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-2xl bg-red-600/20 text-red-400 border border-red-500/30">
-                      <Play size={24} className="fill-red-400" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-sm">Watch 5-Sec Rewarded Video Ad</h4>
-                      <p className="text-xs text-warm-400">Earn +5 Shards per video view</p>
-                    </div>
-                  </div>
-                  <span className="text-xs font-extrabold px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    +5 💎
-                  </span>
-                </div>
-
-                {isPlayingAd ? (
-                  <div className="p-4 rounded-xl bg-black/60 border border-red-500/40 text-center space-y-2 animate-pulse">
-                    <div className="flex items-center justify-center gap-2 text-red-400 font-bold text-xs">
-                      <Loader2 size={16} className="animate-spin" />
-                      <span>Playing Rewarded Ad... ({adSecondsLeft}s left)</span>
-                    </div>
-                    <div className="w-full h-2 bg-warm-800 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-red-600 transition-all duration-1000"
-                        style={{ width: `${((5 - adSecondsLeft) / 5) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setIsPlayingAd(true)}
-                    className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2"
-                  >
-                    <Play size={16} className="fill-white" />
-                    <span>Watch Rewarded Ad (+5 💎)</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: VIP SUBSCRIPTION */}
-          {activeTab === 'vip' && (
-            <div className="space-y-5">
-              <div className="text-center space-y-1">
-                <h3 className="font-serif font-bold text-lg text-warm-900 dark:text-white flex items-center justify-center gap-2">
-                  <Crown size={22} className="text-amber-500" />
-                  <span>CHIMERA VIP Subscriptions</span>
-                </h3>
-                <p className="text-xs text-warm-500">Choose the dedicated pass tailored to your creative mode.</p>
-              </div>
-
-              {/* 3 Dedicated VIP Pass Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                
-                {/* 1. Roleplay VIP Pass */}
-                <div className="p-4 rounded-2xl bg-gradient-to-b from-red-950/20 to-warm-900 border border-red-500/30 flex flex-col justify-between space-y-3">
-                  <div>
-                    <span className="text-xs uppercase font-extrabold text-red-400 bg-red-500/10 px-2.5 py-1 rounded-md inline-block mb-2">
-                      🎭 Roleplay VIP Pass
-                    </span>
-                    <h4 className="font-serif font-bold text-sm text-white">For Roleplayers</h4>
-                    <p className="text-[11px] text-warm-400 mt-1">Unlimited AI character messaging, mood halos, and voice telepathy.</p>
-                    <div className="mt-3 text-lg font-serif font-bold text-red-400">15 💎 Shards <span className="text-xs text-warm-500">/ $4.99</span></div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      if (activateRoleplayVipPass()) {
-                        showToast('Roleplay VIP Pass Activated! 🎭', 'success');
-                      } else {
-                        showToast('Insufficient Shards balance!', 'error');
-                      }
-                    }}
-                    disabled={roleplayVipActive}
-                    className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs shadow-md transition-all"
-                  >
-                    {roleplayVipActive ? 'Pass Active ✨' : 'Activate Pass'}
-                  </button>
-                </div>
-
-                {/* 2. Storytelling VIP Pass */}
-                <div className="p-4 rounded-2xl bg-gradient-to-b from-purple-950/20 to-warm-900 border border-purple-500/30 flex flex-col justify-between space-y-3">
-                  <div>
-                    <span className="text-xs uppercase font-extrabold text-purple-400 bg-purple-500/10 px-2.5 py-1 rounded-md inline-block mb-2">
-                      📖 Storytelling VIP Pass
-                    </span>
-                    <h4 className="font-serif font-bold text-sm text-white">For Authors & Readers</h4>
-                    <p className="text-[11px] text-warm-400 mt-1">Unlimited writer energy, AI author co-pilot, and passage annotations.</p>
-                    <div className="mt-3 text-lg font-serif font-bold text-purple-400">15 💎 Shards <span className="text-xs text-warm-500">/ $4.99</span></div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      if (activateStorytellingVipPass()) {
-                        showToast('Storytelling VIP Pass Activated! 📖', 'success');
-                      } else {
-                        showToast('Insufficient Shards balance!', 'error');
-                      }
-                    }}
-                    disabled={storytellingVipActive}
-                    className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs shadow-md transition-all"
-                  >
-                    {storytellingVipActive ? 'Pass Active ✨' : 'Activate Pass'}
-                  </button>
-                </div>
-
-                {/* 3. Multiverse All-Access VIP Pass */}
-                <div className="p-4 rounded-2xl bg-gradient-to-b from-amber-500/20 via-purple-500/10 to-warm-900 border border-amber-500/50 flex flex-col justify-between space-y-3 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 bg-amber-500 text-black text-[9px] font-black uppercase px-2 py-0.5 rounded-bl-md">Best Value</div>
-                  <div>
-                    <span className="text-xs uppercase font-extrabold text-amber-300 bg-amber-500/20 px-2.5 py-1 rounded-md inline-block mb-2">
-                      ✨ Multiverse All-Access
-                    </span>
-                    <h4 className="font-serif font-bold text-sm text-white">All Features Unlocked</h4>
-                    <p className="text-[11px] text-warm-400 mt-1">Roleplay + Storytelling + Ad-Free + Priority GPU speed.</p>
-                    <div className="mt-3 text-lg font-serif font-bold text-amber-400">25 💎 Shards <span className="text-xs text-warm-500">/ $7.99</span></div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      if (activateMultiverseVipPass()) {
-                        showToast('Multiverse VIP Pass Activated! ✨', 'success');
-                      } else {
-                        showToast('Insufficient Shards balance!', 'error');
-                      }
-                    }}
-                    disabled={multiverseVipActive}
-                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-black font-extrabold text-xs shadow-md transition-all"
-                  >
-                    {multiverseVipActive ? 'All-Access Active ✨' : 'Activate All-Access'}
-                  </button>
-                </div>
-
-              </div>
-            </div>
-          )}
-
+          <button
+            onClick={onClose}
+            className="w-full rounded-xl border border-amber-400/35 bg-purple-900/70 px-5 py-3 text-sm font-bold text-amber-100 transition-colors hover:bg-purple-800"
+          >
+            I understand
+          </button>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

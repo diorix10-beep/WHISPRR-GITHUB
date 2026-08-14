@@ -14,6 +14,7 @@ export default function ShardsPage() {
   const { formatNumber } = useTranslation();
 
   const [showBuyModal, setShowBuyModal] = useState(false);
+  const [showPatronModal, setShowPatronModal] = useState(false);
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   return (
@@ -300,7 +301,7 @@ export default function ShardsPage() {
             {/* Learn More Button */}
             <div className="pt-4 relative z-10">
               <button
-                onClick={() => setShowBuyModal(true)}
+                onClick={() => setShowPatronModal(true)}
                 className="w-full py-3 px-6 rounded-full bg-purple-900/80 hover:bg-purple-800 text-amber-200 font-serif font-bold text-sm border border-amber-500/40 hover:border-amber-300 shadow-xl transition-all hover:scale-105 active:scale-95"
               >
                 Learn more
@@ -317,6 +318,12 @@ export default function ShardsPage() {
       <ShardsHubModal
         isOpen={showBuyModal}
         onClose={() => setShowBuyModal(false)}
+      />
+
+      <ShardsHubModal
+        isOpen={showPatronModal}
+        onClose={() => setShowPatronModal(false)}
+        view="patron"
       />
 
       {/* Tipping & Support Modal */}
