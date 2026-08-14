@@ -12,7 +12,7 @@ type ShardsWallet = {
 type ShardsLedgerEntry = {
   id: string;
   amount: number;
-  entry_type: 'welcome_credit' | 'roleplay_reward' | 'creative_spend' | 'refund' | 'manual_adjustment';
+  entry_type: 'welcome_credit' | 'purchase_credit' | 'roleplay_reward' | 'creative_spend' | 'refund' | 'manual_adjustment';
   status: 'posted' | 'reversed';
   description: string;
   created_at: string;
@@ -20,11 +20,19 @@ type ShardsLedgerEntry = {
 
 const ENTRY_LABELS: Record<ShardsLedgerEntry['entry_type'], string> = {
   welcome_credit: 'Welcome credit',
+  purchase_credit: 'SHARDS purchase',
   roleplay_reward: 'Guided Story Path',
   creative_spend: 'Roleplay moment',
   refund: 'Refund',
   manual_adjustment: 'Balance adjustment',
 };
+
+const SHARDS_PACKS: ReadonlyArray<{ id: 'spark' | 'constellation' | 'odyssey' | 'legend'; name: string; shards: number; bonus: number; price: string; featured?: boolean }> = [
+  { id: 'spark', name: 'Spark', shards: 500, bonus: 0, price: '$4.99' },
+  { id: 'constellation', name: 'Constellation', shards: 1200, bonus: 120, price: '$9.99', featured: true },
+  { id: 'odyssey', name: 'Odyssey', shards: 3000, bonus: 450, price: '$19.99' },
+  { id: 'legend', name: 'Legend', shards: 8000, bonus: 1600, price: '$39.99' },
+];
 
 function formatShards(amount: number) {
   return Math.abs(amount).toLocaleString();
@@ -40,6 +48,33 @@ export default function ShardsPage() {
   const [ledger, setLedger] = useState<ShardsLedgerEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [checkingOut, setCheckingOut] = useState<string | null>(null);
+
+  const startCheckout = async (packageId: typeof SHARDS_PACKS[number]['id']) => {
+    setCheckoutError(null);
+    setCheckingOut(packageId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        navigate('/auth');
+        return;
+      }
+      const response = await fetch('/api/create-shards-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ package_id: packageId }),
+      });
+      const payload = await response.json() as { checkout_url?: string; error?: string };
+      if (!response.ok || !payload.checkout_url) throw new Error(payload.error || 'CHIMERA could not start checkout.');
+      window.location.assign(payload.checkout_url);
+    } catch (checkoutFailure) {
+      console.error('Could not start SHARDS checkout', checkoutFailure);
+      setCheckoutError(checkoutFailure instanceof Error ? checkoutFailure.message : 'CHIMERA could not start checkout.');
+    } finally {
+      setCheckingOut(null);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -112,7 +147,14 @@ export default function ShardsPage() {
 
           <section className="mt-6 rounded-3xl border border-purple-200/15 bg-[#10182a]/90 p-6 shadow-xl sm:p-7">
             <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200">How SHARDS work today</p><h2 className="mt-2 font-serif text-2xl text-white">A reward for a real turn in the story.</h2></div><span className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-bold text-emerald-100"><CheckCircle2 size={14} /> Secure wallet and ledger</span></div>
-            <div className="mt-6 grid gap-3 text-sm text-warm-300 md:grid-cols-2"><p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><strong className="block text-warm-100">Guided Story Paths</strong><span className="mt-1 block">After a roleplay has enough genuine conversation, CHIMERA can offer a new turning point with two or three paths.</span></p><p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><strong className="block text-warm-100">One choice, one reward</strong><span className="mt-1 block">Choose a path and receive +10 SHARDS once. Each account can resolve up to three turning points per day.</span></p><p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><strong className="block text-warm-100">No fake daily claim</strong><span className="mt-1 block">There is no daily check-in, ad watch, store, VIP, or patron purchase pretending to be live here.</span></p><p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><strong className="block text-warm-100">Every real change is visible</strong><span className="mt-1 block">A reward, future spend, or refund must be written to your personal ledger before the balance changes.</span></p></div>
+            <div className="mt-6 grid gap-3 text-sm text-warm-300 md:grid-cols-2"><p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><strong className="block text-warm-100">Guided Story Paths</strong><span className="mt-1 block">After a roleplay has enough genuine conversation, CHIMERA can offer a new turning point with two or three paths.</span></p><p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><strong className="block text-warm-100">One choice, one reward</strong><span className="mt-1 block">Choose a path and receive +10 SHARDS once. Each account can resolve up to three turning points per day.</span></p><p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><strong className="block text-warm-100">No predatory mechanics</strong><span className="mt-1 block">There is no daily check-in, ad watch, fake VIP, or hidden charge. Packs are optional and show their price before checkout.</span></p><p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><strong className="block text-warm-100">Every real change is visible</strong><span className="mt-1 block">A reward, purchase, future spend, or refund must be written to your personal ledger before the balance changes.</span></p></div>
+          </section>
+
+          <section className="mt-6 rounded-3xl border border-purple-200/20 bg-gradient-to-br from-[#17122c] via-[#10182a] to-[#191126] p-6 shadow-xl sm:p-7">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200">SHARDS store</p><h2 className="mt-2 font-serif text-2xl text-white">Keep a little magic in reserve.</h2><p className="mt-2 max-w-2xl text-sm leading-relaxed text-warm-300">One-time packs for optional Roleplay moments. Stripe handles the payment; CHIMERA credits the wallet only after Stripe confirms it.</p></div><span className="inline-flex w-fit items-center gap-2 rounded-full border border-purple-200/20 bg-purple-300/10 px-3 py-1.5 text-xs font-bold text-purple-100"><ShieldCheck size={14} /> Verified checkout</span></div>
+            {checkoutError && <div className="mt-5 rounded-2xl border border-rose-300/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">{checkoutError}</div>}
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{SHARDS_PACKS.map((pack) => <article key={pack.id} className={`relative rounded-2xl border p-5 ${pack.featured ? 'border-amber-300/55 bg-amber-200/[0.08] shadow-[0_0_30px_rgba(217,182,108,0.12)]' : 'border-white/10 bg-white/[0.03]'}`}>{pack.featured && <span className="absolute -top-2.5 left-4 rounded-full bg-amber-300 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-wider text-[#2a1c12]">Most loved</span>}<p className="font-serif text-xl text-white">{pack.name}</p><p className="mt-4 text-3xl font-bold text-amber-100">{pack.shards.toLocaleString()}</p><p className="text-xs font-bold uppercase tracking-wider text-warm-300">SHARDS</p><p className="mt-2 min-h-5 text-xs font-semibold text-purple-200">{pack.bonus ? `+${pack.bonus.toLocaleString()} bonus SHARDS` : 'A simple starting reserve'}</p><div className="mt-5 flex items-center justify-between gap-3"><span className="font-serif text-2xl font-bold text-white">{pack.price}</span><button onClick={() => void startCheckout(pack.id)} disabled={checkingOut !== null} className="rounded-xl bg-[#d9b66c] px-3 py-2 text-xs font-extrabold text-[#2a1c12] transition hover:bg-[#ecd189] disabled:cursor-wait disabled:opacity-60">{checkingOut === pack.id ? 'Opening…' : 'Choose'}</button></div></article>)}</div>
+            <p className="mt-5 text-xs leading-relaxed text-warm-400">SHARDS are non-transferable, non-withdrawable Roleplay credits. A completed payment is credited once to your secure wallet; failed fulfilment is retried safely rather than silently losing your purchase.</p>
           </section>
 
           <section className="mt-6 grid gap-6 lg:grid-cols-[0.82fr_1.18fr]">

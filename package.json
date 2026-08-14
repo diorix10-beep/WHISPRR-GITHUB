@@ -9,5 +9,8 @@
   "scripts": {
     "dev": "npm run dev --workspaces",
     "build": "npm run build --workspaces"
+  },
+  "dependencies": {
+    "stripe": "^18.5.0"
   }
 }
