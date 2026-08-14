@@ -104,11 +104,13 @@ function MobileNavDrawerContent({
   let profile = null;
   let signOut = async () => {};
   let shardsBalance = 50;
+  let vellumBalance: number | null = null;
   try {
     const auth = useAuth();
     profile = auth.profile;
     signOut = auth.signOut;
     shardsBalance = auth.shardsBalance;
+    vellumBalance = auth.vellumBalance;
   } catch (e) {
     console.warn('AuthContext inside MobileNavDrawer:', e);
   }
@@ -141,9 +143,9 @@ function MobileNavDrawerContent({
     { path: '/characters', label: 'Characters', icon: Users },
     { path: '/conversations', label: 'Chats', icon: MessageSquare },
     { path: '/personas', label: 'Personas', icon: User },
-    { path: '/studio', label: 'Studio', icon: Sparkles },
+    { path: '/characters/new', label: 'Studio', icon: Sparkles },
   ] : [
-    { path: '/', label: 'Home', icon: Compass },
+    { path: '/workspace', label: 'Workspace', icon: Feather },
     { path: '/stories', label: 'Stories', icon: BookOpen },
     { path: '/worlds', label: 'Worlds', icon: Globe },
   ];
@@ -211,20 +213,20 @@ function MobileNavDrawerContent({
             </button>
           </div>
 
-          {/* Shards Currency Mobile Banner */}
+          {/* The reserve follows the active creative space. */}
           <button
             onClick={() => {
               onClose();
-              navigate('/shards');
+              navigate(creativeMode === 'storytelling' ? '/workspace' : '/shards');
             }}
-            className="w-full mt-2.5 p-2.5 rounded-xl bg-gradient-to-r from-blue-500/10 via-cyan-500/10 to-indigo-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 border border-cyan-500/30 flex items-center justify-between text-xs font-bold text-cyan-600 dark:text-cyan-400 transition-all shadow-sm"
+            className={`w-full mt-2.5 p-2.5 rounded-xl border flex items-center justify-between text-xs font-bold transition-all shadow-sm ${creativeMode === 'storytelling' ? 'bg-[#10213b]/80 hover:bg-[#173050]/90 border-[#c89d57]/40 text-[#f1d9aa]' : 'bg-gradient-to-r from-blue-500/10 via-cyan-500/10 to-indigo-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 border-cyan-500/30 text-cyan-600 dark:text-cyan-400'}`}
           >
             <div className="flex items-center gap-2">
-              <ShardCrystalImage size={20} showGlow={false} />
-              <span>SHARDS Financial Hub</span>
+              {creativeMode === 'storytelling' ? <img src="/images/vellum-sigil.svg" alt="VELLUM" className="h-5 w-5 rounded-md" /> : <ShardCrystalImage size={20} showGlow={false} />}
+              <span>{creativeMode === 'storytelling' ? 'VELLUM Story Reserve' : 'SHARDS Hub'}</span>
             </div>
-            <span className="bg-cyan-500/20 text-cyan-400 text-xs font-extrabold px-2.5 py-0.5 rounded-full border border-cyan-500/30">
-              💎 {shardsBalance}
+            <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full border ${creativeMode === 'storytelling' ? 'border-[#c89d57]/40 bg-[#c89d57]/10 text-[#f1d9aa]' : 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'}`}>
+              {creativeMode === 'storytelling' ? (vellumBalance === null ? 'VELLUM' : `${vellumBalance.toLocaleString()} VELLUM`) : `💎 ${shardsBalance}`}
             </span>
           </button>
         </div>
@@ -271,7 +273,7 @@ function MobileNavDrawerContent({
             <button
               onClick={() => {
                 onClose();
-                navigate(creativeMode === 'storytelling' ? '/write/desk' : '/studio');
+                navigate(creativeMode === 'storytelling' ? '/stories/new' : '/characters/new');
               }}
               className={`w-full py-2.5 rounded-xl text-xs font-bold text-white shadow-md flex items-center justify-center gap-2 transition-all ${
                 creativeMode === 'storytelling'

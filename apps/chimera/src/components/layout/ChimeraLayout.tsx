@@ -29,7 +29,7 @@ const ROLEPLAY_NAV_LINKS: NavLinkItem[] = [
   { path: '/characters', token: 'navigation.characters', icon: Users },
   { path: '/conversations', token: 'navigation.chats', icon: MessageSquare },
   { path: '/personas', token: 'navigation.personas', icon: UserCheck },
-  { path: '/workspace', token: 'navigation.studio', icon: Sparkles },
+  { path: '/characters/new', token: 'navigation.studio', icon: Sparkles },
 ];
 
 const STORYTELLING_NAV_LINKS: NavLinkItem[] = [
@@ -60,6 +60,25 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
     setCreativeMode(chimeraPreferences.last_creative_mode || chimeraPreferences.default_creative_mode);
   }, [chimeraPreferences?.last_creative_mode, chimeraPreferences?.default_creative_mode]);
 
+  // Deep links and old bookmarks must respect the member's selected creative
+  // room too. We do not delete or mutate anything from the other room; we
+  // simply return the member to the appropriate home before it is displayed.
+  useEffect(() => {
+    // Until the persisted preference has arrived, do not let a browser-local
+    // fallback redirect a storyteller away from a valid bookmarked workspace.
+    if (!chimeraPreferences) return;
+
+    const path = location.pathname;
+    const isRoleplayRoute = /^(\/discover|\/shards|\/characters|\/conversations|\/chats|\/chat|\/lorebooks|\/models|\/memory|\/voices|\/media|\/personas|\/studio|\/roleplay|\/create)/.test(path);
+    const isStorytellingRoute = /^(\/workspace|\/worlds|\/stories|\/write|\/library)/.test(path);
+
+    if (creativeMode === 'storytelling' && isRoleplayRoute) {
+      navigate('/workspace', { replace: true });
+    } else if (creativeMode === 'roleplay' && isStorytellingRoute) {
+      navigate('/discover', { replace: true });
+    }
+  }, [chimeraPreferences, creativeMode, location.pathname, navigate]);
+
   const toggleCreativeMode = (targetMode?: 'roleplay' | 'storytelling') => {
     const nextMode = targetMode || (creativeMode === 'roleplay' ? 'storytelling' : 'roleplay');
     setCreativeMode(nextMode);
@@ -68,16 +87,8 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
       // Navigation remains usable if a transient network failure prevents persistence.
     });
     
-    // Auto-redirect to appropriate home view for active mode
-    if (nextMode === 'storytelling') {
-      if (location.pathname === '/discover' || location.pathname === '/characters' || location.pathname === '/conversations') {
-        navigate('/workspace');
-      }
-    } else {
-      if (location.pathname === '/' || location.pathname === '/workspace' || location.pathname === '/write/desk' || location.pathname === '/worlds') {
-        navigate('/discover');
-      }
-    }
+    // A mode switch is a deliberate arrival, never a mixed-space view.
+    navigate(nextMode === 'storytelling' ? '/workspace' : '/discover');
   };
 
   const themeMenuRef = useRef<HTMLDivElement>(null);
@@ -326,7 +337,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
             {/* Mode-Specific Primary CTA — Identical Fixed Layout width */}
             <button
-              onClick={() => navigate(creativeMode === 'storytelling' ? '/stories/new' : '/studio')}
+              onClick={() => navigate(creativeMode === 'storytelling' ? '/stories/new' : '/characters/new')}
               className={`min-w-[125px] justify-center flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs text-white shadow-md active:scale-[0.98] transition-all shrink-0 ${
                 creativeMode === 'storytelling'
                   ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-600/30'
