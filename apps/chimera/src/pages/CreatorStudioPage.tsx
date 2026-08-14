@@ -90,7 +90,7 @@ export default function CreatorStudioPage() {
           <div className="relative max-w-xl">
             <div className="flex items-center justify-between gap-4">
               <span className="inline-flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200"><Feather size={14} /> Storytelling workspace</span>
-              <span className="inline-flex items-center gap-2 rounded-lg border border-amber-200/30 bg-[#0b1020]/75 px-3 py-2 text-xs font-bold text-amber-100"><span className="font-serif text-base">V</span> {vellumBalance === null ? 'VELLUM' : `${vellumBalance.toLocaleString()} VELLUM`}</span>
+              <span className="inline-flex items-center gap-2 rounded-lg border border-amber-200/30 bg-[#0b1020]/75 px-3 py-2 text-xs font-bold text-amber-100"><img src="/images/vellum-sigil.svg" alt="VELLUM" className="h-5 w-5 rounded-md" /> {vellumBalance === null ? 'VELLUM' : `${vellumBalance.toLocaleString()} VELLUM`}</span>
             </div>
             <h1 className="mt-12 max-w-md font-serif text-5xl font-medium leading-[0.95] tracking-tight text-[#f4e1c3] sm:text-6xl">Where stories<br />become yours.</h1>
             <div className="mt-6 flex items-center gap-2 text-sm text-[#c7bad2]"><Star size={14} className="text-amber-200" /> Write freely. Creative tools are always optional.</div>

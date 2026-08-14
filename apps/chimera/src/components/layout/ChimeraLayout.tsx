@@ -134,6 +134,16 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
     setIsMenuOpen(false);
   }, [location.pathname]);
 
+  // Keep the browser tab aligned with the creative space the user is in.
+  useEffect(() => {
+    const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!favicon) return;
+
+    favicon.href = creativeMode === 'storytelling'
+      ? '/images/vellum-sigil.svg'
+      : '/chimera_logo.png';
+  }, [creativeMode]);
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
