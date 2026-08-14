@@ -13,12 +13,6 @@ interface AppLauncherModalProps {
   onClose: () => void;
 }
 
-const isLocalhost =
-  typeof window !== 'undefined' && window.location.hostname === 'localhost';
-const chimeraUrl = isLocalhost
-  ? 'http://localhost:5175'
-  : 'https://chimera.whisprr.xyz';
-
 const quickActions = [
   { label: 'New Whisper',    icon: Edit3,         path: null,          action: 'compose',       color: 'text-primary-500' },
   { label: 'Communities',   icon: Users,         path: '/communities', action: null,            color: 'text-indigo-500' },
@@ -53,7 +47,10 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
     setActiveApp(app);
     setTimeout(() => {
       if (app === 'chimera') {
-        window.location.href = chimeraUrl;
+        // The switcher is the door to CHIMERA, not a sudden cross-product
+        // redirect. Let its own small welcome transition introduce the space.
+        onClose();
+        window.dispatchEvent(new CustomEvent('open-chimera-promo'));
       } else {
         handleNavigate('/feed');
       }
@@ -152,7 +149,7 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
                       CHIMERA
                     </div>
                     <div className="text-[11px] text-warm-500 dark:text-warm-400 mt-1 leading-tight">
-                      Creative Platform
+                      Creative Studio
                     </div>
                   </div>
                   <ArrowUpRight
