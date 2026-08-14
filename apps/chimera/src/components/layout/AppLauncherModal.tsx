@@ -151,7 +151,7 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
                 </div>
                 <div>
                   <h4 className="font-serif font-black text-sm text-cyan-700 dark:text-cyan-400 leading-none">SHARDS</h4>
-                  <p className="text-[10px] text-cyan-600 dark:text-cyan-400/80 mt-0.5 font-medium">Premium Currency & VIP</p>
+                  <p className="text-[10px] text-cyan-600 dark:text-cyan-400/80 mt-0.5 font-medium">Roleplay rewards & moments</p>
                 </div>
               </div>
             </button>

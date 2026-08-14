@@ -52,7 +52,7 @@ export default function ConversationPage() {
   // the rest of the chat runtime readable while ensuring the page actually
   // receives the route parameter.
   const { id: conversationId } = useParams<{ id: string }>();
-  const { user, profile, spendShards } = useAuth();
+  const { user, profile } = useAuth();
   const { showToast } = useToast();
 
   const [conversation, setConversation] = useState<ConversationData | null>(null);
@@ -837,12 +837,6 @@ export default function ConversationPage() {
   const handleRequestImage = async () => {
     if (!user || requestingImage || !otherUser) return;
 
-    if (!spendShards(2, 'Character Selfie Request')) {
-      showToast('Insufficient Shards! Need 2 💎 Shards.', 'error');
-      window.dispatchEvent(new CustomEvent('open-shards-hub'));
-      return;
-    }
-
     setRequestingImage(true);
     try {
       const characterName = otherUser.display_name;
@@ -1346,7 +1340,7 @@ export default function ConversationPage() {
                   onClick={handleRequestImage}
                   disabled={requestingImage}
                   className={`p-2 rounded-xl transition-colors flex items-center gap-1 ${requestingImage ? 'text-primary-500 animate-pulse' : 'hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500'}`}
-                  title="Request Image/Selfie (Free — Shards Economy Coming Soon)"
+                  title="Request image or selfie"
                 >
                   <Camera size={20} />
                   <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">FREE</span>

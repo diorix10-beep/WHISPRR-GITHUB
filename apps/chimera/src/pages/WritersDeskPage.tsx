@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PenTool, Plus, BookOpen, Trash2, Edit, ChevronLeft, Globe, Eye, Settings, Share2, FileText, Image as ImageIcon, UploadCloud, Gem } from 'lucide-react';
+import { PenTool, Plus, BookOpen, Trash2, Edit, ChevronLeft, Globe, Eye, Settings, Share2, FileText, Image as ImageIcon, UploadCloud, Feather } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Story, StoryChapter } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,7 +11,7 @@ import { checkUserPromptSafety, CRISIS_HELPLINE_INFO } from '../lib/safetyGuard'
 
 export default function WritersDeskPage() {
   const navigate = useNavigate();
-  const { profile, shardsBalance, adFreePassActive } = useAuth();
+  const { profile } = useAuth();
   const { showToast } = useToast();
   
   const [stories, setStories] = useState<Story[]>([]);
@@ -321,34 +321,27 @@ export default function WritersDeskPage() {
 
       <div className="max-w-6xl mx-auto px-6 py-8">
         
-        {/* Shards & Writing Energy Banner Card */}
-        <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-purple-900/50 via-warm-850 to-purple-900/50 border border-purple-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+        {/* Storytelling reserve: writing itself never consumes VELLUM. */}
+        <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-[#10213b]/80 via-warm-850 to-[#10213b]/80 border border-[#c89d57]/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
           <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-purple-600/20 text-purple-400 border border-purple-500/30">
-              <Gem size={24} />
+            <div className="p-3 rounded-2xl bg-[#c89d57]/15 text-[#f1d9aa] border border-[#c89d57]/30">
+              <Feather size={24} />
             </div>
             <div>
-              <h3 className="font-serif font-bold text-sm text-white flex items-center gap-2">
-                Writer's Energy & Ad Pass
-                {adFreePassActive && (
-                  <span className="text-[10px] bg-amber-500 text-black font-extrabold px-2 py-0.5 rounded-full uppercase">
-                    Ad-Free Pass Active ✨
-                  </span>
-                )}
-              </h3>
+              <h3 className="font-serif font-bold text-sm text-white">Writing stays free</h3>
               <p className="text-xs text-warm-400">
-                Unlimited writing energy for authors. Shards economy & ad-free passes are Coming Soon!
+                VELLUM is your separate Storytelling reserve for optional creative support when those tools are genuinely ready.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => window.dispatchEvent(new CustomEvent('open-shards-hub'))}
-              className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-md"
+              onClick={() => navigate('/vellum')}
+              className="px-4 py-2 rounded-xl bg-[#c89d57] hover:bg-[#dfbb78] text-[#24180e] font-bold text-xs flex items-center gap-1.5 transition-colors shadow-md"
             >
-              <Gem size={14} className="fill-white" />
-              <span>Shards Hub (Coming Soon ✨)</span>
+              <Feather size={14} />
+              <span>View VELLUM</span>
             </button>
           </div>
         </div>

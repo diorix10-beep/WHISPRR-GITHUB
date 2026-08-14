@@ -414,23 +414,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const spendShards = useCallback((amount: number, reason: string): boolean => {
-    if (shardsBalance < amount) return false;
-    const newBal = shardsBalance - amount;
-    setShardsBalance(newBal);
-    try {
-      localStorage.setItem('chimera_shards_balance', String(newBal));
-    } catch {}
-    return true;
-  }, [shardsBalance]);
+    // SHARDS changes must be performed through a server-side ledger RPC.
+    // Keeping a local-only deduction here would make the UI lie about money-like value.
+    console.warn('SHARDS spending is not connected yet.', { amount, reason });
+    return false;
+  }, []);
 
   const earnShards = useCallback((amount: number, reason: string) => {
-    setShardsBalance((prev) => {
-      const newBal = prev + amount;
-      try {
-        localStorage.setItem('chimera_shards_balance', String(newBal));
-      } catch {}
-      return newBal;
-    });
+    // Rewards are issued only by verified server-side flows (for example, Guided Story Paths).
+    console.warn('SHARDS earning is not connected for this action.', { amount, reason });
   }, []);
 
   const activateAdFreePass = useCallback((): boolean => {

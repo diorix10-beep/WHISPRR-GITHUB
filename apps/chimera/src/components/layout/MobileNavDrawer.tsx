@@ -226,7 +226,7 @@ function MobileNavDrawerContent({
               <span>{creativeMode === 'storytelling' ? 'VELLUM Story Reserve' : 'SHARDS Hub'}</span>
             </div>
             <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full border ${creativeMode === 'storytelling' ? 'border-[#c89d57]/40 bg-[#c89d57]/10 text-[#f1d9aa]' : 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'}`}>
-              {creativeMode === 'storytelling' ? (vellumBalance === null ? 'VELLUM' : `${vellumBalance.toLocaleString()} VELLUM`) : `💎 ${shardsBalance}`}
+              {creativeMode === 'storytelling' ? (vellumBalance === null ? 'VELLUM' : `${vellumBalance.toLocaleString()} VELLUM`) : `💎 ${shardsBalance ?? 0}`}
             </span>
           </button>
         </div>
