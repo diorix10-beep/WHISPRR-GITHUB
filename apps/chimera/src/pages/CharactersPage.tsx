@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Search, Grid3X3, List, Filter, X, 
   Copy, Archive, Download, MoreHorizontal,
-  SortAsc, Users, Globe, Lock, Eye, Sparkles, Flame, MessageSquare
+  SortAsc, Users, Globe, Lock, Eye, Sparkles, Flame, MessageSquare, FileText
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -36,6 +36,13 @@ interface CharacterItem {
   };
 }
 
+interface CharacterDraftItem {
+  id: string;
+  title: string;
+  form_data: { name?: string; shortDescription?: string; avatarUrl?: string };
+  updated_at: string;
+}
+
 const CATEGORIES = [
   'All', 'Romance', 'Fantasy', 'Sci-Fi', 'Horror', 'Mystery',
   'Action', 'Adventure', 'Historical', 'Slice of Life', 'Anime',
@@ -55,6 +62,7 @@ export default function CharactersPage() {
   const { showToast } = useToast();
 
   const [characters, setCharacters] = useState<CharacterItem[]>([]);
+  const [characterDrafts, setCharacterDrafts] = useState<CharacterDraftItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -67,14 +75,24 @@ export default function CharactersPage() {
     if (!profile?.user_id) return;
     try {
       setLoading(true);
+      if (tab === 'drafts') {
+        const { data, error } = await supabase
+          .from('chimera_character_drafts')
+          .select('id, title, form_data, updated_at')
+          .order('updated_at', { ascending: false })
+          .limit(100);
+        if (error) throw error;
+        const query = searchQuery.trim().toLowerCase();
+        setCharacterDrafts((data || []).filter((draft) => !query || draft.title.toLowerCase().includes(query) || draft.form_data?.shortDescription?.toLowerCase().includes(query)));
+        setCharacters([]);
+        return;
+      }
       let query = supabase
         .from('ai_characters')
         .select('*');
 
       if (tab === 'mine') {
         query = query.eq('creator_id', profile.user_id);
-      } else if (tab === 'drafts') {
-        query = query.eq('creator_id', profile.user_id).eq('visibility', 'private');
       } else {
         query = query.or(`visibility.eq.public,creator_id.eq.${profile.user_id}`);
       }
@@ -106,6 +124,7 @@ export default function CharactersPage() {
       }
 
       setCharacters(results);
+      setCharacterDrafts([]);
     } catch (err: any) {
       console.error('Error loading characters:', err);
       setCharacters([]);
@@ -318,6 +337,27 @@ export default function CharactersPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="h-64 rounded-3xl bg-warm-200 dark:bg-warm-800 animate-pulse" />
+              ))}
+            </div>
+          ) : tab === 'drafts' ? characterDrafts.length === 0 ? (
+            <RichEmptyState
+              icon={FileText}
+              title="No private drafts yet"
+              description="When you choose Save private draft while creating a character, it will live here—visible only to you."
+              actionLabel="Create Character"
+              onAction={() => navigate('/characters/new')}
+            />
+          ) : (
+            <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
+              {characterDrafts.map((draft) => (
+                <button key={draft.id} onClick={() => navigate(`/characters/new?draftId=${draft.id}`)} className="group overflow-hidden rounded-3xl border border-[#d8b56a]/25 bg-warm-850 p-4 text-left shadow-lg transition hover:-translate-y-0.5 hover:border-[#d8b56a]/60">
+                  <div className="flex aspect-[16/8] items-center justify-center overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_50%_20%,rgba(153,103,193,0.35),transparent_35%),#1b1323]">
+                    {draft.form_data?.avatarUrl ? <img src={draft.form_data.avatarUrl} alt="" className="h-full w-full object-cover" /> : <FileText size={30} className="text-[#d8b56a]/70" />}
+                  </div>
+                  <div className="mt-4 flex items-center justify-between gap-3"><h3 className="font-serif text-lg font-semibold text-white">{draft.title}</h3><span className="rounded-full border border-[#d8b56a]/30 bg-[#d8b56a]/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#e9ca81]">Private draft</span></div>
+                  <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-warm-400">{draft.form_data?.shortDescription?.replace(/<[^>]*>/g, '') || 'An unfinished character waiting for you.'}</p>
+                  <p className="mt-4 text-[11px] font-semibold text-warm-500">Continue creating →</p>
+                </button>
               ))}
             </div>
           ) : characters.length === 0 ? (

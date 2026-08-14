@@ -18,8 +18,9 @@ export default function AiCharacterCreator() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { id: routeId } = useParams<{ id?: string }>();
-  const [characterId] = useState<string>(() => routeId || searchParams.get('id') || searchParams.get('draftId') || crypto.randomUUID());
-  const editId = searchParams.get('id') || searchParams.get('draftId') || routeId;
+  const draftId = searchParams.get('draftId');
+  const editId = searchParams.get('id') || routeId;
+  const [characterId] = useState<string>(() => draftId || routeId || searchParams.get('id') || crypto.randomUUID());
   const { profile } = useAuth();
   const { showToast } = useToast();
 
@@ -29,7 +30,9 @@ export default function AiCharacterCreator() {
   const [loading, setLoading] = useState(false);
 
   // Sync / Network States
-  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'offline'>('saved');
+  const [saveStatus, setSaveStatus] = useState<'protected' | 'protecting' | 'offline'>('protected');
+  const [privateDraftSaved, setPrivateDraftSaved] = useState(false);
+  const [savingPrivateDraft, setSavingPrivateDraft] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   // Publishing Pipeline State
@@ -73,7 +76,7 @@ export default function AiCharacterCreator() {
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      setSaveStatus('saved');
+      setSaveStatus('protected');
     };
     const handleOffline = () => {
       setIsOnline(false);
@@ -90,7 +93,29 @@ export default function AiCharacterCreator() {
   // Restore draft from Cloud or LocalStorage on mount
   useEffect(() => {
     async function loadDraft() {
-      if (editId && profile?.user_id) {
+    if (draftId && profile?.user_id) {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('chimera_character_drafts')
+          .select('form_data, architecture_data')
+          .eq('id', draftId)
+          .single();
+        if (error) throw error;
+        if (data?.form_data) setFormData((current) => ({ ...current, ...data.form_data }));
+        if (data?.architecture_data) setArchData(data.architecture_data);
+        setPrivateDraftSaved(true);
+        showToast('Private CHIMERA draft restored.', 'info');
+      } catch (e) {
+        console.error('Failed to load private character draft:', e);
+        showToast('This private draft could not be opened.', 'error');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    if (editId && profile?.user_id) {
         try {
           setLoading(true);
           const { data, error } = await supabase
@@ -160,13 +185,13 @@ export default function AiCharacterCreator() {
 
     const timer = setTimeout(() => {
       if (formData.name || formData.greeting || formData.personality || Object.keys(archData).length > 0) {
-        setSaveStatus('saving');
+        setSaveStatus('protecting');
         localStorage.setItem(
           'chimera-character-creator-draft',
           JSON.stringify({ formData, archData })
         );
         setTimeout(() => {
-          setSaveStatus('saved');
+          setSaveStatus('protected');
         }, 300);
       }
     }, 1000);
@@ -179,45 +204,31 @@ export default function AiCharacterCreator() {
       'chimera-character-creator-draft',
       JSON.stringify({ formData, archData })
     );
-    setSaveStatus('saving');
-
-    // Cloud sync draft if logged in
-    if (profile?.user_id && formData.name.trim()) {
-      try {
-        const tempUsername = editId ? undefined : `draft_${Math.random().toString(36).substring(2, 10)}`;
-        const tags = formData.tagsString.split(',').map(t => t.trim()).filter(Boolean);
-
-        await supabase.rpc('create_ai_character', {
-          p_name: formData.name.trim(),
-          p_username: tempUsername || `draft_${Math.random().toString(36).substring(2, 8)}`,
-          p_avatar_emoji: '🤖',
-          p_greeting: formData.greeting.trim(),
-          p_short_description: formData.shortDescription.trim(),
-          p_long_description: formData.longDescription.trim(),
-          p_personality: formData.personality.trim(),
-          p_scenario: formData.scenario.trim(),
-          p_example_dialogues: formData.exampleDialogues.trim(),
-          p_conversation_style: formData.conversationStyle.trim(),
-          p_knowledge: formData.knowledge.trim(),
-          p_tags: tags,
-          p_category: formData.category,
-          p_visibility: 'private', // Drafts saved as private
-          p_avatar_url: formData.avatarUrl.trim() || '',
-          p_banner_url: formData.avatarUrl.trim() || '',
-          p_content_rating: formData.contentRating,
-          p_creator_notes: formData.creatorNotes.trim(),
-          p_example_conversations: formData.exampleConversations.trim(),
-          p_rp_definition: formData.rpDefinition.trim(),
-          p_system_definition: formData.systemDefinition.trim(),
-          p_system_character_definition: formData.systemCharacterDefinition.trim()
-        });
-      } catch (e) {
-        console.error('Cloud draft sync error:', e);
-      }
+    if (!profile?.user_id) {
+      showToast('Sign in to save this as a private CHIMERA draft. Your changes are still protected on this device.', 'error');
+      return;
     }
 
-    setSaveStatus('saved');
-    showToast('Draft saved & synced across your devices!', 'success');
+    try {
+      setSavingPrivateDraft(true);
+      const { error } = await supabase
+        .from('chimera_character_drafts')
+        .upsert({
+          id: characterId,
+          user_id: profile.user_id,
+          title: formData.name.trim() || 'Untitled character',
+          form_data: formData,
+          architecture_data: archData,
+        }, { onConflict: 'id' });
+      if (error) throw error;
+      setPrivateDraftSaved(true);
+      showToast('Private draft saved to CHIMERA.', 'success');
+    } catch (error) {
+      console.error('Private CHIMERA draft save failed:', error);
+      showToast('CHIMERA could not save this private draft yet. Your changes are still protected on this device.', 'error');
+    } finally {
+      setSavingPrivateDraft(false);
+    }
   };
 
   const handleDiscardDraft = () => {
@@ -248,7 +259,7 @@ export default function AiCharacterCreator() {
       suggestedPersonaName: ''
     });
     setArchData({});
-    showToast('Draft discarded', 'info');
+    showToast('This device copy was cleared. Any private draft saved to CHIMERA remains in your Drafts library.', 'info');
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -1004,35 +1015,37 @@ export default function AiCharacterCreator() {
       </main>
 
       {/* FLOATING ACTION BAR */}
-      <div className="fixed bottom-0 left-0 right-0 md:left-64 bg-warm-900/95 backdrop-blur-sm border-t border-warm-800 px-4 sm:px-6 z-50" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 16px)', paddingTop: '12px' }}>
-        <div className="flex items-center gap-4 text-xs text-warm-500">
-          <span className="flex items-center gap-1.5">
-            <span className={`w-2 h-2 rounded-full ${saveStatus === 'offline' ? 'bg-red-500' : saveStatus === 'saving' ? 'bg-yellow-500 animate-pulse' : 'bg-emerald-500'}`}></span>
-            <span className="font-semibold text-warm-300">
-              {saveStatus === 'saved' ? 'Draft Auto-Saved' : saveStatus === 'saving' ? 'Auto-Saving Draft...' : 'Offline Mode'}
-            </span>
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#130d1a]/95 backdrop-blur-sm border-t border-[#d8b56a]/20 px-4 sm:px-6 z-50" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 16px)', paddingTop: '12px' }}>
+        <div className="mx-auto flex max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-xs text-warm-500">
+            <span className={`w-2 h-2 rounded-full ${saveStatus === 'offline' ? 'bg-amber-400' : saveStatus === 'protecting' ? 'bg-yellow-500 animate-pulse' : 'bg-emerald-500'}`}></span>
+            <div>
+              <span className="font-semibold text-warm-200">{saveStatus === 'protected' ? 'Changes protected on this device' : saveStatus === 'protecting' ? 'Protecting your changes…' : 'Stored on this device'}</span>
+              {privateDraftSaved && <span className="ml-2 text-[#e0bf76]">· Private draft saved to CHIMERA</span>}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
           <button
             onClick={handleDiscardDraft}
             className="px-3 py-2 text-xs font-semibold text-warm-400 hover:text-red-400 transition-colors"
-            title="Discard unsaved draft"
+            title="Clear only this device's recovery copy"
           >
-            Discard Draft
+            Clear device copy
           </button>
           <button
             onClick={handleSaveDraft}
-            className="px-4 py-2 bg-warm-800 hover:bg-warm-750 text-white rounded-lg text-xs font-semibold border border-warm-700 transition-colors"
+            disabled={savingPrivateDraft}
+            className="px-4 py-2 bg-[#2b2131] hover:bg-[#3a2a42] text-[#fff3d8] rounded-lg text-xs font-semibold border border-[#d8b56a]/35 transition-colors disabled:opacity-60"
           >
-            Save Draft
+            {savingPrivateDraft ? 'Saving private draft…' : 'Save private draft'}
           </button>
           <button
             onClick={handleFinalPublish}
-            className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg font-bold text-xs shadow-lg transition-all"
+            className="bg-[#b98535] hover:bg-[#d3a650] text-[#160f1a] px-5 py-2 rounded-lg font-bold text-xs shadow-lg transition-all"
           >
-            Publish Character
+            Bring them into CHIMERA
           </button>
+          </div>
         </div>
       </div>
 
