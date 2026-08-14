@@ -36,7 +36,6 @@ const STORYTELLING_NAV_LINKS: NavLinkItem[] = [
   { path: '/workspace', token: 'navigation.workspace', icon: Sparkles },
   { path: '/stories', token: 'navigation.stories', icon: BookOpen },
   { path: '/worlds', token: 'navigation.worlds', icon: Globe },
-  { path: '/studio', token: 'navigation.studio', icon: Users },
 ];
 
 export function ChimeraLayout({ children }: ChimeraLayoutProps) {
@@ -245,7 +244,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
           {/* 2. BLOC MILIEU — Clean Fluid Primary Navigation */}
           <div className="hidden lg:flex min-w-0 flex-1 items-center justify-center px-2 xl:px-5">
-            <nav className={`grid w-full ${currentNavLinks.length === 5 ? 'max-w-[660px] grid-cols-5' : 'max-w-[540px] grid-cols-4'} items-center gap-1 rounded-2xl border border-warm-800/50 bg-warm-900/20 p-1 text-center`}>
+            <nav className={`grid w-full ${currentNavLinks.length === 5 ? 'max-w-[660px] grid-cols-5' : currentNavLinks.length === 4 ? 'max-w-[540px] grid-cols-4' : 'max-w-[420px] grid-cols-3'} items-center gap-1 rounded-2xl border border-warm-800/50 bg-warm-900/20 p-1 text-center`}>
               {renderNavLinks()}
             </nav>
           </div>
