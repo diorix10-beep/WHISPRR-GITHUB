@@ -128,6 +128,19 @@ export default function VellumPage() {
               </article>
             </section>
 
+            <section className="mt-6 rounded-3xl border border-amber-200/15 bg-[#10182a]/90 p-6 shadow-xl sm:p-7">
+              <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
+                <div><p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200">The VELLUM promise</p><h2 className="mt-2 font-serif text-2xl text-white">A credit for creating, never a toll for writing.</h2></div>
+                <span className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-bold text-emerald-100"><CheckCircle2 size={14} /> Welcome VELLUM never expires</span>
+              </div>
+              <div className="mt-6 grid gap-3 text-sm text-warm-300 md:grid-cols-2">
+                <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><strong className="block text-warm-100">One welcome reserve</strong><span className="mt-1 block">10,000 VELLUM is granted once when a member enters Storytelling or chooses both creative spaces.</span></p>
+                <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><strong className="block text-warm-100">No hidden debits</strong><span className="mt-1 block">Every future creative action will show its exact cost and ask for confirmation first.</span></p>
+                <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><strong className="block text-warm-100">A result or a refund</strong><span className="mt-1 block">If a paid creative action cannot be completed, its VELLUM must be returned.</span></p>
+                <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><strong className="block text-warm-100">Yours, and separate</strong><span className="mt-1 block">VELLUM cannot be transferred, withdrawn, or converted into SHARDS.</span></p>
+              </div>
+            </section>
+
             <section className="mt-6 grid gap-6 lg:grid-cols-[0.82fr_1.18fr]">
               <article className="rounded-3xl border border-amber-200/15 bg-[#10182a]/90 p-6 shadow-xl sm:p-7">
                 <div className="flex items-center gap-3"><Gem size={21} className="text-amber-200" /><h2 className="font-serif text-2xl text-white">Your welcome</h2></div>
@@ -150,6 +163,13 @@ export default function VellumPage() {
                   </div>
                 ))}</div> : <div className="mt-5 rounded-2xl border border-dashed border-white/15 px-5 py-8 text-center text-sm text-warm-400">No VELLUM activity yet. When something genuinely changes, it will be recorded here.</div>}
               </article>
+            </section>
+
+            <section className="mt-6 rounded-3xl border border-dashed border-amber-200/25 bg-[#10182a]/60 p-6 sm:p-7">
+              <div className="flex items-center gap-3"><Sparkles size={21} className="text-amber-200" /><div><h2 className="font-serif text-2xl text-white">What VELLUM will unlock</h2><p className="mt-1 text-sm text-warm-300">These are the first creative directions — not purchasable buttons yet.</p></div></div>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {['Book covers', 'Scene illustrations', 'World Bibles', 'Continuity checks'].map((tool) => <div key={tool} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><p className="font-serif text-lg text-warm-100">{tool}</p><p className="mt-2 text-xs leading-relaxed text-warm-400">Available only once CHIMERA can genuinely create and safely record this result.</p><span className="mt-3 inline-block text-[10px] font-bold uppercase tracking-wider text-amber-200/80">Not connected yet</span></div>)}
+              </div>
             </section>
           </>
         )}

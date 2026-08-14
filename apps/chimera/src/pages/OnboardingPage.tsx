@@ -23,7 +23,7 @@ const choices: Array<{
     value: 'storytelling',
     title: 'Storytelling',
     eyebrow: 'Worlds with a soul',
-    description: 'Write in VELLUM, shape worlds, and let your stories grow in their own space.',
+    description: 'Write freely, shape worlds, and receive a permanent 10,000 VELLUM welcome reserve for optional creative support.',
     icon: BookOpen,
     className: 'border-violet-400/35 bg-violet-500/10 hover:border-violet-300 hover:bg-violet-500/15',
   },
@@ -31,7 +31,7 @@ const choices: Array<{
     value: 'both',
     title: 'Both',
     eyebrow: 'One world, two ways to create',
-    description: 'Keep both spaces close. We will ask where you would like to begin today.',
+    description: 'Keep both spaces close. Enter Storytelling whenever you are ready and receive its permanent 10,000 VELLUM welcome reserve.',
     icon: Sparkles,
     className: 'border-amber-400/35 bg-amber-500/10 hover:border-amber-300 hover:bg-amber-500/15',
   },
@@ -116,7 +116,7 @@ export default function OnboardingPage() {
             <p className="text-xs font-bold uppercase tracking-[0.28em] text-violet-200">Storytelling · VELLUM</p>
             <h1 className="mt-4 font-serif text-4xl font-extrabold sm:text-5xl">Worlds with a soul.</h1>
             <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-slate-200 sm:text-lg">Begin with a blank page. Shape worlds, chapters, scenes, and stories in a quieter space made for writing.</p>
-            <p className="mx-auto mt-5 max-w-lg text-sm leading-relaxed text-violet-100/75">Your writing is always yours. VELLUM is there when you want creative support.</p>
+            <p className="mx-auto mt-5 max-w-lg text-sm leading-relaxed text-violet-100/75">Your writing is always yours. When you enter Storytelling, your one-time 10,000 VELLUM welcome reserve is there for optional creative support.</p>
             <button type="button" onClick={enterChoice} className="mt-10 inline-flex items-center gap-2 rounded-2xl bg-violet-500 px-7 py-4 text-sm font-extrabold transition hover:bg-violet-400">Choose your creative space <ArrowRight size={17} /></button>
           </div>
         )}
