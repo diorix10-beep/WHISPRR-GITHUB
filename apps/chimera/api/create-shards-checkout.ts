@@ -50,7 +50,15 @@ export default async function handler(req: NodeRequest, res: NodeResponse) {
       .insert({ user_id: user.id, package_id, shards_amount: pack.shards, bonus_shards: pack.bonus, amount_cents: pack.amountCents })
       .select('id')
       .single();
-    if (orderError || !order) throw new Error('CHIMERA could not prepare this SHARDS order.');
+    if (orderError || !order) {
+      console.error('Could not create pending SHARDS order', {
+        code: orderError?.code,
+        message: orderError?.message,
+        details: orderError?.details,
+        hint: orderError?.hint,
+      });
+      throw new Error('CHIMERA could not prepare this SHARDS order.');
+    }
 
     const stripe = new Stripe(stripeSecretKey, { typescript: true });
     const host = Array.isArray(req.headers.host) ? req.headers.host[0] : req.headers.host;
