@@ -18,7 +18,7 @@ import { ChatMemoryModal } from '../components/chat/ChatMemoryModal';
 import { MockPhoneModal } from '../components/chat/MockPhoneModal';
 import { MemoryVisualizerModal } from '../components/chat/MemoryVisualizerModal';
 import { MultiCharacterHeader } from '../components/chat/MultiCharacterHeader';
-import { RpgGameOverlay } from '../components/chat/RpgGameOverlay';
+import { GuidedTurningPointCard, type GuidedTurningPoint } from '../components/chat/GuidedTurningPointCard';
 import { LorebookDrawer } from '../components/chat/LorebookDrawer';
 import { InChatPersonaDrawer } from '../components/chat/InChatPersonaDrawer';
 import { WorldRelationshipModal } from '../components/world/WorldRelationshipModal';
@@ -63,6 +63,8 @@ export default function ConversationPage() {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const [turningPoint, setTurningPoint] = useState<GuidedTurningPoint | null>(null);
+  const [turningPointLoading, setTurningPointLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -260,6 +262,14 @@ export default function ConversationPage() {
         setConversation(conv);
         setSceneCanon(conv.memory_summary || '');
         setSceneCanonDraft(conv.memory_summary || '');
+
+        const { data: activeTurningPoint } = await supabase
+          .from('roleplay_turning_points')
+          .select('id, title, scene_prompt, choices, reward_shards, status, selected_choice_id')
+          .eq('conversation_id', conversationId)
+          .eq('status', 'active')
+          .maybeSingle();
+        setTurningPoint((activeTurningPoint || null) as GuidedTurningPoint | null);
 
         // Get profiles for all participants
         const participantIds = (conv.conversation_participants || []).map((p: { user_id: string }) => p.user_id);
@@ -539,6 +549,46 @@ export default function ConversationPage() {
     setSceneCanon(next);
     setShowSceneCanon(false);
     showToast('This scene will remember that.', 'success');
+  };
+
+  const openTurningPoint = async () => {
+    if (!conversationId || !otherUser?.user_id || turningPointLoading) return;
+    setTurningPointLoading(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const response = await fetch('/api/roleplay-turning-point', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionData.session?.access_token || ''}` },
+        body: JSON.stringify({ conversation_id: conversationId, bot_user_id: otherUser.user_id }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'Could not open a turning point.');
+      setTurningPoint(payload.turning_point as GuidedTurningPoint);
+      showToast('A turning point has opened in this scene.', 'success');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Could not open a turning point.', 'error');
+    } finally {
+      setTurningPointLoading(false);
+    }
+  };
+
+  const chooseTurningPoint = async (choice: GuidedTurningPoint['choices'][number]) => {
+    if (!turningPoint || turningPointLoading) return;
+    setTurningPointLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('claim_my_roleplay_turning_point', { p_turning_point_id: turningPoint.id, p_choice_id: choice.id });
+      if (error) throw error;
+      const reward = data?.[0];
+      setTurningPoint(null);
+      setMessageInput(`[Turning Point — ${choice.key}]: ${choice.label}`);
+      if (reward?.memory_note) setSceneCanon((current) => [current, reward.memory_note].filter(Boolean).join('\n'));
+      window.dispatchEvent(new Event('chimera-shards-changed'));
+      showToast(`A new path has opened. +${reward?.shards_awarded ?? 10} SHARDS`, 'success');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Could not resolve this turning point.', 'error');
+    } finally {
+      setTurningPointLoading(false);
+    }
   };
 
   // Image selection
@@ -1525,14 +1575,9 @@ export default function ConversationPage() {
               </section>
             )}
             
-            {/* RPG Game Master Overlay */}
-            {chatMode === 'game_mode' && (
-              <RpgGameOverlay
-                gameState={rpgGameState}
-                onSelectChoice={(choice) => {
-                  setMessageInput(`[Action Choice ${choice.key}]: ${choice.label}`);
-                }}
-              />
+            {/* Guided paths are optional; ordinary roleplay remains fully freeform. */}
+            {chatMode === 'game_mode' && conversation?.type === 'dm' && otherUser?.role === 'ai_character' && (
+              <GuidedTurningPointCard point={turningPoint} loading={turningPointLoading} onOpen={openTurningPoint} onChoose={chooseTurningPoint} />
             )}
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-warm-500 space-y-3">

@@ -346,15 +346,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
-  const [shardsBalance, setShardsBalance] = useState<number>(() => {
-    try {
-      const stored = localStorage.getItem('chimera_shards_balance');
-      if (stored !== null) return Number(stored);
-    } catch {}
-    return 50; // 50 Free Starting Shards
-  });
+  const [shardsBalance, setShardsBalance] = useState<number>(0);
 
   const [vellumBalance, setVellumBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!state.user?.id) {
+      setShardsBalance(0);
+      return;
+    }
+
+    let active = true;
+    const loadShards = () => {
+      supabase.rpc('get_my_shards_wallet').then(({ data, error }) => {
+        if (!active || error) return;
+        setShardsBalance(data?.[0]?.available_balance ?? 0);
+      });
+    };
+    loadShards();
+    window.addEventListener('chimera-shards-changed', loadShards);
+    return () => {
+      active = false;
+      window.removeEventListener('chimera-shards-changed', loadShards);
+    };
+  }, [state.user?.id]);
 
   useEffect(() => {
     if (!state.user?.id) {
