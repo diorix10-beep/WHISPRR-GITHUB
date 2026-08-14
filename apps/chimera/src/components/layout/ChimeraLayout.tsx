@@ -71,10 +71,10 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
     // Auto-redirect to appropriate home view for active mode
     if (nextMode === 'storytelling') {
       if (location.pathname === '/discover' || location.pathname === '/characters' || location.pathname === '/conversations') {
-        navigate('/write/desk');
+        navigate('/workspace');
       }
     } else {
-      if (location.pathname === '/' || location.pathname === '/write/desk' || location.pathname === '/worlds') {
+      if (location.pathname === '/' || location.pathname === '/workspace' || location.pathname === '/write/desk' || location.pathname === '/worlds') {
         navigate('/discover');
       }
     }
@@ -326,7 +326,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
             {/* Mode-Specific Primary CTA — Identical Fixed Layout width */}
             <button
-              onClick={() => navigate(creativeMode === 'storytelling' ? '/write/desk' : '/studio')}
+              onClick={() => navigate(creativeMode === 'storytelling' ? '/stories/new' : '/studio')}
               className={`min-w-[125px] justify-center flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs text-white shadow-md active:scale-[0.98] transition-all shrink-0 ${
                 creativeMode === 'storytelling'
                   ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-600/30'

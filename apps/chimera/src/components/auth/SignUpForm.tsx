@@ -78,7 +78,7 @@ export function SignUpForm({ onBack }: SignUpFormProps) {
         <label className="flex cursor-pointer items-start gap-3"><input type="checkbox" checked={agreedToTerms} onChange={(event) => setAgreedToTerms(event.target.checked)} className="mt-0.5 h-4 w-4 rounded border-warm-500 text-red-500 focus:ring-red-500" /><span>I agree to the <a href="/terms" target="_blank" className="text-red-300 underline">Terms</a> and <a href="/privacy" target="_blank" className="text-red-300 underline">Privacy Policy</a>.</span></label>
       </div>
       <button type="submit" disabled={isLoading || !agreedTo18 || !agreedToTerms} className="mt-2 flex w-full items-center justify-center rounded-xl bg-red-500 px-6 py-4 font-bold text-white shadow-[0_0_20px_rgba(239,68,68,0.3)] transition-all hover:-translate-y-0.5 hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50">
-        {isLoading ? <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : 'Create WHISPRR Account'}
+        {isLoading ? <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : 'Create CHIMERA Account'}
       </button>
     </form>
   );
