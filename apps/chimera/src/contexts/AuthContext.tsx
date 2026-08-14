@@ -36,6 +36,7 @@ interface AuthContextType extends AuthState {
   refreshProfile: () => Promise<void>;
   updateProfile: (updates: Partial<ChimeraProfile>) => Promise<void>;
   shardsBalance: number;
+  vellumBalance: number | null;
   spendShards: (amount: number, reason: string) => boolean;
   earnShards: (amount: number, reason: string) => void;
   adFreePassActive: boolean;
@@ -312,6 +313,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return 50; // 50 Free Starting Shards
   });
 
+  const [vellumBalance, setVellumBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!state.user?.id) {
+      setVellumBalance(null);
+      return;
+    }
+
+    let active = true;
+    supabase.rpc('get_my_vellum_wallet').then(({ data, error }) => {
+      if (!active || error) return;
+      setVellumBalance(data?.[0]?.available_balance ?? null);
+    });
+    return () => { active = false; };
+  }, [state.user?.id]);
+
   const [adFreePassActive, setAdFreePassActive] = useState<boolean>(() => {
     try {
       return localStorage.getItem('chimera_ad_free_pass') === 'true';
@@ -453,6 +470,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refreshProfile,
       updateProfile,
       shardsBalance,
+      vellumBalance,
       spendShards,
       earnShards,
       adFreePassActive,

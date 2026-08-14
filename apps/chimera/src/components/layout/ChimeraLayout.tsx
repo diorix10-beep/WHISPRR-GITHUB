@@ -42,7 +42,7 @@ const STORYTELLING_NAV_LINKS: NavLinkItem[] = [
 export function ChimeraLayout({ children }: ChimeraLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { profile, signOut, shardsBalance } = useAuth();
+  const { profile, signOut, shardsBalance, vellumBalance } = useAuth();
   const { preference, setPreference } = useTheme();
   const { t, formatNumber, locale, setLocale, supportedLocales } = useTranslation();
   
@@ -197,7 +197,14 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
   );
 
   return (
-    <div className="min-h-screen bg-transparent transition-colors duration-300 flex flex-col font-sans relative">
+    <div className={`min-h-screen bg-transparent transition-colors duration-300 flex flex-col font-sans relative ${creativeMode === 'storytelling' ? 'bg-[#081426]' : ''}`}>
+      {creativeMode === 'storytelling' && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat opacity-[0.16]"
+          style={{ backgroundImage: "linear-gradient(rgba(8,20,38,0.88), rgba(8,20,38,0.94)), url('/images/storytelling-workspace-hero-v1.png')" }}
+        />
+      )}
       {/* Top Navigation Header */}
       <header className="sticky top-0 z-40 w-full bg-warm-950/70 dark:bg-warm-950/80 backdrop-blur-2xl border-b border-warm-800/60 shadow-lg transition-colors duration-300">
         <div className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
@@ -291,14 +298,14 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               </button>
             </div>
 
-            {/* Amethyst & Gold Parchment SHARDS Balance Chip */}
+            {/* Mode-aware creative reserve: real VELLUM in Storytelling, SHARDS in Roleplay. */}
             <button
-              onClick={() => navigate('/shards')}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-950/60 backdrop-blur-md hover:bg-purple-900/70 text-amber-200 border border-amber-500/40 hover:border-amber-400 transition-all font-bold text-xs shadow-lg hover:shadow-purple-900/30 hover:scale-105 active:scale-95 group shrink-0"
-              title={t('navigation.shards_hub')}
+              onClick={() => navigate(creativeMode === 'storytelling' ? '/workspace' : '/shards')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-md transition-all font-bold text-xs shadow-lg hover:scale-105 active:scale-95 group shrink-0 ${creativeMode === 'storytelling' ? 'bg-[#10213b]/80 hover:bg-[#173050]/90 text-[#f1d9aa] border border-[#c89d57]/50 hover:border-[#f1d9aa]' : 'bg-purple-950/60 hover:bg-purple-900/70 text-amber-200 border border-amber-500/40 hover:border-amber-400 hover:shadow-purple-900/30'}`}
+              title={creativeMode === 'storytelling' ? 'VELLUM story reserve' : t('navigation.shards_hub')}
             >
-              <img src="/images/shards_amethyst_logo.png" alt="SHARDS" className="w-4 h-4 object-contain drop-shadow-[0_0_8px_rgba(168,85,247,0.6)]" />
-              <span className="font-serif font-black text-xs text-amber-200 tracking-wide">{formatNumber(shardsBalance)} SHARDS</span>
+              <img src={creativeMode === 'storytelling' ? '/images/vellum-sigil.svg' : '/images/shards_amethyst_logo.png'} alt={creativeMode === 'storytelling' ? 'VELLUM' : 'SHARDS'} className="w-5 h-5 object-contain rounded-md" />
+              <span className="font-serif font-black text-xs tracking-wide">{creativeMode === 'storytelling' ? (vellumBalance === null ? 'VELLUM' : `${formatNumber(vellumBalance)} VELLUM`) : `${formatNumber(shardsBalance)} SHARDS`}</span>
             </button>
 
             {/* Search — icon only, no text label on smaller screens */}
