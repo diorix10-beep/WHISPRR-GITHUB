@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { AuthHero } from '../components/auth/AuthHero';
 import { SignInForm } from '../components/auth/SignInForm';
+import { SignUpForm } from '../components/auth/SignUpForm';
 import { ForgotPasswordForm } from '../components/auth/ForgotPasswordForm';
 import { AuthProviders } from '../components/auth/AuthProviders';
 import { brand } from '../brand/brandConfig';
@@ -12,7 +13,7 @@ import { WhisprrLogo } from '../components/common/WhisprrLogo';
 const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
 const whisprrUrl = isLocalhost ? 'http://localhost:5173' : 'https://whisprr.xyz';
 
-type ViewType = 'providers' | 'signin' | 'forgot';
+type ViewType = 'providers' | 'signin' | 'signup' | 'forgot';
 
 export default function AuthPage() {
   const { loading } = useAuth();
@@ -101,13 +102,14 @@ export default function AuthPage() {
                 </p>
 
                 <div className="border-t border-white/10 pt-4 text-center">
-                  <a
-                    href={`${whisprrUrl}/auth?tab=signup`}
+                  <button
+                    type="button"
+                    onClick={() => setView('signup')}
                     className="inline-flex items-center gap-2 text-xs font-bold text-warm-300 hover:text-white transition-colors"
                   >
-                    <span>Use your WHISPRR account to sign in</span>
+                    <span>New here? Create your account</span>
                     <span>→</span>
-                  </a>
+                  </button>
                 </div>
               </div>
             )}
@@ -127,6 +129,24 @@ export default function AuthPage() {
               </div>
             )}
 
+            {view === 'signup' && (
+              <div className="flex flex-col gap-5">
+                <div className="flex items-center justify-between mb-1">
+                  <button
+                    onClick={() => setView('providers')}
+                    className="text-warm-400 hover:text-white text-xs font-bold transition-colors flex items-center gap-1.5"
+                  >
+                    <span>← Back to all options</span>
+                  </button>
+                </div>
+                <div>
+                  <h2 className="text-lg font-serif font-extrabold text-white">Begin with CHIMERA</h2>
+                  <p className="mt-1 text-xs leading-relaxed text-warm-400">Create one WHISPRR Account for the ecosystem. Your CHIMERA space remains your own.</p>
+                </div>
+                <SignUpForm onBack={() => setView('signin')} />
+              </div>
+            )}
+
             {isForgot && (
               <ForgotPasswordForm onBack={() => setView('signin')} />
             )}
@@ -141,7 +161,7 @@ export default function AuthPage() {
                 title="Click to learn about shared ecosystem"
               >
                 <Info size={14} className="text-purple-400 group-hover:scale-110 transition-transform shrink-0" />
-                <span>One account unlocks both</span>
+                <span>One WHISPRR Account. Your CHIMERA creative home.</span>
               </button>
 
               <Link

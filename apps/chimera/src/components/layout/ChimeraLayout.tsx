@@ -41,7 +41,7 @@ const STORYTELLING_NAV_LINKS: NavLinkItem[] = [
 export function ChimeraLayout({ children }: ChimeraLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { profile, signOut, shardsBalance, vellumBalance } = useAuth();
+  const { profile, signOut, shardsBalance, vellumBalance, chimeraPreferences, updateChimeraPreferences } = useAuth();
   const { preference, setPreference } = useTheme();
   const { t, formatNumber, locale, setLocale, supportedLocales } = useTranslation();
   
@@ -55,10 +55,18 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
     return (localStorage.getItem('chimera_creative_mode') as 'roleplay' | 'storytelling') || 'roleplay';
   });
 
+  useEffect(() => {
+    if (!chimeraPreferences) return;
+    setCreativeMode(chimeraPreferences.last_creative_mode || chimeraPreferences.default_creative_mode);
+  }, [chimeraPreferences?.last_creative_mode, chimeraPreferences?.default_creative_mode]);
+
   const toggleCreativeMode = (targetMode?: 'roleplay' | 'storytelling') => {
     const nextMode = targetMode || (creativeMode === 'roleplay' ? 'storytelling' : 'roleplay');
     setCreativeMode(nextMode);
     localStorage.setItem('chimera_creative_mode', nextMode);
+    updateChimeraPreferences({ last_creative_mode: nextMode }).catch(() => {
+      // Navigation remains usable if a transient network failure prevents persistence.
+    });
     
     // Auto-redirect to appropriate home view for active mode
     if (nextMode === 'storytelling') {

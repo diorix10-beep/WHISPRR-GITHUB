@@ -21,8 +21,21 @@ interface AuthState {
   user: User | null;
   session: Session | null;
   profile: ChimeraProfile | null;
+  chimeraPreferences: ChimeraCreativePreferences | null;
   violations: UserViolation[];
   loading: boolean;
+}
+
+export type CreativePreference = 'roleplay' | 'storytelling' | 'both';
+export type CreativeMode = 'roleplay' | 'storytelling';
+
+export interface ChimeraCreativePreferences {
+  user_id: string;
+  creative_preference: CreativePreference | null;
+  default_creative_mode: CreativeMode;
+  last_creative_mode: CreativeMode;
+  chimera_onboarding_complete: boolean;
+  both_mode_welcome_seen: boolean;
 }
 
 interface AuthContextType extends AuthState {
@@ -35,6 +48,7 @@ interface AuthContextType extends AuthState {
   resetPassword: (email: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
   updateProfile: (updates: Partial<ChimeraProfile>) => Promise<void>;
+  updateChimeraPreferences: (updates: Partial<Omit<ChimeraCreativePreferences, 'user_id'>>) => Promise<void>;
   shardsBalance: number;
   vellumBalance: number | null;
   spendShards: (amount: number, reason: string) => boolean;
@@ -64,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: null,
     session: null,
     profile: null,
+    chimeraPreferences: null,
     violations: [],
     loading: true,
   });
@@ -113,15 +128,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const fetchChimeraPreferences = useCallback(async (userId: string): Promise<ChimeraCreativePreferences | null> => {
+    const { data, error } = await supabase
+      .from('chimera_user_preferences')
+      .select('user_id, creative_preference, default_creative_mode, last_creative_mode, chimera_onboarding_complete, both_mode_welcome_seen')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (error) return null;
+    return data as ChimeraCreativePreferences | null;
+  }, []);
+
   const refreshProfile = useCallback(async () => {
     if (state.user) {
-      const [profile, violations] = await Promise.all([
+      const [profile, violations, chimeraPreferences] = await Promise.all([
         fetchProfile(state.user.id),
-        fetchViolations(state.user.id)
+        fetchViolations(state.user.id),
+        fetchChimeraPreferences(state.user.id)
       ]);
-      setState(prev => ({ ...prev, profile, violations }));
+      setState(prev => ({ ...prev, profile, violations, chimeraPreferences }));
     }
-  }, [state.user, fetchProfile, fetchViolations]);
+  }, [state.user, fetchProfile, fetchViolations, fetchChimeraPreferences]);
+
+  const updateChimeraPreferences = useCallback(async (updates: Partial<Omit<ChimeraCreativePreferences, 'user_id'>>) => {
+    if (!state.user) return;
+    const { error } = await supabase
+      .from('chimera_user_preferences')
+      .update(updates)
+      .eq('user_id', state.user.id);
+    if (error) throw error;
+    setState(prev => ({
+      ...prev,
+      chimeraPreferences: prev.chimeraPreferences ? { ...prev.chimeraPreferences, ...updates } : prev.chimeraPreferences,
+    }));
+  }, [state.user]);
 
   const updateProfile = useCallback(async (updates: Partial<ChimeraProfile>) => {
     if (!state.user) return;
@@ -201,21 +240,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!mounted) return;
 
         if (_event === 'SIGNED_OUT') {
-          setState({ user: null, session: null, profile: null, violations: [], loading: false });
+          setState({ user: null, session: null, profile: null, chimeraPreferences: null, violations: [], loading: false });
           return;
         }
 
         if (session?.user) {
           setState(prev => ({ ...prev, user: session.user, session, loading: true }));
-          const [profile, violations] = await Promise.all([
+          const [profile, violations, chimeraPreferences] = await Promise.all([
             fetchProfile(session.user.id),
-            fetchViolations(session.user.id)
+            fetchViolations(session.user.id),
+            fetchChimeraPreferences(session.user.id)
           ]);
           if (mounted) {
-            setState({ user: session.user, session, profile, violations, loading: false });
+            setState({ user: session.user, session, profile, chimeraPreferences, violations, loading: false });
           }
         } else {
-          setState({ user: null, session: null, profile: null, violations: [], loading: false });
+          setState({ user: null, session: null, profile: null, chimeraPreferences: null, violations: [], loading: false });
         }
       }
     );
@@ -224,16 +264,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!mounted) return;
 
       if (session?.user) {
-        const [profile, violations] = await Promise.all([
+        const [profile, violations, chimeraPreferences] = await Promise.all([
           fetchProfile(session.user.id),
-          fetchViolations(session.user.id)
+          fetchViolations(session.user.id),
+          fetchChimeraPreferences(session.user.id)
         ]);
         if (mounted) {
-          setState({ user: session.user, session, profile, violations, loading: false });
+          setState({ user: session.user, session, profile, chimeraPreferences, violations, loading: false });
         }
       } else {
         if (mounted) {
-          setState({ user: null, session: null, profile: null, violations: [], loading: false });
+          setState({ user: null, session: null, profile: null, chimeraPreferences: null, violations: [], loading: false });
         }
       }
       initializedRef.current = true;
@@ -246,7 +287,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
-  }, [fetchProfile]);
+  }, [fetchProfile, fetchChimeraPreferences]);
 
   const signUp = async (email: string, password: string) => {
     const { error } = await supabase.auth.signUp({ 
@@ -254,7 +295,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: {
         data: { 
-          access_level: 'chimera',
+          access_level: 'ecosystem',
           legal_accepted_version: CURRENT_LEGAL_VERSION
         },
         emailRedirectTo: window.location.origin
@@ -295,7 +336,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
-    setState({ user: null, session: null, profile: null, violations: [], loading: false });
+    setState({ user: null, session: null, profile: null, chimeraPreferences: null, violations: [], loading: false });
   };
 
   const resetPassword = async (email: string) => {
@@ -469,6 +510,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       resetPassword,
       refreshProfile,
       updateProfile,
+      updateChimeraPreferences,
       shardsBalance,
       vellumBalance,
       spendShards,

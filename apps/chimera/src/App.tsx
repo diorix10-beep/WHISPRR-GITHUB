@@ -19,6 +19,7 @@ import { EcosystemMaintenancePage } from './pages/EcosystemMaintenancePage';
 const AuthPage          = lazy(() => import('./pages/AuthPage'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
 const OnboardingPage    = lazy(() => import('./pages/OnboardingPage'));
+const ChooseCreativeSpacePage = lazy(() => import('./pages/ChooseCreativeSpacePage'));
 
 // ── Legal & Moderation ─────────────────────────────────────
 const LegalAcceptancePage  = lazy(() => import('./pages/LegalAcceptancePage'));
@@ -176,6 +177,7 @@ function AppLoader() {
         {/* ── Protected Platform ────────────────────────────── */}
         <Route element={<ProtectedRoute />}>
           <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/choose-your-space" element={<ChooseCreativeSpacePage />} />
           <Route path="/legal-acceptance" element={<LegalAcceptancePage />} />
           <Route path="/moderation-notice" element={<ModerationNoticePage />} />
           <Route path="/suspended" element={<SuspendedPage />} />

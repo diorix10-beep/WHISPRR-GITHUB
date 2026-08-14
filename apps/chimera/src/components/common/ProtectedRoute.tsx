@@ -2,7 +2,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth, CURRENT_LEGAL_VERSION } from '../../contexts/AuthContext';
 
 export function ProtectedRoute() {
-  const { user, profile, violations } = useAuth();
+  const { user, profile, violations, chimeraPreferences } = useAuth();
   const location = useLocation();
 
   if (!user) {
@@ -28,7 +28,7 @@ export function ProtectedRoute() {
     return <Navigate to="/restricted" replace />;
   }
 
-  if (profile && !profile.onboarding_complete && location.pathname !== '/onboarding') {
+  if (chimeraPreferences && !chimeraPreferences.chimera_onboarding_complete && location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />;
   }
 

@@ -227,7 +227,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: {
         data: {
-          access_level: 'whisprr',
+          access_level: 'ecosystem',
           legal_accepted_version: CURRENT_LEGAL_VERSION
         },
         emailRedirectTo: window.location.origin
@@ -237,24 +237,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
-
-    if (data.user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('access_level')
-        .eq('user_id', data.user.id)
-        .maybeSingle();
-
-      if (profile?.access_level === 'chimera') {
-        await supabase.auth.signOut();
-        throw new Error(
-          'This is a CHIMERA-only account. CHIMERA accounts cannot sign in to WHISPRR. ' +
-          'Please create a separate WHISPRR account to continue.'
-        );
-      }
-    }
   };
 
   const signInWithGoogle = async () => {
