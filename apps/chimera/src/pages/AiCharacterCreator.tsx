@@ -4,6 +4,7 @@ import {
   ArrowLeft, Save, Bot, Check, RefreshCw, 
   Settings, AlertTriangle, User, FileText, UploadCloud, Plus, Sparkles, Menu, Volume2, Upload
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { checkUserPromptSafety, CRISIS_HELPLINE_INFO } from '../lib/safetyGuard';
@@ -461,9 +462,9 @@ export default function AiCharacterCreator() {
 
           <nav className="mb-8 overflow-x-auto">
             <div className="flex min-w-[680px] items-start justify-between px-1">
-              {[
+              {([
                 ['Identity', 'general', User], ['The Story They Carry', 'definition', FileText], ['First Scene', 'general', Sparkles], ['Their Voice', 'general', Volume2], ['Creator’s Room', 'definition', Settings], ['Publish', 'general', Check],
-              ].map(([label, tab, Icon], index) => <button key={label} type="button" onClick={() => setActiveTab(tab as 'general' | 'definition')} className="group flex w-[105px] flex-col items-center gap-2 text-center"><span className={`flex h-9 w-9 items-center justify-center rounded-full border text-xs font-bold transition-colors ${activeTab === tab ? 'border-[#e4c476] bg-[#5c3c77] text-[#fff0bf]' : 'border-[#8a6c43] bg-[#16101e] text-[#b8a98e] group-hover:border-[#d8b56a]'}`}>{index + 1}</span><span className={`text-[11px] font-semibold leading-tight ${activeTab === tab ? 'text-[#f7df9f]' : 'text-[#afa2b4]'}`}><Icon size={12} className="mx-auto mb-1" />{label}</span></button>)}
+              ] as Array<[string, 'general' | 'definition', LucideIcon]>).map(([label, tab, Icon], index) => <button key={label} type="button" onClick={() => setActiveTab(tab)} className="group flex w-[105px] flex-col items-center gap-2 text-center"><span className={`flex h-9 w-9 items-center justify-center rounded-full border text-xs font-bold transition-colors ${activeTab === tab ? 'border-[#e4c476] bg-[#5c3c77] text-[#fff0bf]' : 'border-[#8a6c43] bg-[#16101e] text-[#b8a98e] group-hover:border-[#d8b56a]'}`}>{index + 1}</span><span className={`text-[11px] font-semibold leading-tight ${activeTab === tab ? 'text-[#f7df9f]' : 'text-[#afa2b4]'}`}><Icon size={12} className="mx-auto mb-1" />{label}</span></button>)}
             </div>
           </nav>
 

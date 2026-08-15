@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Plus, Search, MessageSquare, Loader2, Users, X } from 'lucide-react';
+import { Plus, Search, MessageSquare, Loader2, Users, X, Lock, BookOpen, ShieldCheck } from 'lucide-react';
 import type { Conversation, Profile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -11,6 +11,14 @@ import { CreateGroupRoomModal } from '../components/chat/CreateGroupRoomModal';
 interface ConversationWithProfiles extends Conversation {
   conversation_participants: { user_id: string }[];
   other_user?: Profile;
+}
+
+interface PublicRoleplayScene {
+  id: string;
+  title: string;
+  summary: string;
+  content_rating: 'limited' | 'mature';
+  published_at: string;
 }
 
 export default function ChimeraChatsPage() {
@@ -28,6 +36,9 @@ export default function ChimeraChatsPage() {
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [isCreatingChat, setIsCreatingChat] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
+  const [chatShelf, setChatShelf] = useState<'private' | 'public'>('private');
+  const [publicScenes, setPublicScenes] = useState<PublicRoleplayScene[]>([]);
+  const [loadingPublicScenes, setLoadingPublicScenes] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -153,6 +164,28 @@ export default function ChimeraChatsPage() {
     };
   }, [user]);
 
+  useEffect(() => {
+    if (chatShelf !== 'public') return;
+    const fetchPublicScenes = async () => {
+      setLoadingPublicScenes(true);
+      try {
+        const { data, error } = await supabase
+          .from('roleplay_public_scenes')
+          .select('id, title, summary, content_rating, published_at')
+          .eq('visibility', 'public')
+          .order('published_at', { ascending: false });
+        if (error) throw error;
+        setPublicScenes((data || []) as PublicRoleplayScene[]);
+      } catch (error) {
+        console.error('Could not load public roleplay scenes:', error);
+        setPublicScenes([]);
+      } finally {
+        setLoadingPublicScenes(false);
+      }
+    };
+    fetchPublicScenes();
+  }, [chatShelf]);
+
   const fetchDefaultCharacters = async () => {
     setSearching(true);
     try {
@@ -167,6 +200,7 @@ export default function ChimeraChatsPage() {
             id, user_id, display_name, username, avatar_emoji, photo_url, role
           )
         `)
+        .or(`visibility.eq.public,creator_id.eq.${user?.id}`)
         .limit(20);
 
       if (aiChars && aiChars.length > 0) {
@@ -180,8 +214,7 @@ export default function ChimeraChatsPage() {
           }));
         setSearchResults(formatted);
       } else {
-        const { data: profs } = await supabase.from('profiles').select('*').eq('role', 'ai_character').limit(20);
-        setSearchResults(profs || []);
+        setSearchResults([]);
       }
     } catch (err) {
       console.error('Error fetching characters:', err);
@@ -222,6 +255,7 @@ export default function ChimeraChatsPage() {
           )
         `)
         .or(`name.ilike.%${query}%,short_description.ilike.%${query}%`)
+        .or(`visibility.eq.public,creator_id.eq.${user?.id}`)
         .limit(20);
 
       if (aiChars && aiChars.length > 0) {
@@ -235,12 +269,7 @@ export default function ChimeraChatsPage() {
           }));
         setSearchResults(formatted);
       } else {
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
-          .limit(20);
-        setSearchResults(data || []);
+        setSearchResults([]);
       }
     } catch (error) {
       console.error('Error searching roleplay characters:', error);
@@ -333,15 +362,15 @@ export default function ChimeraChatsPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="max-w-5xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-serif font-bold text-warm-900 dark:text-warm-50 flex items-center gap-2">
-            <span className="text-red-650">🔴</span> CHIMERA Chats
+            Chats
           </h1>
           <p className="text-sm text-warm-500">
-            Your active storytelling and dialogues inside the CHIMERA Nexus
+            Talk to the characters you choose—and let a story continue at your pace.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -357,13 +386,56 @@ export default function ChimeraChatsPage() {
             className="flex items-center gap-1.5 bg-red-650 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-xl text-sm shadow-md transition-all active:scale-95 duration-200"
           >
             <Plus size={16} />
-            <span>New Chat</span>
+            <span>Start a chat</span>
           </button>
         </div>
       </div>
 
-      {/* Loading State */}
-      {loading ? (
+      <div className="mb-6 inline-flex rounded-2xl border border-warm-200 bg-white/70 p-1 shadow-sm dark:border-warm-750 dark:bg-warm-850/80">
+        <button
+          onClick={() => setChatShelf('private')}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${chatShelf === 'private' ? 'bg-red-600 text-white shadow-sm' : 'text-warm-500 hover:text-warm-900 dark:text-warm-400 dark:hover:text-white'}`}
+        >
+          <Lock size={14} /> Private
+        </button>
+        <button
+          onClick={() => setChatShelf('public')}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${chatShelf === 'public' ? 'bg-red-600 text-white shadow-sm' : 'text-warm-500 hover:text-warm-900 dark:text-warm-400 dark:hover:text-white'}`}
+        >
+          <BookOpen size={14} /> Public
+        </button>
+      </div>
+
+      {chatShelf === 'public' ? (
+        <section className="grid gap-5 lg:grid-cols-[1fr_0.48fr]">
+          <div className="rounded-3xl border border-warm-200 bg-white/70 p-5 shadow-sm dark:border-warm-800 dark:bg-warm-900/80 sm:p-6">
+            {loadingPublicScenes ? (
+              <div className="flex min-h-56 items-center justify-center"><Loader2 className="animate-spin text-red-500" size={28} /></div>
+            ) : publicScenes.length === 0 ? (
+              <div className="px-3 py-12 text-center">
+                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl border border-red-500/20 bg-red-500/10 text-red-500"><BookOpen size={28} /></div>
+                <h2 className="font-serif text-2xl font-bold text-warm-900 dark:text-white">No public scenes yet</h2>
+                <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-warm-500 dark:text-warm-400">A public scene will appear here only after someone deliberately shares a private roleplay. CHIMERA never makes a chat public by accident.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {publicScenes.map((scene) => (
+                  <button key={scene.id} onClick={() => navigate(`/conversations/scenes/${scene.id}`)} className="w-full rounded-2xl border border-warm-200 bg-white/70 p-4 text-left transition hover:-translate-y-0.5 hover:border-red-400/40 hover:shadow-md dark:border-warm-700 dark:bg-warm-850">
+                    <div className="flex items-center justify-between gap-3"><h2 className="font-serif text-lg font-bold text-warm-900 dark:text-white">{scene.title}</h2><span className="rounded-full border border-warm-200 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-warm-500 dark:border-warm-700 dark:text-warm-300">{scene.content_rating}</span></div>
+                    {scene.summary && <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-warm-600 dark:text-warm-300">{scene.summary}</p>}
+                    <p className="mt-3 text-xs font-medium text-red-600 dark:text-red-300">Read shared scene</p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <aside className="rounded-3xl border border-amber-500/20 bg-amber-500/[0.06] p-6 shadow-sm">
+            <ShieldCheck className="mb-4 text-amber-500" size={24} />
+            <h2 className="font-serif text-xl font-bold text-warm-900 dark:text-white">When you decide to share</h2>
+            <p className="mt-3 text-sm leading-relaxed text-warm-600 dark:text-warm-300">Give the scene a title, choose its visibility and rating, then confirm before anyone else can read it.</p>
+          </aside>
+        </section>
+      ) : loading ? (
         <div className="flex justify-center items-center py-12">
           <Loader2 size={32} className="animate-spin text-red-500" />
         </div>

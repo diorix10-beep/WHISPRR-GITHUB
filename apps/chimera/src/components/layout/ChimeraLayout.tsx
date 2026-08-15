@@ -26,10 +26,9 @@ interface NavLinkItem {
 
 const ROLEPLAY_NAV_LINKS: NavLinkItem[] = [
   { path: '/discover', token: 'navigation.discover', icon: Compass },
-  { path: '/characters', token: 'navigation.characters', icon: Users },
+  { path: '/characters', token: 'navigation.my_cast', icon: Users },
   { path: '/conversations', token: 'navigation.chats', icon: MessageSquare },
-  { path: '/personas', token: 'navigation.personas', icon: UserCheck },
-  { path: '/characters/new', token: 'navigation.studio', icon: Sparkles },
+  { path: '/personas', token: 'navigation.who_you_are_here', icon: UserCheck },
 ];
 
 const STORYTELLING_NAV_LINKS: NavLinkItem[] = [

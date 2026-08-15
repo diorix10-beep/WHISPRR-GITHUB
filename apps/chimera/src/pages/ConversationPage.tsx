@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import {
-  ArrowLeft, Send, Phone, Video, Loader2, Trash2,
+  ArrowLeft, Send, Phone, Video, Loader2, Trash2, Share2,
   Image as ImageIcon, X, Settings, UserPlus, UserMinus, LogOut, Pencil, Smile, Search,
   PanelRightClose, PanelRightOpen, BookOpen, Copy, RotateCw, Edit3, Camera, Volume2
 } from 'lucide-react';
@@ -96,6 +96,12 @@ export default function ConversationPage() {
   const [showAddCharModal, setShowAddCharModal] = useState(false);
   const [showExpressionModal, setShowExpressionModal] = useState(false);
   const [characterExpressions, setCharacterExpressions] = useState<Record<string, string>>({});
+  const [showPublishSceneModal, setShowPublishSceneModal] = useState(false);
+  const [publishingScene, setPublishingScene] = useState(false);
+  const [sceneTitle, setSceneTitle] = useState('');
+  const [sceneSummary, setSceneSummary] = useState('');
+  const [sceneVisibility, setSceneVisibility] = useState<'unlisted' | 'public'>('unlisted');
+  const [sceneRating, setSceneRating] = useState<'limited' | 'mature'>('limited');
 
   // Roleplay Safety Intervention State
   const [isRoleplayPaused, setIsRoleplayPaused] = useState(false);
@@ -252,12 +258,12 @@ export default function ConversationPage() {
           .maybeSingle();
 
         if (convError) throw convError;
-        if (!conv) { navigate('/messages'); return; }
+        if (!conv) { navigate('/conversations'); return; }
 
         const isParticipant = (conv.conversation_participants || []).some(
           (p: { user_id: string }) => p.user_id === user.id
         );
-        if (!isParticipant) { navigate('/messages'); return; }
+        if (!isParticipant) { navigate('/conversations'); return; }
 
         setConversation(conv);
         setSceneCanon(conv.memory_summary || '');
@@ -1052,7 +1058,7 @@ export default function ConversationPage() {
         .delete()
         .eq('conversation_id', conversationId)
         .eq('user_id', user.id);
-      navigate('/messages');
+      navigate('/conversations');
     } catch { showToast('Failed to leave group', 'error'); }
   };
 
@@ -1127,6 +1133,75 @@ export default function ConversationPage() {
     } catch { showToast('Failed to add member', 'error'); }
   };
 
+  const openPublishSceneModal = () => {
+    const fallbackTitle = otherUser ? `${otherUser.display_name} — a CHIMERA scene` : 'A CHIMERA roleplay scene';
+    setSceneTitle((current) => current || fallbackTitle);
+    setShowPublishSceneModal(true);
+  };
+
+  const handlePublishScene = async () => {
+    if (!user || !conversation || !conversationId) return;
+    if (conversation.type !== 'dm' || conversation.created_by !== user.id) {
+      showToast('Only the person who started this private roleplay can share a scene.', 'error');
+      return;
+    }
+
+    const title = sceneTitle.trim();
+    const summary = sceneSummary.trim();
+    const activeMessages = messages.filter((message) => !message.deleted_at && message.content.trim());
+    if (!title) {
+      showToast('Give this scene a title before sharing it.', 'error');
+      return;
+    }
+    if (activeMessages.length === 0) {
+      showToast('A scene needs at least one message before it can be shared.', 'error');
+      return;
+    }
+
+    setPublishingScene(true);
+    try {
+      const { data: scene, error: sceneError } = await supabase
+        .from('roleplay_public_scenes')
+        .insert({
+          conversation_id: conversationId,
+          owner_id: user.id,
+          title,
+          summary,
+          visibility: sceneVisibility,
+          content_rating: sceneRating,
+        })
+        .select('id')
+        .single();
+      if (sceneError) throw sceneError;
+
+      const snapshots = activeMessages.map((message, position) => ({
+        scene_id: scene.id,
+        source_message_id: message.id,
+        author_label: message.sender_id === user.id
+          ? (profile?.display_name || 'You')
+          : (otherUser?.display_name || 'Character'),
+        author_kind: message.sender_id === user.id ? 'member' : 'character',
+        content: message.content.trim(),
+        position,
+      }));
+      const { error: snapshotError } = await supabase
+        .from('roleplay_public_scene_messages')
+        .insert(snapshots);
+      if (snapshotError) {
+        await supabase.from('roleplay_public_scenes').delete().eq('id', scene.id);
+        throw snapshotError;
+      }
+
+      setShowPublishSceneModal(false);
+      showToast(sceneVisibility === 'public' ? 'Scene published to CHIMERA Chats.' : 'Unlisted scene created. Only people with its link can read it.', 'success');
+    } catch (error) {
+      console.error('Failed to publish roleplay scene:', error);
+      showToast('CHIMERA could not share this scene. Your private chat remains private.', 'error');
+    } finally {
+      setPublishingScene(false);
+    }
+  };
+
   // Get typing display name
   const getTypingDisplay = () => {
     if (typingUsers.length === 0) return null;
@@ -1139,6 +1214,7 @@ export default function ConversationPage() {
   };
 
   const isGroupAdmin = conversation?.type === 'group' && conversation?.created_by === user?.id;
+  const canPublishScene = conversation?.type === 'dm' && conversation?.created_by === user?.id;
 
   if (loading) {
     return (
@@ -1191,7 +1267,7 @@ export default function ConversationPage() {
         <div className={`max-w-7xl mx-auto px-4 py-3 flex items-center justify-between ${isPhoneLayout ? 'relative justify-center' : ''}`}>
           
           <div className={`flex items-center gap-3 flex-1 min-w-0 ${isPhoneLayout ? 'absolute left-4' : ''}`}>
-            <button onClick={() => navigate('/messages')} className="p-2 -ml-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500 transition-colors">
+            <button onClick={() => navigate('/conversations')} className="p-2 -ml-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500 transition-colors">
               <ArrowLeft size={24} />
             </button>
           </div>
@@ -1321,6 +1397,17 @@ export default function ConversationPage() {
                   <BookOpen size={18} />
                   <span className="hidden sm:inline">Novel Studio</span>
                 </button>
+
+                {canPublishScene && (
+                  <button
+                    onClick={openPublishSceneModal}
+                    className="p-2 rounded-xl text-emerald-700 transition-colors hover:bg-emerald-500/10 dark:text-emerald-300"
+                    title="Share a deliberate snapshot of this roleplay"
+                  >
+                    <Share2 size={18} />
+                    <span className="hidden xl:inline ml-1 text-[10px] font-bold uppercase tracking-wider">Share scene</span>
+                  </button>
+                )}
 
                 {/* Multilingual AI Translation Button */}
                 <button
@@ -2120,6 +2207,54 @@ export default function ConversationPage() {
           </div>
         )}
       </div>
+
+      {/* Deliberate public-scene snapshot modal. This never changes the private conversation itself. */}
+      {showPublishSceneModal && canPublishScene && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/65 p-0 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="share-scene-title">
+          <div className="w-full max-w-lg rounded-t-3xl border border-warm-200 bg-white p-6 shadow-2xl dark:border-warm-700 dark:bg-warm-900 sm:rounded-3xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-300">Private by default</p>
+                <h2 id="share-scene-title" className="mt-1 font-serif text-2xl font-bold text-warm-900 dark:text-white">Share a scene, not your live chat</h2>
+              </div>
+              <button onClick={() => setShowPublishSceneModal(false)} className="rounded-xl p-2 text-warm-500 transition hover:bg-warm-100 dark:hover:bg-warm-800" aria-label="Close share scene dialog"><X size={20} /></button>
+            </div>
+            <p className="mt-3 text-sm leading-relaxed text-warm-600 dark:text-warm-300">CHIMERA will make a separate snapshot of the messages currently in this roleplay. Future messages, edits, and private notes remain private.</p>
+
+            <div className="mt-6 space-y-4">
+              <label className="block text-sm font-bold text-warm-800 dark:text-warm-100">Scene title
+                <input value={sceneTitle} onChange={(event) => setSceneTitle(event.target.value)} maxLength={140} className="mt-2 w-full rounded-xl border border-warm-200 bg-white px-3 py-2.5 text-sm text-warm-900 outline-none transition focus:border-emerald-500 dark:border-warm-700 dark:bg-warm-800 dark:text-white" placeholder="The title readers will see" />
+              </label>
+              <label className="block text-sm font-bold text-warm-800 dark:text-warm-100">A short note <span className="font-normal text-warm-500">(optional)</span>
+                <textarea value={sceneSummary} onChange={(event) => setSceneSummary(event.target.value)} maxLength={600} rows={3} className="mt-2 w-full resize-none rounded-xl border border-warm-200 bg-white px-3 py-2.5 text-sm text-warm-900 outline-none transition focus:border-emerald-500 dark:border-warm-700 dark:bg-warm-800 dark:text-white" placeholder="Give readers a little context without revealing more than you mean to." />
+              </label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="rounded-2xl border border-warm-200 p-3 dark:border-warm-700">
+                  <span className="block text-xs font-bold uppercase tracking-wide text-warm-500">Visibility</span>
+                  <select value={sceneVisibility} onChange={(event) => setSceneVisibility(event.target.value as 'unlisted' | 'public')} className="mt-2 w-full bg-transparent text-sm font-bold text-warm-900 outline-none dark:text-white">
+                    <option value="unlisted">Unlisted — link only</option>
+                    <option value="public">Public — CHIMERA Chats</option>
+                  </select>
+                </label>
+                <label className="rounded-2xl border border-warm-200 p-3 dark:border-warm-700">
+                  <span className="block text-xs font-bold uppercase tracking-wide text-warm-500">Content rating</span>
+                  <select value={sceneRating} onChange={(event) => setSceneRating(event.target.value as 'limited' | 'mature')} className="mt-2 w-full bg-transparent text-sm font-bold text-warm-900 outline-none dark:text-white">
+                    <option value="limited">Limited</option>
+                    <option value="mature">Mature</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button onClick={() => setShowPublishSceneModal(false)} disabled={publishingScene} className="rounded-xl px-4 py-2.5 text-sm font-bold text-warm-600 transition hover:bg-warm-100 disabled:opacity-50 dark:text-warm-300 dark:hover:bg-warm-800">Keep it private</button>
+              <button onClick={handlePublishScene} disabled={publishingScene} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60">
+                {publishingScene ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />} {sceneVisibility === 'public' ? 'Publish scene' : 'Create unlisted scene'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Group Settings Modal */}
       {showGroupSettings && conversation?.type === 'group' && (

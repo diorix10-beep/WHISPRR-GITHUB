@@ -67,7 +67,7 @@ export default function CharactersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [tab, setTab] = useState<'mine' | 'drafts' | 'all'>('mine');
+  const [tab, setTab] = useState<'published' | 'private' | 'drafts'>('published');
   const [sortBy, setSortBy] = useState('updated');
   const [selectedDetailChar, setSelectedDetailChar] = useState<any | null>(null);
 
@@ -91,10 +91,11 @@ export default function CharactersPage() {
         .from('ai_characters')
         .select('*');
 
-      if (tab === 'mine') {
-        query = query.eq('creator_id', profile.user_id);
+      query = query.eq('creator_id', profile.user_id);
+      if (tab === 'published') {
+        query = query.eq('visibility', 'public');
       } else {
-        query = query.or(`visibility.eq.public,creator_id.eq.${profile.user_id}`);
+        query = query.neq('visibility', 'public');
       }
 
       if (selectedCategory !== 'All') {
@@ -204,15 +205,15 @@ export default function CharactersPage() {
         <section className="flex flex-col items-center text-center pt-6 sm:pt-8 space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-bold uppercase tracking-wider">
             <Users size={14} />
-            <span>AI Character Multiverse</span>
+            <span>YOUR ROLEPLAY LIBRARY</span>
           </div>
 
           <h1 className="font-serif text-4xl sm:text-5xl font-extrabold tracking-tight text-warm-900 dark:text-white">
-            Characters &amp; OCs
+            My Cast
           </h1>
 
           <p className="text-sm sm:text-base text-warm-600 dark:text-warm-300 max-w-xl mx-auto leading-relaxed">
-            Build, roleplay, and manage persistent AI character identities with customizable personalities, greetings, and memory.
+            The characters you are bringing to life—kept exactly where you mean them to be.
           </p>
 
           <div className="flex items-center gap-3 pt-2 flex-wrap justify-center">
@@ -221,7 +222,7 @@ export default function CharactersPage() {
               className="px-6 py-3 rounded-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-extrabold text-xs shadow-lg shadow-red-600/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
             >
               <Plus size={16} strokeWidth={3} />
-              <span>Create New Character</span>
+              <span>Bring someone into CHIMERA</span>
             </button>
 
             <button
@@ -244,24 +245,24 @@ export default function CharactersPage() {
             {/* Tabs */}
             <div className="flex items-center p-1 rounded-2xl bg-warm-100 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 w-full sm:w-auto">
               <button
-                onClick={() => setTab('mine')}
+                onClick={() => setTab('published')}
                 className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                  tab === 'mine'
+                  tab === 'published'
                     ? 'bg-red-600 text-white shadow-md'
                     : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
               >
-                My Characters
+                Published
               </button>
               <button
-                onClick={() => setTab('all')}
+                onClick={() => setTab('private')}
                 className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                  tab === 'all'
+                  tab === 'private'
                     ? 'bg-red-600 text-white shadow-md'
                     : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
               >
-                Public Multiverse
+                Private
               </button>
               <button
                 onClick={() => setTab('drafts')}
@@ -363,9 +364,9 @@ export default function CharactersPage() {
           ) : characters.length === 0 ? (
             <RichEmptyState
               icon={Users}
-              title={tab === 'mine' ? 'No characters created yet' : 'No characters found'}
-              description={tab === 'mine' ? 'Start building your first AI character with rich backstory & greeting!' : 'Try selecting a different category or search term.'}
-              actionLabel="Create Character"
+              title={tab === 'published' ? 'No one has stepped onto the stage yet.' : 'No private characters found'}
+              description={tab === 'published' ? 'Your published characters will appear here once you choose to share them with the multiverse.' : 'Private characters stay here for you until you decide otherwise.'}
+              actionLabel="Bring someone into CHIMERA"
               onAction={() => navigate('/characters/new')}
             />
           ) : (

@@ -69,6 +69,7 @@ const MemoryManagerPage = lazy(() => import('./pages/MemoryManagerPage'));
 // ── Conversations Module ───────────────────────────────────
 const ChimeraChatsPage  = lazy(() => import('./pages/ChimeraChatsPage'));
 const ConversationPage  = lazy(() => import('./pages/ConversationPage'));
+const PublicRoleplayScenePage = lazy(() => import('./pages/PublicRoleplayScenePage'));
 const ModelsPage        = lazy(() => import('./pages/ModelsPage'));
 const VoiceLibraryPage  = lazy(() => import('./pages/VoiceLibraryPage'));
 
@@ -247,6 +248,7 @@ function AppLoader() {
 
             {/* Conversations Module */}
             <Route path="/conversations" element={<ChimeraChatsPage />} />
+            <Route path="/conversations/scenes/:sceneId" element={<PublicRoleplayScenePage />} />
             <Route path="/conversations/:id" element={<ConversationPage />} />
             {/* Legacy routes redirect */}
             <Route path="/chats" element={<Navigate to="/conversations" replace />} />

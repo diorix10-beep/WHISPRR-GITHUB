@@ -3,7 +3,7 @@ import { useNavigate, useOutletContext } from 'react-router-dom';
 import {
   Compass, Sparkles, MessageSquare, Search, Filter, ShieldCheck, Heart, User, X, Play,
   BookOpen, PenTool, Layers, BookMarked, UserCheck, Globe, Users, ArrowRight, Flame, Plus,
-  TrendingUp, Award, ChevronRight
+  Award, ChevronRight
 } from 'lucide-react';
 import { RichEmptyState } from '../components/common/RichEmptyState';
 import { supabase } from '../lib/supabase';
@@ -98,7 +98,9 @@ export default function DiscoverPage() {
     try {
       const { data, error } = await supabase
         .from('ai_characters')
-        .select('*')
+        .select('*, bot_profile:profiles!ai_characters_user_id_fkey(display_name, username, avatar_emoji, photo_url)')
+        .eq('visibility', 'public')
+        .eq('status', 'published')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -106,25 +108,17 @@ export default function DiscoverPage() {
       const formattedCharacters = (data || []).map((char: any) => ({
         id: char.id,
         user_id: char.user_id || char.id,
-        display_name: char.name || char.display_name || 'Character Persona',
-        username: char.username || 'creator',
-        photo_url: char.photo_url || null,
-        avatar_emoji: '🎭',
+        display_name: char.name || char.bot_profile?.display_name || 'Untitled character',
+        username: char.bot_profile?.username || '',
+        photo_url: char.avatar_url || char.bot_profile?.photo_url || null,
+        avatar_emoji: char.bot_profile?.avatar_emoji || '🎭',
         bio: char.short_description || char.long_description || '',
         badges: char.tags || ['Roleplay'],
         rating: char.content_rating || 'SFW',
         scenario: char.scenario || '',
         greeting: char.greeting || '',
-        mood: 'Ready to chat',
+        mood: '',
         interests: char.tags || [],
-        location: 'CHIMERA Nexus',
-        occupation: 'Interactive Persona',
-        pronouns: 'They/Them',
-        relationship_status: 'Available',
-        personality_type: 'Engaging',
-        chats_count: char.chats_count || 0,
-        followers_count: char.followers_count || 0,
-        likes_count: char.likes_count || 0,
         role: 'ai_character'
       }));
       
@@ -241,7 +235,7 @@ export default function DiscoverPage() {
               : 'bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400'
           }`}>
             <Sparkles size={14} className="animate-spin" />
-            <span>{isStoryMode ? 'CHIMERA Publishing Hub' : 'CHIMERA Multiverse Discovery'}</span>
+            <span>{isStoryMode ? 'CHIMERA Publishing Hub' : 'Roleplay discovery'}</span>
           </div>
 
           {/* Main Headline */}
@@ -250,14 +244,14 @@ export default function DiscoverPage() {
               {isStoryMode ? (
                 <>Where <span className="text-purple-600 dark:text-purple-400">Stories</span> Come to Life</>
               ) : (
-                <>Step Into an Infinite <span className="text-red-600 dark:text-red-500">Multiverse</span></>
+                <>The <span className="text-red-600 dark:text-red-500">Threshold</span></>
               )}
             </h1>
 
             <p className="text-sm sm:text-base text-warm-600 dark:text-warm-300 max-w-xl mx-auto leading-relaxed font-normal">
               {isStoryMode
                 ? 'Discover immersive novels, original sagas, and world lore written by passionate human creators & AI co-authors.'
-                : 'Roleplay with persistent AI identities, explore deep worldbuilding, and craft original narrative adventures.'}
+                : 'A place to meet public characters created by real people.'}
             </p>
           </div>
 
@@ -267,7 +261,7 @@ export default function DiscoverPage() {
               <Search size={18} className="absolute left-4 text-warm-400" />
               <input
                 type="text"
-                placeholder={isStoryMode ? "Search stories by title, author, or genre..." : "Search characters by name, personality, or tag..."}
+                placeholder={isStoryMode ? "Search stories by title, author, or genre..." : "Search real public characters by name, mood, or genre"}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-11 pr-10 py-3.5 rounded-full bg-white dark:bg-warm-850 border border-warm-200 dark:border-warm-750 text-xs sm:text-sm font-medium shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all text-warm-900 dark:text-warm-50 placeholder-warm-400"
@@ -285,48 +279,32 @@ export default function DiscoverPage() {
         </section>
 
 
-        {/* ── 2. PRIMARY QUICK ACTIONS BAR ── */}
-        <section className="p-3 rounded-3xl bg-white/70 dark:bg-warm-850/80 backdrop-blur-xl border border-warm-200/80 dark:border-warm-750/80 shadow-lg flex items-center justify-around flex-wrap gap-2">
+        {/* ── 2. ROLEPLAY ACTIONS ── */}
+        {!isStoryMode && <section className="p-3 rounded-3xl bg-white/70 dark:bg-warm-850/80 backdrop-blur-xl border border-warm-200/80 dark:border-warm-750/80 shadow-lg flex items-center justify-around flex-wrap gap-2">
           <button
             onClick={() => navigate('/characters')}
             className="flex-1 min-w-[130px] py-3 px-4 rounded-2xl bg-warm-100/50 dark:bg-warm-800/50 hover:bg-red-500/10 text-warm-800 dark:text-warm-200 hover:text-red-600 dark:hover:text-red-400 border border-transparent hover:border-red-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold group"
           >
             <Users size={16} className="text-red-500 group-hover:scale-110 transition-transform" />
-            <span>{t('navigation.characters')}</span>
+            <span>Open My Cast</span>
           </button>
 
           <button
-            onClick={() => navigate('/stories')}
-            className="flex-1 min-w-[130px] py-3 px-4 rounded-2xl bg-warm-100/50 dark:bg-warm-800/50 hover:bg-purple-500/10 text-warm-800 dark:text-warm-200 hover:text-purple-600 dark:hover:text-purple-400 border border-transparent hover:border-purple-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold group"
+            onClick={() => navigate('/conversations')}
+            className="flex-1 min-w-[130px] py-3 px-4 rounded-2xl bg-warm-100/50 dark:bg-warm-800/50 hover:bg-red-500/10 text-warm-800 dark:text-warm-200 hover:text-red-600 dark:hover:text-red-400 border border-transparent hover:border-red-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold group"
           >
-            <BookOpen size={16} className="text-purple-500 group-hover:scale-110 transition-transform" />
-            <span>{t('navigation.stories')}</span>
+            <MessageSquare size={16} className="text-red-500 group-hover:scale-110 transition-transform" />
+            <span>Open Chats</span>
           </button>
 
           <button
-            onClick={() => navigate('/worlds')}
-            className="flex-1 min-w-[130px] py-3 px-4 rounded-2xl bg-warm-100/50 dark:bg-warm-800/50 hover:bg-cyan-500/10 text-warm-800 dark:text-warm-200 hover:text-cyan-600 dark:hover:text-cyan-400 border border-transparent hover:border-cyan-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold group"
+            onClick={() => navigate('/characters/new')}
+            className="flex-1 min-w-[130px] py-3 px-4 rounded-2xl bg-red-600 hover:bg-red-500 text-white border border-red-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold group"
           >
-            <Globe size={16} className="text-cyan-500 group-hover:scale-110 transition-transform" />
-            <span>{t('navigation.worlds')}</span>
+            <Plus size={16} className="group-hover:scale-110 transition-transform" />
+            <span>Create a character</span>
           </button>
-
-          <button
-            onClick={() => navigate('/studio')}
-            className="flex-1 min-w-[130px] py-3 px-4 rounded-2xl bg-warm-100/50 dark:bg-warm-800/50 hover:bg-amber-500/10 text-warm-800 dark:text-warm-200 hover:text-amber-600 dark:hover:text-amber-400 border border-transparent hover:border-amber-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold group"
-          >
-            <Sparkles size={16} className="text-amber-500 group-hover:scale-110 transition-transform" />
-            <span>{t('navigation.studio')}</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/shards')}
-            className="flex-1 min-w-[130px] py-3 px-4 rounded-2xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 transition-all flex items-center justify-center gap-2 text-xs font-bold group"
-          >
-            <Award size={16} className="text-blue-500 group-hover:scale-110 transition-transform" />
-            <span>{t('navigation.shards_hub')}</span>
-          </button>
-        </section>
+        </section>}
 
 
         {/* ── 3. EXPLORATION FEED (100% Honest Empty States) ── */}
@@ -365,8 +343,8 @@ export default function DiscoverPage() {
         <section className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="font-serif text-2xl font-bold text-warm-900 dark:text-white flex items-center gap-2">
-              <TrendingUp size={22} className={isStoryMode ? 'text-purple-500' : 'text-red-500'} />
-              <span>{isStoryMode ? 'Trending Stories & Sagas' : 'Trending AI Characters'}</span>
+              {isStoryMode ? <BookOpen size={22} className="text-purple-500" /> : <Users size={22} className="text-red-500" />}
+              <span>{isStoryMode ? 'Published Stories & Sagas' : 'Public characters'}</span>
             </h2>
 
             <button
@@ -388,10 +366,10 @@ export default function DiscoverPage() {
             filteredCharacters.length === 0 ? (
               <RichEmptyState
                 icon={Users}
-                title="No characters found"
-                description={searchQuery || selectedCategory !== 'All' ? `No characters match "${searchQuery || selectedCategory}". Try clearing your filters or exploring another category.` : "Start building the first AI character for the CHIMERA multiverse!"}
-                actionLabel={searchQuery || selectedCategory !== 'All' ? "Clear Search & Filters" : "Create Character"}
-                onAction={searchQuery || selectedCategory !== 'All' ? () => { setSearchQuery(''); setSelectedCategory('All'); } : () => navigate('/studio')}
+                title={searchQuery || selectedCategory !== 'All' ? 'No public characters found' : 'The multiverse is waiting for its first voices.'}
+                description={searchQuery || selectedCategory !== 'All' ? `No public characters match "${searchQuery || selectedCategory}". Try clearing your filters or exploring another category.` : 'When creators choose to publish their characters, you will find them here—with their worlds, their intent, and a clear path into the story.'}
+                actionLabel={searchQuery || selectedCategory !== 'All' ? "Clear Search & Filters" : "Create a character"}
+                onAction={searchQuery || selectedCategory !== 'All' ? () => { setSearchQuery(''); setSelectedCategory('All'); } : () => navigate('/characters/new')}
                 onSelectCategory={(cat) => setSelectedCategory(cat)}
               />
             ) : (
@@ -414,13 +392,13 @@ export default function DiscoverPage() {
                           {char.display_name}
                         </h4>
                         <p className="text-xs text-warm-500 dark:text-warm-400 line-clamp-2 leading-relaxed">
-                          {char.bio || "Persistant AI identity ready for roleplay."}
+                          {char.bio || 'A public character waiting for the right story.'}
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between pt-2 border-t border-warm-100 dark:border-warm-800 text-xs">
-                      <span className="text-warm-400 font-medium">@{char.username || 'creator'}</span>
+                      <span className="text-warm-400 font-medium">{char.username ? `@${char.username}` : 'Creator'}</span>
                       
                       <button
                         onClick={(e) => {

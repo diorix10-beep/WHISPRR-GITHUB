@@ -99,15 +99,15 @@ export default function PersonasPage() {
         <section className="flex flex-col items-center text-center pt-6 sm:pt-8 space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-bold uppercase tracking-wider">
             <UserCheck size={14} />
-            <span>{t('persona.personas_title')}</span>
+            <span>YOUR ROLEPLAY PRESENCE</span>
           </div>
 
           <h1 className="font-serif text-4xl sm:text-5xl font-extrabold tracking-tight text-warm-900 dark:text-white">
-            {t('persona.personas_title')}
+            Who You Are Here
           </h1>
 
           <p className="text-sm sm:text-base text-warm-600 dark:text-warm-300 max-w-xl mx-auto leading-relaxed">
-            {t('persona.persona_desc')}
+            Choose the version of yourself you bring into a scene. Personas stay yours; you decide where they appear.
           </p>
 
           <button
@@ -115,7 +115,7 @@ export default function PersonasPage() {
             className="px-6 py-3 rounded-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-extrabold text-xs shadow-lg shadow-red-600/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
           >
             <Plus size={16} strokeWidth={3} />
-            <span>{t('persona.create_persona')}</span>
+            <span>Create a persona</span>
           </button>
         </section>
 
