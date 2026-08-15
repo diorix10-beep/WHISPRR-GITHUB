@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { resolveLorebookContext, type RuntimeLorebookEntry } from '../src/lib/lorebookRuntime';
+import { resolveLorebookContext, type RuntimeLorebookEntry } from '../src/lib/lorebookRuntime.js';
 
 export const config = {
   runtime: 'edge',
