@@ -194,32 +194,32 @@ export default function CharactersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-transparent text-warm-900 dark:text-warm-50 font-sans pb-24 relative overflow-hidden transition-colors duration-300">
+    <div className="rp-page font-sans pb-24 relative overflow-hidden">
       
       {/* Ambient Red Glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-b from-red-600/15 via-amber-600/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 relative z-10 pt-6">
+      <div className="max-w-[1420px] mx-auto px-4 sm:px-6 lg:px-8 space-y-10 relative z-10 pt-10">
 
         {/* ── 1. HERO SECTION ── */}
-        <section className="flex flex-col items-center text-center pt-6 sm:pt-8 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-bold uppercase tracking-wider">
+        <section className="flex flex-col items-center text-center pt-6 sm:pt-10 space-y-5">
+          <div className="rp-micro inline-flex items-center gap-2 rounded-full border border-[#c99b50]/50 bg-black/30 px-3.5 py-1.5">
             <Users size={14} />
             <span>YOUR ROLEPLAY LIBRARY</span>
           </div>
 
-          <h1 className="font-serif text-4xl sm:text-5xl font-extrabold tracking-tight text-warm-900 dark:text-white">
+          <h1 className="rp-heading text-4xl sm:text-6xl font-extrabold tracking-tight">
             My Cast
           </h1>
 
-          <p className="text-sm sm:text-base text-warm-600 dark:text-warm-300 max-w-xl mx-auto leading-relaxed">
-            The characters you are bringing to life—kept exactly where you mean them to be.
+          <p className="rp-copy text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+            The people you’ve brought into CHIMERA. Create, protect, and return to every character whose story is still unfolding.
           </p>
 
           <div className="flex items-center gap-3 pt-2 flex-wrap justify-center">
             <button
               onClick={() => navigate('/characters/new')}
-              className="px-6 py-3 rounded-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-extrabold text-xs shadow-lg shadow-red-600/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+            className="rp-gold-button"
             >
               <Plus size={16} strokeWidth={3} />
               <span>Bring someone into CHIMERA</span>
@@ -227,7 +227,7 @@ export default function CharactersPage() {
 
             <button
               onClick={() => navigate('/characters/new?import=true')}
-              className="px-5 py-3 rounded-full bg-white/10 dark:bg-warm-800/80 hover:bg-white/20 text-warm-800 dark:text-white font-bold text-xs border border-warm-200 dark:border-warm-700 transition-all flex items-center gap-2"
+            className="rp-outline-button"
               title="Import Character Card (.json or .png from Character.AI / Janitor AI)"
             >
               <Sparkles size={15} className="text-amber-500" />
@@ -238,18 +238,18 @@ export default function CharactersPage() {
 
 
         {/* ── 2. QUICK ACTIONS & FILTER CONTROLS ── */}
-        <section className="p-4 rounded-3xl bg-white/70 dark:bg-warm-850/80 backdrop-blur-xl border border-warm-200/80 dark:border-warm-750/80 shadow-lg space-y-4">
+        <section className="rp-panel p-4 rounded-3xl space-y-4">
           
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             
             {/* Tabs */}
-            <div className="flex items-center p-1 rounded-2xl bg-warm-100 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 w-full sm:w-auto">
+            <div className="flex items-center p-1 rounded-2xl border border-[#c99b50]/35 bg-black/30 w-full sm:w-auto">
               <button
                 onClick={() => setTab('published')}
                 className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                   tab === 'published'
-                    ? 'bg-red-600 text-white shadow-md'
-                    : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
+                    ? 'bg-[#2b2116] text-[#ffe2a1] shadow-md ring-1 ring-[#c99b50]/70'
+                    : 'text-[#bfb4a3] hover:text-[#f4d390]'
                 }`}
               >
                 Published
@@ -258,8 +258,8 @@ export default function CharactersPage() {
                 onClick={() => setTab('private')}
                 className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                   tab === 'private'
-                    ? 'bg-red-600 text-white shadow-md'
-                    : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
+                    ? 'bg-[#2b2116] text-[#ffe2a1] shadow-md ring-1 ring-[#c99b50]/70'
+                    : 'text-[#bfb4a3] hover:text-[#f4d390]'
                 }`}
               >
                 Private
@@ -268,8 +268,8 @@ export default function CharactersPage() {
                 onClick={() => setTab('drafts')}
                 className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                   tab === 'drafts'
-                    ? 'bg-red-600 text-white shadow-md'
-                    : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
+                    ? 'bg-[#2b2116] text-[#ffe2a1] shadow-md ring-1 ring-[#c99b50]/70'
+                    : 'text-[#bfb4a3] hover:text-[#f4d390]'
                 }`}
               >
                 Drafts
@@ -281,7 +281,7 @@ export default function CharactersPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-warm-100 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 text-xs font-bold text-warm-700 dark:text-warm-300 focus:outline-none"
+                className="px-3 py-2 rounded-xl border border-[#c99b50]/35 bg-black/30 text-xs font-bold text-[#e6d7bf] focus:outline-none"
               >
                 {SORT_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -290,11 +290,11 @@ export default function CharactersPage() {
                 ))}
               </select>
 
-              <div className="flex items-center p-1 rounded-xl bg-warm-100 dark:bg-warm-800 border border-warm-200 dark:border-warm-700">
+              <div className="flex items-center p-1 rounded-xl border border-[#c99b50]/35 bg-black/30">
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`p-1.5 rounded-lg transition-all ${
-                    viewMode === 'grid' ? 'bg-white dark:bg-warm-700 text-red-600 dark:text-red-400 shadow-sm' : 'text-warm-400'
+                    viewMode === 'grid' ? 'bg-[#2b2116] text-[#f2d28f] shadow-sm' : 'text-[#a99e8f]'
                   }`}
                 >
                   <Grid3X3 size={16} />
@@ -302,7 +302,7 @@ export default function CharactersPage() {
                 <button
                   onClick={() => setViewMode('list')}
                   className={`p-1.5 rounded-lg transition-all ${
-                    viewMode === 'list' ? 'bg-white dark:bg-warm-700 text-red-600 dark:text-red-400 shadow-sm' : 'text-warm-400'
+                    viewMode === 'list' ? 'bg-[#2b2116] text-[#f2d28f] shadow-sm' : 'text-[#a99e8f]'
                   }`}
                 >
                   <List size={16} />
@@ -320,8 +320,8 @@ export default function CharactersPage() {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
                   selectedCategory === cat
-                    ? 'bg-red-600 text-white shadow-sm'
-                    : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
+                    ? 'bg-[#9b6934] text-[#fff1ce] shadow-sm'
+                    : 'border border-[#c99b50]/25 bg-black/25 text-[#c8bba7] hover:text-[#f4d390]'
                 }`}
               >
                 {cat}

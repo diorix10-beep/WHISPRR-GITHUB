@@ -183,8 +183,10 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
                 : isActive
                   ? creativeMode === 'storytelling'
                     ? 'text-purple-600 dark:text-purple-400 font-bold'
-                    : 'text-red-600 dark:text-red-400 font-bold'
-                  : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-warm-100'
+                    : 'text-[#f5d18c] font-bold'
+                  : creativeMode === 'roleplay'
+                    ? 'text-[#ddd0bc] hover:text-[#f5d18c]'
+                    : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-warm-100'
             } ${isMobile ? 'flex w-full rounded-lg hover:bg-warm-100 dark:hover:bg-warm-800' : ''}`
           }
         >
@@ -202,7 +204,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
                 {/* Active underline indicator for desktop */}
                 {!isMobile && isActive && !link.comingSoon && (
                   <span className={`absolute bottom-0 left-0 w-full h-0.5 rounded-t-md ${
-                    creativeMode === 'storytelling' ? 'bg-purple-600 dark:bg-purple-500' : 'bg-red-600 dark:bg-red-500'
+                    creativeMode === 'storytelling' ? 'bg-purple-600 dark:bg-purple-500' : 'bg-[#e5bd74] shadow-[0_-2px_12px_rgba(229,189,116,0.75)]'
                   }`} />
                 )}
               </span>
@@ -214,7 +216,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
   );
 
   return (
-    <div className={`min-h-screen bg-transparent transition-colors duration-300 flex flex-col font-sans relative ${creativeMode === 'storytelling' ? 'bg-[#081426]' : ''}`}>
+    <div className={`min-h-screen bg-transparent transition-colors duration-300 flex flex-col font-sans relative ${creativeMode === 'storytelling' ? 'bg-[#081426]' : 'bg-[#07080c]'}`}>
       {creativeMode === 'storytelling' && (
         <div
           aria-hidden="true"
@@ -223,7 +225,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
         />
       )}
       {/* Top Navigation Header */}
-      <header className="sticky top-0 z-40 w-full bg-warm-950/70 dark:bg-warm-950/80 backdrop-blur-2xl border-b border-warm-800/60 shadow-lg transition-colors duration-300">
+      <header className={`sticky top-0 z-40 w-full backdrop-blur-2xl border-b shadow-lg transition-colors duration-300 ${creativeMode === 'roleplay' ? 'border-[#c99b50]/25 bg-[#08090e]/90 shadow-black/50' : 'bg-warm-950/70 dark:bg-warm-950/80 border-warm-800/60'}`}>
         <div className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* 1. BLOC GAUCHE — Logo */}
@@ -253,7 +255,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               <span className={`font-serif text-base sm:text-xl font-extrabold tracking-wider bg-clip-text text-transparent transition-all duration-300 drop-shadow-sm ${
                 creativeMode === 'storytelling'
                   ? 'bg-gradient-to-r from-purple-500 via-indigo-400 to-cyan-400'
-                  : 'bg-gradient-to-r from-red-500 via-rose-400 to-amber-400'
+                  : 'bg-gradient-to-r from-[#f8d796] via-[#d5a957] to-[#9b642f]'
               }`}>
                 CHIMERA
               </span>
@@ -262,7 +264,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
           {/* 2. BLOC MILIEU — Clean Fluid Primary Navigation */}
           <div className="hidden lg:flex min-w-0 flex-1 items-center justify-center px-2 xl:px-5">
-            <nav className={`grid w-full ${currentNavLinks.length === 5 ? 'max-w-[660px] grid-cols-5' : currentNavLinks.length === 4 ? 'max-w-[540px] grid-cols-4' : 'max-w-[420px] grid-cols-3'} items-center gap-1 rounded-2xl border border-warm-800/50 bg-warm-900/20 p-1 text-center`}>
+            <nav className={`grid w-full ${currentNavLinks.length === 5 ? 'max-w-[660px] grid-cols-5' : currentNavLinks.length === 4 ? 'max-w-[540px] grid-cols-4' : 'max-w-[420px] grid-cols-3'} items-center gap-1 rounded-2xl border p-1 text-center ${creativeMode === 'roleplay' ? 'border-[#c99b50]/20 bg-black/25' : 'border-warm-800/50 bg-warm-900/20'}`}>
               {renderNavLinks()}
             </nav>
           </div>
@@ -288,12 +290,12 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             </div>
 
             {/* Creative Mode Switch Pill — Responsive on Mobile & Desktop */}
-            <div className="flex items-center bg-warm-200/70 dark:bg-warm-800/90 p-0.5 sm:p-1 rounded-xl sm:rounded-2xl border border-warm-200/90 dark:border-warm-750/90 shadow-inner">
+            <div className={`flex items-center p-0.5 sm:p-1 rounded-xl sm:rounded-2xl border shadow-inner ${creativeMode === 'roleplay' ? 'border-[#c99b50]/55 bg-black/35' : 'bg-warm-200/70 dark:bg-warm-800/90 border-warm-200/90 dark:border-warm-750/90'}`}>
               <button
                 onClick={() => toggleCreativeMode('roleplay')}
                 className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all duration-300 ${
-                  creativeMode === 'roleplay' 
-                    ? 'bg-red-600 text-white shadow-md shadow-red-600/30' 
+                  creativeMode === 'roleplay'
+                    ? 'bg-[#2b2116] text-[#ffe7b5] shadow-md ring-1 ring-[#c99b50]/70'
                     : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
                 title={t('common.roleplay')}
@@ -340,7 +342,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               className={`min-w-[125px] justify-center flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs text-white shadow-md active:scale-[0.98] transition-all shrink-0 ${
                 creativeMode === 'storytelling'
                   ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-600/30'
-                  : 'bg-red-600 hover:bg-red-500 shadow-red-600/30'
+                  : 'border border-[#dfb96e] bg-[linear-gradient(135deg,#8d5f2e,#c9964f,#7f532a)] text-[#fff6e3] shadow-[#6b451f]/40 hover:brightness-110'
               }`}
             >
               <Plus size={16} />

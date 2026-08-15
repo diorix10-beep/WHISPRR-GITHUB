@@ -164,6 +164,43 @@
 }
 
 @layer components {
+  /* ── Roleplay: the shared moonlit CHIMERA visual language ── */
+  .rp-page {
+    @apply relative min-h-screen overflow-hidden pb-24 text-[#f6eee0];
+    background:
+      linear-gradient(90deg, rgba(4, 5, 9, 0.98) 0%, rgba(5, 6, 11, 0.93) 36%, rgba(7, 7, 12, 0.70) 70%, rgba(7, 7, 12, 0.82) 100%),
+      url('/images/chimera_castle_hero_bg.jpg') right top / cover fixed no-repeat;
+  }
+
+  .rp-page::before {
+    content: '';
+    @apply pointer-events-none absolute inset-0 opacity-60;
+    background-image: radial-gradient(circle at 12% 10%, rgba(210, 160, 83, 0.16), transparent 22%), radial-gradient(circle at 72% 4%, rgba(111, 69, 138, 0.16), transparent 24%);
+  }
+
+  .rp-panel {
+    @apply border border-[#c99b50]/50 bg-[#0b0b12]/75 shadow-[0_24px_70px_rgba(0,0,0,0.42)];
+    backdrop-filter: blur(14px);
+  }
+
+  .rp-card {
+    @apply border border-[#c99b50]/55 bg-[#130e19]/85 shadow-[0_18px_42px_rgba(0,0,0,0.32)] transition duration-300;
+    background-image: radial-gradient(circle at 76% 12%, rgba(135, 81, 161, 0.19), transparent 34%), linear-gradient(135deg, rgba(28, 18, 33, 0.95), rgba(11, 11, 17, 0.92));
+  }
+
+  .rp-card:hover { @apply -translate-y-0.5 border-[#e8c178]/80 shadow-[0_22px_56px_rgba(0,0,0,0.5)]; }
+
+  .rp-gold-button {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-[#dfb96e] bg-[linear-gradient(135deg,#8d5f2e,#c9964f,#7f532a)] px-5 py-3 text-sm font-bold text-[#fff6e3] shadow-[0_12px_26px_rgba(123,76,30,0.35)] transition;
+  }
+  .rp-gold-button:hover { @apply border-[#ffe0a0] brightness-110; }
+
+  .rp-outline-button { @apply inline-flex items-center justify-center gap-2 rounded-xl border border-[#c99b50]/65 bg-black/25 px-5 py-3 text-sm font-bold text-[#f2dfb7] transition hover:border-[#efd18b] hover:bg-[#c99b50]/10; }
+
+  .rp-heading { @apply font-serif text-[#fff4df] drop-shadow-[0_3px_22px_rgba(0,0,0,0.72)]; }
+  .rp-copy { @apply text-[#d1c4b0]; }
+  .rp-micro { @apply text-xs font-bold uppercase tracking-[0.18em] text-[#e2bd76]; }
+
   .btn-primary {
     @apply bg-primary-500 text-white font-medium py-2.5 px-6 rounded-2xl
       hover:bg-primary-600 active:bg-primary-700 transition-all duration-200
