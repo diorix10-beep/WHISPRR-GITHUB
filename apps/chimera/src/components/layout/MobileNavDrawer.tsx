@@ -9,6 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Avatar } from '../common/Avatar';
 import { ShardCrystalImage } from '../common/ShardCrystalImage';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface MobileNavDrawerProps {
   isOpen: boolean;
@@ -99,6 +100,8 @@ function MobileNavDrawerContent({
   onOpenSearch,
 }: MobileNavDrawerProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const isRoleplay = creativeMode === 'roleplay';
   
   // Safe auth context access
   let profile = null;
@@ -139,11 +142,10 @@ function MobileNavDrawerContent({
   };
 
   const mainLinks = creativeMode === 'roleplay' ? [
-    { path: '/discover', label: 'Discover', icon: Compass },
-    { path: '/characters', label: 'Characters', icon: Users },
-    { path: '/conversations', label: 'Chats', icon: MessageSquare },
-    { path: '/personas', label: 'Personas', icon: User },
-    { path: '/characters/new', label: 'Studio', icon: Sparkles },
+    { path: '/discover', label: t('navigation.discover'), icon: Compass },
+    { path: '/characters', label: t('navigation.my_cast'), icon: Users },
+    { path: '/conversations', label: t('navigation.chats'), icon: MessageSquare },
+    { path: '/personas', label: t('navigation.who_you_are_here'), icon: User },
   ] : [
     { path: '/workspace', label: 'Workspace', icon: Feather },
     { path: '/stories', label: 'Stories', icon: BookOpen },
@@ -159,43 +161,43 @@ function MobileNavDrawerContent({
       />
 
       {/* Drawer Panel */}
-      <div className="relative w-80 max-w-[85vw] bg-white dark:bg-warm-900 h-[100dvh] max-h-[100dvh] shadow-2xl border-r border-warm-200 dark:border-warm-800 flex flex-col z-50 animate-in slide-in-from-left duration-200 overflow-hidden">
+      <div className={`relative z-50 flex h-[100dvh] max-h-[100dvh] w-80 max-w-[85vw] flex-col overflow-hidden border-r shadow-2xl animate-in slide-in-from-left duration-200 ${isRoleplay ? 'border-[#c99b50]/35 bg-[#0a0b11] text-[#f5ead7]' : 'border-warm-200 bg-white dark:border-warm-800 dark:bg-warm-900'}`}>
         
         {/* Header */}
-        <div className="p-4 border-b border-warm-200 dark:border-warm-800 flex items-center justify-between bg-warm-50/50 dark:bg-warm-950/50 flex-shrink-0">
+        <div className={`flex shrink-0 items-center justify-between border-b p-4 ${isRoleplay ? 'border-[#c99b50]/25 bg-[#090a10]/90' : 'border-warm-200 bg-warm-50/50 dark:border-warm-800 dark:bg-warm-950/50'}`}>
           <div className="flex items-center gap-2">
             <span className={`font-serif text-lg font-extrabold tracking-wider bg-clip-text text-transparent ${
               creativeMode === 'storytelling'
                 ? 'bg-gradient-to-r from-purple-500 via-indigo-400 to-cyan-400'
-                : 'bg-gradient-to-r from-red-500 via-rose-400 to-amber-400'
+                : 'bg-gradient-to-r from-[#f8d796] via-[#d5a957] to-[#9b642f]'
             }`}>
               CHIMERA
             </span>
             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-              creativeMode === 'storytelling' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' : 'bg-red-500/10 text-red-500'
+              creativeMode === 'storytelling' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' : 'border border-[#c99b50]/40 bg-[#2b2116] text-[#e8c378]'
             }`}>
               {creativeMode === 'storytelling' ? 'Storytelling 📖' : 'Roleplay 🎭'}
             </span>
           </div>
           <button 
             onClick={onClose}
-            className="p-1 text-warm-400 hover:text-warm-700 dark:hover:text-warm-200 rounded-full hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
+            className={`rounded-full p-1 transition-colors ${isRoleplay ? 'text-[#b9ad9c] hover:bg-[#c99b50]/10 hover:text-[#ffe8b5]' : 'text-warm-400 hover:bg-warm-100 hover:text-warm-700 dark:hover:bg-warm-800 dark:hover:text-warm-200'}`}
           >
             <X size={20} />
           </button>
         </div>
 
         {/* Creative Mode Toggle */}
-        <div className="p-3 border-b border-warm-100 dark:border-warm-800 bg-warm-50 dark:bg-warm-950/30 flex-shrink-0">
-          <div className="text-[10px] uppercase font-bold tracking-widest text-warm-400 mb-1.5 px-1">
+        <div className={`shrink-0 border-b p-3 ${isRoleplay ? 'border-[#c99b50]/20 bg-black/25' : 'border-warm-100 bg-warm-50 dark:border-warm-800 dark:bg-warm-950/30'}`}>
+          <div className={`mb-1.5 px-1 text-[10px] font-bold uppercase tracking-widest ${isRoleplay ? 'text-[#b9ad9c]' : 'text-warm-400'}`}>
             Creative Workspace
           </div>
-          <div className="flex bg-warm-200/70 dark:bg-warm-800/70 p-0.5 rounded-xl">
+          <div className={`flex rounded-xl p-0.5 ${isRoleplay ? 'border border-[#c99b50]/35 bg-black/35' : 'bg-warm-200/70 dark:bg-warm-800/70'}`}>
             <button
               onClick={() => toggleCreativeMode('roleplay')}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${
                 creativeMode === 'roleplay'
-                  ? 'bg-red-600 text-white shadow-md shadow-red-600/20'
+                  ? 'bg-[#2b2116] text-[#ffe7b5] shadow-md ring-1 ring-[#c99b50]/70'
                   : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
               }`}
             >
@@ -219,14 +221,14 @@ function MobileNavDrawerContent({
               onClose();
               navigate(creativeMode === 'storytelling' ? '/vellum' : '/shards');
             }}
-            className={`w-full mt-2.5 p-2.5 rounded-xl border flex items-center justify-between text-xs font-bold transition-all shadow-sm ${creativeMode === 'storytelling' ? 'bg-[#10213b]/80 hover:bg-[#173050]/90 border-[#c89d57]/40 text-[#f1d9aa]' : 'bg-gradient-to-r from-blue-500/10 via-cyan-500/10 to-indigo-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 border-cyan-500/30 text-cyan-600 dark:text-cyan-400'}`}
+            className={`mt-2.5 flex w-full items-center justify-between rounded-xl border p-2.5 text-xs font-bold shadow-sm transition-all ${creativeMode === 'storytelling' ? 'border-[#c89d57]/40 bg-[#10213b]/80 text-[#f1d9aa] hover:bg-[#173050]/90' : 'border-[#b882d2]/45 bg-[linear-gradient(135deg,rgba(43,18,70,0.94),rgba(25,13,44,0.95))] text-[#f2daff] hover:border-[#e2b9f7]/70'}`}
           >
             <div className="flex items-center gap-2">
               {creativeMode === 'storytelling' ? <img src="/images/vellum-sigil.svg" alt="VELLUM" className="h-5 w-5 rounded-md" /> : <ShardCrystalImage size={20} showGlow={false} />}
               <span>{creativeMode === 'storytelling' ? 'VELLUM Story Reserve' : 'SHARDS Hub'}</span>
             </div>
-            <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full border ${creativeMode === 'storytelling' ? 'border-[#c89d57]/40 bg-[#c89d57]/10 text-[#f1d9aa]' : 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'}`}>
-              {creativeMode === 'storytelling' ? (vellumBalance === null ? 'VELLUM' : `${vellumBalance.toLocaleString()} VELLUM`) : `💎 ${shardsBalance ?? 0}`}
+            <span className={`rounded-full border px-2.5 py-0.5 text-xs font-extrabold ${creativeMode === 'storytelling' ? 'border-[#c89d57]/40 bg-[#c89d57]/10 text-[#f1d9aa]' : 'border-[#cda0ea]/35 bg-[#6d3a91]/35 text-[#ecd4ff]'}`}>
+              {creativeMode === 'storytelling' ? (vellumBalance === null ? 'VELLUM' : `${vellumBalance.toLocaleString()} VELLUM`) : `${shardsBalance ?? 0} SHARDS`}
             </span>
           </button>
         </div>
@@ -236,8 +238,8 @@ function MobileNavDrawerContent({
           
           {/* Main Links */}
           <div className="space-y-1">
-            <div className="px-3 py-1 text-[10px] font-bold text-warm-400 uppercase tracking-wider">
-              {creativeMode === 'storytelling' ? 'Author Navigation' : 'Roleplay Navigation'}
+            <div className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${isRoleplay ? 'text-[#b9ad9c]' : 'text-warm-400'}`}>
+              {creativeMode === 'storytelling' ? 'Author Navigation' : 'Roleplay Rooms'}
             </div>
             {mainLinks.map((link) => {
               const Icon = link.icon;
@@ -251,8 +253,10 @@ function MobileNavDrawerContent({
                       isActive
                         ? creativeMode === 'storytelling'
                           ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20'
-                          : 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
-                        : 'text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800'
+                          : 'border border-[#c99b50]/45 bg-[#2b2116] text-[#f0ce8e]'
+                        : isRoleplay
+                          ? 'text-[#d5c8b5] hover:bg-[#c99b50]/10 hover:text-[#ffe8b5]'
+                          : 'text-warm-700 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800'
                     }`
                   }
                 >
@@ -266,8 +270,8 @@ function MobileNavDrawerContent({
           </div>
 
           {/* Quick Actions */}
-          <div className="pt-2 border-t border-warm-100 dark:border-warm-800">
-            <div className="px-3 py-1 text-[10px] font-bold text-warm-400 uppercase tracking-wider mb-2">
+          <div className={`border-t pt-2 ${isRoleplay ? 'border-[#c99b50]/20' : 'border-warm-100 dark:border-warm-800'}`}>
+            <div className={`mb-2 px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${isRoleplay ? 'text-[#b9ad9c]' : 'text-warm-400'}`}>
               Quick Actions
             </div>
             <button
@@ -278,11 +282,11 @@ function MobileNavDrawerContent({
               className={`w-full py-2.5 rounded-xl text-xs font-bold text-white shadow-md flex items-center justify-center gap-2 transition-all ${
                 creativeMode === 'storytelling'
                   ? 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/20'
-                  : 'bg-red-600 hover:bg-red-700 shadow-red-600/20'
+                  : 'border border-[#dfb96e] bg-[linear-gradient(135deg,#8d5f2e,#c9964f,#7f532a)] text-[#fff6e3] shadow-[#6b451f]/40 hover:brightness-110'
               }`}
             >
               <PenTool size={14} />
-              <span>{creativeMode === 'storytelling' ? '+ Write Story' : '+ Create Character'}</span>
+              <span>{creativeMode === 'storytelling' ? '+ Write Story' : '+ Bring someone into CHIMERA'}</span>
             </button>
           </div>
 
@@ -292,26 +296,26 @@ function MobileNavDrawerContent({
               onClose();
               onOpenSearch();
             }}
-            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-850 text-warm-600 dark:text-warm-300 text-xs font-semibold hover:border-warm-300 dark:hover:border-warm-650 transition-colors"
+            className={`flex w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-xs font-semibold transition-colors ${isRoleplay ? 'border-[#c99b50]/30 bg-black/25 text-[#d5c8b5] hover:border-[#c99b50]/65 hover:text-[#fff0be]' : 'border-warm-200 bg-warm-50 text-warm-600 hover:border-warm-300 dark:border-warm-750 dark:bg-warm-850 dark:text-warm-300 dark:hover:border-warm-650'}`}
           >
             <Search size={16} />
-            <span>{creativeMode === 'storytelling' ? 'Search stories & authors...' : 'Search characters...'}</span>
+            <span>{creativeMode === 'storytelling' ? 'Search stories & authors...' : 'Search characters, moods, or worlds...'}</span>
           </button>
         </div>
 
         {/* Footer: User Profile & Preferences */}
-        <div className="p-4 border-t border-warm-200 dark:border-warm-800 bg-warm-50/50 dark:bg-warm-950/50 flex-shrink-0 space-y-3">
+        <div className={`shrink-0 space-y-3 border-t p-4 ${isRoleplay ? 'border-[#c99b50]/25 bg-[#090a10]/90' : 'border-warm-200 bg-warm-50/50 dark:border-warm-800 dark:bg-warm-950/50'}`}>
           
           {/* Theme Selector */}
-          <div className="flex bg-warm-200/50 dark:bg-warm-800/50 p-0.5 rounded-lg text-xs">
+          <div className={`flex rounded-lg p-0.5 text-xs ${isRoleplay ? 'border border-[#c99b50]/25 bg-black/30' : 'bg-warm-200/50 dark:bg-warm-800/50'}`}>
             {(['light', 'dark', 'system'] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setPreference(t)}
                 className={`flex-1 py-1 rounded-md capitalize font-semibold transition-all ${
                   preference === t
-                    ? 'bg-white dark:bg-warm-900 text-warm-900 dark:text-warm-50 shadow-sm'
-                    : 'text-warm-500 hover:text-warm-800 dark:hover:text-warm-200'
+                    ? isRoleplay ? 'bg-[#2b2116] text-[#f7dfaa] shadow-sm' : 'bg-white text-warm-900 shadow-sm dark:bg-warm-900 dark:text-warm-50'
+                    : isRoleplay ? 'text-[#a99e8f] hover:text-[#f4d390]' : 'text-warm-500 hover:text-warm-800 dark:hover:text-warm-200'
                 }`}
               >
                 {t}
@@ -329,16 +333,16 @@ function MobileNavDrawerContent({
                   size="sm"
                 />
                 <div className="min-w-0">
-                  <p className="text-xs font-bold text-warm-900 dark:text-warm-50 truncate">
+                  <p className={`truncate text-xs font-bold ${isRoleplay ? 'text-[#fff3df]' : 'text-warm-900 dark:text-warm-50'}`}>
                     {profile.display_name || profile.username}
                   </p>
-                  <p className="text-[10px] text-warm-400 truncate">@{profile.username}</p>
+                  <p className={`truncate text-[10px] ${isRoleplay ? 'text-[#b9ad9c]' : 'text-warm-400'}`}>@{profile.username}</p>
                 </div>
               </div>
               
               <button
                 onClick={handleSignOut}
-                className="p-2 text-warm-400 hover:text-red-500 rounded-lg hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
+                className={`rounded-lg p-2 transition-colors ${isRoleplay ? 'text-[#b9ad9c] hover:bg-[#c99b50]/10 hover:text-[#f0ce8e]' : 'text-warm-400 hover:bg-warm-100 hover:text-red-500 dark:hover:bg-warm-800'}`}
                 title="Sign Out"
               >
                 <LogOut size={16} />
@@ -350,7 +354,7 @@ function MobileNavDrawerContent({
                 onClose();
                 navigate('/auth');
               }}
-              className="w-full py-2 bg-red-600 text-white font-bold text-xs rounded-xl shadow-md"
+              className={`w-full rounded-xl py-2 text-xs font-bold shadow-md ${isRoleplay ? 'border border-[#dfb96e] bg-[linear-gradient(135deg,#8d5f2e,#c9964f,#7f532a)] text-[#fff6e3]' : 'bg-red-600 text-white'}`}
             >
               Sign In
             </button>
