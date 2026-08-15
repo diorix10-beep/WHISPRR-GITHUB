@@ -346,7 +346,9 @@ export default function ConversationPage() {
         const loadedMsgs = msgs || [];
         setMessages(loadedMsgs);
 
-        // Auto extract Memory Nexus memories from initial messages
+        // Memory Nexus currently remains a session visualization. Persistent
+        // continuity for the runtime is the conversation's saved scene canon.
+        // It must not silently invent or inject random "memories" into a model.
         if (loadedMsgs.length > 0) {
           setMemoryNexusState((prev) => autoExtractMemoriesIfNeeded(loadedMsgs, prev, conversationId));
         }
@@ -368,24 +370,8 @@ export default function ConversationPage() {
                 greetingText = charData?.greeting || '';
               } catch {}
 
-              if (!greetingText) {
-                greetingText = other.bio || `*Steps into the room...* Hello! I am ${other.display_name}. How can I assist you today?`;
-              }
-              
-              const syntheticGreeting: MessageWithProfile = {
-                id: crypto.randomUUID(),
-                conversation_id: conversationId,
-                sender_id: other.user_id,
-                content: greetingText,
-                created_at: new Date().toISOString(),
-                read: true,
-                image_url: null,
-                deleted_at: null,
-                profiles: other as any
-              };
-
-              try {
-                const { data: newGreetingMsg } = await supabase
+              if (greetingText) {
+                const { data: newGreetingMsg, error: greetingError } = await supabase
                   .from('messages')
                   .insert({
                     conversation_id: conversationId,
@@ -396,13 +382,41 @@ export default function ConversationPage() {
                   .select('*, profiles:sender_id(*)')
                   .single();
 
-                if (newGreetingMsg) {
-                  setMessages([newGreetingMsg]);
-                } else {
-                  setMessages([syntheticGreeting]);
+                if (greetingError) throw greetingError;
+                if (newGreetingMsg) setMessages([newGreetingMsg]);
+              } else {
+                // A missing creator greeting is not permission to fabricate a
+                // generic assistant greeting. Let the character runtime open
+                // the scene from its real definition instead.
+                setInitiating(true);
+                try {
+                  const sessionRes = await supabase.auth.getSession();
+                  const token = sessionRes.data.session?.access_token;
+                  const response = await fetch('/api/ai-chat', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                      conversation_id: conversationId,
+                      bot_user_id: other.user_id,
+                      is_initiation: true,
+                    }),
+                  });
+                  const data = await response.json().catch(() => ({}));
+                  if (!response.ok || !data?.reply) {
+                    throw new Error(data?.error || 'The character could not open this scene.');
+                  }
+                  const { data: updatedMsgs } = await supabase
+                    .from('messages')
+                    .select('*')
+                    .eq('conversation_id', conversationId)
+                    .order('created_at', { ascending: true });
+                  if (updatedMsgs) setMessages(updatedMsgs);
+                } finally {
+                  setInitiating(false);
                 }
-              } catch {
-                setMessages([syntheticGreeting]);
               }
             } else {
               const lastMsg = loadedMsgs[loadedMsgs.length - 1];

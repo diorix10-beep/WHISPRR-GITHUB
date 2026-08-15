@@ -52,6 +52,40 @@ interface ChatMessage {
 }
 
 /**
+ * A roleplay character needs a deliberately-sized recent window, not an
+ * ever-growing transcript that eventually pushes its definition out of the
+ * model context. Scene canon is stored separately on the conversation and is
+ * always compiled before this window.
+ */
+function selectRecentHistory(messages: ChatMessage[]): ChatMessage[] {
+  const maxMessages = 32;
+  const maxCharacters = 28_000;
+  const selected: ChatMessage[] = [];
+  let usedCharacters = 0;
+
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    const content = message.content.trim();
+    if (!content) continue;
+
+    const remainingCharacters = maxCharacters - usedCharacters;
+    if (remainingCharacters <= 0 || selected.length >= maxMessages) break;
+
+    selected.push({
+      sender_id: message.sender_id,
+      // Keep the newest part of an unusually long message: it is usually the
+      // current action, dialogue, or instruction that the character must answer.
+      content: content.length > remainingCharacters
+        ? content.slice(-remainingCharacters)
+        : content,
+    });
+    usedCharacters += Math.min(content.length, remainingCharacters);
+  }
+
+  return selected.reverse();
+}
+
+/**
  * Build a structured, layered system prompt for AI character roleplay.
  *
  * Layer 1 — Core Identity: who the character is, personality, behavioral rules
@@ -341,7 +375,6 @@ export default async function handler(req: Request) {
       bot_user_id,
       is_initiation,
       lorebook_context = '',
-      memory_nexus_context = '',
     } = await req.json();
 
     if (!conversation_id || !bot_user_id) {
@@ -361,8 +394,35 @@ export default async function handler(req: Request) {
       }
     });
 
-    // Conversation-owned canon is persistent. Client-provided lore and memory
-    // are optional, turn-specific context generated from the active session.
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    const requester = authData.user;
+    if (authError || !requester) {
+      return new Response(JSON.stringify({ error: 'Authentication is required to continue a roleplay.' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Do this explicitly before contacting a model provider. RLS also protects
+    // the query, but this keeps a direct API call from spending model capacity
+    // for a conversation the requester does not belong to.
+    const { data: requesterParticipant, error: participantError } = await supabase
+      .from('conversation_participants')
+      .select('user_id')
+      .eq('conversation_id', conversation_id)
+      .eq('user_id', requester.id)
+      .maybeSingle();
+
+    if (participantError || !requesterParticipant) {
+      return new Response(JSON.stringify({ error: 'You do not have access to this roleplay.' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Conversation-owned canon is persistent. Linked lore remains optional
+    // turn-specific context; browser-only Memory Nexus data is deliberately
+    // not treated as durable character memory.
     const { data: conversation, error: conversationError } = await supabase
       .from('conversations')
       .select('memory_summary')
@@ -436,14 +496,17 @@ export default async function handler(req: Request) {
       }
     }
 
-    // 5. Fetch message history — increase to 150 messages for Long-Term Memory
+    // 5. Fetch the most recent messages. Durable continuity lives in
+    // conversations.memory_summary; the model receives a bounded recent window
+    // so the character definition remains more important than old transcript
+    // noise.
     const { data: messages, error: msgError } = await supabase
       .from('messages')
       .select('sender_id, content')
       .eq('conversation_id', conversation_id)
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
-      .limit(150);
+      .limit(80);
 
     if (msgError) {
       return new Response(JSON.stringify({ error: 'Failed to fetch conversation history' }), {
@@ -456,9 +519,11 @@ export default async function handler(req: Request) {
       .filter(m => m.content && m.content.trim() !== '')
       .reverse(); // chronological order (oldest first)
 
-    // 6. Provide full recent history (no more summarizing)
+    // 6. The persisted scene canon above is the long-term memory. This is the
+    // short-term conversational window, selected from newest to oldest and
+    // then restored to chronological order.
     const historySummary = null;
-    const recentMessages = allMessages;
+    const recentMessages = selectRecentHistory(allMessages);
 
     // 8. Format history into Gemini API contents structure
     const formattedHistory: Array<{ role: string; parts: Array<{ text: string }> }> = recentMessages
@@ -502,9 +567,6 @@ export default async function handler(req: Request) {
         : '',
       lorebook_context?.trim()
         ? `## Triggered Lorebook Context\nUse only when relevant to the current scene.\n${lorebook_context.trim().slice(0, 6000)}`
-        : '',
-      memory_nexus_context?.trim()
-        ? `## Recalled Conversation Memory\nTreat these as established continuity, not as dialogue to quote.\n${memory_nexus_context.trim().slice(0, 4000)}`
         : '',
     ].filter(Boolean).join('\n\n---\n\n');
 
