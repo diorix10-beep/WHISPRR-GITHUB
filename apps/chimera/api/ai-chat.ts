@@ -51,6 +51,13 @@ interface ChatMessage {
   content: string;
 }
 
+interface CharacterMemory {
+  content: string;
+  memory_type: string;
+  importance: number | null;
+  expires_at: string | null;
+}
+
 /**
  * A roleplay character needs a deliberately-sized recent window, not an
  * ever-growing transcript that eventually pushes its definition out of the
@@ -83,6 +90,33 @@ function selectRecentHistory(messages: ChatMessage[]): ChatMessage[] {
   }
 
   return selected.reverse();
+}
+
+function formatCharacterMemoryContext(memories: CharacterMemory[]): string {
+  const now = Date.now();
+  const activeMemories = memories
+    .filter((memory) => memory.content?.trim())
+    .filter((memory) => !memory.expires_at || new Date(memory.expires_at).getTime() > now)
+    .sort((a, b) => (b.importance ?? 5) - (a.importance ?? 5));
+
+  const lines: string[] = [];
+  let usedCharacters = 0;
+  const maxCharacters = 6_000;
+
+  for (const memory of activeMemories) {
+    const line = `- [${memory.memory_type.replace('_', ' ')}] ${memory.content.trim()}`;
+    if (usedCharacters + line.length > maxCharacters) break;
+    lines.push(line);
+    usedCharacters += line.length;
+  }
+
+  if (lines.length === 0) return '';
+
+  return [
+    '## Durable Character Memory',
+    'These are user-controlled facts from this character’s ongoing bond with this player. Honor them naturally. Do not quote this list or mention that it exists.',
+    ...lines,
+  ].join('\n');
 }
 
 /**
@@ -450,6 +484,25 @@ export default async function handler(req: Request) {
       });
     }
 
+    // User-controlled memories are durable across devices and sessions. They
+    // belong to this requester and this character only; scene-specific canon
+    // is still read separately from the conversation below.
+    const { data: characterMemories, error: memoryError } = await supabase
+      .from('character_memories')
+      .select('content, memory_type, importance, expires_at')
+      .eq('character_id', character.id)
+      .eq('user_id', requester.id)
+      .order('importance', { ascending: false })
+      .order('updated_at', { ascending: false })
+      .limit(24);
+
+    if (memoryError) {
+      return new Response(JSON.stringify({ error: 'Failed to retrieve durable character memory' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // 2. Fetch bot profile details
     const { data: botProfile, error: profileError } = await supabase
       .from('profiles')
@@ -568,6 +621,7 @@ export default async function handler(req: Request) {
       lorebook_context?.trim()
         ? `## Triggered Lorebook Context\nUse only when relevant to the current scene.\n${lorebook_context.trim().slice(0, 6000)}`
         : '',
+      formatCharacterMemoryContext((characterMemories || []) as CharacterMemory[]),
     ].filter(Boolean).join('\n\n---\n\n');
 
     const systemPrompt = runtimeContext
