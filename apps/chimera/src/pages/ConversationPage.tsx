@@ -6,7 +6,7 @@ import {
   Image as ImageIcon, X, Settings, UserPlus, UserMinus, LogOut, Pencil, Smile, Search,
   PanelRightClose, PanelRightOpen, BookOpen, Copy, RotateCw, Edit3, Camera, Volume2
 } from 'lucide-react';
-import type { Conversation, Message, Profile, MemoryNexusState, ChatMode, MultiCharacterParticipant, RpgGameState, RpgChoice, LorebookEntry } from '../types';
+import type { Conversation, Message, Profile, ChatMode, MultiCharacterParticipant, RpgGameState, RpgChoice, LorebookEntry } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
@@ -16,7 +16,7 @@ import { EmojiPicker } from '../components/common/EmojiPicker';
 import { ChatSettingsDrawer } from '../components/chat/ChatSettingsDrawer';
 import { ChatMemoryModal } from '../components/chat/ChatMemoryModal';
 import { MockPhoneModal } from '../components/chat/MockPhoneModal';
-import { MemoryVisualizerModal } from '../components/chat/MemoryVisualizerModal';
+import { CharacterMemoryCabinetModal } from '../components/chat/MemoryVisualizerModal';
 import { MultiCharacterHeader } from '../components/chat/MultiCharacterHeader';
 import { GuidedTurningPointCard, type GuidedTurningPoint } from '../components/chat/GuidedTurningPointCard';
 import { LorebookDrawer } from '../components/chat/LorebookDrawer';
@@ -27,7 +27,6 @@ import { AddCharacterToGroupModal } from '../components/chat/AddCharacterToGroup
 import { voiceEngine } from '../services/voiceEngine';
 import { LanguageSelectorModal } from '../components/common/LanguageSelectorModal';
 import { SUPPORTED_LANGUAGES, translateText } from '../services/translationEngine';
-import { createInitialMemoryNexusState, autoExtractMemoriesIfNeeded, formatMemoryNexusPromptContext } from '../services/memoryNexus';
 import { generateElevenLabsAudio } from '../lib/elevenlabs';
 import { scanAndMatchLorebookEntries, parseJanitorLorebookJson, parseOocMessage } from '../services/lorebookEngine';
 import { checkUserPromptSafety, CRISIS_HELPLINE_INFO } from '../lib/safetyGuard';
@@ -86,9 +85,11 @@ export default function ConversationPage() {
   const [sceneCanonDraft, setSceneCanonDraft] = useState('');
   const [isPhoneOpen, setIsPhoneOpen] = useState(false);
 
-  // Memory Nexus State & Visualizer Modal
-  const [memoryNexusState, setMemoryNexusState] = useState<MemoryNexusState>(createInitialMemoryNexusState());
+  // Character memories are durable, user-controlled facts held privately for
+  // the active player-character bond. They are retrieved by the AI runtime.
   const [showMemoryVisualizer, setShowMemoryVisualizer] = useState(false);
+  const [memoryCharacter, setMemoryCharacter] = useState<{ id: string; name: string } | null>(null);
+  const [memoryCount, setMemoryCount] = useState(0);
   const [showExporterModal, setShowExporterModal] = useState(false);
   const [targetLang, setTargetLang] = useState('en');
   const [showLangModal, setShowLangModal] = useState(false);
@@ -189,6 +190,30 @@ export default function ConversationPage() {
   const voice = useVoice();
   const aesthetics = useChatAesthetics(conversationId);
 
+  useEffect(() => {
+    if (!memoryCharacter || !user?.id) {
+      setMemoryCount(0);
+      return;
+    }
+
+    const loadMemoryCount = async () => {
+      const { count, error } = await supabase
+        .from('character_memories')
+        .select('*', { count: 'exact', head: true })
+        .eq('character_id', memoryCharacter.id)
+        .eq('user_id', user.id)
+        .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
+
+      if (error) {
+        console.error('Could not load character memory count:', error);
+        return;
+      }
+      setMemoryCount(count || 0);
+    };
+
+    void loadMemoryCount();
+  }, [memoryCharacter, user?.id]);
+
   const loreTriggerResult = scanAndMatchLorebookEntries(messages, lorebookEntries, {
     defaultScanDepth: scanDepth,
   });
@@ -251,6 +276,7 @@ export default function ConversationPage() {
 
     const fetchConversationData = async () => {
       try {
+        setMemoryCharacter(null);
         const { data: conv, error: convError } = await supabase
           .from('conversations')
           .select('*, conversation_participants(user_id)')
@@ -293,6 +319,7 @@ export default function ConversationPage() {
             .maybeSingle();
 
           if (aiChar) {
+            setMemoryCharacter({ id: aiChar.id, name: aiChar.name || aiChar.display_name || 'this character' });
             botProfile = {
               id: aiChar.id,
               // Messages and conversation participants are keyed to the bot's
@@ -345,13 +372,6 @@ export default function ConversationPage() {
         if (msgsError) throw msgsError;
         const loadedMsgs = msgs || [];
         setMessages(loadedMsgs);
-
-        // Memory Nexus currently remains a session visualization. Persistent
-        // continuity for the runtime is the conversation's saved scene canon.
-        // It must not silently invent or inject random "memories" into a model.
-        if (loadedMsgs.length > 0) {
-          setMemoryNexusState((prev) => autoExtractMemoriesIfNeeded(loadedMsgs, prev, conversationId));
-        }
 
         // Check if we should trigger an AI initiation response or insert character greeting
         if (conv.type === 'dm' && profiles) {
@@ -772,7 +792,6 @@ export default function ConversationPage() {
             conversation_id: conversationId,
             bot_user_id: otherUser.user_id,
             lorebook_context: loreRes.compiledPromptText,
-            memory_nexus_context: formatMemoryNexusPromptContext(memoryNexusState),
             chat_mode: chatMode,
             active_speaker_id: activeSpeakerId,
           })
@@ -1355,15 +1374,15 @@ export default function ConversationPage() {
                     </span>
                   </button>
                 )}
-                {/* Memory Nexus 2D Visualizer Button */}
+                {/* Private, durable character memories */}
                 <button 
                   onClick={() => setShowMemoryVisualizer(true)}
                   className="p-2 rounded-xl hover:bg-purple-500/10 text-purple-600 dark:text-purple-400 transition-colors flex items-center gap-1"
-                  title="Open Memory Nexus 2D Graph Visualizer"
+                  title="Open what this character remembers"
                 >
                   <Brain size={20} />
                   <span className="text-[10px] font-bold uppercase tracking-wider hidden lg:inline bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20">
-                    Nexus {memoryNexusState.recall_strength}
+                    Memory {memoryCount}
                   </span>
                 </button>
 
@@ -1499,8 +1518,7 @@ export default function ConversationPage() {
           </div>
 
           <div className="flex items-center gap-2 text-[11px] text-warm-500 dark:text-warm-400 font-medium">
-            <span>Recall: <strong className="text-purple-500 font-bold">{memoryNexusState.recall_strength}/16</strong></span>
-            <span>Memories: <strong className="text-purple-500 font-bold">{memoryNexusState.nodes.length}</strong></span>
+            <span>Private memories: <strong className="text-purple-500 font-bold">{memoryCount}</strong></span>
           </div>
         </div>
       </header>
@@ -1517,18 +1535,18 @@ export default function ConversationPage() {
           onSelectPersona={() => navigate('/personas')}
           onOpenMemory={() => setShowMemoryModal(true)}
           onOpenMemoryVisualizer={() => setShowMemoryVisualizer(true)}
-          recallStrength={memoryNexusState.recall_strength}
-          onChangeRecallStrength={(val) => setMemoryNexusState((prev) => ({ ...prev, recall_strength: val }))}
           aesthetics={aesthetics}
         />
       )}
 
-      {/* Memory Nexus 2D Graph Visualizer Modal */}
-      <MemoryVisualizerModal
+      {/* Durable, private player-character memory cabinet */}
+      <CharacterMemoryCabinetModal
         isOpen={showMemoryVisualizer}
         onClose={() => setShowMemoryVisualizer(false)}
-        memoryNexusState={memoryNexusState}
-        onUpdateState={setMemoryNexusState}
+        characterId={memoryCharacter?.id || null}
+        characterName={memoryCharacter?.name || otherUser?.display_name || 'this character'}
+        userId={user?.id}
+        onMemoryCountChange={setMemoryCount}
       />
 
       {/* Janitor AI Lorebook Drawer & Inspector */}
