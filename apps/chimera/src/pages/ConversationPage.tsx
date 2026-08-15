@@ -28,7 +28,8 @@ import { voiceEngine } from '../services/voiceEngine';
 import { LanguageSelectorModal } from '../components/common/LanguageSelectorModal';
 import { SUPPORTED_LANGUAGES, translateText } from '../services/translationEngine';
 import { generateElevenLabsAudio } from '../lib/elevenlabs';
-import { scanAndMatchLorebookEntries, parseJanitorLorebookJson, parseOocMessage } from '../services/lorebookEngine';
+import { parseOocMessage } from '../services/lorebookEngine';
+import { resolveLorebookContext } from '../lib/lorebookRuntime';
 import { checkUserPromptSafety, CRISIS_HELPLINE_INFO } from '../lib/safetyGuard';
 import { useChatAesthetics } from '../hooks/useChatAesthetics';
 import { useVoice } from '../hooks/useVoice';
@@ -107,22 +108,10 @@ export default function ConversationPage() {
   // Roleplay Safety Intervention State
   const [isRoleplayPaused, setIsRoleplayPaused] = useState(false);
 
-  // Lorebook & Janitor AI Engine State
-  const [lorebookEntries, setLorebookEntries] = useState<LorebookEntry[]>([
-    {
-      id: 'demo-1',
-      lorebook_id: 'default',
-      title: 'CHIMERA Universe',
-      content: 'CHIMERA is a vast multi-dimensional nexus where stories, roleplays, and worlds converge.',
-      keywords: ['CHIMERA', 'Nexus', 'Universe'],
-      priority: 10,
-      enabled: true,
-      is_constant: true,
-      insertion_order: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-  ]);
+  // Linked lore is persistent creator data. There is deliberately no demo
+  // universe or browser-only substitute: an empty scope means no lore exists.
+  const [lorebookEntries, setLorebookEntries] = useState<LorebookEntry[]>([]);
+  const [loreScope, setLoreScope] = useState<{ characterId: string; worldId: string | null } | null>(null);
   const [showLorebookDrawer, setShowLorebookDrawer] = useState(false);
   const [scanDepth, setScanDepth] = useState<number>(10);
   const [isOocMode, setIsOocMode] = useState<boolean>(false);
@@ -214,9 +203,55 @@ export default function ConversationPage() {
     void loadMemoryCount();
   }, [memoryCharacter, user?.id]);
 
-  const loreTriggerResult = scanAndMatchLorebookEntries(messages, lorebookEntries, {
-    defaultScanDepth: scanDepth,
-  });
+  const loreTriggerResult = resolveLorebookContext(messages.slice(-scanDepth).map((message) => message.content), lorebookEntries);
+
+  useEffect(() => {
+    if (!loreScope || creativeMode !== 'roleplay') {
+      setLorebookEntries([]);
+      return;
+    }
+
+    const loadShareableLinkedLore = async () => {
+      const [characterLinksResult, worldLinksResult] = await Promise.all([
+        supabase.from('lorebook_characters').select('lorebook_id').eq('character_id', loreScope.characterId),
+        loreScope.worldId
+          ? supabase.from('lorebook_worlds').select('lorebook_id').eq('world_id', loreScope.worldId)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+
+      if (characterLinksResult.error || worldLinksResult.error) {
+        console.error('Could not load linked lorebook scope:', characterLinksResult.error || worldLinksResult.error);
+        setLorebookEntries([]);
+        return;
+      }
+
+      const lorebookIds = [...new Set([
+        ...(characterLinksResult.data || []).map((link) => link.lorebook_id),
+        ...(worldLinksResult.data || []).map((link) => link.lorebook_id),
+      ])];
+      if (lorebookIds.length === 0) {
+        setLorebookEntries([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('lorebook_entries')
+        .select('*')
+        .in('lorebook_id', lorebookIds)
+        .eq('enabled', true)
+        .order('priority', { ascending: false })
+        .order('insertion_order');
+
+      if (error) {
+        console.error('Could not load linked lorebook entries:', error);
+        setLorebookEntries([]);
+        return;
+      }
+      setLorebookEntries((data || []) as LorebookEntry[]);
+    };
+
+    void loadShareableLinkedLore();
+  }, [creativeMode, loreScope]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -320,6 +355,7 @@ export default function ConversationPage() {
 
           if (aiChar) {
             setMemoryCharacter({ id: aiChar.id, name: aiChar.name || aiChar.display_name || 'this character' });
+            setLoreScope({ characterId: aiChar.id, worldId: aiChar.world_id || null });
             botProfile = {
               id: aiChar.id,
               // Messages and conversation participants are keyed to the bot's
@@ -718,22 +754,8 @@ export default function ConversationPage() {
         }
       }
     }
-    if (oocParsed.isOoc && oocParsed.isCreateLoreRequest && oocParsed.loreTopic) {
-      const topic = oocParsed.loreTopic;
-      const autoEntry: LorebookEntry = {
-        id: `ooc-${Date.now()}`,
-        lorebook_id: 'default',
-        title: topic.charAt(0).toUpperCase() + topic.slice(1),
-        content: `Lore details for ${topic} established during RP: ${oocParsed.oocContent}`,
-        keywords: [topic, topic.toLowerCase()],
-        priority: 10,
-        enabled: true,
-        insertion_order: lorebookEntries.length,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      setLorebookEntries((prev) => [...prev, autoEntry]);
-      showToast(`✨ Created Lorebook entry for "${topic}"!`, 'success');
+    if (oocParsed.isOoc && oocParsed.isCreateLoreRequest) {
+      showToast('Lore stays creator-owned. Add it from a linked Lorebook so it persists for future roleplays.', 'info');
     }
 
     setMessageInput('');
@@ -773,11 +795,6 @@ export default function ConversationPage() {
         // Simulate typing status immediately for fluid UI
         setTypingUsers([otherUser.user_id]);
 
-        // Compute current triggered lore context
-        const loreRes = scanAndMatchLorebookEntries(messages, lorebookEntries, {
-          defaultScanDepth: scanDepth,
-        });
-
         // Trigger AI reply generation in the background
         const sessionRes = await supabase.auth.getSession();
         const token = sessionRes.data.session?.access_token;
@@ -791,7 +808,6 @@ export default function ConversationPage() {
           body: JSON.stringify({
             conversation_id: conversationId,
             bot_user_id: otherUser.user_id,
-            lorebook_context: loreRes.compiledPromptText,
             chat_mode: chatMode,
             active_speaker_id: activeSpeakerId,
           })
@@ -1555,48 +1571,7 @@ export default function ConversationPage() {
         onClose={() => setShowLorebookDrawer(false)}
         entries={lorebookEntries}
         matchedKeywordsMap={loreTriggerResult.matchedKeywordsMap}
-        onToggleForceActive={(entryId, forceActive) => {
-          setLorebookEntries((prev) =>
-            prev.map((e) => (e.id === entryId ? { ...e, force_active: forceActive } : e))
-          );
-        }}
-        onAddEntry={async (newEntry) => {
-          const created: LorebookEntry = {
-            id: `lb-${Date.now()}`,
-            lorebook_id: 'default',
-            title: newEntry.title,
-            content: newEntry.content,
-            keywords: newEntry.keywords,
-            priority: 10,
-            enabled: true,
-            insertion_order: lorebookEntries.length,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-          setLorebookEntries((prev) => [...prev, created]);
-          showToast(`Added Lorebook Entry: ${newEntry.title}`, 'success');
-        }}
-        onImportJson={async (jsonString) => {
-          const parsed = parseJanitorLorebookJson(jsonString);
-          const newEntries: LorebookEntry[] = parsed.entries.map((e, idx) => ({
-            id: `imported-${Date.now()}-${idx}`,
-            lorebook_id: 'imported',
-            title: e.title || `Entry ${idx + 1}`,
-            content: e.content || '',
-            keywords: e.keywords || [],
-            selective_keys: e.selective_keys || [],
-            is_constant: e.is_constant || false,
-            priority: e.priority || 10,
-            enabled: true,
-            insertion_order: lorebookEntries.length + idx,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }));
-          setLorebookEntries((prev) => [...prev, ...newEntries]);
-          showToast(`Imported Lorebook "${parsed.title}" with ${newEntries.length} entries!`, 'success');
-        }}
-        scanDepth={scanDepth}
-        onChangeScanDepth={setScanDepth}
+        onManageLorebooks={() => navigate('/lorebooks')}
       />
 
       {/* Memory Modal */}

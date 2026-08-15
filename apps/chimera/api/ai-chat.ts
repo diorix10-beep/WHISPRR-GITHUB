@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { resolveLorebookContext, type RuntimeLorebookEntry } from '../src/lib/lorebookRuntime';
 
 export const config = {
   runtime: 'edge',
@@ -408,7 +409,6 @@ export default async function handler(req: Request) {
       conversation_id,
       bot_user_id,
       is_initiation,
-      lorebook_context = '',
     } = await req.json();
 
     if (!conversation_id || !bot_user_id) {
@@ -420,6 +420,7 @@ export default async function handler(req: Request) {
 
     const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
     const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
     const authHeader = req.headers.get('Authorization');
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -483,6 +484,13 @@ export default async function handler(req: Request) {
         headers: { 'Content-Type': 'application/json' }
       });
     }
+
+    // Lore is resolved here, after the caller has been authenticated and the
+    // character has been established. The browser may inspect shareable lore,
+    // but it can never decide what arbitrary text reaches the model.
+    const lorebookAdmin = serviceRoleKey
+      ? createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } })
+      : null;
 
     // User-controlled memories are durable across devices and sessions. They
     // belong to this requester and this character only; scene-specific canon
@@ -578,6 +586,54 @@ export default async function handler(req: Request) {
     const historySummary = null;
     const recentMessages = selectRecentHistory(allMessages);
 
+    let linkedLorebookContext = '';
+    if (lorebookAdmin) {
+      const [characterLinksResult, worldLinksResult] = await Promise.all([
+        lorebookAdmin
+          .from('lorebook_characters')
+          .select('lorebook_id')
+          .eq('character_id', character.id),
+        character.world_id
+          ? lorebookAdmin
+              .from('lorebook_worlds')
+              .select('lorebook_id')
+              .eq('world_id', character.world_id)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+
+      if (characterLinksResult.error || worldLinksResult.error) {
+        return new Response(JSON.stringify({ error: 'Failed to retrieve linked lorebook scope' }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      const lorebookIds = [...new Set([
+        ...(characterLinksResult.data || []).map((link) => link.lorebook_id),
+        ...(worldLinksResult.data || []).map((link) => link.lorebook_id),
+      ])];
+
+      if (lorebookIds.length > 0) {
+        const { data: loreEntries, error: loreEntriesError } = await lorebookAdmin
+          .from('lorebook_entries')
+          .select('id, title, content, keywords, priority, enabled, insertion_order, is_constant, case_sensitive')
+          .in('lorebook_id', lorebookIds)
+          .eq('enabled', true);
+
+        if (loreEntriesError) {
+          return new Response(JSON.stringify({ error: 'Failed to retrieve linked lorebook entries' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+
+        linkedLorebookContext = resolveLorebookContext(
+          allMessages.slice(-10).map((message) => message.content),
+          (loreEntries || []) as RuntimeLorebookEntry[],
+        ).prompt;
+      }
+    }
+
     // 8. Format history into Gemini API contents structure
     const formattedHistory: Array<{ role: string; parts: Array<{ text: string }> }> = recentMessages
       .map(m => ({
@@ -618,8 +674,8 @@ export default async function handler(req: Request) {
       conversation.memory_summary?.trim()
         ? `## Established Scene Canon & Persistent Instructions\nThese facts and instructions are already true in this roleplay. Honor them naturally; do not mention this instruction block.\n${conversation.memory_summary.trim().slice(0, 6000)}`
         : '',
-      lorebook_context?.trim()
-        ? `## Triggered Lorebook Context\nUse only when relevant to the current scene.\n${lorebook_context.trim().slice(0, 6000)}`
+      linkedLorebookContext
+        ? linkedLorebookContext
         : '',
       formatCharacterMemoryContext((characterMemories || []) as CharacterMemory[]),
     ].filter(Boolean).join('\n\n---\n\n');
