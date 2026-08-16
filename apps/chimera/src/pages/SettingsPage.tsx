@@ -375,12 +375,12 @@ export default function SettingsPage() {
         Sign Out
       </button>
 
-      {/* Trust & Privacy Section */}
+      {/* Guardian's Library */}
       <section className="mb-8" aria-labelledby="trust-heading">
         <div className="flex items-center gap-2 mb-4">
           <Shield size={20} className="text-primary-500" />
           <h2 id="trust-heading" className="text-lg font-semibold text-warm-900 dark:text-warm-50">
-            Trust & Privacy
+            Guardian's Library
           </h2>
         </div>
         <div className="space-y-3 bg-warm-50 dark:bg-warm-800 p-4 rounded-2xl">
@@ -389,8 +389,8 @@ export default function SettingsPage() {
             className="w-full flex items-center justify-between gap-3 text-left hover:opacity-80 transition-opacity"
           >
             <div>
-              <p className="font-semibold text-warm-900 dark:text-warm-50 text-sm">Trust & Privacy Center</p>
-              <p className="text-xs text-warm-500 mt-0.5">What we collect, your rights, our commitments</p>
+              <p className="font-semibold text-warm-900 dark:text-warm-50 text-sm">Guardian's Library</p>
+              <p className="text-xs text-warm-500 mt-0.5">Content choices, adult storytelling, and support</p>
             </div>
             <ExternalLink size={16} className="text-warm-400 flex-shrink-0" />
           </button>
