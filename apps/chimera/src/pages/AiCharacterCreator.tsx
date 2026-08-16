@@ -19,37 +19,37 @@ const CHARACTER_SOUL_GROUPS: Array<{
   title: string;
   fields: Array<{ key: keyof CharacterArchitecture; label: string; placeholder: string }>;
 }> = [
-  { title: 'Identity', fields: [
+  { title: 'Who They Are', fields: [
     { key: 'age', label: 'Age', placeholder: 'e.g. 28, ageless, looks thirty' },
     { key: 'pronouns', label: 'Pronouns', placeholder: 'e.g. she/her' },
     { key: 'occupation', label: 'Role or occupation', placeholder: 'e.g. archivist, royal guard' },
     { key: 'species', label: 'Species or nature', placeholder: 'e.g. human, vampire, android' },
   ] },
-  { title: 'Appearance', fields: [
+  { title: 'The Shape They Take', fields: [
     { key: 'height', label: 'Presence', placeholder: 'Height, build, or the way they carry themself' },
     { key: 'hair', label: 'Hair', placeholder: 'Texture, colour, style' },
     { key: 'eyes', label: 'Eyes', placeholder: 'Colour, expression, notable detail' },
     { key: 'clothing', label: 'Wardrobe', placeholder: 'What they tend to wear' },
   ] },
-  { title: 'Temperament', fields: [
+  { title: 'The Heart Beneath', fields: [
     { key: 'personality_traits', label: 'Core traits', placeholder: 'The contradictions that make them real' },
     { key: 'strengths', label: 'Strengths', placeholder: 'What they are good at' },
     { key: 'flaws', label: 'Flaws', placeholder: 'Where they struggle or self-sabotage' },
     { key: 'humor', label: 'Humour', placeholder: 'Dry, gentle, teasing, none…' },
   ] },
-  { title: 'Voice & inner life', fields: [
+  { title: 'How They Move Through the World', fields: [
     { key: 'speech_style', label: 'Speech pattern', placeholder: 'Rhythm, vocabulary, accent notes' },
     { key: 'habits', label: 'Habits & mannerisms', placeholder: 'Small things they do without thinking' },
     { key: 'likes', label: 'Likes', placeholder: 'Comforts, joys, obsessions' },
     { key: 'dislikes', label: 'Dislikes', placeholder: 'Irritations, aversions, pet peeves' },
   ] },
-  { title: 'Motivation & limits', fields: [
+  { title: 'What Pulls Them / What They Protect', fields: [
     { key: 'goals', label: 'Goals', placeholder: 'What they actively want' },
     { key: 'fears', label: 'Fears', placeholder: 'What they cannot bear to lose or face' },
     { key: 'boundaries', label: 'Boundaries', placeholder: 'What they will not do or tolerate' },
     { key: 'triggers', label: 'Triggers & comfort', placeholder: 'What unsettles them and what helps' },
   ] },
-  { title: 'World knowledge', fields: [
+  { title: 'What They Carry', fields: [
     { key: 'knows', label: 'What they know', placeholder: 'Relevant expertise and lived knowledge' },
     { key: 'does_not_know', label: 'What they do not know', placeholder: 'Blind spots and knowledge limits' },
     { key: 'abilities', label: 'Abilities', placeholder: 'Skills, powers, talents' },
@@ -635,13 +635,13 @@ export default function AiCharacterCreator() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-warm-400 mb-2">Name inside chats</label>
+                    <label className="block text-xs font-bold text-warm-400 mb-2">The Name They Answer To</label>
                     <input
                       type="text"
                       name="chatName"
                       value={formData.chatName}
                       onChange={handleChange}
-                      placeholder="Optional nickname shown in chats instead of the character's name"
+                      placeholder="An optional name they answer to in roleplay"
                       className="w-full bg-warm-800 border border-warm-700 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-red-500"
                     />
                   </div>
@@ -773,10 +773,10 @@ export default function AiCharacterCreator() {
                         <div>
                           <h4 className="text-xs font-bold text-warm-200 flex items-center gap-2">
                             <Sparkles size={14} className="text-amber-400" />
-                        <span>Other Ways In</span>
+                        <span>Other Ways Into Their Story</span>
                           </h4>
                           <p className="text-[10px] text-warm-400 mt-0.5">
-                            Add alternative opening scenes so conversations can start in different settings or moods!
+                            Give people another doorway into their world — a different mood, moment, or setting.
                           </p>
                         </div>
                         <button
@@ -915,9 +915,9 @@ export default function AiCharacterCreator() {
                     <summary className="cursor-pointer list-none">
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#d6ad56]">Character Soul</p>
-                          <h4 className="mt-1 font-serif text-xl text-[#fff3d8]">The details that keep them themselves</h4>
-                          <p className="mt-1 text-xs leading-relaxed text-warm-400">These creator facts are saved with the character and compiled into every roleplay reply.</p>
+                          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#d6ad56]">The Soul of Them</p>
+                          <h4 className="mt-1 font-serif text-xl text-[#fff3d8]">The details that make them unmistakable</h4>
+                          <p className="mt-1 text-xs leading-relaxed text-warm-400">Their wants, fears, habits, boundaries, and the people who changed them — carried into every roleplay reply.</p>
                         </div>
                         <span className="mt-1 rounded-full border border-[#d8b56a]/35 px-2 py-1 text-[10px] font-bold text-[#f0d48d] group-open:hidden">Open</span>
                         <span className="mt-1 hidden rounded-full border border-[#d8b56a]/35 px-2 py-1 text-[10px] font-bold text-[#f0d48d] group-open:inline">Close</span>
@@ -945,7 +945,7 @@ export default function AiCharacterCreator() {
                       ))}
 
                       <label className="block">
-                        <span className="mb-1.5 block text-[11px] font-semibold text-warm-300">Relationships & social ties</span>
+                        <span className="mb-1.5 block text-[11px] font-semibold text-warm-300">The People Entwined With Them</span>
                         <textarea
                           value={(archData.relationships || []).map((relationship) => `${relationship.name} — ${relationship.role}`).join('\n')}
                           onChange={(event) => setArchData((current) => ({
@@ -1061,8 +1061,8 @@ export default function AiCharacterCreator() {
                   {/* Dialogue Style Guardrails & Suggested Companion Role */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
                     <div>
-                      <label className="block text-xs font-bold text-warm-400 mb-1">Dialogue Style Guardrails (Forbidden Clichés)</label>
-                      <p className="text-[10px] text-warm-500 mb-2">Comma-separated phrases to ban (e.g. *a pang of*, *can I ask you something?*).</p>
+                      <label className="block text-xs font-bold text-warm-400 mb-1">Phrases That Break the Spell</label>
+                      <p className="text-[10px] text-warm-500 mb-2">Comma-separated clichés or phrases they should quietly avoid (e.g. *a pang of*, *can I ask you something?*).</p>
                       <textarea
                         name="bannedWords"
                         value={formData.bannedWords}
@@ -1074,8 +1074,8 @@ export default function AiCharacterCreator() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-warm-400 mb-1">Recommended Companion Role / Persona</label>
-                      <p className="text-[10px] text-warm-500 mb-2">Default persona role suggested to users when starting a chat (e.g. *Gotham Detective*, *Rival Sorcerer*).</p>
+                      <label className="block text-xs font-bold text-warm-400 mb-1">Who the Story Invites You To Be</label>
+                      <p className="text-[10px] text-warm-500 mb-2">A role gently suggested to people beginning their story with this character (e.g. *Gotham Detective*, *Rival Sorcerer*).</p>
                       <input
                         type="text"
                         name="suggestedPersonaName"
