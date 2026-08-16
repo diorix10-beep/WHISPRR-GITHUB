@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Brain, Cpu, Zap, Key, Sliders, CheckCircle2, ShieldCheck, Sparkles, Lock } from 'lucide-react';
+import { Brain, Cpu, Zap, Sliders, CheckCircle2, Sparkles, Compass, MoonStar } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 
@@ -13,6 +13,8 @@ interface ModelInfo {
   engineName: string;
   description: string;
   strengths: string[];
+  bestFor: string;
+  consideration: string;
   context_length: string;
   is_nsfw_allowed: boolean;
   tier: 'free' | 'premium';
@@ -32,6 +34,8 @@ const AVAILABLE_MODELS: ModelInfo[] = [
     engineName: 'Engine announcement soon',
     description: 'A sun-warm storyteller made for vivid chemistry, playful initiative, and scenes that refuse to stand still.',
     strengths: ['Vivid Chemistry', 'Playful Initiative', 'Bright Scenes'],
+    bestFor: 'Fast-moving adventures and luminous banter',
+    consideration: 'This edition is still being prepared and cannot guide chats yet.',
     context_length: 'To be announced',
     is_nsfw_allowed: false,
     tier: 'premium',
@@ -49,6 +53,8 @@ const AVAILABLE_MODELS: ModelInfo[] = [
     engineName: 'Returning in winter',
     description: 'A moonlit storyteller for slow-burn tension, intimate mystery, and worlds that remember every snowfall.',
     strengths: ['Slow Burn', 'Atmosphere', 'Emotional Continuity'],
+    bestFor: 'Patient mysteries and intimate long-form scenes',
+    consideration: 'This edition returns with the winter collection and cannot guide chats yet.',
     context_length: 'To be announced',
     is_nsfw_allowed: false,
     tier: 'premium',
@@ -67,6 +73,8 @@ const AVAILABLE_MODELS: ModelInfo[] = [
     engineName: 'Gemini 2.5 Flash',
     description: 'Blazing fast creative energy with 2M token context. Ideal for swift roleplay and dynamic conversation.',
     strengths: ['Speed', 'Creative Writing', '2M Context'],
+    bestFor: 'Swift roleplay, spontaneous turns, and lively dialogue',
+    consideration: 'Favors momentum over the most intricate prose on every reply.',
     context_length: '2M tokens',
     is_nsfw_allowed: false,
     tier: 'free'
@@ -80,6 +88,8 @@ const AVAILABLE_MODELS: ModelInfo[] = [
     engineName: 'DeepSeek-V3',
     description: 'Lightning-fast open architecture model offering highly responsive dialogue and multi-turn persona consistency.',
     strengths: ['Ultra Fast', 'High Precision', 'Fluid Prose'],
+    bestFor: 'Responsive exchanges and clear, direct scene progression',
+    consideration: 'Its voice can feel more direct than lyrical for slow, atmospheric scenes.',
     context_length: '64K tokens',
     is_nsfw_allowed: true,
     tier: 'free'
@@ -93,6 +103,8 @@ const AVAILABLE_MODELS: ModelInfo[] = [
     engineName: 'Claude 3.5 Sonnet',
     description: 'Deep emotional shadow & light storytelling. The gold standard for character voice and narrative nuance.',
     strengths: ['Emotional Depth', 'Nuance', 'Formatting'],
+    bestFor: 'Layered character voices and emotionally detailed scenes',
+    consideration: 'May take a more deliberate pace for complex responses.',
     context_length: '200K tokens',
     is_nsfw_allowed: true,
     tier: 'premium'
@@ -106,6 +118,8 @@ const AVAILABLE_MODELS: ModelInfo[] = [
     engineName: 'Gemini 1.5 Pro',
     description: 'Immense analytical power and massive lore memory context. Perfect for complex multi-chapter web novels.',
     strengths: ['2M Context', 'Complex Lore', 'Analytical Depth'],
+    bestFor: 'Dense lore, sprawling worlds, and multi-chapter planning',
+    consideration: 'Best when you want careful continuity more than quick-fire exchanges.',
     context_length: '2M tokens',
     is_nsfw_allowed: false,
     tier: 'premium'
@@ -119,6 +133,8 @@ const AVAILABLE_MODELS: ModelInfo[] = [
     engineName: 'DeepSeek-R1',
     description: 'Infinite chain-of-thought depth with advanced reasoning and complex multi-layered plot planning.',
     strengths: ['Deep Reasoning', 'Complex Plots', 'Unconstrained'],
+    bestFor: 'Interlocking plots and difficult story decisions',
+    consideration: 'Can be more contemplative than conversational in a fast scene.',
     context_length: '128K tokens',
     is_nsfw_allowed: true,
     tier: 'premium'
@@ -132,6 +148,8 @@ const AVAILABLE_MODELS: ModelInfo[] = [
     engineName: 'Llama 3 (70B)',
     description: 'Expansive, open-ended universe building. Fully uncensored for intense and raw roleplay scenarios.',
     strengths: ['Uncensored', 'Directness', 'World-building'],
+    bestFor: 'Open-ended worldbuilding and decisive scene direction',
+    consideration: 'Its direct style may need more guidance for subtle, poetic scenes.',
     context_length: '8K tokens',
     is_nsfw_allowed: true,
     tier: 'premium'
@@ -145,6 +163,8 @@ const AVAILABLE_MODELS: ModelInfo[] = [
     engineName: 'Hermes 3 (405B)',
     description: 'Colossal 405-billion parameter model fine-tuned for deep roleplay fidelity, complex personas, and uncensored freedom.',
     strengths: ['405B Parameters', 'Uncensored', 'Persona Fidelity'],
+    bestFor: 'Distinct personas and deeply committed character roleplay',
+    consideration: 'A strong character voice can need firmer scene direction from you.',
     context_length: '128K tokens',
     is_nsfw_allowed: true,
     tier: 'premium'
@@ -158,6 +178,8 @@ const AVAILABLE_MODELS: ModelInfo[] = [
     engineName: 'GPT-4o',
     description: 'Universal knowledge base with high structural logic, consistency, and precise scene mechanics.',
     strengths: ['Logic', 'Consistency', 'World Knowledge'],
+    bestFor: 'Structured stories, consistent mechanics, and clear world rules',
+    consideration: 'Can favor clarity and structure over a more experimental voice.',
     context_length: '128K tokens',
     is_nsfw_allowed: false,
     tier: 'premium'
@@ -171,6 +193,8 @@ const AVAILABLE_MODELS: ModelInfo[] = [
     engineName: 'Mistral Large 2',
     description: 'European flagship model with multi-lingual prose mastery and sophisticated worldbuilding mechanics.',
     strengths: ['Multi-lingual', 'Poetic Prose', 'High Precision'],
+    bestFor: 'Poetic prose, multilingual scenes, and textured worldbuilding',
+    consideration: 'Its more literary voice may feel less immediate in rapid back-and-forth.',
     context_length: '128K tokens',
     is_nsfw_allowed: true,
     tier: 'premium'
@@ -184,14 +208,6 @@ export default function ModelsPage() {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Custom API Keys State
-  const [apiKeys, setApiKeys] = useState({
-    openrouter: '',
-    openai: '',
-    anthropic: '',
-    deepseek: ''
-  });
-
   // Engine Hyperparameters
   const [temperature, setTemperature] = useState<number>(0.8);
   const [repetitionPenalty, setRepetitionPenalty] = useState<number>(1.1);
@@ -202,13 +218,6 @@ export default function ModelsPage() {
       setSelectedModel(chimeraPreferences.default_ai_model);
     } else if (savedModel) {
       setSelectedModel(savedModel);
-    }
-
-    const savedKeys = localStorage.getItem('chimera_user_api_keys');
-    if (savedKeys) {
-      try {
-        setApiKeys(JSON.parse(savedKeys));
-      } catch (e) {}
     }
 
     const savedTemp = localStorage.getItem('chimera_temperature');
@@ -225,32 +234,27 @@ export default function ModelsPage() {
       return;
     }
 
-    setSelectedModel(modelId);
     setSaving(true);
     setSaveSuccess(false);
-    
-    localStorage.setItem('chimera_default_model', modelId);
 
     if (user) {
       try {
         await updateChimeraPreferences({ default_ai_model: modelId });
       } catch {
         setSaving(false);
-        showToast('The model was selected locally, but CHIMERA could not save it to your account.', 'error');
+        showToast('CHIMERA could not save this choice to your account. Your current guiding voice has not changed.', 'error');
         return;
       }
     }
+
+    setSelectedModel(modelId);
+    localStorage.setItem('chimera_default_model', modelId);
 
     setTimeout(() => {
       setSaving(false);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     }, 400);
-  };
-
-  const handleSaveApiKeys = () => {
-    localStorage.setItem('chimera_user_api_keys', JSON.stringify(apiKeys));
-    showToast('Custom API Keys saved securely in local storage!', 'success');
   };
 
   const handleSaveHyperparams = () => {
@@ -305,6 +309,7 @@ export default function ModelsPage() {
               <button
                 key={model.id}
                 type="button"
+                disabled={!isAvailable}
                 onClick={() => handleSelectModel(model.id)}
                 className={`relative text-left p-6 rounded-2xl border transition-all ${
                   isAvailable
@@ -329,6 +334,9 @@ export default function ModelsPage() {
                     <span key={strength} className="px-2.5 py-1 rounded-lg text-xs font-medium bg-warm-100/80 dark:bg-warm-800/80 text-warm-700 dark:text-warm-200">{strength}</span>
                   ))}
                 </div>
+                <p className="mt-5 text-xs font-semibold uppercase tracking-[0.12em] text-amber-700 dark:text-amber-300">
+                  {isAvailable ? 'Ready to guide a new story' : 'Not yet a chat engine'}
+                </p>
               </button>
             );
           })}
@@ -349,7 +357,7 @@ export default function ModelsPage() {
               </div>
               <div className="shrink-0 rounded-2xl border border-amber-400/30 bg-black/20 px-5 py-4 text-sm text-amber-100">
                 <p className="font-semibold">{user ? 'Saved to your CHIMERA account' : 'Saved on this device'}</p>
-                <p className="mt-1 text-xs text-warm-400">{guidingModel.engineName}</p>
+                <p className="mt-1 text-xs text-warm-400">Your account choice is used when a character begins a chat.</p>
               </div>
             </div>
           );
@@ -410,87 +418,20 @@ export default function ModelsPage() {
                 ))}
               </div>
 
-              <div className="flex items-center justify-between text-xs text-warm-500 border-t border-warm-200 dark:border-warm-800 pt-3">
-                <span>Context: <strong>{model.context_length}</strong></span>
-                <span>NSFW: <strong>{model.is_nsfw_allowed ? 'Allowed' : 'Filtered'}</strong></span>
-              </div>
+               <div className="grid gap-3 border-t border-warm-200 dark:border-warm-800 pt-3 text-xs">
+                 <p className="text-warm-600 dark:text-warm-300"><strong className="text-warm-800 dark:text-white">Best for:</strong> {model.bestFor}</p>
+                 <p className="text-warm-500 dark:text-warm-400"><strong className="text-warm-700 dark:text-warm-200">A note on its voice:</strong> {model.consideration}</p>
+                 <div className="flex items-center justify-between text-warm-500">
+                   <span>Story memory: <strong>{model.context_length}</strong></span>
+                   <span>Adult-content setting: <strong>{model.is_nsfw_allowed ? 'Available when enabled' : 'Off'}</strong></span>
+                 </div>
+               </div>
               <details className="mt-3 text-xs text-warm-500 dark:text-warm-400">
                 <summary className="cursor-pointer hover:text-warm-700 dark:hover:text-warm-200">Engine details</summary>
                 <p className="mt-2 leading-relaxed">Powered by {model.company} · {model.engineName}</p>
               </details>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* Custom API Key Vault */}
-      <div className="bg-white dark:bg-warm-900 border border-warm-200 dark:border-warm-800 rounded-3xl p-6 sm:p-8 space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
-            <Key size={20} />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-warm-900 dark:text-white">Custom API Key Vault</h2>
-            <p className="text-xs text-warm-500">
-              Bring your own API keys for OpenRouter, Anthropic, OpenAI, or DeepSeek for high-volume inference.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold text-warm-700 dark:text-warm-300 mb-1">OpenRouter Key</label>
-            <input
-              type="password"
-              value={apiKeys.openrouter}
-              onChange={(e) => setApiKeys({ ...apiKeys, openrouter: e.target.value })}
-              placeholder="sk-or-v1-..."
-              className="w-full text-xs bg-warm-50 dark:bg-warm-950 border border-warm-200 dark:border-warm-800 rounded-xl px-4 py-3 text-warm-900 dark:text-white focus:ring-2 focus:ring-red-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-warm-700 dark:text-warm-300 mb-1">DeepSeek API Key</label>
-            <input
-              type="password"
-              value={apiKeys.deepseek}
-              onChange={(e) => setApiKeys({ ...apiKeys, deepseek: e.target.value })}
-              placeholder="sk-..."
-              className="w-full text-xs bg-warm-50 dark:bg-warm-950 border border-warm-200 dark:border-warm-800 rounded-xl px-4 py-3 text-warm-900 dark:text-white focus:ring-2 focus:ring-red-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-warm-700 dark:text-warm-300 mb-1">Anthropic Key</label>
-            <input
-              type="password"
-              value={apiKeys.anthropic}
-              onChange={(e) => setApiKeys({ ...apiKeys, anthropic: e.target.value })}
-              placeholder="sk-ant-..."
-              className="w-full text-xs bg-warm-50 dark:bg-warm-950 border border-warm-200 dark:border-warm-800 rounded-xl px-4 py-3 text-warm-900 dark:text-white focus:ring-2 focus:ring-red-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-warm-700 dark:text-warm-300 mb-1">OpenAI Key</label>
-            <input
-              type="password"
-              value={apiKeys.openai}
-              onChange={(e) => setApiKeys({ ...apiKeys, openai: e.target.value })}
-              placeholder="sk-proj-..."
-              className="w-full text-xs bg-warm-50 dark:bg-warm-950 border border-warm-200 dark:border-warm-800 rounded-xl px-4 py-3 text-warm-900 dark:text-white focus:ring-2 focus:ring-red-500"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex items-center gap-2 text-xs text-warm-500">
-            <ShieldCheck size={16} className="text-green-500" />
-            <span>Keys are encrypted & stored locally in your browser.</span>
-          </div>
-          <button
-            onClick={handleSaveApiKeys}
-            className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs shadow-md transition-all"
-          >
-            Save API Keys
-          </button>
         </div>
       </div>
 
@@ -507,6 +448,9 @@ export default function ModelsPage() {
             </p>
           </div>
         </div>
+        <p className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs leading-relaxed text-warm-600 dark:text-warm-300">
+          These controls are being prepared for a future CHIMERA release. They do not change live chats yet, so your stories continue with CHIMERA's current, carefully balanced settings.
+        </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
@@ -522,8 +466,8 @@ export default function ModelsPage() {
               max="1.3"
               step="0.05"
               value={temperature}
-              onChange={(e) => setTemperature(parseFloat(e.target.value))}
-              className="w-full accent-red-500 cursor-pointer"
+              disabled
+              className="w-full cursor-not-allowed accent-red-500 opacity-50"
             />
           </div>
 
@@ -540,20 +484,35 @@ export default function ModelsPage() {
               max="1.5"
               step="0.05"
               value={repetitionPenalty}
-              onChange={(e) => setRepetitionPenalty(parseFloat(e.target.value))}
-              className="w-full accent-red-500 cursor-pointer"
+              disabled
+              className="w-full cursor-not-allowed accent-red-500 opacity-50"
             />
           </div>
         </div>
 
         <div className="flex justify-end pt-2">
           <button
+            disabled
             onClick={handleSaveHyperparams}
-            className="px-5 py-2.5 bg-warm-800 hover:bg-warm-750 text-white rounded-xl font-bold text-xs shadow-md transition-all"
+            className="cursor-not-allowed px-5 py-2.5 rounded-xl bg-warm-300 dark:bg-warm-700 text-warm-600 dark:text-warm-300 font-bold text-xs"
           >
-            Save Parameters
+            Not live yet
           </button>
         </div>
+      </div>
+      <section className="rounded-3xl border border-purple-500/20 bg-gradient-to-br from-purple-950/25 via-warm-900 to-transparent p-6 sm:p-8">
+         <div className="flex items-start gap-4">
+           <div className="rounded-2xl bg-purple-500/10 p-3 text-purple-300"><Compass size={22} /></div>
+           <div>
+             <h2 className="font-serif text-2xl font-bold text-warm-900 dark:text-white">Choose a voice, not a control panel</h2>
+             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-warm-600 dark:text-warm-300">Your choice changes the creative voice CHIMERA asks to guide your stories. Scene safety and account preferences remain part of CHIMERA, whichever voice you choose.</p>
+           </div>
+         </div>
+         <div className="mt-5 flex items-start gap-3 border-t border-purple-400/15 pt-5 text-sm text-warm-600 dark:text-warm-300">
+           <MoonStar className="mt-0.5 shrink-0 text-amber-400" size={18} />
+           <p>Seasonal Editions are invitations, not promises. They become selectable only after CHIMERA has completed their launch and connected them to the story runtime.</p>
+         </div>
+      </section>
       </div>
     </div>
   );
