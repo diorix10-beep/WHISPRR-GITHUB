@@ -178,6 +178,7 @@ const AVAILABLE_MODELS: ModelInfo[] = [
 ];
 
 export default function ModelsPage() {
+  const { user, chimeraPreferences, updateChimeraPreferences } = useAuth();
   const { showToast } = useToast();
   const [selectedModel, setSelectedModel] = useState<string>('gemini-2.5-flash');
   const [saving, setSaving] = useState(false);
@@ -197,7 +198,11 @@ export default function ModelsPage() {
 
   useEffect(() => {
     const savedModel = localStorage.getItem('chimera_default_model');
-    if (savedModel) setSelectedModel(savedModel);
+    if (chimeraPreferences?.default_ai_model) {
+      setSelectedModel(chimeraPreferences.default_ai_model);
+    } else if (savedModel) {
+      setSelectedModel(savedModel);
+    }
 
     const savedKeys = localStorage.getItem('chimera_user_api_keys');
     if (savedKeys) {
@@ -211,7 +216,7 @@ export default function ModelsPage() {
 
     const savedRep = localStorage.getItem('chimera_repetition_penalty');
     if (savedRep) setRepetitionPenalty(parseFloat(savedRep));
-  }, []);
+  }, [chimeraPreferences?.default_ai_model]);
 
   const handleSelectModel = async (modelId: string) => {
     const model = AVAILABLE_MODELS.find((candidate) => candidate.id === modelId);
@@ -225,6 +230,16 @@ export default function ModelsPage() {
     setSaveSuccess(false);
     
     localStorage.setItem('chimera_default_model', modelId);
+
+    if (user) {
+      try {
+        await updateChimeraPreferences({ default_ai_model: modelId });
+      } catch {
+        setSaving(false);
+        showToast('The model was selected locally, but CHIMERA could not save it to your account.', 'error');
+        return;
+      }
+    }
 
     setTimeout(() => {
       setSaving(false);
@@ -319,6 +334,27 @@ export default function ModelsPage() {
           })}
         </div>
       </div>
+
+      {/* Current guiding voice */}
+      <section className="relative overflow-hidden rounded-3xl border border-red-500/30 bg-gradient-to-br from-red-950/30 via-warm-900 to-purple-950/30 p-6 sm:p-8 shadow-xl">
+        <div className="absolute -right-16 -top-20 h-52 w-52 rounded-full bg-amber-400/10 blur-3xl" />
+        {(() => {
+          const guidingModel = AVAILABLE_MODELS.find((model) => model.id === selectedModel) ?? AVAILABLE_MODELS[2];
+          return (
+            <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-red-300">Currently guiding your stories</p>
+                <h2 className="mt-2 font-serif text-3xl font-bold text-white">{guidingModel.codename}</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-warm-300">{guidingModel.description}</p>
+              </div>
+              <div className="shrink-0 rounded-2xl border border-amber-400/30 bg-black/20 px-5 py-4 text-sm text-amber-100">
+                <p className="font-semibold">{user ? 'Saved to your CHIMERA account' : 'Saved on this device'}</p>
+                <p className="mt-1 text-xs text-warm-400">{guidingModel.engineName}</p>
+              </div>
+            </div>
+          );
+        })()}
+      </section>
 
       {/* Core model selection grid */}
       <div>

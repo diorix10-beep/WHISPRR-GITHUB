@@ -693,8 +693,18 @@ export default async function handler(req: Request) {
 
     // 11. AI Routing Logic
     let replyText = '';
-    const aiProvider = character.ai_provider || 'gemini';
-    const aiModel = character.ai_model || 'gemini-2.5-flash';
+    const { data: modelPreferences } = await supabase
+      .from('chimera_user_preferences')
+      .select('default_ai_model')
+      .eq('user_id', requester.id)
+      .maybeSingle();
+    const memberModel = modelPreferences?.default_ai_model?.trim();
+    const aiModel = memberModel || character.ai_model || 'gemini-2.5-flash';
+    // A member's Model House choice is the account-level default. OpenRouter
+    // models (including DeepSeek IDs) use CHIMERA's server-side gateway key.
+    const aiProvider = memberModel
+      ? (memberModel.includes('/') ? 'openrouter' : 'gemini')
+      : (character.ai_provider || 'gemini');
 
     if (aiProvider === 'openrouter') {
       const openRouterKey = process.env.OPENROUTER_API_KEY;

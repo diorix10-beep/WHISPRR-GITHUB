@@ -31,6 +31,7 @@ export type CreativeMode = 'roleplay' | 'storytelling';
 
 export interface ChimeraCreativePreferences {
   user_id: string;
+  default_ai_model: string;
   creative_preference: CreativePreference | null;
   default_creative_mode: CreativeMode;
   last_creative_mode: CreativeMode;
@@ -131,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchChimeraPreferences = useCallback(async (userId: string): Promise<ChimeraCreativePreferences | null> => {
     const { data, error } = await supabase
       .from('chimera_user_preferences')
-      .select('user_id, creative_preference, default_creative_mode, last_creative_mode, chimera_onboarding_complete, both_mode_welcome_seen')
+      .select('user_id, default_ai_model, creative_preference, default_creative_mode, last_creative_mode, chimera_onboarding_complete, both_mode_welcome_seen')
       .eq('user_id', userId)
       .maybeSingle();
     if (error) return null;
