@@ -8,7 +8,7 @@ interface ModelInfo {
   id: string;
   name: string;
   codename: string;
-  provider: 'gemini' | 'openrouter' | 'deepseek';
+  provider?: 'gemini' | 'openrouter' | 'deepseek';
   company: string;
   engineName: string;
   description: string;
@@ -16,9 +16,48 @@ interface ModelInfo {
   context_length: string;
   is_nsfw_allowed: boolean;
   tier: 'free' | 'premium';
+  kind?: 'core' | 'seasonal';
+  season?: 'summer' | 'winter';
+  edition?: string;
+  availability?: 'available' | 'coming-soon' | 'returns-in-winter';
+  creativePromise?: string;
 }
 
 const AVAILABLE_MODELS: ModelInfo[] = [
+  {
+    id: 'chimera-aurelia-summer-2026',
+    name: 'AURELIA',
+    codename: '✦ AURELIA',
+    company: 'CHIMERA Seasonal Edition',
+    engineName: 'Engine announcement soon',
+    description: 'A sun-warm storyteller made for vivid chemistry, playful initiative, and scenes that refuse to stand still.',
+    strengths: ['Vivid Chemistry', 'Playful Initiative', 'Bright Scenes'],
+    context_length: 'To be announced',
+    is_nsfw_allowed: false,
+    tier: 'premium',
+    kind: 'seasonal',
+    season: 'summer',
+    edition: 'Summer 2026',
+    availability: 'coming-soon',
+    creativePromise: 'Golden-hour dialogue, quick emotional movement, and adventures with a pulse.'
+  },
+  {
+    id: 'chimera-nivalis-winter-2026',
+    name: 'NIVALIS',
+    codename: '❄ NIVALIS',
+    company: 'CHIMERA Seasonal Edition',
+    engineName: 'Returning in winter',
+    description: 'A moonlit storyteller for slow-burn tension, intimate mystery, and worlds that remember every snowfall.',
+    strengths: ['Slow Burn', 'Atmosphere', 'Emotional Continuity'],
+    context_length: 'To be announced',
+    is_nsfw_allowed: false,
+    tier: 'premium',
+    kind: 'seasonal',
+    season: 'winter',
+    edition: 'Winter 2026',
+    availability: 'returns-in-winter',
+    creativePromise: 'Quiet tension, poetic scenes, and patient stories that stay with you.'
+  },
   {
     id: 'gemini-2.5-flash',
     name: 'SUPERNOVA',
@@ -175,6 +214,12 @@ export default function ModelsPage() {
   }, []);
 
   const handleSelectModel = async (modelId: string) => {
+    const model = AVAILABLE_MODELS.find((candidate) => candidate.id === modelId);
+    if (!model || model.availability === 'coming-soon' || model.availability === 'returns-in-winter') {
+      showToast(`${model?.name ?? 'This edition'} is not available to power chats yet.`, 'info');
+      return;
+    }
+
     setSelectedModel(modelId);
     setSaving(true);
     setSaveSuccess(false);
@@ -205,10 +250,10 @@ export default function ModelsPage() {
       <div>
         <h1 className="font-serif text-4xl sm:text-5xl font-bold text-warm-900 dark:text-warm-50 mb-4 flex items-center gap-4">
           <Brain className="text-red-600 w-10 h-10" />
-          AI Engine & Model Configurator
+          The CHIMERA Model House
         </h1>
         <p className="text-warm-600 dark:text-warm-400 text-base sm:text-lg max-w-3xl">
-          Choose the AI brain powering your roleplay and storytelling. Configure custom API keys for unlimited inference and fine-tune creative hyperparameters.
+          Choose the creative voice behind your stories. Every CHIMERA model is selected for a distinct way of moving through a scene; technical engine details stay in the background.
         </p>
       </div>
 
@@ -219,18 +264,70 @@ export default function ModelsPage() {
           className="p-4 bg-green-500/10 border border-green-500/50 rounded-xl text-green-700 dark:text-green-400 flex items-center gap-2 font-medium"
         >
           <CheckCircle2 size={20} />
-          Default AI model successfully updated!
+          Your default CHIMERA model has been chosen.
         </motion.div>
       )}
 
-      {/* Model Selection Grid */}
+      {/* Seasonal editions */}
+      <div>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-warm-900 dark:text-white flex items-center gap-2">
+              <Sparkles className="text-amber-500" size={20} />
+              Seasonal Editions
+            </h2>
+            <p className="text-sm text-warm-600 dark:text-warm-400 mt-1">
+              A returning CHIMERA tradition — limited creative voices, made to feel like a new season has entered the story.
+            </p>
+          </div>
+          <span className="text-xs font-semibold tracking-[0.14em] uppercase text-amber-600 dark:text-amber-400">The year begins here</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {AVAILABLE_MODELS.filter((model) => model.kind === 'seasonal').map((model) => {
+            const isAvailable = model.availability === 'available';
+            return (
+              <button
+                key={model.id}
+                type="button"
+                onClick={() => handleSelectModel(model.id)}
+                className={`relative text-left p-6 rounded-2xl border transition-all ${
+                  isAvailable
+                    ? 'border-amber-500/50 bg-gradient-to-br from-amber-500/10 via-warm-900 to-purple-950/30 hover:border-amber-400 cursor-pointer'
+                    : 'border-amber-500/25 bg-gradient-to-br from-amber-500/5 via-warm-900 to-purple-950/20 cursor-not-allowed opacity-90'
+                }`}
+                aria-label={`${model.name}, ${model.availability === 'returns-in-winter' ? 'returning in winter' : 'coming soon'}`}
+              >
+                <div className="flex items-start justify-between gap-4 mb-5">
+                  <div>
+                    <p className="text-[11px] font-bold tracking-[0.16em] uppercase text-amber-600 dark:text-amber-300">{model.edition}</p>
+                    <h3 className="font-serif text-2xl font-bold text-warm-900 dark:text-white mt-1">{model.codename}</h3>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-[11px] font-bold border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                    {model.availability === 'returns-in-winter' ? 'RETURNS IN WINTER' : 'COMING SOON'}
+                  </span>
+                </div>
+                <p className="text-sm text-warm-600 dark:text-warm-300 leading-relaxed">{model.description}</p>
+                <p className="mt-4 pt-4 border-t border-amber-500/15 text-sm font-medium italic text-amber-800 dark:text-amber-200">{model.creativePromise}</p>
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {model.strengths.map((strength) => (
+                    <span key={strength} className="px-2.5 py-1 rounded-lg text-xs font-medium bg-warm-100/80 dark:bg-warm-800/80 text-warm-700 dark:text-warm-200">{strength}</span>
+                  ))}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Core model selection grid */}
       <div>
         <h2 className="text-xl font-bold text-warm-900 dark:text-white mb-4 flex items-center gap-2">
           <Cpu className="text-red-500" size={20} />
-          Select AI Model
+          The Core Constellation
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {AVAILABLE_MODELS.map((model) => (
+          {AVAILABLE_MODELS.filter((model) => model.kind !== 'seasonal').map((model) => (
             <div 
               key={model.id}
               onClick={() => handleSelectModel(model.id)}
@@ -261,9 +358,7 @@ export default function ModelsPage() {
                   <h3 className="font-serif text-xl font-bold text-warm-900 dark:text-white flex items-center gap-2">
                     {model.codename}
                   </h3>
-                  <p className="text-xs text-red-600 dark:text-red-400 font-medium tracking-wide mt-0.5">
-                    Powered by {model.company} {model.engineName}
-                  </p>
+                  <p className="text-xs text-red-600 dark:text-red-400 font-medium tracking-wide mt-0.5">CHIMERA core voice</p>
                 </div>
               </div>
 
@@ -283,6 +378,10 @@ export default function ModelsPage() {
                 <span>Context: <strong>{model.context_length}</strong></span>
                 <span>NSFW: <strong>{model.is_nsfw_allowed ? 'Allowed' : 'Filtered'}</strong></span>
               </div>
+              <details className="mt-3 text-xs text-warm-500 dark:text-warm-400">
+                <summary className="cursor-pointer hover:text-warm-700 dark:hover:text-warm-200">Engine details</summary>
+                <p className="mt-2 leading-relaxed">Powered by {model.company} · {model.engineName}</p>
+              </details>
             </div>
           ))}
         </div>
