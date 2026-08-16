@@ -354,14 +354,14 @@ export default function ConversationPage() {
             .maybeSingle();
 
           if (aiChar) {
-            setMemoryCharacter({ id: aiChar.id, name: aiChar.name || aiChar.display_name || 'this character' });
+            setMemoryCharacter({ id: aiChar.id, name: aiChar.chat_name || aiChar.name || aiChar.display_name || 'this character' });
             setLoreScope({ characterId: aiChar.id, worldId: aiChar.world_id || null });
             botProfile = {
               id: aiChar.id,
               // Messages and conversation participants are keyed to the bot's
               // profile user id, not the separate ai_characters record id.
               user_id: aiChar.user_id,
-              display_name: aiChar.name || aiChar.display_name || 'AI Character',
+              display_name: aiChar.chat_name || aiChar.name || aiChar.display_name || 'AI Character',
               username: aiChar.creator_username || 'bot',
               photo_url: aiChar.photo_url || aiChar.avatar_url || null,
               avatar_emoji: '🎭',

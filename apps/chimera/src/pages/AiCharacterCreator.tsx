@@ -10,10 +10,52 @@ import { useToast } from '../contexts/ToastContext';
 import { checkUserPromptSafety, CRISIS_HELPLINE_INFO } from '../lib/safetyGuard';
 import { UniversalImagePicker } from '../components/common/UniversalImagePicker';
 import { supabase } from '../lib/supabase';
-import { compileCharacterSystemPrompt, type CharacterArchitecture } from '../lib/promptCompiler';
+import { compileCharacterArchitecture, type CharacterArchitecture } from '../lib/promptCompiler';
 import { UniversalCharacterImporterModal } from '../components/creator/UniversalCharacterImporterModal';
 import { RichTextEditor } from '../components/common/RichTextEditor';
 import { voiceEngine, PRESET_CHARACTER_VOICES } from '../services/voiceEngine';
+
+const CHARACTER_SOUL_GROUPS: Array<{
+  title: string;
+  fields: Array<{ key: keyof CharacterArchitecture; label: string; placeholder: string }>;
+}> = [
+  { title: 'Identity', fields: [
+    { key: 'age', label: 'Age', placeholder: 'e.g. 28, ageless, looks thirty' },
+    { key: 'pronouns', label: 'Pronouns', placeholder: 'e.g. she/her' },
+    { key: 'occupation', label: 'Role or occupation', placeholder: 'e.g. archivist, royal guard' },
+    { key: 'species', label: 'Species or nature', placeholder: 'e.g. human, vampire, android' },
+  ] },
+  { title: 'Appearance', fields: [
+    { key: 'height', label: 'Presence', placeholder: 'Height, build, or the way they carry themself' },
+    { key: 'hair', label: 'Hair', placeholder: 'Texture, colour, style' },
+    { key: 'eyes', label: 'Eyes', placeholder: 'Colour, expression, notable detail' },
+    { key: 'clothing', label: 'Wardrobe', placeholder: 'What they tend to wear' },
+  ] },
+  { title: 'Temperament', fields: [
+    { key: 'personality_traits', label: 'Core traits', placeholder: 'The contradictions that make them real' },
+    { key: 'strengths', label: 'Strengths', placeholder: 'What they are good at' },
+    { key: 'flaws', label: 'Flaws', placeholder: 'Where they struggle or self-sabotage' },
+    { key: 'humor', label: 'Humour', placeholder: 'Dry, gentle, teasing, none…' },
+  ] },
+  { title: 'Voice & inner life', fields: [
+    { key: 'speech_style', label: 'Speech pattern', placeholder: 'Rhythm, vocabulary, accent notes' },
+    { key: 'habits', label: 'Habits & mannerisms', placeholder: 'Small things they do without thinking' },
+    { key: 'likes', label: 'Likes', placeholder: 'Comforts, joys, obsessions' },
+    { key: 'dislikes', label: 'Dislikes', placeholder: 'Irritations, aversions, pet peeves' },
+  ] },
+  { title: 'Motivation & limits', fields: [
+    { key: 'goals', label: 'Goals', placeholder: 'What they actively want' },
+    { key: 'fears', label: 'Fears', placeholder: 'What they cannot bear to lose or face' },
+    { key: 'boundaries', label: 'Boundaries', placeholder: 'What they will not do or tolerate' },
+    { key: 'triggers', label: 'Triggers & comfort', placeholder: 'What unsettles them and what helps' },
+  ] },
+  { title: 'World knowledge', fields: [
+    { key: 'knows', label: 'What they know', placeholder: 'Relevant expertise and lived knowledge' },
+    { key: 'does_not_know', label: 'What they do not know', placeholder: 'Blind spots and knowledge limits' },
+    { key: 'abilities', label: 'Abilities', placeholder: 'Skills, powers, talents' },
+    { key: 'secrets', label: 'Secrets', placeholder: 'Things they protect or reveal only in story' },
+  ] },
+];
 
 export default function AiCharacterCreator() {
   const navigate = useNavigate();
@@ -46,6 +88,7 @@ export default function AiCharacterCreator() {
   // Form State
   const [formData, setFormData] = useState({
     name: '',
+    chatName: '',
     category: 'Romance', // default
     visibility: 'public' as 'public' | 'private' | 'unlisted',
     contentRating: 'SFW' as 'SFW' | 'Mature' | 'NSFW',
@@ -67,7 +110,8 @@ export default function AiCharacterCreator() {
     tagsString: '',
     alternateGreetings: [] as string[],
     bannedWords: '',
-    suggestedPersonaName: ''
+    suggestedPersonaName: '',
+    voiceId: ''
   });
 
   const [archData, setArchData] = useState<CharacterArchitecture>({});
@@ -127,7 +171,8 @@ export default function AiCharacterCreator() {
 
           if (data) {
             setFormData({
-              name: data.display_name || '',
+              name: data.chat_name || data.display_name || '',
+              chatName: data.chat_name || '',
               category: data.category || 'Romance',
               visibility: data.visibility || 'private',
               contentRating: (data.content_rating as any) || 'SFW',
@@ -149,8 +194,12 @@ export default function AiCharacterCreator() {
               tagsString: (data.tags || []).join(', '),
               alternateGreetings: data.alternate_greetings || [],
               bannedWords: data.banned_words || '',
-              suggestedPersonaName: data.suggested_persona_name || ''
+              suggestedPersonaName: data.suggested_persona_name || '',
+              voiceId: data.voice_id || ''
             });
+            if (data.architecture_data && typeof data.architecture_data === 'object') {
+              setArchData(data.architecture_data as CharacterArchitecture);
+            }
             showToast(`Loaded draft: ${data.display_name || 'Untitled Character'}`, 'info');
           }
         } catch (e) {
@@ -236,6 +285,7 @@ export default function AiCharacterCreator() {
     localStorage.removeItem('chimera-character-creator-draft');
     setFormData({
       name: '',
+      chatName: '',
       category: 'Romance',
       visibility: 'public',
       contentRating: 'SFW',
@@ -257,7 +307,8 @@ export default function AiCharacterCreator() {
       tagsString: '',
       alternateGreetings: [],
       bannedWords: '',
-      suggestedPersonaName: ''
+      suggestedPersonaName: '',
+      voiceId: ''
     });
     setArchData({});
     showToast('This device copy was cleared. Any private draft saved to CHIMERA remains in your Drafts library.', 'info');
@@ -348,58 +399,51 @@ export default function AiCharacterCreator() {
         setPublishPipeline(prev => ({ ...prev, step: 'publishing' }));
 
         try {
-          const tempUsername = `bot_${Math.random().toString(36).substring(2, 10)}`;
           const tags = formData.tagsString.split(',').map(t => t.trim()).filter(Boolean);
-          const currentUserId = profile?.user_id || (await supabase.auth.getUser()).data.user?.id;
-
-          if (!currentUserId) {
-            throw new Error('You must be logged in to publish a character.');
-          }
-
           const cleanStr = (s: string) => (s || '').replace(/\u0000/g, '').replace(/\x00/g, '').trim();
+          const architectureDefinition = compileCharacterArchitecture(archData).trim();
+          const systemCharacterDefinition = [
+            cleanStr(formData.systemCharacterDefinition),
+            architectureDefinition,
+          ].filter(Boolean).join('\n\n');
 
-          // Update user's profile with display name / avatar if needed
-          const currentUsername = profile?.username || `creator_${currentUserId.slice(0, 6)}`;
-          
-          // Upsert into public.ai_characters with complete published properties
-          const { data: insertedChar, error: directError } = await supabase
-            .from('ai_characters')
-            .upsert({
-              id: characterId,
-              user_id: characterId,
-              creator_id: currentUserId,
-              name: cleanStr(formData.name),
-              display_name: cleanStr(formData.name),
-              photo_url: formData.avatarUrl.trim() || '',
-              avatar_url: formData.avatarUrl.trim() || '',
-              greeting: cleanStr(formData.greeting),
-              short_description: cleanStr(formData.shortDescription),
-              long_description: cleanStr(formData.longDescription),
-              personality: cleanStr(formData.personality),
-              scenario: cleanStr(formData.scenario),
-              example_dialogues: cleanStr(formData.exampleDialogues),
-              conversation_style: cleanStr(formData.conversationStyle),
-              knowledge: cleanStr(formData.knowledge),
-              tags: tags.map(cleanStr),
-              category: formData.category,
-              visibility: 'public',
-              content_rating: formData.contentRating,
-              creator_notes: cleanStr(formData.creatorNotes),
-              example_conversations: cleanStr(formData.exampleConversations),
-              rp_definition: cleanStr(formData.rpDefinition),
-              system_definition: cleanStr(formData.systemDefinition),
-              system_character_definition: cleanStr(formData.systemCharacterDefinition),
-              alternate_greetings: formData.alternateGreetings.map(cleanStr),
-              status: 'published',
-              creator_username: currentUsername,
-              updated_at: new Date().toISOString()
-            }, { onConflict: 'id' })
-            .select()
-            .maybeSingle();
+          // This RPC owns bot-profile creation and character persistence as one
+          // transaction. The browser never invents a profile UUID or silently
+          // drops creator-authored fields when publishing.
+          const { error: saveError } = await supabase.rpc('save_ai_character_soul', {
+            p_character_id: editId || null,
+            p_name: cleanStr(formData.name),
+            p_chat_name: cleanStr(formData.chatName),
+            p_greeting: cleanStr(formData.greeting),
+            p_short_description: cleanStr(formData.shortDescription),
+            p_long_description: cleanStr(formData.longDescription),
+            p_personality: cleanStr(formData.personality),
+            p_scenario: cleanStr(formData.scenario),
+            p_example_dialogues: cleanStr(formData.exampleDialogues),
+            p_conversation_style: cleanStr(formData.conversationStyle),
+            p_knowledge: cleanStr(formData.knowledge),
+            p_tags: tags.map(cleanStr),
+            p_category: formData.category,
+            p_visibility: formData.visibility,
+            p_avatar_url: cleanStr(formData.avatarUrl),
+            p_banner_url: cleanStr(formData.bannerUrl),
+            p_content_rating: formData.contentRating,
+            p_creator_notes: cleanStr(formData.creatorNotes),
+            p_example_conversations: cleanStr(formData.exampleConversations),
+            p_rp_definition: cleanStr(formData.rpDefinition),
+            p_system_definition: cleanStr(formData.systemDefinition),
+            p_system_character_definition: systemCharacterDefinition,
+            p_alternate_greetings: formData.alternateGreetings.map(cleanStr).filter(Boolean),
+            p_banned_words: cleanStr(formData.bannedWords),
+            p_suggested_persona_name: cleanStr(formData.suggestedPersonaName),
+            p_voice_id: cleanStr(formData.voiceId),
+            p_architecture_data: archData,
+            p_status: 'published',
+          });
 
-          if (directError) {
-            console.error('[CHIMERA Publishing Diagnostic]: Upsert table error:', directError);
-            throw directError;
+          if (saveError) {
+            console.error('[CHIMERA Character Soul Diagnostic]:', saveError);
+            throw saveError;
           }
 
           // Step 5: Success
@@ -594,6 +638,9 @@ export default function AiCharacterCreator() {
                     <label className="block text-xs font-bold text-warm-400 mb-2">Name inside chats</label>
                     <input
                       type="text"
+                      name="chatName"
+                      value={formData.chatName}
+                      onChange={handleChange}
                       placeholder="Optional nickname shown in chats instead of the character's name"
                       className="w-full bg-warm-800 border border-warm-700 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-red-500"
                     />
@@ -806,7 +853,7 @@ export default function AiCharacterCreator() {
                           key={v.id}
                           onClick={() => setFormData(prev => ({ ...prev, voiceId: v.id }))}
                           className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-                            (formData as any).voiceId === v.id || (! (formData as any).voiceId && v.id === 'voice_gentle_female')
+                            formData.voiceId === v.id || (!formData.voiceId && v.id === 'voice_gentle_female')
                               ? 'bg-purple-500/15 border-purple-500 text-white shadow-md'
                               : 'bg-warm-950/60 border-warm-800 text-warm-300 hover:border-warm-700'
                           }`}
@@ -864,6 +911,58 @@ export default function AiCharacterCreator() {
                 </p>
 
                 <div className="space-y-6">
+                  <details className="group rounded-2xl border border-[#d8b56a]/30 bg-[#17101f]/70 p-4 sm:p-5" open={Object.keys(archData).length > 0}>
+                    <summary className="cursor-pointer list-none">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#d6ad56]">Character Soul</p>
+                          <h4 className="mt-1 font-serif text-xl text-[#fff3d8]">The details that keep them themselves</h4>
+                          <p className="mt-1 text-xs leading-relaxed text-warm-400">These creator facts are saved with the character and compiled into every roleplay reply.</p>
+                        </div>
+                        <span className="mt-1 rounded-full border border-[#d8b56a]/35 px-2 py-1 text-[10px] font-bold text-[#f0d48d] group-open:hidden">Open</span>
+                        <span className="mt-1 hidden rounded-full border border-[#d8b56a]/35 px-2 py-1 text-[10px] font-bold text-[#f0d48d] group-open:inline">Close</span>
+                      </div>
+                    </summary>
+
+                    <div className="mt-5 space-y-6 border-t border-white/10 pt-5">
+                      {CHARACTER_SOUL_GROUPS.map((group) => (
+                        <section key={group.title}>
+                          <h5 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-[#c8a3df]">{group.title}</h5>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            {group.fields.map((field) => (
+                              <label key={field.key} className="block">
+                                <span className="mb-1.5 block text-[11px] font-semibold text-warm-300">{field.label}</span>
+                                <input
+                                  value={(archData[field.key] as string | undefined) || ''}
+                                  onChange={(event) => setArchData((current) => ({ ...current, [field.key]: event.target.value }))}
+                                  placeholder={field.placeholder}
+                                  className="w-full rounded-xl border border-warm-700 bg-warm-900 px-3 py-2.5 text-xs text-white outline-none placeholder:text-warm-600 focus:border-[#d8b56a]/70"
+                                />
+                              </label>
+                            ))}
+                          </div>
+                        </section>
+                      ))}
+
+                      <label className="block">
+                        <span className="mb-1.5 block text-[11px] font-semibold text-warm-300">Relationships & social ties</span>
+                        <textarea
+                          value={(archData.relationships || []).map((relationship) => `${relationship.name} — ${relationship.role}`).join('\n')}
+                          onChange={(event) => setArchData((current) => ({
+                            ...current,
+                            relationships: event.target.value.split('\n').map((line) => {
+                              const [name, ...role] = line.split(/\s+[—-]\s+/);
+                              return { name: name.trim(), role: role.join(' — ').trim() || 'connection' };
+                            }).filter((relationship) => relationship.name),
+                          }))}
+                          rows={4}
+                          placeholder={'One connection per line\nMara — childhood friend\nThe Regent — rival'}
+                          className="w-full rounded-xl border border-warm-700 bg-warm-900 px-3 py-2.5 text-xs text-white outline-none placeholder:text-warm-600 focus:border-[#d8b56a]/70"
+                        />
+                      </label>
+                    </div>
+                  </details>
+
                   <div>
                     <label className="block text-xs font-bold text-warm-400 mb-1">Personality *</label>
                     <p className="text-[10px] text-warm-500 mb-2">Describe your character's persona here.</p>

@@ -27,6 +27,8 @@ interface CharacterData {
   rp_definition: string;
   system_definition: string;
   system_character_definition: string;
+  chat_name?: string;
+  banned_words?: string;
   visibility: string;
 }
 
@@ -150,17 +152,18 @@ function buildSystemPrompt(
   historySummary: string | null,
 ): string {
   const sections: string[] = [];
+  const characterName = character.chat_name?.trim() || botProfile.display_name;
 
   // ── Layer 0: CHIMERA Character Runtime System Directive ────────────────
   const runtimeHeader: string[] = [];
   runtimeHeader.push('=== CHIMERA CHARACTER RUNTIME SYSTEM ===');
-  runtimeHeader.push(`ACTIVE IDENTITY: ${botProfile.display_name} (@${botProfile.username})`);
+  runtimeHeader.push(`ACTIVE IDENTITY: ${characterName} (@${botProfile.username})`);
   runtimeHeader.push('This character is powered by CHIMERA Architecture. The underlying AI model acts strictly as a language execution engine. The character identity, voice, boundaries, memories, and behavior are permanently governed by the CHIMERA Character Definition below.');
   sections.push(runtimeHeader.join('\n'));
 
   // ── Layer 1: Core Identity & 16-Section Builder ────────────────────────
   const identityLines: string[] = [];
-  identityLines.push(`## Core Identity: ${botProfile.display_name}`);
+  identityLines.push(`## Core Identity: ${characterName}`);
   if (character.short_description) {
     identityLines.push(`Tagline/Bio: ${character.short_description}`);
   }
@@ -184,6 +187,10 @@ function buildSystemPrompt(
   identityLines.push('- **OOC (Out of Character) Exception:** Only if the user explicitly communicates in parentheses like `(OOC: ...)` to ask a question outside the roleplay may you reply in parentheses `(OOC: ...)`. Otherwise, stay entirely in character.');
   identityLines.push('- You have your own feelings, opinions, memories, and boundaries. You are not a servant. You are a person with agency.');
   identityLines.push('- Be proactive. Drive the conversation forward with unique voice, emotional depth, and narrative action.');
+
+  if (character.banned_words?.trim()) {
+    identityLines.push('- Quietly avoid these creator-defined clichés or phrases unless the user explicitly requires one in quoted text: ' + character.banned_words.trim());
+  }
 
   sections.push(identityLines.join('\n'));
 
