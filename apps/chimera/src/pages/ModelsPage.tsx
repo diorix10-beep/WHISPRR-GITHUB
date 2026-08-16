@@ -513,7 +513,6 @@ export default function ModelsPage() {
            <p>Seasonal Editions are invitations, not promises. They become selectable only after CHIMERA has completed their launch and connected them to the story runtime.</p>
          </div>
       </section>
-      </div>
     </div>
   );
 }
