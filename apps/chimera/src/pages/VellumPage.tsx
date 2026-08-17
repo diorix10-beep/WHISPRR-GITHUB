@@ -67,7 +67,12 @@ export default function VellumPage() {
     };
 
     void loadVellum();
-    return () => { active = false; };
+    const refreshAfterSpend = () => { void loadVellum(); };
+    window.addEventListener('chimera-vellum-changed', refreshAfterSpend);
+    return () => {
+      active = false;
+      window.removeEventListener('chimera-vellum-changed', refreshAfterSpend);
+    };
   }, []);
 
   const welcomeCredit = ledger.find((entry) => entry.entry_type === 'welcome_credit' && entry.status === 'posted');
@@ -165,12 +170,13 @@ export default function VellumPage() {
               </article>
             </section>
 
-            <section className="mt-6 rounded-3xl border border-dashed border-amber-200/25 bg-[#10182a]/60 p-6 sm:p-7">
-              <div className="flex items-center gap-3"><Sparkles size={21} className="text-amber-200" /><div><h2 className="font-serif text-2xl text-white">What VELLUM will unlock</h2><p className="mt-1 text-sm text-warm-300">These are the first creative directions — not purchasable buttons yet.</p></div></div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {['Book covers', 'Scene illustrations', 'World Bibles', 'Continuity checks'].map((tool) => <div key={tool} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><p className="font-serif text-lg text-warm-100">{tool}</p><p className="mt-2 text-xs leading-relaxed text-warm-400">Available only once CHIMERA can genuinely create and safely record this result.</p><span className="mt-3 inline-block text-[10px] font-bold uppercase tracking-wider text-amber-200/80">Not connected yet</span></div>)}
-              </div>
-            </section>
+             <section className="mt-6 rounded-3xl border border-amber-200/25 bg-[#10182a]/75 p-6 shadow-xl sm:p-7">
+               <div className="flex items-center gap-3"><Sparkles size={21} className="text-amber-200" /><div><h2 className="font-serif text-2xl text-white">Bring one scene to life</h2><p className="mt-1 text-sm text-warm-300">Scene Illustration is the first live VELLUM artifact. The rest stays proposed until its real creation and ledger flow exists.</p></div></div>
+               <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                 <div className="rounded-2xl border border-amber-200/30 bg-amber-200/[0.08] p-4"><p className="font-serif text-lg text-warm-100">Scene illustration</p><p className="mt-2 text-xs leading-relaxed text-warm-300">A private visual companion for a chapter scene, based on your direction.</p><p className="mt-3 text-xs font-bold text-amber-100">400 VELLUM · Live</p><button onClick={() => navigate('/write')} className="mt-4 rounded-lg bg-[#e6c48b] px-3 py-2 text-xs font-extrabold text-[#2a1c12] transition hover:bg-[#f4dbac]">Open the writing desk</button></div>
+                 {['Book covers', 'World maps', 'Continuity checks'].map((tool) => <div key={tool} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><p className="font-serif text-lg text-warm-100">{tool}</p><p className="mt-2 text-xs leading-relaxed text-warm-400">A future creative artifact. It will appear here only after CHIMERA can genuinely create and record it.</p><span className="mt-3 inline-block text-[10px] font-bold uppercase tracking-wider text-amber-200/80">Not connected yet</span></div>)}
+               </div>
+             </section>
           </>
         )}
 

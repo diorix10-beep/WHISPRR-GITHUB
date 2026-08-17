@@ -20,6 +20,8 @@ export function SceneIllustrationModal({ isOpen, onClose, storyId, chapterId, ch
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [availableVellum, setAvailableVellum] = useState<number | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
   const suggestedPrompt = useMemo(() => {
     const excerpt = chapterContent.trim().replace(/\s+/g, ' ').slice(0, 700);
@@ -30,12 +32,20 @@ export function SceneIllustrationModal({ isOpen, onClose, storyId, chapterId, ch
     if (isOpen) {
       setPrompt(suggestedPrompt);
       setError(null);
+      setConfirming(false);
+      supabase.rpc('get_my_vellum_wallet').then(({ data, error: walletError }) => {
+        if (!walletError) setAvailableVellum(data?.[0]?.available_balance ?? null);
+      });
     }
   }, [isOpen, suggestedPrompt]);
 
   if (!isOpen) return null;
 
   const generate = async () => {
+    if (!confirming) {
+      setConfirming(true);
+      return;
+    }
     setError(null);
     if (prompt.trim().length < 12) {
       setError('Add a little more scene detail first.');
@@ -53,6 +63,7 @@ export function SceneIllustrationModal({ isOpen, onClose, storyId, chapterId, ch
       const body = await response.json().catch(() => ({}));
       if (!response.ok || !body?.illustration?.signed_url) throw new Error(body?.error || 'CHIMERA could not create this scene.');
       onGenerated({ id: body.illustration.id, signedUrl: body.illustration.signed_url });
+      window.dispatchEvent(new Event('chimera-vellum-changed'));
       onClose();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'CHIMERA could not create this scene.');
@@ -98,15 +109,17 @@ export function SceneIllustrationModal({ isOpen, onClose, storyId, chapterId, ch
           </div>
 
           <div className="rounded-2xl border border-[#e4c77e]/25 bg-[#e4c77e]/10 p-4 text-sm text-[#f8e8b9]">
-            <strong>{VELLUM_COST} VELLUM</strong> will be reserved when you generate. If CHIMERA cannot deliver an image, it is automatically refunded.
+            <strong>{VELLUM_COST} VELLUM</strong> will be reserved only after you confirm. If CHIMERA cannot deliver an image, it is automatically refunded.
+            {availableVellum !== null && <span className="mt-1 block text-xs text-[#d8c995]">Your available reserve: {availableVellum.toLocaleString()} VELLUM.</span>}
           </div>
+          {availableVellum !== null && availableVellum < VELLUM_COST && <p className="rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">You need {VELLUM_COST.toLocaleString()} VELLUM to create this illustration. Your writing remains completely free.</p>}
           {error && <p className="rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{error}</p>}
         </div>
 
         <div className="flex flex-col-reverse gap-3 border-t border-white/10 px-6 py-5 sm:flex-row sm:justify-end">
           <button onClick={onClose} disabled={generating} className="rounded-xl px-4 py-3 text-sm font-semibold text-[#cfc2dd] hover:bg-white/10">Not now</button>
-          <button onClick={generate} disabled={generating} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#caa552] to-[#e9d28c] px-5 py-3 text-sm font-bold text-[#211728] transition hover:brightness-110 disabled:cursor-wait disabled:opacity-70">
-            {generating ? <><Loader2 size={17} className="animate-spin" /> Creating your scene…</> : <><ImagePlus size={17} /> Generate for {VELLUM_COST} VELLUM</>}
+          <button onClick={generate} disabled={generating || (availableVellum !== null && availableVellum < VELLUM_COST)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#caa552] to-[#e9d28c] px-5 py-3 text-sm font-bold text-[#211728] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70">
+            {generating ? <><Loader2 size={17} className="animate-spin" /> Creating your scene…</> : confirming ? <><ImagePlus size={17} /> Confirm and create · {VELLUM_COST} VELLUM</> : <><ImagePlus size={17} /> Review · {VELLUM_COST} VELLUM</>}
           </button>
         </div>
       </div>
