@@ -264,7 +264,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
           {/* 2. BLOC MILIEU — Clean Fluid Primary Navigation */}
           <div className="hidden lg:flex min-w-0 flex-1 items-center justify-center px-2 xl:px-5">
-            <nav className={`grid w-full ${currentNavLinks.length === 5 ? 'max-w-[660px] grid-cols-5' : currentNavLinks.length === 4 ? 'max-w-[540px] grid-cols-4' : 'max-w-[420px] grid-cols-3'} items-center gap-1 rounded-2xl border p-1 text-center ${creativeMode === 'roleplay' ? 'border-[#c99b50]/20 bg-black/25' : 'border-warm-800/50 bg-warm-900/20'}`}>
+            <nav className={`grid w-full ${currentNavLinks.length === 5 ? 'max-w-[660px] grid-cols-5' : currentNavLinks.length === 4 ? 'max-w-[540px] grid-cols-4' : 'max-w-[420px] grid-cols-3'} items-center gap-1 rounded-2xl border px-1 py-2 text-center ${creativeMode === 'roleplay' ? 'border-[#c99b50]/20 bg-black/25' : 'border-warm-800/50 bg-warm-900/20'}`}>
               {renderNavLinks()}
             </nav>
           </div>
