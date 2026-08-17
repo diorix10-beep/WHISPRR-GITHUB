@@ -323,7 +323,7 @@ function buildLinksEmbed() {
     .setDescription('All official links in one place.')
     .addFields(
       { name: '🌐 WHISPRR Social', value: '[whisprr.xyz](https://whisprr.xyz)', inline: true },
-      { name: '🤖 CHIMERA Studio', value: '[chimera.whisprr.xyz](https://chimera.whisprr.xyz)', inline: true },
+      { name: '🤖 CHIMERA Studio', value: '[chimera.it.com](https://chimera.it.com)', inline: true },
       { name: '💻 GitHub Monorepo', value: '[WHISPRR-GITHUB](https://github.com/diorix10-beep/WHISPRR-GITHUB)', inline: true },
     )
     .setFooter({ text: 'WHISPRR × CHIMERA — The Ecosystem of Creators' });

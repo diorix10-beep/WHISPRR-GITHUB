@@ -16,6 +16,7 @@ interface UserViolation {
   updated_at: string;
 }
 import { supabase } from '../lib/supabase';
+import { CHIMERA_ORIGIN } from '../lib/supabase';
 
 interface AuthState {
   user: User | null;
@@ -104,6 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const initializedRef = useRef(false);
+  const latestSessionRef = useRef<Session | null | undefined>(undefined);
 
   const fetchViolations = useCallback(async (userId: string): Promise<UserViolation[]> => {
     try {
@@ -232,6 +234,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
+    const hydrateSession = async (session: Session | null) => {
+      if (!mounted) return;
+
+      if (session?.user) {
+        setState(prev => ({ ...prev, user: session.user, session, loading: true }));
+        const [profile, violations, chimeraPreferences] = await Promise.all([
+          fetchProfile(session.user.id),
+          fetchViolations(session.user.id),
+          fetchChimeraPreferences(session.user.id)
+        ]);
+        if (mounted) {
+          setState({ user: session.user, session, profile, chimeraPreferences, violations, loading: false });
+        }
+      } else if (mounted) {
+        setState({ user: null, session: null, profile: null, chimeraPreferences: null, violations: [], loading: false });
+      }
+    };
+
     const timeoutId = setTimeout(() => {
       if (mounted && state.loading) {
         setState(prev => ({ ...prev, loading: false }));
@@ -242,21 +262,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (_event, session) => {
         if (!mounted) return;
 
+        latestSessionRef.current = session;
+
         if (_event === 'SIGNED_OUT') {
           setState({ user: null, session: null, profile: null, chimeraPreferences: null, violations: [], loading: false });
           return;
         }
 
         if (session?.user) {
-          setState(prev => ({ ...prev, user: session.user, session, loading: true }));
-          const [profile, violations, chimeraPreferences] = await Promise.all([
-            fetchProfile(session.user.id),
-            fetchViolations(session.user.id),
-            fetchChimeraPreferences(session.user.id)
-          ]);
-          if (mounted) {
-            setState({ user: session.user, session, profile, chimeraPreferences, violations, loading: false });
-          }
+          await hydrateSession(session);
         } else {
           setState({ user: null, session: null, profile: null, chimeraPreferences: null, violations: [], loading: false });
         }
@@ -266,20 +280,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!mounted) return;
 
-      if (session?.user) {
-        const [profile, violations, chimeraPreferences] = await Promise.all([
-          fetchProfile(session.user.id),
-          fetchViolations(session.user.id),
-          fetchChimeraPreferences(session.user.id)
-        ]);
-        if (mounted) {
-          setState({ user: session.user, session, profile, chimeraPreferences, violations, loading: false });
-        }
-      } else {
-        if (mounted) {
-          setState({ user: null, session: null, profile: null, chimeraPreferences: null, violations: [], loading: false });
-        }
-      }
+      // INITIAL_SESSION/SIGNED_IN can arrive while getSession is resolving.
+      // Never let an older null result overwrite a session already delivered
+      // by the auth event listener.
+      if (latestSessionRef.current !== undefined) return;
+      latestSessionRef.current = session;
+      await hydrateSession(session);
       initializedRef.current = true;
     });
 
@@ -301,7 +307,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           access_level: 'ecosystem',
           legal_accepted_version: CURRENT_LEGAL_VERSION
         },
-        emailRedirectTo: window.location.origin
+        emailRedirectTo: CHIMERA_ORIGIN
       }
     });
     if (error) throw error;
@@ -329,7 +335,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth` },
+      options: { redirectTo: `${CHIMERA_ORIGIN}/auth` },
     });
     if (error) throw error;
   };
@@ -337,7 +343,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithApple = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'apple',
-      options: { redirectTo: `${window.location.origin}/auth` },
+      options: { redirectTo: `${CHIMERA_ORIGIN}/auth` },
     });
     if (error) throw error;
   };
@@ -345,7 +351,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithDiscord = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'discord',
-      options: { redirectTo: `${window.location.origin}/auth` },
+      options: { redirectTo: `${CHIMERA_ORIGIN}/auth` },
     });
     if (error) throw error;
   };
@@ -358,7 +364,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resetPassword = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${CHIMERA_ORIGIN}/reset-password`,
     });
     if (error) throw error;
   };
