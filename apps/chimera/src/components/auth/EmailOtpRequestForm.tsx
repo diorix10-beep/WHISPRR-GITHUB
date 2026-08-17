@@ -38,7 +38,7 @@ export function EmailOtpRequestForm({ onCodeSent, onUsePassword }: EmailOtpReque
         <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent-300">Private entrance</p>
         <h2 className="mt-2 font-serif text-2xl font-semibold text-white">Your gateway is ready.</h2>
         <p className="mt-2 text-sm leading-relaxed text-warm-400">
-          We will send a six-digit sign-in code to your email. No password to remember, just a quiet step into your creative universe.
+          We will send an eight-digit sign-in code to your email. No password to remember, just a quiet step into your creative universe.
         </p>
       </div>
 

@@ -6,7 +6,7 @@ interface EmailOtpVerifyFormProps {
   onBack: () => void;
 }
 
-const CODE_LENGTH = 6;
+const CODE_LENGTH = 8;
 const RESEND_COOLDOWN_SECONDS = 30;
 
 function describeVerificationError(error: unknown) {
@@ -41,7 +41,23 @@ export function EmailOtpVerifyForm({ email, onBack }: EmailOtpVerifyFormProps) {
   }, [cooldown]);
 
   const setCode = (value: string, index: number) => {
-    const cleanValue = value.replace(/\D/g, '').slice(-1);
+    if (value.length > 1) {
+      if (/^\d{8}$/.test(value)) {
+        setDigits(value.split(''));
+        setError('');
+        inputRefs.current[CODE_LENGTH - 1]?.focus();
+      } else {
+        setError('Enter exactly eight numeric digits.');
+      }
+      return;
+    }
+
+    if (value && !/^\d$/.test(value)) {
+      setError('Only numeric digits are accepted.');
+      return;
+    }
+
+    const cleanValue = value;
     setDigits((current) => {
       const next = [...current];
       next[index] = cleanValue;
@@ -53,13 +69,14 @@ export function EmailOtpVerifyForm({ email, onBack }: EmailOtpVerifyFormProps) {
 
   const handlePaste = (event: React.ClipboardEvent) => {
     event.preventDefault();
-    const pasted = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, CODE_LENGTH);
-    if (!pasted) return;
-    const next = Array(CODE_LENGTH).fill('');
-    pasted.split('').forEach((digit, index) => { next[index] = digit; });
-    setDigits(next);
+    const pasted = event.clipboardData.getData('text');
+    if (!/^\d{8}$/.test(pasted)) {
+      setError('Paste exactly eight numeric digits.');
+      return;
+    }
+    setDigits(pasted.split(''));
     setError('');
-    inputRefs.current[Math.min(pasted.length, CODE_LENGTH) - 1]?.focus();
+    inputRefs.current[CODE_LENGTH - 1]?.focus();
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>, index: number) => {
@@ -71,8 +88,8 @@ export function EmailOtpVerifyForm({ email, onBack }: EmailOtpVerifyFormProps) {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     const token = digits.join('');
-    if (token.length !== CODE_LENGTH) {
-      setError('Enter all six digits from the email before continuing.');
+    if (!/^\d{8}$/.test(token)) {
+      setError('Enter all eight digits from the email before continuing.');
       return;
     }
     setError('');
@@ -120,13 +137,13 @@ export function EmailOtpVerifyForm({ email, onBack }: EmailOtpVerifyFormProps) {
       <div>
         <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-accent-300">Verification chamber</p>
         <h2 className="mt-2 font-serif text-2xl font-semibold text-white">Enter your sign-in code.</h2>
-        <p className="mt-2 text-sm leading-relaxed text-warm-400">A six-digit code is waiting in <span className="font-semibold text-warm-200">{email}</span>.</p>
+        <p className="mt-2 text-sm leading-relaxed text-warm-400">An eight-digit code is waiting in <span className="font-semibold text-warm-200">{email}</span>.</p>
       </div>
 
       {error && <div role="alert" className="rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm leading-relaxed text-red-200">{error}</div>}
 
       <div className="rounded-2xl border border-accent-400/25 bg-gradient-to-br from-accent-500/10 via-white/[0.03] to-purple-500/10 p-4 sm:p-5">
-        <label className="sr-only" htmlFor="chimera-otp-0">Six-digit verification code</label>
+        <label className="sr-only" htmlFor="chimera-otp-0">Eight-digit verification code</label>
         <div className="flex justify-center gap-2 sm:gap-3" onPaste={handlePaste}>
           {digits.map((digit, index) => (
             <input
