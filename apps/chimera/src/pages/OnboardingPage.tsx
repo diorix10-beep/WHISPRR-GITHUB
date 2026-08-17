@@ -95,6 +95,7 @@ export default function OnboardingPage() {
             <p className="text-xs font-bold uppercase tracking-[0.28em] text-amber-300">More than a conversation</p>
             <h1 className="mt-5 font-serif text-4xl font-extrabold leading-tight sm:text-5xl">CHIMERA is a studio for imagination.</h1>
             <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg">Create characters, explore roleplay, build worlds, and write stories that are truly your own. CHIMERA is not a generic chatbot — it is a place to make something personal.</p>
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-emerald-200/80">Writing, editing, chapters, worlds, and collaboration are free. Optional reserves only apply to specific creative moments.</p>
             <button type="button" onClick={nextStep} className="mt-10 inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-7 py-4 text-sm font-extrabold transition hover:bg-white/15">See the two creative spaces <ArrowRight size={17} /></button>
           </div>
         )}
@@ -105,7 +106,7 @@ export default function OnboardingPage() {
             <p className="text-xs font-bold uppercase tracking-[0.28em] text-rose-200">Roleplay</p>
             <h1 className="mt-4 font-serif text-4xl font-extrabold sm:text-5xl">Characters with a pulse.</h1>
             <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-slate-200 sm:text-lg">Create a character with a voice, history, personality, relationships, and a world to inhabit. Then let the roleplay unfold together.</p>
-            <p className="mx-auto mt-5 max-w-lg text-sm leading-relaxed text-rose-100/75">CHIMERA helps your character stay grounded in the story you build together.</p>
+            <p className="mx-auto mt-5 max-w-lg text-sm leading-relaxed text-rose-100/75">CHIMERA helps your character stay grounded in the story you build together. SHARDS are optional Roleplay credits and stay inside Roleplay.</p>
             <button type="button" onClick={nextStep} className="mt-10 inline-flex items-center gap-2 rounded-2xl bg-rose-500 px-7 py-4 text-sm font-extrabold transition hover:bg-rose-400">Explore Storytelling <ArrowRight size={17} /></button>
           </div>
         )}
@@ -116,7 +117,7 @@ export default function OnboardingPage() {
             <p className="text-xs font-bold uppercase tracking-[0.28em] text-violet-200">Storytelling · VELLUM</p>
             <h1 className="mt-4 font-serif text-4xl font-extrabold sm:text-5xl">Worlds with a soul.</h1>
             <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-slate-200 sm:text-lg">Begin with a blank page. Shape worlds, chapters, scenes, and stories in a quieter space made for writing.</p>
-            <p className="mx-auto mt-5 max-w-lg text-sm leading-relaxed text-violet-100/75">Your writing is always yours. When you enter Storytelling, your one-time 10,000 VELLUM welcome reserve is there for optional creative support.</p>
+            <p className="mx-auto mt-5 max-w-lg text-sm leading-relaxed text-violet-100/75">Your writing is always yours. When you enter Storytelling, your one-time 10,000 VELLUM welcome reserve is there for optional creative support. VELLUM cannot move into SHARDS or leave Storytelling.</p>
             <button type="button" onClick={enterChoice} className="mt-10 inline-flex items-center gap-2 rounded-2xl bg-violet-500 px-7 py-4 text-sm font-extrabold transition hover:bg-violet-400">Choose your creative space <ArrowRight size={17} /></button>
           </div>
         )}
@@ -126,7 +127,7 @@ export default function OnboardingPage() {
           <img src="/chimera_logo.png" alt="CHIMERA" className="mx-auto mb-5 h-14 w-14 object-contain" />
           <p className="text-xs font-bold uppercase tracking-[0.24em] text-amber-300">CHIMERA creative home</p>
           <h1 className="mt-3 font-serif text-4xl font-extrabold sm:text-5xl">What brings you to CHIMERA?</h1>
-          <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base">Choose the creative space you would like to begin with. This changes your welcome, never what you are allowed to create.</p>
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base">Choose the creative space you would like to begin with. This changes your welcome, never what you are allowed to create. Both reserves are closed and separate: SHARDS belong to Roleplay, while VELLUM belongs to Storytelling.</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">

@@ -33,6 +33,7 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
 
   useEffect(() => {
     const savedSettings = {
@@ -127,8 +128,23 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSignOutEverywhere = async () => {
+    setSessionsLoading(true);
+    try {
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      if (error) throw error;
+      navigate('/auth');
+      showToast('All active sessions were signed out.', 'success');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Could not sign out other sessions.', 'error');
+    } finally {
+      setSessionsLoading(false);
+    }
+  };
+
   const handleRequestDataExport = () => {
-    showToast('Data export request received. We will email you within 30 days.', 'success');
+    window.location.href = 'mailto:support@chimera.it.com?subject=CHIMERA%20data%20export%20request';
+    showToast('Your email app is ready to send a data export request to support.', 'info');
   };
 
   const handleDeleteAccount = async () => {
@@ -375,6 +391,23 @@ export default function SettingsPage() {
         Sign Out
       </button>
 
+      <section className="mb-8" aria-labelledby="security-heading">
+        <div className="flex items-center gap-2 mb-4">
+          <Shield size={20} className="text-primary-500" />
+          <h2 id="security-heading" className="text-lg font-semibold text-warm-900 dark:text-warm-50">Security</h2>
+        </div>
+        <div className="space-y-3 bg-warm-50 dark:bg-warm-800 p-4 rounded-2xl">
+          <div>
+            <p className="font-semibold text-warm-900 dark:text-warm-50">Active sessions</p>
+            <p className="text-sm text-warm-600 dark:text-warm-400">Changing your password or signing out everywhere helps protect your account on shared devices.</p>
+          </div>
+          <button onClick={() => void handleSignOutEverywhere()} disabled={sessionsLoading} className="w-full flex items-center justify-center gap-2 btn-secondary disabled:opacity-60">
+            <Shield size={18} />
+            {sessionsLoading ? 'Signing out sessions…' : 'Sign Out Everywhere'}
+          </button>
+        </div>
+      </section>
+
       {/* Guardian's Library */}
       <section className="mb-8" aria-labelledby="trust-heading">
         <div className="flex items-center gap-2 mb-4">
@@ -416,8 +449,8 @@ export default function SettingsPage() {
           <h2 className="text-lg font-semibold text-error-700 dark:text-error-400">Danger Zone</h2>
         </div>
         <div className="bg-error-50 dark:bg-error-900/20 border border-error-200 dark:border-error-800 p-4 rounded-2xl">
-          <p className="text-sm text-warm-700 dark:text-warm-300 mb-3">
-            Permanently delete your account and all associated data. This action cannot be undone and takes effect within 30 days.
+           <p className="text-sm text-warm-700 dark:text-warm-300 mb-3">
+             Request permanent account deletion. Support will confirm the request and explain the removal timeline before processing it.
           </p>
           <button
             onClick={() => setShowDeleteAccountModal(true)}
@@ -555,6 +588,7 @@ function ToggleRow({ label, description, checked, onChange, border = false }: {
           }`}
         />
       </button>
+
     </div>
   );
 }

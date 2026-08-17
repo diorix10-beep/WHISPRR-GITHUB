@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, ArrowLeft, BookOpen, CheckCircle2, Clock3, Download, Eye, Feather, Gem, Image as ImageIcon, Sparkles, WalletCards } from 'lucide-react';
+import { AlertCircle, ArrowLeft, BookOpen, CheckCircle2, Clock3, Download, Eye, Feather, Gem, Image as ImageIcon, RefreshCw, Sparkles, WalletCards } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 type VellumWallet = {
@@ -50,11 +50,14 @@ export default function VellumPage() {
   const [artifacts, setArtifacts] = useState<VellumArtifact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshNonce, setRefreshNonce] = useState(0);
 
   useEffect(() => {
     let active = true;
 
-    const loadVellum = async () => {
+    const loadVellum = async (showRefreshState = false) => {
+      if (showRefreshState) setRefreshing(true);
       setLoading(true);
       setError(null);
 
@@ -76,6 +79,7 @@ export default function VellumPage() {
         console.error('Could not load VELLUM reserve', { walletError: walletResult.error, ledgerError: ledgerResult.error, artifactError: artifactResult.error });
         setError('VELLUM could not be loaded right now. Please try again in a moment.');
         setLoading(false);
+        setRefreshing(false);
         return;
       }
 
@@ -91,6 +95,7 @@ export default function VellumPage() {
       }));
       setArtifacts(signedArtifacts.filter((artifact): artifact is VellumArtifact => Boolean(artifact)));
       setLoading(false);
+      setRefreshing(false);
     };
 
     void loadVellum();
@@ -100,7 +105,7 @@ export default function VellumPage() {
       active = false;
       window.removeEventListener('chimera-vellum-changed', refreshAfterSpend);
     };
-  }, []);
+  }, [refreshNonce]);
 
   const welcomeCredit = ledger.find((entry) => entry.entry_type === 'welcome_credit' && entry.status === 'posted');
 
@@ -187,7 +192,7 @@ export default function VellumPage() {
               </article>
 
               <article className="rounded-3xl border border-amber-200/15 bg-[#10182a]/90 p-6 shadow-xl sm:p-7">
-                <div className="flex items-center justify-between gap-4"><div><h2 className="font-serif text-2xl text-white">Reserve activity</h2><p className="mt-1 text-xs text-warm-400">Only real VELLUM changes appear here.</p></div><Clock3 size={20} className="text-amber-200" /></div>
+              <div className="flex items-center justify-between gap-4"><div><h2 className="font-serif text-2xl text-white">Reserve activity</h2><p className="mt-1 text-xs text-warm-400">Only real VELLUM changes appear here.</p></div><Clock3 size={20} className="text-amber-200" /></div>
                 {loading ? <div className="mt-5 space-y-3">{[1, 2, 3].map((item) => <div key={item} className="h-16 animate-pulse rounded-xl bg-white/5" />)}</div> : ledger.length ? <div className="mt-5 divide-y divide-white/10">{ledger.map((entry) => (
                   <div key={entry.id} className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0">
                     <div className="min-w-0"><p className="truncate text-sm font-bold text-warm-100">{entry.description || ENTRY_LABELS[entry.entry_type]}</p><p className="mt-1 text-xs text-warm-400">{ENTRY_LABELS[entry.entry_type]} · {formatDate(entry.created_at)}{entry.status === 'reversed' ? ' · Reversed' : ''}</p></div>
@@ -198,13 +203,14 @@ export default function VellumPage() {
             </section>
 
             <section className="mt-6 rounded-3xl border border-amber-200/20 bg-[#10182a]/90 p-6 shadow-xl sm:p-7">
-              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+               <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
                 <div className="flex items-start gap-3">
                   <ImageIcon size={21} className="mt-1 text-amber-200" />
                   <div>
                     <h2 className="font-serif text-2xl text-white">Your private artifacts</h2>
                     <p className="mt-1 max-w-2xl text-sm leading-relaxed text-warm-300">Completed Scene Illustrations belong to your Storytelling space. These are private previews from real VELLUM actions, not community posts.</p>
-                  </div>
+                 </div>
+                 <button type="button" onClick={() => setRefreshNonce((value) => value + 1)} disabled={loading || refreshing} className="inline-flex w-fit items-center gap-2 rounded-xl border border-amber-200/20 px-3 py-2 text-xs font-bold text-amber-100 transition hover:bg-amber-200/10 disabled:cursor-wait disabled:opacity-50"><RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} /> Refresh gallery</button>
                 </div>
                 <span className="inline-flex w-fit items-center gap-2 rounded-full border border-amber-200/20 bg-amber-200/10 px-3 py-1.5 text-xs font-bold text-amber-100"><Eye size={14} /> {artifacts.length} saved</span>
               </div>
@@ -233,7 +239,7 @@ export default function VellumPage() {
                <div className="flex items-center gap-3"><Sparkles size={21} className="text-amber-200" /><div><h2 className="font-serif text-2xl text-white">Bring one scene to life</h2><p className="mt-1 text-sm text-warm-300">Scene Illustration is the first live VELLUM artifact. The rest stays proposed until its real creation and ledger flow exists.</p></div></div>
                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                  <div className="rounded-2xl border border-amber-200/30 bg-amber-200/[0.08] p-4"><p className="font-serif text-lg text-warm-100">Scene illustration</p><p className="mt-2 text-xs leading-relaxed text-warm-300">A private visual companion for a chapter scene, based on your direction.</p><p className="mt-3 text-xs font-bold text-amber-100">400 VELLUM · Live</p><button onClick={() => navigate('/write')} className="mt-4 rounded-lg bg-[#e6c48b] px-3 py-2 text-xs font-extrabold text-[#2a1c12] transition hover:bg-[#f4dbac]">Open the writing desk</button></div>
-                 {['Book covers', 'World maps', 'Continuity checks'].map((tool) => <div key={tool} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><p className="font-serif text-lg text-warm-100">{tool}</p><p className="mt-2 text-xs leading-relaxed text-warm-400">A future creative artifact. It will appear here only after CHIMERA can genuinely create and record it.</p><span className="mt-3 inline-block text-[10px] font-bold uppercase tracking-wider text-amber-200/80">Not connected yet</span></div>)}
+                  {['Chapter covers', 'World maps', 'Continuity checks'].map((tool) => <div key={tool} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><p className="font-serif text-lg text-warm-100">{tool}</p><p className="mt-2 text-xs leading-relaxed text-warm-400">A future creative artifact. It will appear here only after CHIMERA can genuinely create and record it.</p><span className="mt-3 inline-block text-[10px] font-bold uppercase tracking-wider text-amber-200/80">Not connected yet</span></div>)}
                </div>
              </section>
           </>
