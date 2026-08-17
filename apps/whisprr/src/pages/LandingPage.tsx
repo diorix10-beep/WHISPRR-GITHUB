@@ -100,7 +100,7 @@ export default function LandingPage() {
   }, []);
 
   const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
-  const chimeraUrl = isLocalhost ? 'http://localhost:5174' : 'https://chimera.whisprr.xyz';
+  const chimeraUrl = isLocalhost ? 'http://localhost:5174' : 'https://www.chimera.it.com';
 
   const navBg = scrollY > 60 ? 'rgba(10,8,20,0.92)' : 'transparent';
 

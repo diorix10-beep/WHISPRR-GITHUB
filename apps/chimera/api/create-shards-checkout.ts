@@ -62,7 +62,7 @@ export default async function handler(req: NodeRequest, res: NodeResponse) {
 
     const stripe = new Stripe(stripeSecretKey, { typescript: true });
     const host = Array.isArray(req.headers.host) ? req.headers.host[0] : req.headers.host;
-    const appUrl = (process.env.CHIMERA_APP_URL || `https://${host || 'chimera.whisprr.xyz'}`).replace(/\/$/, '');
+    const appUrl = (process.env.CHIMERA_APP_URL || `https://${host || 'www.chimera.it.com'}`).replace(/\/$/, '');
     const totalShards = pack.shards + pack.bonus;
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',

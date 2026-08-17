@@ -45,7 +45,7 @@ export const WhisperCard = memo(function WhisperCard({
   const [showShareModal, setShowShareModal] = useState(false);
 
   const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
-  const chimeraUrl = isLocalhost ? 'http://localhost:5174' : 'https://chimera.whisprr.xyz';
+  const chimeraUrl = isLocalhost ? 'http://localhost:5174' : 'https://www.chimera.it.com';
 
   const isOwnWhisper = user?.id === whisper.user_id;
 

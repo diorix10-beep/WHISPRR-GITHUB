@@ -17,7 +17,7 @@ import { LoadingSkeleton, WhisperSkeleton } from '../components/common/LoadingSk
 import { CommunityAvatar } from '../components/communities/CommunityAvatar';
 
 const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
-const chimeraUrl = isLocalhost ? 'http://localhost:5174' : 'https://chimera.whisprr.xyz';
+const chimeraUrl = isLocalhost ? 'http://localhost:5174' : 'https://www.chimera.it.com';
 
 type SearchTab = 'users' | 'communities' | 'posts' | 'stories' | 'characters' | 'worlds';
 

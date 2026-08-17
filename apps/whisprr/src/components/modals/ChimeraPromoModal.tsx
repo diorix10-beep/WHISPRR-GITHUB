@@ -7,7 +7,7 @@ interface ChimeraPromoModalProps {
 }
 
 const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
-const chimeraUrl = isLocalhost ? 'http://localhost:5174' : 'https://chimera.whisprr.xyz';
+const chimeraUrl = isLocalhost ? 'http://localhost:5174' : 'https://www.chimera.it.com';
 
 export function ChimeraPromoModal({ isOpen, onClose }: ChimeraPromoModalProps) {
   if (!isOpen) return null;

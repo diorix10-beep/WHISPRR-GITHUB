@@ -461,7 +461,7 @@ export default function ConversationPage() {
   };
 
   const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
-  const chimeraUrl = isLocalhost ? 'http://localhost:5174' : 'https://chimera.whisprr.xyz';
+  const chimeraUrl = isLocalhost ? 'http://localhost:5174' : 'https://www.chimera.it.com';
 
   const renderRichContent = (content: string) => {
     // 1. Check for Character: [Character: Name | Description | Greeting | Id]

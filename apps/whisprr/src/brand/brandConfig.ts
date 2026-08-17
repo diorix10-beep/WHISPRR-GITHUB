@@ -46,14 +46,14 @@ const CHIMERA: BrandConfig = {
   heroTagline: 'Every conversation becomes a story worth remembering.',
   description: 'CHIMERA is where people create, connect, roleplay, and enjoy AI together.',
   themeColor: '#C96059',
-  domain: 'chimera.whisprr.xyz',
-  ogImage: 'https://chimera.whisprr.xyz/pwa-512x512.png',
+  domain: 'www.chimera.it.com',
+  ogImage: 'https://www.chimera.it.com/pwa-512x512.png',
   loadingText: 'Entering CHIMERA...',
   authSubtitle: 'Where conversations become worlds.',
   onboardingWelcome: 'Welcome to CHIMERA',
   onboardingSubtitle: "Let's set up your profile. Start with your name and username.",
   footerText: 'Create, connect, and explore worlds with AI.',
-  supportEmail: 'help@chimera.whisprr.xyz',
+  supportEmail: 'support@chimera.it.com',
   showWhisprrOption: true,
 };
 

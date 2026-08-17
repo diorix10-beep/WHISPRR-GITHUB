@@ -56,7 +56,7 @@ export function Footer({ product }: FooterProps) {
           © {currentYear} CHIMERA. All rights reserved.
         </p>
         <div className="flex items-center gap-4 text-sm text-warm-600">
-          <span>contact@chimera.whisprr.xyz</span>
+          <span>support@chimera.it.com</span>
         </div>
       </div>
     </footer>

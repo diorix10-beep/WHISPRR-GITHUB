@@ -64,7 +64,7 @@ export default function RestrictedPage() {
           </button>
           
           <button
-            onClick={() => window.location.href = 'https://chimera.whisprr.xyz'}
+            onClick={() => window.location.href = 'https://www.chimera.it.com'}
             className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-warm-100 dark:bg-warm-800 text-warm-700 dark:text-warm-300 font-bold rounded-xl hover:bg-warm-200 dark:hover:bg-warm-700 transition-all"
           >
             <ArrowLeft size={18} />
