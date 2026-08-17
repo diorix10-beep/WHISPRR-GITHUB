@@ -52,7 +52,7 @@ interface AuthContextType extends AuthState {
   refreshProfile: () => Promise<void>;
   updateProfile: (updates: Partial<ChimeraProfile>) => Promise<void>;
   updateChimeraPreferences: (updates: Partial<Omit<ChimeraCreativePreferences, 'user_id'>>) => Promise<void>;
-  shardsBalance: number;
+  shardsBalance: number | null;
   vellumBalance: number | null;
   spendShards: (amount: number, reason: string) => boolean;
   earnShards: (amount: number, reason: string) => void;
@@ -363,13 +363,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
-  const [shardsBalance, setShardsBalance] = useState<number>(0);
+  const [shardsBalance, setShardsBalance] = useState<number | null>(null);
 
   const [vellumBalance, setVellumBalance] = useState<number | null>(null);
 
   useEffect(() => {
     if (!state.user?.id) {
-      setShardsBalance(0);
+      setShardsBalance(null);
       return;
     }
 
@@ -377,7 +377,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const loadShards = () => {
       supabase.rpc('get_my_shards_wallet').then(({ data, error }) => {
         if (!active || error) return;
-        setShardsBalance(data?.[0]?.available_balance ?? 0);
+        setShardsBalance(data?.[0]?.available_balance ?? null);
       });
     };
     loadShards();
@@ -450,7 +450,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const activateAdFreePass = useCallback((): boolean => {
-    if (shardsBalance < 20) return false;
+    if (shardsBalance === null || shardsBalance < 20) return false;
     if (spendShards(20, 'Ad-Free Pass Activation')) {
       setAdFreePassActive(true);
       try {
@@ -462,7 +462,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [shardsBalance, spendShards]);
 
   const activateRoleplayVipPass = useCallback((): boolean => {
-    if (shardsBalance < 15) return false;
+    if (shardsBalance === null || shardsBalance < 15) return false;
     if (spendShards(15, 'Roleplay VIP Pass Activation')) {
       setRoleplayVipActive(true);
       try {
@@ -474,7 +474,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [shardsBalance, spendShards]);
 
   const activateStorytellingVipPass = useCallback((): boolean => {
-    if (shardsBalance < 15) return false;
+    if (shardsBalance === null || shardsBalance < 15) return false;
     if (spendShards(15, 'Storytelling VIP Pass Activation')) {
       setStorytellingVipActive(true);
       try {
@@ -486,7 +486,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [shardsBalance, spendShards]);
 
   const activateMultiverseVipPass = useCallback((): boolean => {
-    if (shardsBalance < 25) return false;
+    if (shardsBalance === null || shardsBalance < 25) return false;
     if (spendShards(25, 'Multiverse All-Access VIP Pass Activation')) {
       setMultiverseVipActive(true);
       setRoleplayVipActive(true);

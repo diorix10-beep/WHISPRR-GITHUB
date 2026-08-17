@@ -324,7 +324,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               title={creativeMode === 'storytelling' ? 'VELLUM story reserve' : t('navigation.shards_hub')}
             >
               <img src={creativeMode === 'storytelling' ? '/images/vellum-sigil.svg' : '/images/shards_amethyst_logo.png'} alt={creativeMode === 'storytelling' ? 'VELLUM' : 'SHARDS'} className="w-5 h-5 object-contain rounded-md" />
-              <span className="font-serif font-black text-xs tracking-wide">{creativeMode === 'storytelling' ? (vellumBalance === null ? 'VELLUM' : `${formatNumber(vellumBalance)} VELLUM`) : `${formatNumber(shardsBalance)} SHARDS`}</span>
+              <span className="font-serif font-black text-xs tracking-wide">{creativeMode === 'storytelling' ? (vellumBalance === null ? 'VELLUM · loading…' : `${formatNumber(vellumBalance)} VELLUM`) : (shardsBalance === null ? 'SHARDS · loading…' : `${formatNumber(shardsBalance)} SHARDS`)}</span>
             </button>
 
             {/* Search — icon only, no text label on smaller screens */}

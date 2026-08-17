@@ -106,7 +106,7 @@ function MobileNavDrawerContent({
   // Safe auth context access
   let profile = null;
   let signOut = async () => {};
-  let shardsBalance = 50;
+  let shardsBalance: number | null = null;
   let vellumBalance: number | null = null;
   try {
     const auth = useAuth();
@@ -228,7 +228,7 @@ function MobileNavDrawerContent({
               <span>{creativeMode === 'storytelling' ? 'VELLUM Story Reserve' : 'SHARDS Hub'}</span>
             </div>
             <span className={`rounded-full border px-2.5 py-0.5 text-xs font-extrabold ${creativeMode === 'storytelling' ? 'border-[#c89d57]/40 bg-[#c89d57]/10 text-[#f1d9aa]' : 'border-[#cda0ea]/35 bg-[#6d3a91]/35 text-[#ecd4ff]'}`}>
-              {creativeMode === 'storytelling' ? (vellumBalance === null ? 'VELLUM' : `${vellumBalance.toLocaleString()} VELLUM`) : `${shardsBalance ?? 0} SHARDS`}
+              {creativeMode === 'storytelling' ? (vellumBalance === null ? 'VELLUM · loading…' : `${vellumBalance.toLocaleString()} VELLUM`) : (shardsBalance === null ? 'SHARDS · loading…' : `${shardsBalance.toLocaleString()} SHARDS`)}
             </span>
           </button>
         </div>
