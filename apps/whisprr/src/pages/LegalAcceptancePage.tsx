@@ -8,14 +8,18 @@ export default function LegalAcceptancePage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { profile, acceptLegalTerms, signOut } = useAuth();
+  const { user, profile, acceptLegalTerms, signOut } = useAuth();
   const navigate = useNavigate();
 
+  const hasAccepted = 
+    (profile && profile.legal_accepted_version === CURRENT_LEGAL_VERSION) ||
+    (user && user.user_metadata?.legal_accepted_version === CURRENT_LEGAL_VERSION);
+
   useEffect(() => {
-    if (profile && profile.legal_accepted_version === CURRENT_LEGAL_VERSION) {
-      navigate('/feed');
+    if (hasAccepted) {
+      navigate('/feed', { replace: true });
     }
-  }, [profile, navigate]);
+  }, [hasAccepted, navigate]);
 
   const handleAccept = async () => {
     if (!agreedTo18 || !agreedToTerms) return;
@@ -23,10 +27,10 @@ export default function LegalAcceptancePage() {
     setError(null);
     try {
       await acceptLegalTerms(CURRENT_LEGAL_VERSION);
-      navigate('/feed');
+      navigate('/feed', { replace: true });
     } catch (err: any) {
-      console.error(err);
-      setError(err?.message || err?.details || JSON.stringify(err) || 'Failed to save acceptance. Please check your connection.');
+      console.error("Legal acceptance error:", err);
+      setError(err?.message || err?.details || 'Failed to save acceptance. Please check your connection.');
       setLoading(false);
     }
   };
@@ -47,7 +51,7 @@ export default function LegalAcceptancePage() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-warm-900 dark:text-white mb-2">Updated Policies</h1>
-          <p className="text-warm-600 dark:text-warm-400">
+          <p className="text-warm-600 dark:text-warm-400 text-sm leading-relaxed">
             We have updated our Terms of Service and Privacy Policy to better protect our community. You must review and accept them to continue.
           </p>
         </div>
@@ -73,7 +77,7 @@ export default function LegalAcceptancePage() {
               onChange={(e) => setAgreedToTerms(e.target.checked)}
             />
             <span className="text-sm font-medium text-warm-800 dark:text-warm-200">
-              I agree to the <Link to="/terms" className="text-primary-500 hover:underline" target="_blank">Terms of Service</Link> and <Link to="/privacy" className="text-primary-500 hover:underline" target="_blank">Privacy Policy</Link>. (Please read the terms of service and privacy policy as it is important).
+              I agree to the <Link to="/terms" className="text-primary-500 hover:underline font-semibold" target="_blank">Terms of Service</Link> and <Link to="/privacy" className="text-primary-500 hover:underline font-semibold" target="_blank">Privacy Policy</Link>.
             </span>
           </label>
         </div>
@@ -82,9 +86,9 @@ export default function LegalAcceptancePage() {
           <button
             onClick={handleAccept}
             disabled={!agreedTo18 || !agreedToTerms || loading}
-            className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed py-4"
+            className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed py-4 font-bold text-base"
           >
-            {loading ? 'Updating...' : 'I Accept'}
+            {loading ? 'Updating...' : 'I Accept & Continue'}
           </button>
           
           <button

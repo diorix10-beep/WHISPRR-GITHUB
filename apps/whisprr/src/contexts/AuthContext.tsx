@@ -284,22 +284,76 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const acceptLegalTerms = async (version: string) => {
     if (!state.user) return;
-    const { error } = await supabase
+    const now = new Date().toISOString();
+
+    // 1. Update user_metadata in Supabase Auth so trigger & auth session have the legal version
+    await supabase.auth.updateUser({
+      data: { legal_accepted_version: version }
+    }).catch(err => console.warn("Failed to update user_metadata:", err));
+
+    // 2. Update profiles table
+    const { data: updatedRows, error: updateErr } = await supabase
       .from('profiles')
       .update({
         legal_accepted_version: version,
-        legal_accepted_at: new Date().toISOString()
+        legal_accepted_at: now
       })
-      .eq('user_id', state.user.id);
-      
-    if (error) throw error;
-    
-    // Proactively update state first to prevent router race conditions
+      .eq('user_id', state.user.id)
+      .select();
+
+    if (updateErr) {
+      console.error("Database error updating legal terms acceptance:", updateErr);
+    }
+
+    // 3. Fallback: if no profile row existed, create/upsert it so user is never trapped
+    let activeProfile = state.profile;
+    if (!updatedRows || updatedRows.length === 0) {
+      const fallbackProfile = {
+        user_id: state.user.id,
+        username: state.user.email ? state.user.email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '') : `user_${state.user.id.substring(0, 8)}`,
+        display_name: state.user.user_metadata?.full_name || state.user.email?.split('@')[0] || 'Creator',
+        legal_accepted_version: version,
+        legal_accepted_at: now,
+        onboarding_complete: false,
+        created_at: now
+      };
+
+      const { data: upsertData, error: upsertErr } = await supabase
+        .from('profiles')
+        .upsert(fallbackProfile, { onConflict: 'user_id' })
+        .select()
+        .maybeSingle();
+
+      if (!upsertErr && upsertData) {
+        activeProfile = upsertData as Profile;
+      }
+    } else if (updatedRows && updatedRows.length > 0) {
+      activeProfile = updatedRows[0] as Profile;
+    }
+
+    // 4. Update React state immediately and synchronously with non-null profile
+    const updatedProfile: Profile = activeProfile
+      ? { ...activeProfile, legal_accepted_version: version, legal_accepted_at: now }
+      : {
+          user_id: state.user.id,
+          username: state.user.email ? state.user.email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '') : `user_${state.user.id.substring(0, 8)}`,
+          display_name: state.user.email?.split('@')[0] || 'Creator',
+          legal_accepted_version: version,
+          legal_accepted_at: now,
+          onboarding_complete: false,
+          created_at: now
+        } as Profile;
+
     setState(prev => ({
       ...prev,
-      profile: prev.profile ? { ...prev.profile, legal_accepted_version: version } : null
+      user: prev.user ? {
+        ...prev.user,
+        user_metadata: { ...prev.user.user_metadata, legal_accepted_version: version }
+      } : prev.user,
+      profile: updatedProfile
     }));
 
+    // 5. Refetch profile to be 100% in sync
     await refreshProfile();
   };
 

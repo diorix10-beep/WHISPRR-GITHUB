@@ -7,9 +7,7 @@ export function ProtectedRoute() {
 
   if (!user) {
     // Redirect them to the /auth page, but save the current location they were
-    // trying to go to when they were redirected. This allows us to send them
-    // along to that page after they login, which is a nicer user experience
-    // than dropping them off on the home page.
+    // trying to go to when they were redirected.
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
@@ -19,8 +17,12 @@ export function ProtectedRoute() {
     return <Navigate to="/suspended" replace />;
   }
 
-  // Gate 2: Legal Acceptance
-  if (profile && profile.legal_accepted_version !== CURRENT_LEGAL_VERSION && location.pathname !== '/legal-acceptance') {
+  // Gate 2: Legal Acceptance (Check both profile.legal_accepted_version & user.user_metadata.legal_accepted_version)
+  const hasAcceptedLegal = 
+    (profile && profile.legal_accepted_version === CURRENT_LEGAL_VERSION) ||
+    (user && user.user_metadata?.legal_accepted_version === CURRENT_LEGAL_VERSION);
+
+  if (!hasAcceptedLegal && location.pathname !== '/legal-acceptance') {
     return <Navigate to="/legal-acceptance" replace />;
   }
 
@@ -30,8 +32,13 @@ export function ProtectedRoute() {
     return <Navigate to="/moderation-notice" replace />;
   }
 
-  // If the user has no profile or has not completed onboarding, only allow them to access the onboarding page.
-  if ((!profile || !profile.onboarding_complete) && location.pathname !== '/onboarding') {
+  // Prevent CHIMERA-only accounts from accessing WHISPRR
+  if (profile && profile.access_level === 'chimera') {
+    return <Navigate to="/restricted" replace />;
+  }
+
+  // If legal is accepted, allow onboarding if profile exists but onboarding incomplete
+  if (profile && !profile.onboarding_complete && location.pathname !== '/onboarding' && location.pathname !== '/legal-acceptance') {
     return <Navigate to="/onboarding" replace />;
   }
 
