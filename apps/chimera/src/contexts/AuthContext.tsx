@@ -41,6 +41,8 @@ export interface ChimeraCreativePreferences {
 
 interface AuthContextType extends AuthState {
   signIn: (email: string, password: string) => Promise<void>;
+  requestEmailOtp: (email: string) => Promise<void>;
+  verifyEmailOtp: (email: string, token: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signInWithApple: () => Promise<void>;
@@ -310,6 +312,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
+  const requestEmailOtp = async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({ email });
+    if (error) throw error;
+  };
+
+  const verifyEmailOtp = async (email: string, token: string) => {
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'email',
+    });
+    if (error) throw error;
+  };
+
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -379,11 +395,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     let active = true;
-    supabase.rpc('get_my_vellum_wallet').then(({ data, error }) => {
-      if (!active || error) return;
-      setVellumBalance(data?.[0]?.available_balance ?? null);
-    });
-    return () => { active = false; };
+    const loadVellum = () => {
+      supabase.rpc('get_my_vellum_wallet').then(({ data, error }) => {
+        if (!active || error) return;
+        setVellumBalance(data?.[0]?.available_balance ?? null);
+      });
+    };
+    loadVellum();
+    window.addEventListener('chimera-vellum-changed', loadVellum);
+    return () => {
+      active = false;
+      window.removeEventListener('chimera-vellum-changed', loadVellum);
+    };
   }, [state.user?.id]);
 
   const [adFreePassActive, setAdFreePassActive] = useState<boolean>(() => {
@@ -523,14 +546,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
 
       if (!upsertErr && upsertData) {
-        activeProfile = upsertData as Profile;
+        activeProfile = upsertData as ChimeraProfile;
       }
     } else if (updatedRows && updatedRows.length > 0) {
-      activeProfile = updatedRows[0] as Profile;
+      activeProfile = updatedRows[0] as ChimeraProfile;
     }
 
     // 4. Update React state immediately and synchronously with non-null profile
-    const updatedProfile: Profile = activeProfile
+    const updatedProfile: ChimeraProfile = activeProfile
       ? { ...activeProfile, legal_accepted_version: version, legal_accepted_at: now }
       : {
           user_id: state.user.id,
@@ -540,7 +563,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           legal_accepted_at: now,
           onboarding_complete: false,
           created_at: now
-        } as Profile;
+        } as ChimeraProfile;
 
     setState(prev => ({
       ...prev,
@@ -571,6 +594,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{
       ...state,
       signIn,
+      requestEmailOtp,
+      verifyEmailOtp,
       signUp,
       signInWithGoogle,
       signInWithApple,

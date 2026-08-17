@@ -6,13 +6,16 @@ import { SignInForm } from '../components/auth/SignInForm';
 import { SignUpForm } from '../components/auth/SignUpForm';
 import { ForgotPasswordForm } from '../components/auth/ForgotPasswordForm';
 import { AuthProviders } from '../components/auth/AuthProviders';
+import { EmailOtpRequestForm } from '../components/auth/EmailOtpRequestForm';
+import { EmailOtpVerifyForm } from '../components/auth/EmailOtpVerifyForm';
 import { brand } from '../brand/brandConfig';
 
-type ViewType = 'providers' | 'signin' | 'signup' | 'forgot';
+type ViewType = 'providers' | 'signin' | 'signup' | 'forgot' | 'otp' | 'otp-verify';
 
 export default function AuthPage() {
   const { loading } = useAuth();
   const [view, setView] = useState<ViewType>('providers');
+  const [otpEmail, setOtpEmail] = useState('');
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -81,7 +84,7 @@ export default function AuthPage() {
             
             {showProviders && (
               <div className="flex flex-col gap-4">
-                <AuthProviders mode="signin" onEmailClick={() => setView('signin')} />
+                <AuthProviders mode="signin" onEmailClick={() => setView('otp')} />
                 
                 <p className="text-center text-warm-400 text-[11px] leading-relaxed pt-2">
                   By continuing, you agree to our{' '}
@@ -120,6 +123,32 @@ export default function AuthPage() {
                 </div>
                 <h2 className="text-lg font-serif font-extrabold text-white">Sign in with Email</h2>
                 <SignInForm onForgotPassword={() => setView('forgot')} />
+              </div>
+            )}
+
+            {view === 'otp' && (
+              <div className="flex flex-col gap-5">
+                <div className="flex items-center justify-between mb-1">
+                  <button
+                    onClick={() => setView('providers')}
+                    className="text-warm-400 hover:text-white text-xs font-bold transition-colors flex items-center gap-1.5"
+                  >
+                    <span>← Back to all options</span>
+                  </button>
+                </div>
+                <EmailOtpRequestForm
+                  onCodeSent={(email) => {
+                    setOtpEmail(email);
+                    setView('otp-verify');
+                  }}
+                  onUsePassword={() => setView('signin')}
+                />
+              </div>
+            )}
+
+            {view === 'otp-verify' && (
+              <div className="flex flex-col gap-5">
+                <EmailOtpVerifyForm email={otpEmail} onBack={() => setView('otp')} />
               </div>
             )}
 
