@@ -13,7 +13,7 @@ import { Logo } from '../common/Logo';
 import { useWellness } from '../../contexts/WellnessContext';
 
 const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
-const chimeraUrl = isLocalhost ? 'http://localhost:5174' : 'https://www.chimera.it.com';
+const chimeraUrl = isLocalhost ? 'http://localhost:5174' : 'https://chimera.it.com';
 
 const navItems = [
   { path: '/feed', icon: Home, label: 'Feed' },
