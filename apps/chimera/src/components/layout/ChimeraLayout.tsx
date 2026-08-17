@@ -177,7 +177,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
           end={link.path === '/'}
           onClick={link.comingSoon ? (e) => e.preventDefault() : undefined}
           className={({ isActive }) =>
-            `relative min-w-0 px-2 py-2 text-xs xl:text-sm font-semibold transition-all whitespace-nowrap inline-flex items-center justify-center ${
+              `relative min-w-0 px-2 py-2.5 text-xs xl:text-sm font-semibold transition-all whitespace-nowrap inline-flex items-center justify-center ${
               link.comingSoon
                 ? 'text-warm-400 dark:text-warm-600 cursor-default opacity-60'
                 : isActive
@@ -264,7 +264,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
           {/* 2. BLOC MILIEU — Clean Fluid Primary Navigation */}
           <div className="hidden lg:flex min-w-0 flex-1 items-center justify-center px-2 xl:px-5">
-            <nav className={`grid w-full ${currentNavLinks.length === 5 ? 'max-w-[660px] grid-cols-5' : currentNavLinks.length === 4 ? 'max-w-[540px] grid-cols-4' : 'max-w-[420px] grid-cols-3'} items-center gap-1 rounded-2xl border px-1 py-2 text-center ${creativeMode === 'roleplay' ? 'border-[#c99b50]/20 bg-black/25' : 'border-warm-800/50 bg-warm-900/20'}`}>
+            <nav className={`grid w-full ${currentNavLinks.length === 5 ? 'max-w-[660px] grid-cols-5' : currentNavLinks.length === 4 ? 'max-w-[540px] grid-cols-4' : 'max-w-[420px] grid-cols-3'} items-center gap-1 rounded-2xl border px-1 py-3 text-center ${creativeMode === 'roleplay' ? 'border-[#c99b50]/20 bg-black/25' : 'border-warm-800/50 bg-warm-900/20'}`}>
               {renderNavLinks()}
             </nav>
           </div>
