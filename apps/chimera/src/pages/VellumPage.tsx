@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, ArrowLeft, BookOpen, CheckCircle2, Clock3, Feather, Gem, Sparkles, WalletCards } from 'lucide-react';
+import { AlertCircle, ArrowLeft, BookOpen, CheckCircle2, Clock3, Download, Eye, Feather, Gem, Image as ImageIcon, Sparkles, WalletCards } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 type VellumWallet = {
@@ -16,6 +16,16 @@ type VellumLedgerEntry = {
   status: 'posted' | 'reversed';
   description: string;
   created_at: string;
+};
+
+type VellumArtifact = {
+  id: string;
+  storage_path: string;
+  style: 'cinematic' | 'painterly' | 'graphic_novel';
+  aspect_ratio: '16:9' | '4:5' | '1:1';
+  vellum_cost: number;
+  created_at: string;
+  signed_url: string;
 };
 
 const ENTRY_LABELS: Record<VellumLedgerEntry['entry_type'], string> = {
@@ -37,6 +47,7 @@ export default function VellumPage() {
   const navigate = useNavigate();
   const [wallet, setWallet] = useState<VellumWallet | null>(null);
   const [ledger, setLedger] = useState<VellumLedgerEntry[]>([]);
+  const [artifacts, setArtifacts] = useState<VellumArtifact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,15 +58,22 @@ export default function VellumPage() {
       setLoading(true);
       setError(null);
 
-      const [walletResult, ledgerResult] = await Promise.all([
+      const [walletResult, ledgerResult, artifactResult] = await Promise.all([
         supabase.rpc('get_my_vellum_wallet'),
         supabase.rpc('get_my_vellum_ledger', { p_limit: 50 }),
+        supabase
+          .from('story_scene_illustrations')
+          .select('id, storage_path, style, aspect_ratio, vellum_cost, created_at')
+          .eq('status', 'completed')
+          .not('storage_path', 'is', null)
+          .order('created_at', { ascending: false })
+          .limit(24),
       ]);
 
       if (!active) return;
 
-      if (walletResult.error || ledgerResult.error) {
-        console.error('Could not load VELLUM reserve', { walletError: walletResult.error, ledgerError: ledgerResult.error });
+      if (walletResult.error || ledgerResult.error || artifactResult.error) {
+        console.error('Could not load VELLUM reserve', { walletError: walletResult.error, ledgerError: ledgerResult.error, artifactError: artifactResult.error });
         setError('VELLUM could not be loaded right now. Please try again in a moment.');
         setLoading(false);
         return;
@@ -63,6 +81,15 @@ export default function VellumPage() {
 
       setWallet((walletResult.data?.[0] ?? null) as VellumWallet | null);
       setLedger((ledgerResult.data ?? []) as VellumLedgerEntry[]);
+      const signedArtifacts = await Promise.all((artifactResult.data ?? []).map(async (artifact) => {
+        if (!artifact.storage_path) return null;
+        const { data: signed, error: signedError } = await supabase.storage
+          .from('story-illustrations')
+          .createSignedUrl(artifact.storage_path, 60 * 60);
+        if (signedError || !signed?.signedUrl) return null;
+        return { ...artifact, signed_url: signed.signedUrl } as VellumArtifact;
+      }));
+      setArtifacts(signedArtifacts.filter((artifact): artifact is VellumArtifact => Boolean(artifact)));
       setLoading(false);
     };
 
@@ -129,7 +156,7 @@ export default function VellumPage() {
               <article className="rounded-2xl border border-amber-200/15 bg-[#10182a]/90 p-5 shadow-xl">
                 <WalletCards size={20} className="text-amber-200" />
                 <h2 className="mt-4 font-serif text-xl text-white">A separate reserve</h2>
-                <p className="mt-2 text-sm leading-relaxed text-warm-300">VELLUM cannot be transferred, withdrawn, or converted to SHARDS.</p>
+                <p className="mt-2 text-sm leading-relaxed text-warm-300">VELLUM is a closed Storytelling economy: it cannot be transferred, withdrawn, or converted into SHARDS.</p>
               </article>
             </section>
 
@@ -142,7 +169,7 @@ export default function VellumPage() {
                 <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><strong className="block text-warm-100">One welcome reserve</strong><span className="mt-1 block">10,000 VELLUM is granted once when a member enters Storytelling or chooses both creative spaces.</span></p>
                 <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><strong className="block text-warm-100">No hidden debits</strong><span className="mt-1 block">Every future creative action will show its exact cost and ask for confirmation first.</span></p>
                 <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><strong className="block text-warm-100">A result or a refund</strong><span className="mt-1 block">If a paid creative action cannot be completed, its VELLUM must be returned.</span></p>
-                <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><strong className="block text-warm-100">Yours, and separate</strong><span className="mt-1 block">VELLUM cannot be transferred, withdrawn, or converted into SHARDS.</span></p>
+                 <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><strong className="block text-warm-100">Closed and separate</strong><span className="mt-1 block">VELLUM cannot be transferred, withdrawn, or converted into SHARDS. It stays inside Storytelling.</span></p>
               </div>
             </section>
 
@@ -168,6 +195,38 @@ export default function VellumPage() {
                   </div>
                 ))}</div> : <div className="mt-5 rounded-2xl border border-dashed border-white/15 px-5 py-8 text-center text-sm text-warm-400">No VELLUM activity yet. When something genuinely changes, it will be recorded here.</div>}
               </article>
+            </section>
+
+            <section className="mt-6 rounded-3xl border border-amber-200/20 bg-[#10182a]/90 p-6 shadow-xl sm:p-7">
+              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+                <div className="flex items-start gap-3">
+                  <ImageIcon size={21} className="mt-1 text-amber-200" />
+                  <div>
+                    <h2 className="font-serif text-2xl text-white">Your private artifacts</h2>
+                    <p className="mt-1 max-w-2xl text-sm leading-relaxed text-warm-300">Completed Scene Illustrations belong to your Storytelling space. These are private previews from real VELLUM actions, not community posts.</p>
+                  </div>
+                </div>
+                <span className="inline-flex w-fit items-center gap-2 rounded-full border border-amber-200/20 bg-amber-200/10 px-3 py-1.5 text-xs font-bold text-amber-100"><Eye size={14} /> {artifacts.length} saved</span>
+              </div>
+              {loading ? (
+                <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{[1, 2, 3].map((item) => <div key={item} className="aspect-video animate-pulse rounded-2xl bg-white/5" />)}</div>
+              ) : artifacts.length ? (
+                <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {artifacts.map((artifact) => (
+                    <article key={artifact.id} className="overflow-hidden rounded-2xl border border-white/10 bg-black/20">
+                      <a href={artifact.signed_url} target="_blank" rel="noreferrer" className="group block">
+                        <img src={artifact.signed_url} alt="Private CHIMERA scene illustration" className={`w-full object-cover transition duration-300 group-hover:scale-[1.02] ${artifact.aspect_ratio === '4:5' ? 'aspect-[4/5]' : artifact.aspect_ratio === '1:1' ? 'aspect-square' : 'aspect-video'}`} />
+                      </a>
+                      <div className="flex items-center justify-between gap-3 p-4">
+                        <div className="min-w-0"><p className="truncate text-sm font-bold text-warm-100">Scene Illustration</p><p className="mt-1 text-xs text-warm-400">{artifact.style.replace('_', ' ')} · {formatDate(artifact.created_at)}</p><p className="mt-1 text-xs text-amber-200">{formatVellum(artifact.vellum_cost)} VELLUM</p></div>
+                        <a href={artifact.signed_url} download={`chimera-scene-${artifact.id}.png`} className="shrink-0 rounded-lg border border-amber-200/20 p-2 text-amber-100 transition hover:bg-amber-200/10" aria-label="Download scene illustration"><Download size={16} /></a>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-6 rounded-2xl border border-dashed border-amber-200/20 px-5 py-10 text-center"><ImageIcon className="mx-auto text-amber-200/60" size={24} /><p className="mt-3 text-sm font-semibold text-warm-200">Your first scene is waiting in the writing desk.</p><p className="mt-1 text-xs leading-relaxed text-warm-400">When a real illustration is completed, it will appear here privately.</p><button onClick={() => navigate('/write')} className="mt-4 rounded-lg bg-[#e6c48b] px-4 py-2 text-xs font-extrabold text-[#2a1c12] transition hover:bg-[#f4dbac]">Open the writing desk</button></div>
+              )}
             </section>
 
              <section className="mt-6 rounded-3xl border border-amber-200/25 bg-[#10182a]/75 p-6 shadow-xl sm:p-7">
