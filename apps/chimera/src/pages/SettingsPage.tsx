@@ -357,7 +357,7 @@ export default function SettingsPage() {
               Careers at WHISPRR
             </a>
             <a
-              href="mailto:help@whisprr.xyz"
+              href="mailto:support@chimera.it.com"
               className="block text-sm text-primary-500 hover:underline"
             >
               Contact Support

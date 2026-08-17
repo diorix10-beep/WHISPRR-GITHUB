@@ -299,7 +299,7 @@ export default function TrustPage() {
           )}
 
           {activeSection === 'help' && (
-            <a href="mailto:help@whisprr.xyz?subject=CHIMERA%20support%20request" className="mt-8 inline-flex rounded-xl border border-[#dfb365] bg-[#2b1d38] px-4 py-2.5 text-sm font-semibold text-[#f4d79c] transition hover:bg-[#392748] focus:outline-none focus:ring-2 focus:ring-[#e7bc69]">
+            <a href="mailto:support@chimera.it.com?subject=CHIMERA%20support%20request" className="mt-8 inline-flex rounded-xl border border-[#dfb365] bg-[#2b1d38] px-4 py-2.5 text-sm font-semibold text-[#f4d79c] transition hover:bg-[#392748] focus:outline-none focus:ring-2 focus:ring-[#e7bc69]">
               Contact CHIMERA support
             </a>
           )}
@@ -351,7 +351,7 @@ export default function TrustPage() {
         <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm text-[#c4a6d1]">
           <button type="button" onClick={() => navigate('/terms')} className="underline decoration-dotted underline-offset-4 transition hover:text-[#f0d28e]">Terms of Service</button>
           <button type="button" onClick={() => navigate('/privacy')} className="underline decoration-dotted underline-offset-4 transition hover:text-[#f0d28e]">Privacy Policy</button>
-          <a href="mailto:help@whisprr.xyz?subject=CHIMERA%20support%20request" className="underline decoration-dotted underline-offset-4 transition hover:text-[#f0d28e]">Contact support</a>
+          <a href="mailto:support@chimera.it.com?subject=CHIMERA%20support%20request" className="underline decoration-dotted underline-offset-4 transition hover:text-[#f0d28e]">Contact support</a>
         </div>
       </div>
     </main>
