@@ -28,6 +28,7 @@ interface NavLinkItem {
 const ROLEPLAY_NAV_LINKS: NavLinkItem[] = [
   { path: '/discover', token: 'navigation.discover', icon: Compass },
   { path: '/characters', token: 'navigation.my_cast', icon: Users },
+  { path: '/human-roleplay', token: 'navigation.human_roleplay', icon: Users, shortLabel: 'Human RP' },
   { path: '/conversations', token: 'navigation.chats', icon: MessageSquare },
   { path: '/personas', token: 'navigation.who_you_are_here', icon: UserCheck, shortLabel: 'WYAH' },
 ];
@@ -69,7 +70,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
     if (!chimeraPreferences) return;
 
     const path = location.pathname;
-    const isRoleplayRoute = /^(\/discover|\/shards|\/characters|\/conversations|\/chats|\/chat|\/lorebooks|\/models|\/memory|\/voices|\/media|\/personas|\/studio|\/roleplay|\/create)/.test(path);
+    const isRoleplayRoute = /^(\/discover|\/shards|\/characters|\/conversations|\/chats|\/chat|\/human-roleplay|\/lorebooks|\/models|\/memory|\/voices|\/media|\/personas|\/studio|\/roleplay|\/create)/.test(path);
     const isStorytellingRoute = /^(\/workspace|\/vellum|\/worlds|\/stories|\/write|\/library)/.test(path);
 
     if (creativeMode === 'storytelling' && isRoleplayRoute) {
@@ -264,8 +265,8 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
           </div>
 
           {/* 2. BLOC MILIEU — Clean Fluid Primary Navigation */}
-          <div className="hidden lg:flex min-w-0 flex-1 basis-[720px] items-center justify-center px-2 xl:px-5">
-            <nav className={`grid w-full ${currentNavLinks.length === 5 ? 'max-w-[660px] grid-cols-5' : currentNavLinks.length === 4 ? 'max-w-[720px] grid-cols-4' : 'max-w-[420px] grid-cols-3'} items-center gap-1 rounded-2xl border p-1 text-center ${creativeMode === 'roleplay' ? 'border-[#c99b50]/20 bg-black/25' : 'border-warm-800/50 bg-warm-900/20'}`}>
+          <div className="hidden lg:flex min-w-0 flex-1 basis-[820px] items-center justify-center px-2 xl:px-5">
+            <nav className={`grid w-full ${currentNavLinks.length === 5 ? 'max-w-[820px] grid-cols-5' : currentNavLinks.length === 4 ? 'max-w-[720px] grid-cols-4' : 'max-w-[420px] grid-cols-3'} items-center gap-1 rounded-2xl border p-1 text-center ${creativeMode === 'roleplay' ? 'border-[#c99b50]/20 bg-black/25' : 'border-warm-800/50 bg-warm-900/20'}`}>
               {renderNavLinks()}
             </nav>
           </div>

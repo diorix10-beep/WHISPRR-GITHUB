@@ -69,6 +69,9 @@ const MemoryManagerPage = lazy(() => import('./pages/MemoryManagerPage'));
 // ── Conversations Module ───────────────────────────────────
 const ChimeraChatsPage  = lazy(() => import('./pages/ChimeraChatsPage'));
 const ConversationPage  = lazy(() => import('./pages/ConversationPage'));
+const HumanRoleplayHubPage = lazy(() => import('./pages/HumanRoleplayHubPage'));
+const HumanRoleplayCreatePage = lazy(() => import('./pages/HumanRoleplayCreatePage'));
+const HumanRoleplaySessionPage = lazy(() => import('./pages/HumanRoleplaySessionPage'));
 const PublicRoleplayScenePage = lazy(() => import('./pages/PublicRoleplayScenePage'));
 const ModelsPage        = lazy(() => import('./pages/ModelsPage'));
 const VoiceLibraryPage  = lazy(() => import('./pages/VoiceLibraryPage'));
@@ -250,6 +253,9 @@ function AppLoader() {
             <Route path="/conversations" element={<ChimeraChatsPage />} />
             <Route path="/conversations/scenes/:sceneId" element={<PublicRoleplayScenePage />} />
             <Route path="/conversations/:id" element={<ConversationPage />} />
+            <Route path="/human-roleplay" element={<HumanRoleplayHubPage />} />
+            <Route path="/human-roleplay/create" element={<HumanRoleplayCreatePage />} />
+            <Route path="/human-roleplay/:sessionId" element={<HumanRoleplaySessionPage />} />
             {/* Legacy routes redirect */}
             <Route path="/chats" element={<Navigate to="/conversations" replace />} />
             <Route path="/chat/:id" element={<Navigate to="/conversations/:id" replace />} />

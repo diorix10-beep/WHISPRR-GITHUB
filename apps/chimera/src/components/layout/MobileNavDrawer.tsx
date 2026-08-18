@@ -144,6 +144,7 @@ function MobileNavDrawerContent({
   const mainLinks = creativeMode === 'roleplay' ? [
     { path: '/discover', label: t('navigation.discover'), icon: Compass },
     { path: '/characters', label: t('navigation.my_cast'), icon: Users },
+    { path: '/human-roleplay', label: t('navigation.human_roleplay'), icon: Users },
     { path: '/conversations', label: t('navigation.chats'), icon: MessageSquare },
     { path: '/personas', label: t('navigation.who_you_are_here'), icon: User },
   ] : [
