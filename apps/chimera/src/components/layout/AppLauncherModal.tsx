@@ -43,7 +43,7 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
     { label: 'CHIMERA Studio', desc: 'Creative roleplay & novel workspace', path: '/workspace', icon: Sparkles, accent: 'text-amber-400 group-hover:text-amber-300' },
     { label: 'WHISPRR Ecosystem', desc: 'Main platform & identity', path: whisprrUrl, external: true, icon: Globe, accent: 'text-purple-400 group-hover:text-purple-300' },
     { label: 'Account Settings', desc: 'Profile & preferences', path: '/settings', icon: Settings, accent: 'text-warm-400 group-hover:text-warm-300' },
-    { label: 'Trust & Safety', desc: 'Privacy & content controls', path: '/trust', icon: Shield, accent: 'text-indigo-400 group-hover:text-indigo-300' },
+    { label: "Guardian's Library", desc: 'Content controls & support', path: '/trust', icon: Shield, accent: 'text-indigo-400 group-hover:text-indigo-300' },
   ];
 
   return (
@@ -151,7 +151,7 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
                 </div>
                 <div>
                   <h4 className="font-serif font-black text-sm text-cyan-700 dark:text-cyan-400 leading-none">SHARDS</h4>
-                  <p className="text-[10px] text-cyan-600 dark:text-cyan-400/80 mt-0.5 font-medium">Premium Currency & VIP</p>
+                  <p className="text-[10px] text-cyan-600 dark:text-cyan-400/80 mt-0.5 font-medium">Roleplay rewards & moments</p>
                 </div>
               </div>
             </button>

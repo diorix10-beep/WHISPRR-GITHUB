@@ -3,8 +3,13 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-// Cache-busting mechanism for PWA / Service Worker caches
-const APP_VERSION = 'v6';
+// Cache-busting mechanism for PWA / Service Worker caches.
+// A fixed version left returning visitors on an old asset cache after later
+// deployments. Vite replaces this value for every production build, so an
+// outdated client clears its PWA cache once and reloads the current app.
+const APP_VERSION = typeof __APP_BUILD_TIME__ !== 'undefined'
+  ? __APP_BUILD_TIME__
+  : 'development';
 
 // Migration: clear old WHISPRR key if it exists
 const legacyVersion = localStorage.getItem('whisprr_app_version');
@@ -57,4 +62,3 @@ if (currentVersion !== APP_VERSION) {
     </StrictMode>
   );
 }
-

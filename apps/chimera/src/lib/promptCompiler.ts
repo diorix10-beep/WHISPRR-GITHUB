@@ -73,7 +73,11 @@ export interface CharacterArchitecture {
   writing_style?: string;
 }
 
-export function compileCharacterSystemPrompt(arch: CharacterArchitecture): string {
+/**
+ * Compiles only creator-authored 16-section data. It is deliberately safe to
+ * persist as part of a character and use inside the runtime prompt.
+ */
+export function compileCharacterArchitecture(arch: CharacterArchitecture): string {
   const sections: string[] = [];
 
   // Identity
@@ -189,12 +193,15 @@ export function compileCharacterSystemPrompt(arch: CharacterArchitecture): strin
     sections.push(`[EXAMPLE DIALOGUES]\n${dialogues}`);
   }
 
-  // CHIMERA Persona Drift Guard & Consistency Re-anchoring
-  sections.push(`[CHIMERA PERSONA DRIFT GUARD & IMMERSION DIRECTIVE]
+  return sections.join('\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n');
+}
+
+/** Backward-compatible wrapper for callers that need platform guardrails. */
+export function compileCharacterSystemPrompt(arch: CharacterArchitecture): string {
+  const architecture = compileCharacterArchitecture(arch);
+  const driftGuard = `[CHIMERA PERSONA DRIFT GUARD & IMMERSION DIRECTIVE]
 • You MUST maintain this specific identity, speech pattern, and emotional traits AT ALL TIMES.
 • NEVER revert to generic AI assistant phrases like "As an AI language model...", "I am programmed to...", or "How can I help you today?".
-• Maintain 100% creative roleplay immersion in every turn.`);
-
-  const compiledPrompt = sections.join('\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n');
-  return injectSafetySystemPrompt(compiledPrompt);
+• Maintain 100% creative roleplay immersion in every turn.`;
+  return injectSafetySystemPrompt([architecture, driftGuard].filter(Boolean).join('\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n'));
 }

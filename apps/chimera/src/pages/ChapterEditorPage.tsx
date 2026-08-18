@@ -6,6 +6,7 @@ import { Story, StoryChapter } from '../types';
 import { checkUserPromptSafety, CRISIS_HELPLINE_INFO } from '../lib/safetyGuard';
 import { useToast } from '../contexts/ToastContext';
 import { AiCoPilotDrawer } from '../components/writers/AiCoPilotDrawer';
+import { SceneIllustrationModal } from '../components/writers/SceneIllustrationModal';
 
 export default function ChapterEditorPage() {
   const { storyId, chapterId } = useParams<{ storyId: string; chapterId: string }>();
@@ -28,6 +29,8 @@ export default function ChapterEditorPage() {
   const [focusMode, setFocusMode] = useState(false);
   const [isHandcrafted, setIsHandcrafted] = useState(true);
   const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
+  const [sceneIllustrationOpen, setSceneIllustrationOpen] = useState(false);
+  const [sceneIllustrations, setSceneIllustrations] = useState<{ id: string; signedUrl: string }[]>([]);
 
   // Word count logic
   const wordCount = useMemo(() => {
@@ -65,6 +68,20 @@ export default function ChapterEditorPage() {
       setContent(chapData.content || '');
       setStatus(chapData.status);
       setChoices(chapData.choices || []);
+
+      const { data: illustrations, error: illustrationsError } = await supabase
+        .from('story_scene_illustrations')
+        .select('id, storage_path')
+        .eq('chapter_id', chapterId)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false });
+      if (illustrationsError) throw illustrationsError;
+      const signedIllustrations = await Promise.all((illustrations || []).map(async (illustration) => {
+        if (!illustration.storage_path) return null;
+        const { data } = await supabase.storage.from('story-illustrations').createSignedUrl(illustration.storage_path, 60 * 60);
+        return data?.signedUrl ? { id: illustration.id, signedUrl: data.signedUrl } : null;
+      }));
+      setSceneIllustrations(signedIllustrations.filter((illustration): illustration is { id: string; signedUrl: string } => Boolean(illustration)));
 
     } catch (err: any) {
       showToast(err.message || 'Error loading chapter details', 'error');
@@ -122,6 +139,11 @@ export default function ChapterEditorPage() {
     } finally {
       if (!isAutoSave) setSaving(false);
     }
+  };
+
+  const handleSceneIllustration = (image: { id: string; signedUrl: string }) => {
+    setSceneIllustrations((current) => [image, ...current]);
+    showToast('Your private scene illustration is ready.', 'success');
   };
 
   // Auto-save every 10 seconds if content changes
@@ -246,6 +268,14 @@ export default function ChapterEditorPage() {
             <Sparkles size={16} />
             <span className="hidden md:inline">AI Co-Pilot</span>
           </button>
+          <button
+            onClick={() => setSceneIllustrationOpen(true)}
+            className="p-2 rounded-xl bg-[#e4c77e]/10 text-[#e4c77e] border border-[#e4c77e]/30 hover:bg-[#e4c77e]/20 transition-all flex items-center gap-1 text-xs font-bold"
+            title="Illustrate this scene with VELLUM"
+          >
+            <ImageIcon size={16} />
+            <span className="hidden lg:inline">Illustrate</span>
+          </button>
         </div>
       </header>
 
@@ -291,6 +321,18 @@ export default function ChapterEditorPage() {
                 {wordCount} {wordCount === 1 ? 'Word' : 'Words'}
               </span>
             </div>
+
+            {sceneIllustrations.length > 0 && (
+              <section className="mt-6 border-t border-[#E5E0D8] dark:border-[#2A2827] pt-6">
+                <div className="mb-3 flex items-center gap-2">
+                  <ImageIcon size={16} className="text-[#b99145]" />
+                  <h3 className="font-serif text-lg font-semibold text-[#1A1817] dark:text-[#F7F5F0]">Private scene illustrations</h3>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {sceneIllustrations.map((image) => <img key={image.id} src={image.signedUrl} alt="Generated scene illustration" className="aspect-video w-full rounded-2xl object-cover shadow-lg" />)}
+                </div>
+              </section>
+            )}
 
             {/* CYOA Reader Choices Creator */}
             <div className="mt-6 pt-6 border-t border-[#E5E0D8] dark:border-[#2A2827]">
@@ -352,6 +394,17 @@ export default function ChapterEditorPage() {
         chapterContent={content}
         onInsertText={(text) => setContent(prev => prev + '\n\n' + text)}
       />
+      {storyId && chapterId && (
+        <SceneIllustrationModal
+          isOpen={sceneIllustrationOpen}
+          onClose={() => setSceneIllustrationOpen(false)}
+          storyId={storyId}
+          chapterId={chapterId}
+          chapterTitle={title}
+          chapterContent={content}
+          onGenerated={handleSceneIllustration}
+        />
+      )}
     </div>
   );
 }

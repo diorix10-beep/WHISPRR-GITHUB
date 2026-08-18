@@ -19,6 +19,7 @@ import { EcosystemMaintenancePage } from './pages/EcosystemMaintenancePage';
 const AuthPage          = lazy(() => import('./pages/AuthPage'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
 const OnboardingPage    = lazy(() => import('./pages/OnboardingPage'));
+const ChooseCreativeSpacePage = lazy(() => import('./pages/ChooseCreativeSpacePage'));
 
 // ── Legal & Moderation ─────────────────────────────────────
 const LegalAcceptancePage  = lazy(() => import('./pages/LegalAcceptancePage'));
@@ -40,6 +41,7 @@ const TrustPage                = lazy(() => import('./pages/TrustPage'));
 const CreatorDashboardPage = lazy(() => import('./pages/CreatorDashboardPage'));
 const DiscoverPage = lazy(() => import('./pages/DiscoverPage'));
 const ShardsPage = lazy(() => import('./pages/ShardsPage'));
+const VellumPage = lazy(() => import('./pages/VellumPage'));
 
 // ── Creator Studio ─────────────────────────────────────────
 const CreatorStudioPage = lazy(() => import('./pages/CreatorStudioPage'));
@@ -47,6 +49,7 @@ const CreatorStudioPage = lazy(() => import('./pages/CreatorStudioPage'));
 // ── Characters Module ──────────────────────────────────────
 const CharactersPage     = lazy(() => import('./pages/CharactersPage'));
 const AiCharacterCreator = lazy(() => import('./pages/AiCharacterCreator'));
+const CharacterProfilePage = lazy(() => import('./pages/CharacterProfilePage'));
 
 // ── Worlds Module ──────────────────────────────────────────
 const WorldsPage        = lazy(() => import('./pages/WorldsPage'));
@@ -66,6 +69,10 @@ const MemoryManagerPage = lazy(() => import('./pages/MemoryManagerPage'));
 // ── Conversations Module ───────────────────────────────────
 const ChimeraChatsPage  = lazy(() => import('./pages/ChimeraChatsPage'));
 const ConversationPage  = lazy(() => import('./pages/ConversationPage'));
+const HumanRoleplayHubPage = lazy(() => import('./pages/HumanRoleplayHubPage'));
+const HumanRoleplayCreatePage = lazy(() => import('./pages/HumanRoleplayCreatePage'));
+const HumanRoleplaySessionPage = lazy(() => import('./pages/HumanRoleplaySessionPage'));
+const PublicRoleplayScenePage = lazy(() => import('./pages/PublicRoleplayScenePage'));
 const ModelsPage        = lazy(() => import('./pages/ModelsPage'));
 const VoiceLibraryPage  = lazy(() => import('./pages/VoiceLibraryPage'));
 
@@ -198,7 +205,7 @@ function AppLoader() {
         {/* ── Protected Platform ────────────────────────────── */}
         <Route element={<ProtectedRoute />}>
           <Route path="/onboarding" element={<OnboardingPage />} />
-          <Route path="/choose-your-space" element={<Navigate to="/onboarding" replace />} />
+          <Route path="/choose-your-space" element={<ChooseCreativeSpacePage />} />
           <Route path="/legal-acceptance" element={<LegalAcceptancePage />} />
           <Route path="/moderation-notice" element={<ModerationNoticePage />} />
           <Route path="/suspended" element={<SuspendedPage />} />
@@ -211,11 +218,12 @@ function AppLoader() {
             <Route path="/" element={<ChimeraHomeRedirect />} />
             <Route path="/discover" element={<DiscoverPage />} />
             <Route path="/shards" element={<ShardsPage />} />
+            <Route path="/vellum" element={<VellumPage />} />
 
             {/* Characters Module */}
             <Route path="/characters" element={<CharactersPage />} />
             <Route path="/characters/new" element={<AiCharacterCreator />} />
-            <Route path="/characters/:id" element={<AiCharacterCreator />} />
+            <Route path="/characters/:id" element={<CharacterProfilePage />} />
             <Route path="/characters/:id/edit" element={<AiCharacterCreator />} />
 
             {/* Worlds Module */}
@@ -243,7 +251,11 @@ function AppLoader() {
 
             {/* Conversations Module */}
             <Route path="/conversations" element={<ChimeraChatsPage />} />
+            <Route path="/conversations/scenes/:sceneId" element={<PublicRoleplayScenePage />} />
             <Route path="/conversations/:id" element={<ConversationPage />} />
+            <Route path="/human-roleplay" element={<HumanRoleplayHubPage />} />
+            <Route path="/human-roleplay/create" element={<HumanRoleplayCreatePage />} />
+            <Route path="/human-roleplay/:sessionId" element={<HumanRoleplaySessionPage />} />
             {/* Legacy routes redirect */}
             <Route path="/chats" element={<Navigate to="/conversations" replace />} />
             <Route path="/chat/:id" element={<Navigate to="/conversations/:id" replace />} />

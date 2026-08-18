@@ -88,61 +88,61 @@ export default function PersonasPage() {
   const defaultPersona = personas.find(p => p.is_default) || personas[0];
 
   return (
-    <div className="min-h-screen bg-warm-50 dark:bg-warm-900 text-warm-900 dark:text-warm-50 font-sans pb-24 relative overflow-hidden transition-colors duration-300">
+    <div className="rp-page font-sans pb-24 relative overflow-hidden">
       
       {/* Ambient Red/Purple Glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-b from-red-600/15 via-purple-600/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 relative z-10 pt-6">
+      <div className="max-w-[1160px] mx-auto px-4 sm:px-6 lg:px-8 space-y-10 relative z-10 pt-10">
 
         {/* ── 1. HERO SECTION ── */}
-        <section className="flex flex-col items-center text-center pt-6 sm:pt-8 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-bold uppercase tracking-wider">
+        <section className="flex flex-col items-start pt-6 sm:pt-10 space-y-4 text-left">
+          <div className="rp-micro inline-flex items-center gap-2 rounded-full border border-[#c99b50]/50 bg-black/30 px-3.5 py-1.5">
             <UserCheck size={14} />
-            <span>{t('persona.personas_title')}</span>
+            <span>YOUR ROLEPLAY PRESENCE</span>
           </div>
 
-          <h1 className="font-serif text-4xl sm:text-5xl font-extrabold tracking-tight text-warm-900 dark:text-white">
-            {t('persona.personas_title')}
+          <h1 className="rp-heading text-5xl sm:text-6xl font-extrabold tracking-tight">
+            Who You Are Here
           </h1>
 
-          <p className="text-sm sm:text-base text-warm-600 dark:text-warm-300 max-w-xl mx-auto leading-relaxed">
-            {t('persona.persona_desc')}
+          <p className="rp-copy text-base sm:text-lg max-w-2xl leading-relaxed">
+            A persona is the self you bring into a story—their voice, history, boundaries, and point of view.
           </p>
 
           <button
             onClick={() => navigate('/personas/new')}
-            className="px-6 py-3 rounded-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-extrabold text-xs shadow-lg shadow-red-600/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+            className="rp-gold-button"
           >
             <Plus size={16} strokeWidth={3} />
-            <span>{t('persona.create_persona')}</span>
+            <span>Create a persona</span>
           </button>
         </section>
 
 
         {/* ── 2. ACTIVE DEFAULT PERSONA SHOWCASE ── */}
         {defaultPersona && (
-          <section className="p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-warm-900 via-warm-900 to-warm-950 text-white border border-white/10 shadow-2xl relative overflow-hidden space-y-6">
+          <section className="rp-card p-8 sm:p-10 rounded-3xl text-white relative overflow-hidden space-y-6">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
               
               <div className="space-y-4 max-w-xl">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-extrabold uppercase tracking-wider">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#c99b50]/10 border border-[#c99b50]/40 text-[#e8c378] text-xs font-extrabold uppercase tracking-wider">
                   <CheckCircle size={14} />
                   <span>{t('persona.active_persona')}</span>
                 </div>
 
-                <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white leading-tight">
+                  <h2 className="rp-heading text-3xl sm:text-4xl font-bold leading-tight">
                   {defaultPersona.name}
                 </h2>
 
-                <p className="text-xs sm:text-sm text-warm-300 leading-relaxed line-clamp-3">
+                  <p className="text-xs sm:text-sm text-[#d5c6af] leading-relaxed line-clamp-3">
                   {defaultPersona.description || defaultPersona.personality || "Your primary active identity for AI character roleplays."}
                 </p>
 
                 <div className="flex items-center gap-3 pt-2">
                   <button
                     onClick={() => navigate(`/personas/${defaultPersona.id}/edit`)}
-                    className="px-6 py-3 rounded-full bg-white hover:bg-warm-100 text-black font-extrabold text-xs shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                    className="rp-gold-button"
                   >
                     <Edit2 size={16} />
                     <span>Edit Active Persona</span>
@@ -151,7 +151,7 @@ export default function PersonasPage() {
               </div>
 
               {/* Avatar Showcase */}
-              <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-3xl bg-warm-800 border-4 border-white/20 shadow-2xl overflow-hidden flex items-center justify-center shrink-0 self-center md:self-auto">
+              <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-3xl bg-black/40 border-2 border-[#c99b50]/65 shadow-2xl overflow-hidden flex items-center justify-center shrink-0 self-center md:self-auto">
                 {defaultPersona.avatar_url ? (
                   <img src={defaultPersona.avatar_url} alt={defaultPersona.name} className="w-full h-full object-cover" />
                 ) : (
@@ -167,15 +167,15 @@ export default function PersonasPage() {
         {/* ── 3. PERSONA LIBRARY MATRIX ── */}
         <section className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="font-serif text-2xl font-bold text-warm-900 dark:text-white">
-              All Personas ({personas.length})
+            <h2 className="rp-heading font-serif text-2xl font-bold">
+              Your other selves ({personas.length})
             </h2>
           </div>
 
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-48 rounded-3xl bg-warm-200 dark:bg-warm-800 animate-pulse" />
+                <div key={i} className="h-48 rounded-3xl bg-[#201725] animate-pulse" />
               ))}
             </div>
           ) : personas.length === 0 ? (
@@ -191,11 +191,11 @@ export default function PersonasPage() {
               {personas.map((persona) => (
                 <div 
                   key={persona.id} 
-                  className="bg-white dark:bg-warm-850 rounded-3xl border border-warm-200 dark:border-warm-750 overflow-hidden shadow-sm hover:shadow-xl transition-all group relative cursor-pointer flex flex-col justify-between p-6 space-y-4"
+                  className="rp-card rounded-3xl overflow-hidden group relative cursor-pointer flex flex-col justify-between p-6 space-y-4"
                   onClick={() => navigate(`/personas/${persona.id}`)}
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-warm-100 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 overflow-hidden flex items-center justify-center shrink-0">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#c99b50]/35 bg-black/35">
                       {persona.avatar_url ? (
                         <img src={persona.avatar_url} alt={persona.name} className="w-full h-full object-cover" />
                       ) : (
@@ -205,24 +205,24 @@ export default function PersonasPage() {
 
                     <div className="space-y-1 min-w-0 flex-1">
                       <div className="flex items-center justify-between">
-                        <h3 className="font-bold text-lg text-warm-900 dark:text-white truncate">{persona.name}</h3>
+                        <h3 className="font-serif font-bold text-lg text-[#fff2dc] truncate">{persona.name}</h3>
                         {persona.is_default && (
                           <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-extrabold uppercase rounded-full">
                             Default
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-warm-500 dark:text-warm-400 line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-[#c9bda9] line-clamp-2 leading-relaxed">
                         {persona.description || persona.personality || "No description provided."}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-3 border-t border-warm-100 dark:border-warm-800 text-xs">
+                  <div className="flex items-center justify-between border-t border-[#c99b50]/20 pt-3 text-xs">
                     {!persona.is_default ? (
                       <button
                         onClick={(e) => handleSetDefault(persona.id, e)}
-                        className="text-red-600 dark:text-red-400 font-bold hover:underline"
+                        className="font-bold text-[#e6c377] hover:text-[#fff0be] hover:underline"
                       >
                         Set as Default
                       </button>

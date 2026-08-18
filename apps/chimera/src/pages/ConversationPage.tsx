@@ -2,11 +2,11 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import {
-  ArrowLeft, Send, Phone, Video, Loader2, Trash2,
+  ArrowLeft, Send, Phone, Video, Loader2, Trash2, Share2,
   Image as ImageIcon, X, Settings, UserPlus, UserMinus, LogOut, Pencil, Smile, Search,
   PanelRightClose, PanelRightOpen, BookOpen, Copy, RotateCw, Edit3, Camera, Volume2
 } from 'lucide-react';
-import type { Conversation, Message, Profile, MemoryNexusState, ChatMode, MultiCharacterParticipant, RpgGameState, RpgChoice, LorebookEntry } from '../types';
+import type { Conversation, Message, Profile, ChatMode, MultiCharacterParticipant, RpgGameState, RpgChoice, LorebookEntry } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
@@ -16,9 +16,9 @@ import { EmojiPicker } from '../components/common/EmojiPicker';
 import { ChatSettingsDrawer } from '../components/chat/ChatSettingsDrawer';
 import { ChatMemoryModal } from '../components/chat/ChatMemoryModal';
 import { MockPhoneModal } from '../components/chat/MockPhoneModal';
-import { MemoryVisualizerModal } from '../components/chat/MemoryVisualizerModal';
+import { CharacterMemoryCabinetModal } from '../components/chat/MemoryVisualizerModal';
 import { MultiCharacterHeader } from '../components/chat/MultiCharacterHeader';
-import { RpgGameOverlay } from '../components/chat/RpgGameOverlay';
+import { GuidedTurningPointCard, type GuidedTurningPoint } from '../components/chat/GuidedTurningPointCard';
 import { LorebookDrawer } from '../components/chat/LorebookDrawer';
 import { InChatPersonaDrawer } from '../components/chat/InChatPersonaDrawer';
 import { WorldRelationshipModal } from '../components/world/WorldRelationshipModal';
@@ -27,9 +27,9 @@ import { AddCharacterToGroupModal } from '../components/chat/AddCharacterToGroup
 import { voiceEngine } from '../services/voiceEngine';
 import { LanguageSelectorModal } from '../components/common/LanguageSelectorModal';
 import { SUPPORTED_LANGUAGES, translateText } from '../services/translationEngine';
-import { createInitialMemoryNexusState, autoExtractMemoriesIfNeeded, formatMemoryNexusPromptContext } from '../services/memoryNexus';
 import { generateElevenLabsAudio } from '../lib/elevenlabs';
-import { scanAndMatchLorebookEntries, parseJanitorLorebookJson, parseOocMessage } from '../services/lorebookEngine';
+import { parseOocMessage } from '../services/lorebookEngine';
+import { resolveLorebookContext } from '../lib/lorebookRuntime';
 import { checkUserPromptSafety, CRISIS_HELPLINE_INFO } from '../lib/safetyGuard';
 import { useChatAesthetics } from '../hooks/useChatAesthetics';
 import { useVoice } from '../hooks/useVoice';
@@ -48,8 +48,11 @@ interface ConversationData extends Conversation {
 
 export default function ConversationPage() {
   const navigate = useNavigate();
-  const { conversationId } = useParams<{ conversationId: string }>();
-  const { user, profile, spendShards } = useAuth();
+  // The route is `/conversations/:id`; retaining the same local name keeps
+  // the rest of the chat runtime readable while ensuring the page actually
+  // receives the route parameter.
+  const { id: conversationId } = useParams<{ id: string }>();
+  const { user, profile } = useAuth();
   const { showToast } = useToast();
 
   const [conversation, setConversation] = useState<ConversationData | null>(null);
@@ -60,6 +63,8 @@ export default function ConversationPage() {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const [turningPoint, setTurningPoint] = useState<GuidedTurningPoint | null>(null);
+  const [turningPointLoading, setTurningPointLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -76,11 +81,16 @@ export default function ConversationPage() {
   const [showContextDrawer, setShowContextDrawer] = useState(false);
   const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
   const [showMemoryModal, setShowMemoryModal] = useState(false);
+  const [showSceneCanon, setShowSceneCanon] = useState(false);
+  const [sceneCanon, setSceneCanon] = useState('');
+  const [sceneCanonDraft, setSceneCanonDraft] = useState('');
   const [isPhoneOpen, setIsPhoneOpen] = useState(false);
 
-  // Memory Nexus State & Visualizer Modal
-  const [memoryNexusState, setMemoryNexusState] = useState<MemoryNexusState>(createInitialMemoryNexusState());
+  // Character memories are durable, user-controlled facts held privately for
+  // the active player-character bond. They are retrieved by the AI runtime.
   const [showMemoryVisualizer, setShowMemoryVisualizer] = useState(false);
+  const [memoryCharacter, setMemoryCharacter] = useState<{ id: string; name: string } | null>(null);
+  const [memoryCount, setMemoryCount] = useState(0);
   const [showExporterModal, setShowExporterModal] = useState(false);
   const [targetLang, setTargetLang] = useState('en');
   const [showLangModal, setShowLangModal] = useState(false);
@@ -88,26 +98,20 @@ export default function ConversationPage() {
   const [showAddCharModal, setShowAddCharModal] = useState(false);
   const [showExpressionModal, setShowExpressionModal] = useState(false);
   const [characterExpressions, setCharacterExpressions] = useState<Record<string, string>>({});
+  const [showPublishSceneModal, setShowPublishSceneModal] = useState(false);
+  const [publishingScene, setPublishingScene] = useState(false);
+  const [sceneTitle, setSceneTitle] = useState('');
+  const [sceneSummary, setSceneSummary] = useState('');
+  const [sceneVisibility, setSceneVisibility] = useState<'unlisted' | 'public'>('unlisted');
+  const [sceneRating, setSceneRating] = useState<'limited' | 'mature'>('limited');
 
   // Roleplay Safety Intervention State
   const [isRoleplayPaused, setIsRoleplayPaused] = useState(false);
 
-  // Lorebook & Janitor AI Engine State
-  const [lorebookEntries, setLorebookEntries] = useState<LorebookEntry[]>([
-    {
-      id: 'demo-1',
-      lorebook_id: 'default',
-      title: 'CHIMERA Universe',
-      content: 'CHIMERA is a vast multi-dimensional nexus where stories, roleplays, and worlds converge.',
-      keywords: ['CHIMERA', 'Nexus', 'Universe'],
-      priority: 10,
-      enabled: true,
-      is_constant: true,
-      insertion_order: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-  ]);
+  // Linked lore is persistent creator data. There is deliberately no demo
+  // universe or browser-only substitute: an empty scope means no lore exists.
+  const [lorebookEntries, setLorebookEntries] = useState<LorebookEntry[]>([]);
+  const [loreScope, setLoreScope] = useState<{ characterId: string; worldId: string | null } | null>(null);
   const [showLorebookDrawer, setShowLorebookDrawer] = useState(false);
   const [scanDepth, setScanDepth] = useState<number>(10);
   const [isOocMode, setIsOocMode] = useState<boolean>(false);
@@ -175,9 +179,79 @@ export default function ConversationPage() {
   const voice = useVoice();
   const aesthetics = useChatAesthetics(conversationId);
 
-  const loreTriggerResult = scanAndMatchLorebookEntries(messages, lorebookEntries, {
-    defaultScanDepth: scanDepth,
-  });
+  useEffect(() => {
+    if (!memoryCharacter || !user?.id) {
+      setMemoryCount(0);
+      return;
+    }
+
+    const loadMemoryCount = async () => {
+      const { count, error } = await supabase
+        .from('character_memories')
+        .select('*', { count: 'exact', head: true })
+        .eq('character_id', memoryCharacter.id)
+        .eq('user_id', user.id)
+        .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
+
+      if (error) {
+        console.error('Could not load character memory count:', error);
+        return;
+      }
+      setMemoryCount(count || 0);
+    };
+
+    void loadMemoryCount();
+  }, [memoryCharacter, user?.id]);
+
+  const loreTriggerResult = resolveLorebookContext(messages.slice(-scanDepth).map((message) => message.content), lorebookEntries);
+
+  useEffect(() => {
+    if (!loreScope || creativeMode !== 'roleplay') {
+      setLorebookEntries([]);
+      return;
+    }
+
+    const loadShareableLinkedLore = async () => {
+      const [characterLinksResult, worldLinksResult] = await Promise.all([
+        supabase.from('lorebook_characters').select('lorebook_id').eq('character_id', loreScope.characterId),
+        loreScope.worldId
+          ? supabase.from('lorebook_worlds').select('lorebook_id').eq('world_id', loreScope.worldId)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+
+      if (characterLinksResult.error || worldLinksResult.error) {
+        console.error('Could not load linked lorebook scope:', characterLinksResult.error || worldLinksResult.error);
+        setLorebookEntries([]);
+        return;
+      }
+
+      const lorebookIds = [...new Set([
+        ...(characterLinksResult.data || []).map((link) => link.lorebook_id),
+        ...(worldLinksResult.data || []).map((link) => link.lorebook_id),
+      ])];
+      if (lorebookIds.length === 0) {
+        setLorebookEntries([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('lorebook_entries')
+        .select('*')
+        .in('lorebook_id', lorebookIds)
+        .eq('enabled', true)
+        .order('priority', { ascending: false })
+        .order('insertion_order');
+
+      if (error) {
+        console.error('Could not load linked lorebook entries:', error);
+        setLorebookEntries([]);
+        return;
+      }
+      setLorebookEntries((data || []) as LorebookEntry[]);
+    };
+
+    void loadShareableLinkedLore();
+  }, [creativeMode, loreScope]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -237,6 +311,7 @@ export default function ConversationPage() {
 
     const fetchConversationData = async () => {
       try {
+        setMemoryCharacter(null);
         const { data: conv, error: convError } = await supabase
           .from('conversations')
           .select('*, conversation_participants(user_id)')
@@ -244,14 +319,24 @@ export default function ConversationPage() {
           .maybeSingle();
 
         if (convError) throw convError;
-        if (!conv) { navigate('/messages'); return; }
+        if (!conv) { navigate('/conversations'); return; }
 
         const isParticipant = (conv.conversation_participants || []).some(
           (p: { user_id: string }) => p.user_id === user.id
         );
-        if (!isParticipant) { navigate('/messages'); return; }
+        if (!isParticipant) { navigate('/conversations'); return; }
 
         setConversation(conv);
+        setSceneCanon(conv.memory_summary || '');
+        setSceneCanonDraft(conv.memory_summary || '');
+
+        const { data: activeTurningPoint } = await supabase
+          .from('roleplay_turning_points')
+          .select('id, title, scene_prompt, choices, reward_shards, status, selected_choice_id')
+          .eq('conversation_id', conversationId)
+          .eq('status', 'active')
+          .maybeSingle();
+        setTurningPoint((activeTurningPoint || null) as GuidedTurningPoint | null);
 
         // Get profiles for all participants
         const participantIds = (conv.conversation_participants || []).map((p: { user_id: string }) => p.user_id);
@@ -269,10 +354,14 @@ export default function ConversationPage() {
             .maybeSingle();
 
           if (aiChar) {
+            setMemoryCharacter({ id: aiChar.id, name: aiChar.chat_name || aiChar.name || aiChar.display_name || 'this character' });
+            setLoreScope({ characterId: aiChar.id, worldId: aiChar.world_id || null });
             botProfile = {
               id: aiChar.id,
-              user_id: aiChar.id,
-              display_name: aiChar.name || aiChar.display_name || 'AI Character',
+              // Messages and conversation participants are keyed to the bot's
+              // profile user id, not the separate ai_characters record id.
+              user_id: aiChar.user_id,
+              display_name: aiChar.chat_name || aiChar.name || aiChar.display_name || 'AI Character',
               username: aiChar.creator_username || 'bot',
               photo_url: aiChar.photo_url || aiChar.avatar_url || null,
               avatar_emoji: '🎭',
@@ -320,11 +409,6 @@ export default function ConversationPage() {
         const loadedMsgs = msgs || [];
         setMessages(loadedMsgs);
 
-        // Auto extract Memory Nexus memories from initial messages
-        if (loadedMsgs.length > 0) {
-          setMemoryNexusState((prev) => autoExtractMemoriesIfNeeded(loadedMsgs, prev, conversationId));
-        }
-
         // Check if we should trigger an AI initiation response or insert character greeting
         if (conv.type === 'dm' && profiles) {
           const other = profiles.find(p => p.user_id !== user.id);
@@ -342,24 +426,8 @@ export default function ConversationPage() {
                 greetingText = charData?.greeting || '';
               } catch {}
 
-              if (!greetingText) {
-                greetingText = other.bio || `*Steps into the room...* Hello! I am ${other.display_name}. How can I assist you today?`;
-              }
-              
-              const syntheticGreeting: MessageWithProfile = {
-                id: crypto.randomUUID(),
-                conversation_id: conversationId,
-                sender_id: other.user_id,
-                content: greetingText,
-                created_at: new Date().toISOString(),
-                read: true,
-                image_url: null,
-                deleted_at: null,
-                profiles: other as any
-              };
-
-              try {
-                const { data: newGreetingMsg } = await supabase
+              if (greetingText) {
+                const { data: newGreetingMsg, error: greetingError } = await supabase
                   .from('messages')
                   .insert({
                     conversation_id: conversationId,
@@ -370,13 +438,41 @@ export default function ConversationPage() {
                   .select('*, profiles:sender_id(*)')
                   .single();
 
-                if (newGreetingMsg) {
-                  setMessages([newGreetingMsg]);
-                } else {
-                  setMessages([syntheticGreeting]);
+                if (greetingError) throw greetingError;
+                if (newGreetingMsg) setMessages([newGreetingMsg]);
+              } else {
+                // A missing creator greeting is not permission to fabricate a
+                // generic assistant greeting. Let the character runtime open
+                // the scene from its real definition instead.
+                setInitiating(true);
+                try {
+                  const sessionRes = await supabase.auth.getSession();
+                  const token = sessionRes.data.session?.access_token;
+                  const response = await fetch('/api/ai-chat', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                      conversation_id: conversationId,
+                      bot_user_id: other.user_id,
+                      is_initiation: true,
+                    }),
+                  });
+                  const data = await response.json().catch(() => ({}));
+                  if (!response.ok || !data?.reply) {
+                    throw new Error(data?.error || 'The character could not open this scene.');
+                  }
+                  const { data: updatedMsgs } = await supabase
+                    .from('messages')
+                    .select('*')
+                    .eq('conversation_id', conversationId)
+                    .order('created_at', { ascending: true });
+                  if (updatedMsgs) setMessages(updatedMsgs);
+                } finally {
+                  setInitiating(false);
                 }
-              } catch {
-                setMessages([syntheticGreeting]);
               }
             } else {
               const lastMsg = loadedMsgs[loadedMsgs.length - 1];
@@ -521,6 +617,56 @@ export default function ConversationPage() {
     typingTimeoutRef.current = setTimeout(() => broadcastTyping(false), 2000);
   };
 
+  const saveSceneCanon = async () => {
+    if (!conversationId) return;
+    const next = sceneCanonDraft.trim();
+    const { error } = await supabase.from('conversations').update({ memory_summary: next }).eq('id', conversationId);
+    if (error) { showToast('Could not save the scene canon.', 'error'); return; }
+    setSceneCanon(next);
+    setShowSceneCanon(false);
+    showToast('This scene will remember that.', 'success');
+  };
+
+  const openTurningPoint = async () => {
+    if (!conversationId || !otherUser?.user_id || turningPointLoading) return;
+    setTurningPointLoading(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const response = await fetch('/api/roleplay-turning-point', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionData.session?.access_token || ''}` },
+        body: JSON.stringify({ conversation_id: conversationId, bot_user_id: otherUser.user_id }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'Could not open a turning point.');
+      setTurningPoint(payload.turning_point as GuidedTurningPoint);
+      showToast('A turning point has opened in this scene.', 'success');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Could not open a turning point.', 'error');
+    } finally {
+      setTurningPointLoading(false);
+    }
+  };
+
+  const chooseTurningPoint = async (choice: GuidedTurningPoint['choices'][number]) => {
+    if (!turningPoint || turningPointLoading) return;
+    setTurningPointLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('claim_my_roleplay_turning_point', { p_turning_point_id: turningPoint.id, p_choice_id: choice.id });
+      if (error) throw error;
+      const reward = data?.[0];
+      setTurningPoint(null);
+      setMessageInput(`[Turning Point — ${choice.key}]: ${choice.label}`);
+      if (reward?.memory_note) setSceneCanon((current) => [current, reward.memory_note].filter(Boolean).join('\n'));
+      window.dispatchEvent(new Event('chimera-shards-changed'));
+      showToast(`A new path has opened. +${reward?.shards_awarded ?? 10} SHARDS`, 'success');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Could not resolve this turning point.', 'error');
+    } finally {
+      setTurningPointLoading(false);
+    }
+  };
+
   // Image selection
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -583,22 +729,33 @@ export default function ConversationPage() {
 
     // Check OOC Lore Request
     const oocParsed = parseOocMessage(content);
-    if (oocParsed.isOoc && oocParsed.isCreateLoreRequest && oocParsed.loreTopic) {
-      const topic = oocParsed.loreTopic;
-      const autoEntry: LorebookEntry = {
-        id: `ooc-${Date.now()}`,
-        lorebook_id: 'default',
-        title: topic.charAt(0).toUpperCase() + topic.slice(1),
-        content: `Lore details for ${topic} established during RP: ${oocParsed.oocContent}`,
-        keywords: [topic, topic.toLowerCase()],
-        priority: 10,
-        enabled: true,
-        insertion_order: lorebookEntries.length,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      setLorebookEntries((prev) => [...prev, autoEntry]);
-      showToast(`✨ Created Lorebook entry for "${topic}"!`, 'success');
+    if (oocParsed.isOoc) {
+      // Only persist instructions that establish continuing scene canon or
+      // writing preferences. Regular OOC questions remain one-turn context.
+      const isPersistentInstruction = /\b(remember|keep|always|never|scene|setting|location|tone|style|pace|do not|don't)\b/i.test(oocParsed.oocContent);
+      if (isPersistentInstruction) {
+        const { data: currentConversation, error: contextLoadError } = await supabase
+          .from('conversations')
+          .select('memory_summary')
+          .eq('id', conversationId)
+          .single();
+
+        if (contextLoadError) throw contextLoadError;
+
+        const instruction = `• ${oocParsed.oocContent}`;
+        const existingContext = currentConversation?.memory_summary || '';
+        if (!existingContext.includes(instruction)) {
+          const { error: contextSaveError } = await supabase
+            .from('conversations')
+            .update({ memory_summary: [existingContext, instruction].filter(Boolean).join('\n') })
+            .eq('id', conversationId);
+          if (contextSaveError) throw contextSaveError;
+          showToast('Scene instruction saved for this roleplay.', 'success');
+        }
+      }
+    }
+    if (oocParsed.isOoc && oocParsed.isCreateLoreRequest) {
+      showToast('Lore stays creator-owned. Add it from a linked Lorebook so it persists for future roleplays.', 'info');
     }
 
     setMessageInput('');
@@ -638,11 +795,6 @@ export default function ConversationPage() {
         // Simulate typing status immediately for fluid UI
         setTypingUsers([otherUser.user_id]);
 
-        // Compute current triggered lore context
-        const loreRes = scanAndMatchLorebookEntries(messages, lorebookEntries, {
-          defaultScanDepth: scanDepth,
-        });
-
         // Trigger AI reply generation in the background
         const sessionRes = await supabase.auth.getSession();
         const token = sessionRes.data.session?.access_token;
@@ -656,15 +808,19 @@ export default function ConversationPage() {
           body: JSON.stringify({
             conversation_id: conversationId,
             bot_user_id: otherUser.user_id,
-            lorebook_context: loreRes.compiledPromptText,
-            memory_nexus_context: formatMemoryNexusPromptContext(memoryNexusState),
             chat_mode: chatMode,
             active_speaker_id: activeSpeakerId,
           })
         })
           .then(async (res) => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              throw new Error(data?.error || 'The character could not generate a reply.');
+            }
+            return data;
+          })
+          .then(async (data) => {
             setTypingUsers([]);
-            const data = await res.json();
             if (data?.pause_roleplay) {
               setIsRoleplayPaused(true);
             } else if (data?.reply) {
@@ -677,28 +833,10 @@ export default function ConversationPage() {
               if (updatedMsgs) setMessages(updatedMsgs);
             }
           })
-          .catch(async (err) => {
-            console.warn('API endpoint unavailable, generating AI response client-side:', err);
-            
-            // Client-side fallback AI response generator
-            const charName = otherUser.display_name;
-            const fallbackReply = `*${charName} listens intently and turns to you.* "I hear your words clearly. Let us continue our roleplay story together!"`;
-
-            const { data: aiMsg } = await supabase
-              .from('messages')
-              .insert({
-                conversation_id: conversationId,
-                sender_id: otherUser.user_id,
-                content: fallbackReply,
-                read: true
-              })
-              .select('*, profiles:sender_id(*)')
-              .single();
-
-            if (aiMsg) {
-              setMessages(prev => [...prev, aiMsg]);
-            }
+          .catch((err) => {
+            console.error('AI reply generation failed:', err);
             setTypingUsers([]);
+            showToast('Your message was saved, but the character could not reply. Please try again.', 'error');
           });
       }
     } catch (err: any) {
@@ -753,12 +891,6 @@ export default function ConversationPage() {
   const [requestingImage, setRequestingImage] = useState(false);
   const handleRequestImage = async () => {
     if (!user || requestingImage || !otherUser) return;
-
-    if (!spendShards(2, 'Character Selfie Request')) {
-      showToast('Insufficient Shards! Need 2 💎 Shards.', 'error');
-      window.dispatchEvent(new CustomEvent('open-shards-hub'));
-      return;
-    }
 
     setRequestingImage(true);
     try {
@@ -975,7 +1107,7 @@ export default function ConversationPage() {
         .delete()
         .eq('conversation_id', conversationId)
         .eq('user_id', user.id);
-      navigate('/messages');
+      navigate('/conversations');
     } catch { showToast('Failed to leave group', 'error'); }
   };
 
@@ -1050,6 +1182,75 @@ export default function ConversationPage() {
     } catch { showToast('Failed to add member', 'error'); }
   };
 
+  const openPublishSceneModal = () => {
+    const fallbackTitle = otherUser ? `${otherUser.display_name} — a CHIMERA scene` : 'A CHIMERA roleplay scene';
+    setSceneTitle((current) => current || fallbackTitle);
+    setShowPublishSceneModal(true);
+  };
+
+  const handlePublishScene = async () => {
+    if (!user || !conversation || !conversationId) return;
+    if (conversation.type !== 'dm' || conversation.created_by !== user.id) {
+      showToast('Only the person who started this private roleplay can share a scene.', 'error');
+      return;
+    }
+
+    const title = sceneTitle.trim();
+    const summary = sceneSummary.trim();
+    const activeMessages = messages.filter((message) => !message.deleted_at && message.content.trim());
+    if (!title) {
+      showToast('Give this scene a title before sharing it.', 'error');
+      return;
+    }
+    if (activeMessages.length === 0) {
+      showToast('A scene needs at least one message before it can be shared.', 'error');
+      return;
+    }
+
+    setPublishingScene(true);
+    try {
+      const { data: scene, error: sceneError } = await supabase
+        .from('roleplay_public_scenes')
+        .insert({
+          conversation_id: conversationId,
+          owner_id: user.id,
+          title,
+          summary,
+          visibility: sceneVisibility,
+          content_rating: sceneRating,
+        })
+        .select('id')
+        .single();
+      if (sceneError) throw sceneError;
+
+      const snapshots = activeMessages.map((message, position) => ({
+        scene_id: scene.id,
+        source_message_id: message.id,
+        author_label: message.sender_id === user.id
+          ? (profile?.display_name || 'You')
+          : (otherUser?.display_name || 'Character'),
+        author_kind: message.sender_id === user.id ? 'member' : 'character',
+        content: message.content.trim(),
+        position,
+      }));
+      const { error: snapshotError } = await supabase
+        .from('roleplay_public_scene_messages')
+        .insert(snapshots);
+      if (snapshotError) {
+        await supabase.from('roleplay_public_scenes').delete().eq('id', scene.id);
+        throw snapshotError;
+      }
+
+      setShowPublishSceneModal(false);
+      showToast(sceneVisibility === 'public' ? 'Scene published to CHIMERA Chats.' : 'Unlisted scene created. Only people with its link can read it.', 'success');
+    } catch (error) {
+      console.error('Failed to publish roleplay scene:', error);
+      showToast('CHIMERA could not share this scene. Your private chat remains private.', 'error');
+    } finally {
+      setPublishingScene(false);
+    }
+  };
+
   // Get typing display name
   const getTypingDisplay = () => {
     if (typingUsers.length === 0) return null;
@@ -1062,6 +1263,7 @@ export default function ConversationPage() {
   };
 
   const isGroupAdmin = conversation?.type === 'group' && conversation?.created_by === user?.id;
+  const canPublishScene = conversation?.type === 'dm' && conversation?.created_by === user?.id;
 
   if (loading) {
     return (
@@ -1114,7 +1316,7 @@ export default function ConversationPage() {
         <div className={`max-w-7xl mx-auto px-4 py-3 flex items-center justify-between ${isPhoneLayout ? 'relative justify-center' : ''}`}>
           
           <div className={`flex items-center gap-3 flex-1 min-w-0 ${isPhoneLayout ? 'absolute left-4' : ''}`}>
-            <button onClick={() => navigate('/messages')} className="p-2 -ml-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500 transition-colors">
+            <button onClick={() => navigate('/conversations')} className="p-2 -ml-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500 transition-colors">
               <ArrowLeft size={24} />
             </button>
           </div>
@@ -1188,15 +1390,15 @@ export default function ConversationPage() {
                     </span>
                   </button>
                 )}
-                {/* Memory Nexus 2D Visualizer Button */}
+                {/* Private, durable character memories */}
                 <button 
                   onClick={() => setShowMemoryVisualizer(true)}
                   className="p-2 rounded-xl hover:bg-purple-500/10 text-purple-600 dark:text-purple-400 transition-colors flex items-center gap-1"
-                  title="Open Memory Nexus 2D Graph Visualizer"
+                  title="Open what this character remembers"
                 >
                   <Brain size={20} />
                   <span className="text-[10px] font-bold uppercase tracking-wider hidden lg:inline bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20">
-                    Nexus {memoryNexusState.recall_strength}
+                    Memory {memoryCount}
                   </span>
                 </button>
 
@@ -1245,6 +1447,17 @@ export default function ConversationPage() {
                   <span className="hidden sm:inline">Novel Studio</span>
                 </button>
 
+                {canPublishScene && (
+                  <button
+                    onClick={openPublishSceneModal}
+                    className="p-2 rounded-xl text-emerald-700 transition-colors hover:bg-emerald-500/10 dark:text-emerald-300"
+                    title="Share a deliberate snapshot of this roleplay"
+                  >
+                    <Share2 size={18} />
+                    <span className="hidden xl:inline ml-1 text-[10px] font-bold uppercase tracking-wider">Share scene</span>
+                  </button>
+                )}
+
                 {/* Multilingual AI Translation Button */}
                 <button
                   onClick={() => setShowLangModal(true)}
@@ -1263,7 +1476,7 @@ export default function ConversationPage() {
                   onClick={handleRequestImage}
                   disabled={requestingImage}
                   className={`p-2 rounded-xl transition-colors flex items-center gap-1 ${requestingImage ? 'text-primary-500 animate-pulse' : 'hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500'}`}
-                  title="Request Image/Selfie (Free — Shards Economy Coming Soon)"
+                  title="Request image or selfie"
                 >
                   <Camera size={20} />
                   <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">FREE</span>
@@ -1321,8 +1534,7 @@ export default function ConversationPage() {
           </div>
 
           <div className="flex items-center gap-2 text-[11px] text-warm-500 dark:text-warm-400 font-medium">
-            <span>Recall: <strong className="text-purple-500 font-bold">{memoryNexusState.recall_strength}/16</strong></span>
-            <span>Memories: <strong className="text-purple-500 font-bold">{memoryNexusState.nodes.length}</strong></span>
+            <span>Private memories: <strong className="text-purple-500 font-bold">{memoryCount}</strong></span>
           </div>
         </div>
       </header>
@@ -1339,18 +1551,18 @@ export default function ConversationPage() {
           onSelectPersona={() => navigate('/personas')}
           onOpenMemory={() => setShowMemoryModal(true)}
           onOpenMemoryVisualizer={() => setShowMemoryVisualizer(true)}
-          recallStrength={memoryNexusState.recall_strength}
-          onChangeRecallStrength={(val) => setMemoryNexusState((prev) => ({ ...prev, recall_strength: val }))}
           aesthetics={aesthetics}
         />
       )}
 
-      {/* Memory Nexus 2D Graph Visualizer Modal */}
-      <MemoryVisualizerModal
+      {/* Durable, private player-character memory cabinet */}
+      <CharacterMemoryCabinetModal
         isOpen={showMemoryVisualizer}
         onClose={() => setShowMemoryVisualizer(false)}
-        memoryNexusState={memoryNexusState}
-        onUpdateState={setMemoryNexusState}
+        characterId={memoryCharacter?.id || null}
+        characterName={memoryCharacter?.name || otherUser?.display_name || 'this character'}
+        userId={user?.id}
+        onMemoryCountChange={setMemoryCount}
       />
 
       {/* Janitor AI Lorebook Drawer & Inspector */}
@@ -1359,48 +1571,7 @@ export default function ConversationPage() {
         onClose={() => setShowLorebookDrawer(false)}
         entries={lorebookEntries}
         matchedKeywordsMap={loreTriggerResult.matchedKeywordsMap}
-        onToggleForceActive={(entryId, forceActive) => {
-          setLorebookEntries((prev) =>
-            prev.map((e) => (e.id === entryId ? { ...e, force_active: forceActive } : e))
-          );
-        }}
-        onAddEntry={async (newEntry) => {
-          const created: LorebookEntry = {
-            id: `lb-${Date.now()}`,
-            lorebook_id: 'default',
-            title: newEntry.title,
-            content: newEntry.content,
-            keywords: newEntry.keywords,
-            priority: 10,
-            enabled: true,
-            insertion_order: lorebookEntries.length,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-          setLorebookEntries((prev) => [...prev, created]);
-          showToast(`Added Lorebook Entry: ${newEntry.title}`, 'success');
-        }}
-        onImportJson={async (jsonString) => {
-          const parsed = parseJanitorLorebookJson(jsonString);
-          const newEntries: LorebookEntry[] = parsed.entries.map((e, idx) => ({
-            id: `imported-${Date.now()}-${idx}`,
-            lorebook_id: 'imported',
-            title: e.title || `Entry ${idx + 1}`,
-            content: e.content || '',
-            keywords: e.keywords || [],
-            selective_keys: e.selective_keys || [],
-            is_constant: e.is_constant || false,
-            priority: e.priority || 10,
-            enabled: true,
-            insertion_order: lorebookEntries.length + idx,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }));
-          setLorebookEntries((prev) => [...prev, ...newEntries]);
-          showToast(`Imported Lorebook "${parsed.title}" with ${newEntries.length} entries!`, 'success');
-        }}
-        scanDepth={scanDepth}
-        onChangeScanDepth={setScanDepth}
+        onManageLorebooks={() => navigate('/lorebooks')}
       />
 
       {/* Memory Modal */}
@@ -1475,15 +1646,26 @@ export default function ConversationPage() {
 
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 space-y-6 scroll-smooth">
+            {conversation?.type === 'dm' && otherUser?.role === 'ai_character' && (
+              <section className="rounded-2xl border border-purple-500/20 bg-purple-500/5 dark:bg-purple-950/20 px-4 py-3">
+                <button onClick={() => setShowSceneCanon(v => !v)} className="w-full flex items-center justify-between gap-3 text-left">
+                  <span className="flex items-center gap-2 text-xs font-bold text-purple-700 dark:text-purple-200"><Brain size={15} /> This scene remembers</span>
+                  <span className="text-[11px] text-warm-500">{showSceneCanon ? 'Close' : 'View & edit'}</span>
+                </button>
+                {!showSceneCanon && sceneCanon && <p className="mt-2 text-xs leading-relaxed text-warm-600 dark:text-warm-300 line-clamp-2">{sceneCanon.replace(/^•\s*/gm, '• ')}</p>}
+                {showSceneCanon && (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-[11px] text-warm-500">Facts, scene rules, tone, promises, and writing preferences the character should quietly honor.</p>
+                    <textarea value={sceneCanonDraft} onChange={(e) => setSceneCanonDraft(e.target.value)} placeholder="• Paris, in the rain\n• Keep the tone slow and romantic\n• He never uses that nickname" rows={6} className="w-full rounded-xl border border-warm-200 dark:border-warm-700 bg-white/80 dark:bg-warm-950/40 p-3 text-sm text-warm-800 dark:text-warm-100 focus:outline-none focus:ring-2 focus:ring-purple-500/40" />
+                    <div className="flex justify-end gap-2"><button onClick={() => { setSceneCanonDraft(sceneCanon); setShowSceneCanon(false); }} className="text-xs font-bold text-warm-500 px-3 py-2">Cancel</button><button onClick={saveSceneCanon} className="rounded-lg bg-purple-600 px-3 py-2 text-xs font-bold text-white">Save scene</button></div>
+                  </div>
+                )}
+              </section>
+            )}
             
-            {/* RPG Game Master Overlay */}
-            {chatMode === 'game_mode' && (
-              <RpgGameOverlay
-                gameState={rpgGameState}
-                onSelectChoice={(choice) => {
-                  setMessageInput(`[Action Choice ${choice.key}]: ${choice.label}`);
-                }}
-              />
+            {/* Guided paths are optional; ordinary roleplay remains fully freeform. */}
+            {chatMode === 'game_mode' && conversation?.type === 'dm' && otherUser?.role === 'ai_character' && (
+              <GuidedTurningPointCard point={turningPoint} loading={turningPointLoading} onOpen={openTurningPoint} onChoose={chooseTurningPoint} />
             )}
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-warm-500 space-y-3">
@@ -2032,6 +2214,54 @@ export default function ConversationPage() {
           </div>
         )}
       </div>
+
+      {/* Deliberate public-scene snapshot modal. This never changes the private conversation itself. */}
+      {showPublishSceneModal && canPublishScene && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/65 p-0 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="share-scene-title">
+          <div className="w-full max-w-lg rounded-t-3xl border border-warm-200 bg-white p-6 shadow-2xl dark:border-warm-700 dark:bg-warm-900 sm:rounded-3xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-300">Private by default</p>
+                <h2 id="share-scene-title" className="mt-1 font-serif text-2xl font-bold text-warm-900 dark:text-white">Share a scene, not your live chat</h2>
+              </div>
+              <button onClick={() => setShowPublishSceneModal(false)} className="rounded-xl p-2 text-warm-500 transition hover:bg-warm-100 dark:hover:bg-warm-800" aria-label="Close share scene dialog"><X size={20} /></button>
+            </div>
+            <p className="mt-3 text-sm leading-relaxed text-warm-600 dark:text-warm-300">CHIMERA will make a separate snapshot of the messages currently in this roleplay. Future messages, edits, and private notes remain private.</p>
+
+            <div className="mt-6 space-y-4">
+              <label className="block text-sm font-bold text-warm-800 dark:text-warm-100">Scene title
+                <input value={sceneTitle} onChange={(event) => setSceneTitle(event.target.value)} maxLength={140} className="mt-2 w-full rounded-xl border border-warm-200 bg-white px-3 py-2.5 text-sm text-warm-900 outline-none transition focus:border-emerald-500 dark:border-warm-700 dark:bg-warm-800 dark:text-white" placeholder="The title readers will see" />
+              </label>
+              <label className="block text-sm font-bold text-warm-800 dark:text-warm-100">A short note <span className="font-normal text-warm-500">(optional)</span>
+                <textarea value={sceneSummary} onChange={(event) => setSceneSummary(event.target.value)} maxLength={600} rows={3} className="mt-2 w-full resize-none rounded-xl border border-warm-200 bg-white px-3 py-2.5 text-sm text-warm-900 outline-none transition focus:border-emerald-500 dark:border-warm-700 dark:bg-warm-800 dark:text-white" placeholder="Give readers a little context without revealing more than you mean to." />
+              </label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="rounded-2xl border border-warm-200 p-3 dark:border-warm-700">
+                  <span className="block text-xs font-bold uppercase tracking-wide text-warm-500">Visibility</span>
+                  <select value={sceneVisibility} onChange={(event) => setSceneVisibility(event.target.value as 'unlisted' | 'public')} className="mt-2 w-full bg-transparent text-sm font-bold text-warm-900 outline-none dark:text-white">
+                    <option value="unlisted">Unlisted — link only</option>
+                    <option value="public">Public — CHIMERA Chats</option>
+                  </select>
+                </label>
+                <label className="rounded-2xl border border-warm-200 p-3 dark:border-warm-700">
+                  <span className="block text-xs font-bold uppercase tracking-wide text-warm-500">Content rating</span>
+                  <select value={sceneRating} onChange={(event) => setSceneRating(event.target.value as 'limited' | 'mature')} className="mt-2 w-full bg-transparent text-sm font-bold text-warm-900 outline-none dark:text-white">
+                    <option value="limited">Limited</option>
+                    <option value="mature">Mature</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button onClick={() => setShowPublishSceneModal(false)} disabled={publishingScene} className="rounded-xl px-4 py-2.5 text-sm font-bold text-warm-600 transition hover:bg-warm-100 disabled:opacity-50 dark:text-warm-300 dark:hover:bg-warm-800">Keep it private</button>
+              <button onClick={handlePublishScene} disabled={publishingScene} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60">
+                {publishingScene ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />} {sceneVisibility === 'public' ? 'Publish scene' : 'Create unlisted scene'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Group Settings Modal */}
       {showGroupSettings && conversation?.type === 'group' && (

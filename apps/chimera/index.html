@@ -1,63 +1,58 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/chimera_logo.png" />
+    <link rel="apple-touch-icon" href="/chimera_logo.png" />
+    <!-- Viewport optimisé pour l'accessibilité -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CHIMERA — Create Characters. Build Worlds. Begin Stories.</title>
+    <meta name="description" content="CHIMERA is a beautiful creative studio for AI character roleplay, worldbuilding, and novel storytelling." />
+    <meta name="theme-color" content="#18181B" />
+    <link rel="canonical" href="https://chimera.it.com" />
 
-<head>
-  <meta charset="UTF-8" />
-  <link rel="icon" type="image/png" href="/chimera_logo.png" />
-  <link rel="apple-touch-icon" href="/chimera_logo.png" />
-  <!-- Viewport optimisé pour l'accessibilité -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CHIMERA — Create Characters. Build Worlds. Begin Stories.</title>
-  <meta name="description"
-    content="CHIMERA is a beautiful creative studio for AI character roleplay, worldbuilding, and novel storytelling." />
-  <meta name="theme-color" content="#18181B" />
-  <link rel="canonical" href="https://chimera.it.com" />
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://chimera.it.com" />
+    <meta property="og:title" content="CHIMERA — Where Stories Come to Life" />
+    <meta property="og:description" content="A complete creation platform for storytellers and world builders. Build characters, craft worlds, write stories — your way." />
+    <meta property="og:site_name" content="CHIMERA" />
+    <meta property="og:image" content="https://chimera.it.com/chimera_logo.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
-  <!-- Open Graph -->
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://chimera.it.com" />
-  <meta property="og:title" content="CHIMERA — Create Characters. Build Worlds. Begin Stories." />
-  <meta property="og:description"
-    content="A beautiful creative studio where people create characters, worlds, and stories that feel alive." />
-  <meta property="og:site_name" content="CHIMERA" />
-  <meta property="og:image" content="https://chimera.it.com/chimera_logo.png" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://chimera.it.com" />
+    <meta name="twitter:title" content="CHIMERA — Where Stories Come to Life" />
+    <meta name="twitter:description" content="Build characters, craft worlds, write stories — your way." />
+    <meta name="twitter:image" content="https://chimera.it.com/pwa-512x512.png" />
 
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:url" content="https://chimera.it.com" />
-  <meta name="twitter:title" content="CHIMERA — Where Stories Come to Life" />
-  <meta name="twitter:description"
-    content="A complete creation platform for storytellers and world builders. Build characters, craft worlds, write stories — your way." />
-  <meta name="twitter:image" content="https://chimera.it.com/pwa-512x512.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet" />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap"
-    rel="stylesheet" />
-
-  <!-- Google Search Engine Searchbox JSON-LD -->
-  <script type="application/ld+json">
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "WebSite",
+        "@type": "WebApplication",
         "name": "CHIMERA",
         "url": "https://chimera.it.com",
+        "description": "Creation platform for storytellers, character designers, and world builders.",
+        "applicationCategory": "EntertainmentApplication",
+        "operatingSystem": "All",
         "potentialAction": {
           "@type": "SearchAction",
-          "target": {
-            "@type": "EntryPoint",
             "urlTemplate": "https://chimera.it.com/characters?q={search_term_string}"
           },
           "query-input": "required name=search_term_string"
         }
       }
     </script>
-</head>
-
-<body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
-</body>
-
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

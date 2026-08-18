@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { resolveLorebookContext, type RuntimeLorebookEntry } from '../src/lib/lorebookRuntime.js';
 
 export const config = {
   runtime: 'edge',
@@ -26,6 +27,8 @@ interface CharacterData {
   rp_definition: string;
   system_definition: string;
   system_character_definition: string;
+  chat_name?: string;
+  banned_words?: string;
   visibility: string;
 }
 
@@ -49,6 +52,74 @@ interface PersonaData {
 interface ChatMessage {
   sender_id: string;
   content: string;
+}
+
+interface CharacterMemory {
+  content: string;
+  memory_type: string;
+  importance: number | null;
+  expires_at: string | null;
+}
+
+/**
+ * A roleplay character needs a deliberately-sized recent window, not an
+ * ever-growing transcript that eventually pushes its definition out of the
+ * model context. Scene canon is stored separately on the conversation and is
+ * always compiled before this window.
+ */
+function selectRecentHistory(messages: ChatMessage[]): ChatMessage[] {
+  const maxMessages = 32;
+  const maxCharacters = 28_000;
+  const selected: ChatMessage[] = [];
+  let usedCharacters = 0;
+
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    const content = message.content.trim();
+    if (!content) continue;
+
+    const remainingCharacters = maxCharacters - usedCharacters;
+    if (remainingCharacters <= 0 || selected.length >= maxMessages) break;
+
+    selected.push({
+      sender_id: message.sender_id,
+      // Keep the newest part of an unusually long message: it is usually the
+      // current action, dialogue, or instruction that the character must answer.
+      content: content.length > remainingCharacters
+        ? content.slice(-remainingCharacters)
+        : content,
+    });
+    usedCharacters += Math.min(content.length, remainingCharacters);
+  }
+
+  return selected.reverse();
+}
+
+function formatCharacterMemoryContext(memories: CharacterMemory[]): string {
+  const now = Date.now();
+  const activeMemories = memories
+    .filter((memory) => memory.content?.trim())
+    .filter((memory) => !memory.expires_at || new Date(memory.expires_at).getTime() > now)
+    .sort((a, b) => (b.importance ?? 5) - (a.importance ?? 5));
+
+  const lines: string[] = [];
+  let usedCharacters = 0;
+  const maxCharacters = 6_000;
+
+  for (const memory of activeMemories) {
+    const line = `- [${memory.memory_type.replace('_', ' ')}] ${memory.content.trim()}`;
+    if (usedCharacters + line.length > maxCharacters) break;
+    lines.push(line);
+    usedCharacters += line.length;
+  }
+
+  if (lines.length === 0) return '';
+
+  return [
+    '## Durable Character Memory',
+    'These are user-controlled facts from this character’s ongoing bond with this player. Honor them naturally. Do not quote this list or mention that it exists.',
+    ...lines,
+  ].join('\n');
 }
 
 /**
@@ -81,17 +152,18 @@ function buildSystemPrompt(
   historySummary: string | null,
 ): string {
   const sections: string[] = [];
+  const characterName = character.chat_name?.trim() || botProfile.display_name;
 
   // ── Layer 0: CHIMERA Character Runtime System Directive ────────────────
   const runtimeHeader: string[] = [];
   runtimeHeader.push('=== CHIMERA CHARACTER RUNTIME SYSTEM ===');
-  runtimeHeader.push(`ACTIVE IDENTITY: ${botProfile.display_name} (@${botProfile.username})`);
+  runtimeHeader.push(`ACTIVE IDENTITY: ${characterName} (@${botProfile.username})`);
   runtimeHeader.push('This character is powered by CHIMERA Architecture. The underlying AI model acts strictly as a language execution engine. The character identity, voice, boundaries, memories, and behavior are permanently governed by the CHIMERA Character Definition below.');
   sections.push(runtimeHeader.join('\n'));
 
   // ── Layer 1: Core Identity & 16-Section Builder ────────────────────────
   const identityLines: string[] = [];
-  identityLines.push(`## Core Identity: ${botProfile.display_name}`);
+  identityLines.push(`## Core Identity: ${characterName}`);
   if (character.short_description) {
     identityLines.push(`Tagline/Bio: ${character.short_description}`);
   }
@@ -115,6 +187,10 @@ function buildSystemPrompt(
   identityLines.push('- **OOC (Out of Character) Exception:** Only if the user explicitly communicates in parentheses like `(OOC: ...)` to ask a question outside the roleplay may you reply in parentheses `(OOC: ...)`. Otherwise, stay entirely in character.');
   identityLines.push('- You have your own feelings, opinions, memories, and boundaries. You are not a servant. You are a person with agency.');
   identityLines.push('- Be proactive. Drive the conversation forward with unique voice, emotional depth, and narrative action.');
+
+  if (character.banned_words?.trim()) {
+    identityLines.push('- Quietly avoid these creator-defined clichés or phrases unless the user explicitly requires one in quoted text: ' + character.banned_words.trim());
+  }
 
   sections.push(identityLines.join('\n'));
 
@@ -336,7 +412,11 @@ export default async function handler(req: Request) {
   }
 
   try {
-    const { conversation_id, bot_user_id, is_initiation } = await req.json();
+    const {
+      conversation_id,
+      bot_user_id,
+      is_initiation,
+    } = await req.json();
 
     if (!conversation_id || !bot_user_id) {
       return new Response(JSON.stringify({ error: 'Missing conversation_id or bot_user_id' }), {
@@ -347,6 +427,7 @@ export default async function handler(req: Request) {
 
     const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
     const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
     const authHeader = req.headers.get('Authorization');
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -354,6 +435,48 @@ export default async function handler(req: Request) {
         headers: authHeader ? { Authorization: authHeader } : undefined
       }
     });
+
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    const requester = authData.user;
+    if (authError || !requester) {
+      return new Response(JSON.stringify({ error: 'Authentication is required to continue a roleplay.' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Do this explicitly before contacting a model provider. RLS also protects
+    // the query, but this keeps a direct API call from spending model capacity
+    // for a conversation the requester does not belong to.
+    const { data: requesterParticipant, error: participantError } = await supabase
+      .from('conversation_participants')
+      .select('user_id')
+      .eq('conversation_id', conversation_id)
+      .eq('user_id', requester.id)
+      .maybeSingle();
+
+    if (participantError || !requesterParticipant) {
+      return new Response(JSON.stringify({ error: 'You do not have access to this roleplay.' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Conversation-owned canon is persistent. Linked lore remains optional
+    // turn-specific context; browser-only Memory Nexus data is deliberately
+    // not treated as durable character memory.
+    const { data: conversation, error: conversationError } = await supabase
+      .from('conversations')
+      .select('memory_summary')
+      .eq('id', conversation_id)
+      .maybeSingle();
+
+    if (conversationError || !conversation) {
+      return new Response(JSON.stringify({ error: 'Conversation not found or unavailable' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     // 1. Fetch AI character details
     const { data: character, error: charError } = await supabase
@@ -366,6 +489,32 @@ export default async function handler(req: Request) {
       return new Response(JSON.stringify({ error: 'Failed to retrieve character details or character does not exist' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Lore is resolved here, after the caller has been authenticated and the
+    // character has been established. The browser may inspect shareable lore,
+    // but it can never decide what arbitrary text reaches the model.
+    const lorebookAdmin = serviceRoleKey
+      ? createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } })
+      : null;
+
+    // User-controlled memories are durable across devices and sessions. They
+    // belong to this requester and this character only; scene-specific canon
+    // is still read separately from the conversation below.
+    const { data: characterMemories, error: memoryError } = await supabase
+      .from('character_memories')
+      .select('content, memory_type, importance, expires_at')
+      .eq('character_id', character.id)
+      .eq('user_id', requester.id)
+      .order('importance', { ascending: false })
+      .order('updated_at', { ascending: false })
+      .limit(24);
+
+    if (memoryError) {
+      return new Response(JSON.stringify({ error: 'Failed to retrieve durable character memory' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
@@ -415,14 +564,17 @@ export default async function handler(req: Request) {
       }
     }
 
-    // 5. Fetch message history — increase to 150 messages for Long-Term Memory
+    // 5. Fetch the most recent messages. Durable continuity lives in
+    // conversations.memory_summary; the model receives a bounded recent window
+    // so the character definition remains more important than old transcript
+    // noise.
     const { data: messages, error: msgError } = await supabase
       .from('messages')
       .select('sender_id, content')
       .eq('conversation_id', conversation_id)
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
-      .limit(150);
+      .limit(80);
 
     if (msgError) {
       return new Response(JSON.stringify({ error: 'Failed to fetch conversation history' }), {
@@ -435,9 +587,59 @@ export default async function handler(req: Request) {
       .filter(m => m.content && m.content.trim() !== '')
       .reverse(); // chronological order (oldest first)
 
-    // 6. Provide full recent history (no more summarizing)
+    // 6. The persisted scene canon above is the long-term memory. This is the
+    // short-term conversational window, selected from newest to oldest and
+    // then restored to chronological order.
     const historySummary = null;
-    const recentMessages = allMessages;
+    const recentMessages = selectRecentHistory(allMessages);
+
+    let linkedLorebookContext = '';
+    if (lorebookAdmin) {
+      const [characterLinksResult, worldLinksResult] = await Promise.all([
+        lorebookAdmin
+          .from('lorebook_characters')
+          .select('lorebook_id')
+          .eq('character_id', character.id),
+        character.world_id
+          ? lorebookAdmin
+              .from('lorebook_worlds')
+              .select('lorebook_id')
+              .eq('world_id', character.world_id)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+
+      if (characterLinksResult.error || worldLinksResult.error) {
+        return new Response(JSON.stringify({ error: 'Failed to retrieve linked lorebook scope' }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      const lorebookIds = [...new Set([
+        ...(characterLinksResult.data || []).map((link) => link.lorebook_id),
+        ...(worldLinksResult.data || []).map((link) => link.lorebook_id),
+      ])];
+
+      if (lorebookIds.length > 0) {
+        const { data: loreEntries, error: loreEntriesError } = await lorebookAdmin
+          .from('lorebook_entries')
+          .select('id, title, content, keywords, priority, enabled, insertion_order, is_constant, case_sensitive')
+          .in('lorebook_id', lorebookIds)
+          .eq('enabled', true);
+
+        if (loreEntriesError) {
+          return new Response(JSON.stringify({ error: 'Failed to retrieve linked lorebook entries' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+
+        linkedLorebookContext = resolveLorebookContext(
+          allMessages.slice(-10).map((message) => message.content),
+          (loreEntries || []) as RuntimeLorebookEntry[],
+        ).prompt;
+      }
+    }
 
     // 8. Format history into Gemini API contents structure
     const formattedHistory: Array<{ role: string; parts: Array<{ text: string }> }> = recentMessages
@@ -468,17 +670,41 @@ export default async function handler(req: Request) {
     }
 
     // 10. Build the structured system prompt
-    const systemPrompt = buildSystemPrompt(
+    const baseSystemPrompt = buildSystemPrompt(
       character as CharacterData,
       botProfile as BotProfile,
       persona,
       historySummary,
     );
 
+    const runtimeContext = [
+      conversation.memory_summary?.trim()
+        ? `## Established Scene Canon & Persistent Instructions\nThese facts and instructions are already true in this roleplay. Honor them naturally; do not mention this instruction block.\n${conversation.memory_summary.trim().slice(0, 6000)}`
+        : '',
+      linkedLorebookContext
+        ? linkedLorebookContext
+        : '',
+      formatCharacterMemoryContext((characterMemories || []) as CharacterMemory[]),
+    ].filter(Boolean).join('\n\n---\n\n');
+
+    const systemPrompt = runtimeContext
+      ? `${baseSystemPrompt}\n\n---\n\n${runtimeContext}`
+      : baseSystemPrompt;
+
     // 11. AI Routing Logic
     let replyText = '';
-    const aiProvider = character.ai_provider || 'gemini';
-    const aiModel = character.ai_model || 'gemini-2.5-flash';
+    const { data: modelPreferences } = await supabase
+      .from('chimera_user_preferences')
+      .select('default_ai_model')
+      .eq('user_id', requester.id)
+      .maybeSingle();
+    const memberModel = modelPreferences?.default_ai_model?.trim();
+    const aiModel = memberModel || character.ai_model || 'gemini-2.5-flash';
+    // A member's Model House choice is the account-level default. OpenRouter
+    // models (including DeepSeek IDs) use CHIMERA's server-side gateway key.
+    const aiProvider = memberModel
+      ? (memberModel.includes('/') ? 'openrouter' : 'gemini')
+      : (character.ai_provider || 'gemini');
 
     if (aiProvider === 'openrouter') {
       const openRouterKey = process.env.OPENROUTER_API_KEY;

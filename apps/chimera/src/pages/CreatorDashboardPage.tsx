@@ -76,35 +76,33 @@ export default function CreatorDashboardPage() {
         </p>
       </motion.div>
 
-      {/* Creator Monetization & Revenue Widget */}
+      {/* Creator rewards are deliberately shown as a future programme until the ledger and payout flow exist. */}
       <div className="mb-8 mx-4 sm:mx-0 p-6 rounded-3xl bg-gradient-to-r from-warm-900 via-warm-950 to-warm-900 text-white border border-amber-500/30 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
         
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
           <div className="space-y-1.5">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-extrabold uppercase tracking-wider">
-              <TrendingUp size={14} /> Creator Revenue Share
+              <TrendingUp size={14} /> Creator rewards — in development
             </div>
-            <h2 className="font-serif text-2xl font-bold">Monetize Your Characters &amp; Stories</h2>
+            <h2 className="font-serif text-2xl font-bold">Creator rewards will be earned for real.</h2>
             <p className="text-xs text-warm-400 max-w-xl">
-              Earn Shards when roleplayers chat with your AI characters, read your novels, or tip you directly. Convert your earned Shards to real cash payouts!
+              CHIMERA will publish the exact earning rules, eligibility, SHARDS ledger, and payout terms before creators can earn or request a payout. No example balance is being presented as yours.
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
             <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-center w-full sm:w-auto min-w-[150px]">
-              <span className="text-xs text-warm-400 font-medium block">Total Earned</span>
-              <span className="font-serif text-2xl font-bold text-amber-400">350 💎</span>
-              <span className="text-[11px] text-emerald-400 font-bold block mt-0.5">≈ $3.50 USD</span>
+              <span className="text-xs text-warm-400 font-medium block">Creator earnings</span>
+              <span className="font-serif text-2xl font-bold text-amber-400">Not live</span>
+              <span className="text-[11px] text-warm-400 font-bold block mt-0.5">No balance or payout estimate yet</span>
             </div>
 
             <button
-              onClick={() => {
-                alert('💰 Payout Request Submitted! Minimum threshold is $10.00 USD. Your payout request of $3.50 will process on the next 1st or 15th payout date.');
-              }}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-400 hover:to-red-400 text-white font-extrabold text-xs shadow-lg transition-all flex items-center justify-center gap-2"
+              onClick={() => navigate('/shards')}
+              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl border border-amber-400/40 bg-amber-500/15 hover:bg-amber-500/25 text-amber-100 font-extrabold text-xs shadow-lg transition-all flex items-center justify-center gap-2"
             >
-              <span>Request Cash Payout</span>
+              <span>See SHARDS rules</span>
               <ChevronRight size={16} />
             </button>
           </div>
