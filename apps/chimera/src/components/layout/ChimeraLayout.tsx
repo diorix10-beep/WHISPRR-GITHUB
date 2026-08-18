@@ -26,24 +26,22 @@ interface NavLinkItem {
 
 const ROLEPLAY_NAV_LINKS: NavLinkItem[] = [
   { path: '/discover', token: 'navigation.discover', icon: Compass },
-  { path: '/workspace', token: 'navigation.workspace', icon: Sparkles },
-  { path: '/stories', token: 'navigation.stories', icon: BookOpen },
+  { path: '/characters', token: 'navigation.characters', icon: Users },
   { path: '/conversations', token: 'navigation.chats', icon: MessageSquare },
-  { path: '/profile', token: 'navigation.me', icon: UserCheck },
+  { path: '/personas', token: 'navigation.personas', icon: UserCheck },
+  { path: '/characters/new', token: 'navigation.studio', icon: Sparkles },
 ];
 
 const STORYTELLING_NAV_LINKS: NavLinkItem[] = [
-  { path: '/discover', token: 'navigation.discover', icon: Compass },
   { path: '/workspace', token: 'navigation.workspace', icon: Sparkles },
   { path: '/stories', token: 'navigation.stories', icon: BookOpen },
-  { path: '/conversations', token: 'navigation.chats', icon: MessageSquare },
-  { path: '/profile', token: 'navigation.me', icon: UserCheck },
+  { path: '/worlds', token: 'navigation.worlds', icon: Globe },
 ];
 
 export function ChimeraLayout({ children }: ChimeraLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { profile, signOut, shardsBalance } = useAuth();
+  const { profile, signOut, shardsBalance, vellumBalance, chimeraPreferences, updateChimeraPreferences } = useAuth();
   const { preference, setPreference } = useTheme();
   const { t, formatNumber, locale, setLocale, supportedLocales } = useTranslation();
   
@@ -57,21 +55,40 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
     return (localStorage.getItem('chimera_creative_mode') as 'roleplay' | 'storytelling') || 'roleplay';
   });
 
+  useEffect(() => {
+    if (!chimeraPreferences) return;
+    setCreativeMode(chimeraPreferences.last_creative_mode || chimeraPreferences.default_creative_mode);
+  }, [chimeraPreferences?.last_creative_mode, chimeraPreferences?.default_creative_mode]);
+
+  // Deep links and old bookmarks must respect the member's selected creative
+  // room too. We do not delete or mutate anything from the other room; we
+  // simply return the member to the appropriate home before it is displayed.
+  useEffect(() => {
+    // Until the persisted preference has arrived, do not let a browser-local
+    // fallback redirect a storyteller away from a valid bookmarked workspace.
+    if (!chimeraPreferences) return;
+
+    const path = location.pathname;
+    const isRoleplayRoute = /^(\/discover|\/shards|\/characters|\/conversations|\/chats|\/chat|\/lorebooks|\/models|\/memory|\/voices|\/media|\/personas|\/studio|\/roleplay|\/create)/.test(path);
+    const isStorytellingRoute = /^(\/workspace|\/worlds|\/stories|\/write|\/library)/.test(path);
+
+    if (creativeMode === 'storytelling' && isRoleplayRoute) {
+      navigate('/workspace', { replace: true });
+    } else if (creativeMode === 'roleplay' && isStorytellingRoute) {
+      navigate('/discover', { replace: true });
+    }
+  }, [chimeraPreferences, creativeMode, location.pathname, navigate]);
+
   const toggleCreativeMode = (targetMode?: 'roleplay' | 'storytelling') => {
     const nextMode = targetMode || (creativeMode === 'roleplay' ? 'storytelling' : 'roleplay');
     setCreativeMode(nextMode);
     localStorage.setItem('chimera_creative_mode', nextMode);
+    updateChimeraPreferences({ last_creative_mode: nextMode }).catch(() => {
+      // Navigation remains usable if a transient network failure prevents persistence.
+    });
     
-    // Auto-redirect to appropriate home view for active mode
-    if (nextMode === 'storytelling') {
-      if (location.pathname === '/discover' || location.pathname === '/characters' || location.pathname === '/conversations') {
-        navigate('/write/desk');
-      }
-    } else {
-      if (location.pathname === '/' || location.pathname === '/write/desk' || location.pathname === '/worlds') {
-        navigate('/discover');
-      }
-    }
+    // A mode switch is a deliberate arrival, never a mixed-space view.
+    navigate(nextMode === 'storytelling' ? '/workspace' : '/discover');
   };
 
   const themeMenuRef = useRef<HTMLDivElement>(null);
@@ -135,6 +152,16 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
     setIsMenuOpen(false);
   }, [location.pathname]);
 
+  // Keep the browser tab aligned with the creative space the user is in.
+  useEffect(() => {
+    const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!favicon) return;
+
+    favicon.href = creativeMode === 'storytelling'
+      ? '/images/vellum-sigil.svg'
+      : '/chimera_logo.png';
+  }, [creativeMode]);
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
@@ -151,7 +178,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
           end={link.path === '/'}
           onClick={link.comingSoon ? (e) => e.preventDefault() : undefined}
           className={({ isActive }) =>
-            `relative px-1 xl:px-2 py-1.5 text-xs xl:text-sm font-semibold transition-all whitespace-nowrap inline-flex items-center justify-center shrink-0 w-full ${
+            `relative min-w-0 px-2 py-2 text-xs xl:text-sm font-semibold transition-all whitespace-nowrap inline-flex items-center justify-center ${
               link.comingSoon
                 ? 'text-warm-400 dark:text-warm-600 cursor-default opacity-60'
                 : isActive
@@ -188,7 +215,14 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
   );
 
   return (
-    <div className="min-h-screen bg-transparent transition-colors duration-300 flex flex-col font-sans relative">
+    <div className={`min-h-screen bg-transparent transition-colors duration-300 flex flex-col font-sans relative ${creativeMode === 'storytelling' ? 'bg-[#081426]' : ''}`}>
+      {creativeMode === 'storytelling' && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat opacity-[0.16]"
+          style={{ backgroundImage: "linear-gradient(rgba(8,20,38,0.88), rgba(8,20,38,0.94)), url('/images/storytelling-workspace-hero-v1.png')" }}
+        />
+      )}
       {/* Top Navigation Header */}
       <header className="sticky top-0 z-40 w-full bg-warm-950/70 dark:bg-warm-950/80 backdrop-blur-2xl border-b border-warm-800/60 shadow-lg transition-colors duration-300">
         <div className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
@@ -228,8 +262,8 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
           </div>
 
           {/* 2. BLOC MILIEU — Clean Fluid Primary Navigation */}
-          <div className="hidden lg:flex items-center justify-center">
-            <nav className="flex items-center gap-1 xl:gap-2 text-center whitespace-nowrap shrink-0">
+          <div className="hidden lg:flex min-w-0 flex-1 items-center justify-center px-2 xl:px-5">
+            <nav className={`grid w-full ${currentNavLinks.length === 5 ? 'max-w-[660px] grid-cols-5' : currentNavLinks.length === 4 ? 'max-w-[540px] grid-cols-4' : 'max-w-[420px] grid-cols-3'} items-center gap-1 rounded-2xl border border-warm-800/50 bg-warm-900/20 p-1 text-center`}>
               {renderNavLinks()}
             </nav>
           </div>
@@ -282,14 +316,14 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               </button>
             </div>
 
-            {/* Amethyst & Gold Parchment SHARDS Balance Chip */}
+            {/* Mode-aware creative reserve: real VELLUM in Storytelling, SHARDS in Roleplay. */}
             <button
-              onClick={() => navigate('/shards')}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-950/60 backdrop-blur-md hover:bg-purple-900/70 text-amber-200 border border-amber-500/40 hover:border-amber-400 transition-all font-bold text-xs shadow-lg hover:shadow-purple-900/30 hover:scale-105 active:scale-95 group shrink-0"
-              title={t('navigation.shards_hub')}
+              onClick={() => navigate(creativeMode === 'storytelling' ? '/workspace' : '/shards')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-md transition-all font-bold text-xs shadow-lg hover:scale-105 active:scale-95 group shrink-0 ${creativeMode === 'storytelling' ? 'bg-[#10213b]/80 hover:bg-[#173050]/90 text-[#f1d9aa] border border-[#c89d57]/50 hover:border-[#f1d9aa]' : 'bg-purple-950/60 hover:bg-purple-900/70 text-amber-200 border border-amber-500/40 hover:border-amber-400 hover:shadow-purple-900/30'}`}
+              title={creativeMode === 'storytelling' ? 'VELLUM story reserve' : t('navigation.shards_hub')}
             >
-              <img src="/images/shards_amethyst_logo.png" alt="SHARDS" className="w-4 h-4 object-contain drop-shadow-[0_0_8px_rgba(168,85,247,0.6)]" />
-              <span className="font-serif font-black text-xs text-amber-200 tracking-wide">{formatNumber(shardsBalance)} SHARDS</span>
+              <img src={creativeMode === 'storytelling' ? '/images/vellum-sigil.svg' : '/images/shards_amethyst_logo.png'} alt={creativeMode === 'storytelling' ? 'VELLUM' : 'SHARDS'} className="w-5 h-5 object-contain rounded-md" />
+              <span className="font-serif font-black text-xs tracking-wide">{creativeMode === 'storytelling' ? (vellumBalance === null ? 'VELLUM' : `${formatNumber(vellumBalance)} VELLUM`) : `${formatNumber(shardsBalance)} SHARDS`}</span>
             </button>
 
             {/* Search — icon only, no text label on smaller screens */}
@@ -303,7 +337,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
             {/* Mode-Specific Primary CTA — Identical Fixed Layout width */}
             <button
-              onClick={() => navigate(creativeMode === 'storytelling' ? '/write/desk' : '/studio')}
+              onClick={() => navigate(creativeMode === 'storytelling' ? '/stories/new' : '/characters/new')}
               className={`min-w-[125px] justify-center flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs text-white shadow-md active:scale-[0.98] transition-all shrink-0 ${
                 creativeMode === 'storytelling'
                   ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-600/30'

@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 interface SignUpFormProps {
   onSuccess?: () => void;
+  onBack?: () => void;
 }
 
 export function SignUpForm({ onSuccess }: SignUpFormProps) {

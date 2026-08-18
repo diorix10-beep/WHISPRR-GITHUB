@@ -36,8 +36,11 @@ interface AuthContextType extends AuthState {
   refreshProfile: () => Promise<void>;
   updateProfile: (updates: Partial<ChimeraProfile>) => Promise<void>;
   shardsBalance: number;
+  vellumBalance: number;
   spendShards: (amount: number, reason: string) => boolean;
   earnShards: (amount: number, reason: string) => void;
+  chimeraPreferences: any;
+  updateChimeraPreferences: (updates: any) => Promise<void>;
   adFreePassActive: boolean;
   roleplayVipActive: boolean;
   storytellingVipActive: boolean;
@@ -453,8 +456,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refreshProfile,
       updateProfile,
       shardsBalance,
+      vellumBalance: 500,
       spendShards,
       earnShards,
+      chimeraPreferences: state.profile?.preferences || { last_creative_mode: 'roleplay' },
+      updateChimeraPreferences: async (updates) => {
+        if (state.user) {
+          await updateProfile({ preferences: { ...state.profile?.preferences, ...updates } });
+        }
+      },
       adFreePassActive,
       roleplayVipActive,
       storytellingVipActive,

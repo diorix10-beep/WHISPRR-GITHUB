@@ -92,6 +92,29 @@ function PageLoader() {
   );
 }
 
+/**
+ * The root URL is an intentional arrival point, not a generic feed. It honors
+ * the creative space the member chose during CHIMERA onboarding on every
+ * device, including immediately after sign-in.
+ */
+function ChimeraHomeRedirect() {
+  const { chimeraPreferences } = useAuth();
+
+  if (!chimeraPreferences) {
+    return <Navigate to="/discover" replace />;
+  }
+
+  if (!chimeraPreferences.chimera_onboarding_complete) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  if (chimeraPreferences.creative_preference === 'both' && !chimeraPreferences.both_mode_welcome_seen) {
+    return <Navigate to="/choose-your-space" replace />;
+  }
+
+  return <Navigate to={chimeraPreferences.last_creative_mode === 'storytelling' ? '/workspace' : '/discover'} replace />;
+}
+
 function AppLoader() {
   const { profile, loading, systemSettings } = useAuth();
 
@@ -175,6 +198,7 @@ function AppLoader() {
         {/* ── Protected Platform ────────────────────────────── */}
         <Route element={<ProtectedRoute />}>
           <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/choose-your-space" element={<Navigate to="/onboarding" replace />} />
           <Route path="/legal-acceptance" element={<LegalAcceptancePage />} />
           <Route path="/moderation-notice" element={<ModerationNoticePage />} />
           <Route path="/suspended" element={<SuspendedPage />} />
@@ -183,8 +207,8 @@ function AppLoader() {
           <Route element={<ChimeraLayout />}>
 
             {/* Dashboard redirect & Discover Feed */}
-            <Route path="/dashboard" element={<Navigate to="/discover" replace />} />
-            <Route path="/" element={<DiscoverPage />} />
+            <Route path="/dashboard" element={<ChimeraHomeRedirect />} />
+            <Route path="/" element={<ChimeraHomeRedirect />} />
             <Route path="/discover" element={<DiscoverPage />} />
             <Route path="/shards" element={<ShardsPage />} />
 

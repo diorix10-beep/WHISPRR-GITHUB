@@ -451,6 +451,7 @@ export interface ChimeraProfile {
   personality_badges?: string[];
   personal_values?: string[];
   looking_for?: string[];
+  preferences?: any;
   created_at: string;
   updated_at: string;
   // CHIMERA-specific
