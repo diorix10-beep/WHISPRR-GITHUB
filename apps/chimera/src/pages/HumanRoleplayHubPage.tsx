@@ -21,7 +21,7 @@ export default function HumanRoleplayHubPage() {
   return <main className="min-h-screen bg-[#08090e] px-4 py-10 text-white sm:px-6 lg:px-8">
     <div className="mx-auto max-w-6xl">
       <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-        <div><p className="text-xs font-bold uppercase tracking-[.2em] text-[#e8c378]">Human Roleplay</p><h1 className="mt-3 font-serif text-4xl font-extrabold sm:text-5xl">Enter a shared world.</h1><p className="mt-4 max-w-2xl text-sm leading-relaxed text-[#cfc2b4]">Create a private scenario and invite real people to shape it with you. This space is separate from Lia and every AI conversation.</p></div>
+        <div><p className="text-xs font-bold uppercase tracking-[.2em] text-[#e8c378]">Human Roleplay</p><h1 className="mt-3 font-serif text-4xl font-extrabold sm:text-5xl">Enter a shared world.</h1><p className="mt-4 max-w-2xl text-sm leading-relaxed text-[#cfc2b4]">Create a private scenario and invite real people to shape it with you. This space is separate from AI Roleplay and AI characters.</p></div>
         <Link to="/human-roleplay/create" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#d9b66c] px-5 py-3 text-sm font-extrabold text-[#2a1c12]"><Plus size={17} /> Create a session</Link>
       </div>
       <section className="mt-10 rounded-3xl border border-[#c99b50]/25 bg-[#11121a]/90 p-6 sm:p-8">
