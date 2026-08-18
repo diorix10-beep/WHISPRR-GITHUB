@@ -35,8 +35,8 @@ export function GiftShardsModal({
   if (!isOpen) return null;
 
   const handleSendTip = () => {
-    if (shardsBalance === null || selectedAmount > shardsBalance) {
-      showToast(`Your SHARDS balance is still loading. Please try again in a moment.`, 'error');
+    if (selectedAmount > shardsBalance) {
+      showToast(`Insufficient SHARDS balance! You have ${shardsBalance} 💎.`, 'error');
       window.dispatchEvent(new CustomEvent('open-shards-hub'));
       return;
     }
@@ -86,7 +86,7 @@ export function GiftShardsModal({
             <span className="text-xs font-bold text-warm-300">Your SHARDS Balance</span>
             <div className="flex items-center gap-1.5 font-serif text-base font-bold text-cyan-400">
               <ShardCrystalImage size={20} showGlow={false} />
-              <span>{shardsBalance === null ? 'Loading…' : shardsBalance}</span>
+              <span>{shardsBalance}</span>
             </div>
           </div>
 

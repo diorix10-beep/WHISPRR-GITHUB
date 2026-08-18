@@ -1,323 +1,413 @@
-import { useEffect, useMemo, useState } from 'react';
-import {
-  BookHeart,
-  Brain,
-  Edit3,
-  Heart,
-  Loader2,
-  Pin,
-  Plus,
-  Save,
-  Sparkles,
-  Trash2,
-  X,
-} from 'lucide-react';
-import { supabase } from '../../lib/supabase';
-import type { CharacterMemory, MemoryType } from '../../types';
+import React, { useState } from 'react';
+import { X, Brain, Plus, Trash2, Edit3, Link2, Sparkles, Sliders, ShieldCheck } from 'lucide-react';
+import { MemoryNode, MemoryEdge, MemoryNexusState } from '../../types';
 
-interface CharacterMemoryCabinetModalProps {
+interface MemoryVisualizerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  characterId: string | null;
-  characterName: string;
-  userId: string | null | undefined;
-  onMemoryCountChange?: (count: number) => void;
+  memoryNexusState: MemoryNexusState;
+  onUpdateState: (newState: MemoryNexusState) => void;
 }
 
-const MEMORY_TYPES: Array<{ id: MemoryType; label: string; description: string }> = [
-  { id: 'long_term', label: 'Long term', description: 'Lasting facts that should travel between scenes.' },
-  { id: 'relationship', label: 'Bond', description: 'What this character understands about your relationship.' },
-  { id: 'personality', label: 'Character', description: 'How they should understand you in this roleplay.' },
-  { id: 'lore', label: 'Lore', description: 'Established private world details for this bond.' },
-  { id: 'short_term', label: 'For now', description: 'A detail that can be changed or removed later.' },
-];
+const CATEGORY_COLORS: Record<MemoryNode['category'], { bg: string; border: string; text: string; glow: string }> = {
+  event: { bg: 'bg-purple-500/20', border: 'border-purple-500', text: 'text-purple-300', glow: 'rgba(168, 85, 247, 0.4)' },
+  fact: { bg: 'bg-blue-500/20', border: 'border-blue-500', text: 'text-blue-300', glow: 'rgba(59, 130, 246, 0.4)' },
+  relationship: { bg: 'bg-emerald-500/20', border: 'border-emerald-500', text: 'text-emerald-300', glow: 'rgba(16, 185, 129, 0.4)' },
+  secret: { bg: 'bg-rose-500/20', border: 'border-rose-500', text: 'text-rose-300', glow: 'rgba(244, 63, 94, 0.4)' },
+  preference: { bg: 'bg-amber-500/20', border: 'border-amber-500', text: 'text-amber-300', glow: 'rgba(245, 158, 11, 0.4)' },
+};
 
-const emptyDraft = (memoryType: MemoryType = 'long_term') => ({
-  content: '',
-  memory_type: memoryType,
-  importance: 6,
-});
-
-/**
- * A private, durable memory editor for one player-character bond.
- * Every operation is performed under Supabase's user-owned RLS policies.
- */
-export function CharacterMemoryCabinetModal({
+export const MemoryVisualizerModal: React.FC<MemoryVisualizerModalProps> = ({
   isOpen,
   onClose,
-  characterId,
-  characterName,
-  userId,
-  onMemoryCountChange,
-}: CharacterMemoryCabinetModalProps) {
-  const [memories, setMemories] = useState<CharacterMemory[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [activeType, setActiveType] = useState<MemoryType | 'all'>('all');
-  const [editingMemory, setEditingMemory] = useState<CharacterMemory | null>(null);
-  const [draft, setDraft] = useState(emptyDraft());
-  const [saving, setSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  memoryNexusState,
+  onUpdateState,
+}) => {
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [editingNode, setEditingNode] = useState<MemoryNode | null>(null);
+  const [isAddingNew, setIsAddingNew] = useState(false);
 
-  const loadMemories = async () => {
-    if (!characterId || !userId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const { data, error: queryError } = await supabase
-        .from('character_memories')
-        .select('*')
-        .eq('character_id', characterId)
-        .eq('user_id', userId)
-        .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
-        .order('importance', { ascending: false })
-        .order('updated_at', { ascending: false });
-
-      if (queryError) throw queryError;
-      const nextMemories = (data || []) as CharacterMemory[];
-      setMemories(nextMemories);
-      onMemoryCountChange?.(nextMemories.length);
-    } catch (loadError) {
-      console.error('Could not load character memories:', loadError);
-      setError(loadError instanceof Error ? loadError.message : 'CHIMERA could not open this memory cabinet.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isOpen) void loadMemories();
-  }, [isOpen, characterId, userId]);
-
-  const visibleMemories = useMemo(
-    () => activeType === 'all' ? memories : memories.filter((memory) => memory.memory_type === activeType),
-    [activeType, memories],
-  );
-
-  const beginCreate = (type: MemoryType = activeType === 'all' ? 'long_term' : activeType) => {
-    setEditingMemory(null);
-    setDraft(emptyDraft(type));
-  };
-
-  const beginEdit = (memory: CharacterMemory) => {
-    setEditingMemory(memory);
-    setDraft({
-      content: memory.content,
-      memory_type: memory.memory_type,
-      importance: memory.importance,
-    });
-  };
-
-  const saveMemory = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!characterId || !userId || !draft.content.trim()) return;
-
-    setSaving(true);
-    setError(null);
-    try {
-      if (editingMemory) {
-        const { error: updateError } = await supabase
-          .from('character_memories')
-          .update({
-            content: draft.content.trim(),
-            memory_type: draft.memory_type,
-            importance: draft.importance,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', editingMemory.id);
-        if (updateError) throw updateError;
-      } else {
-        const { error: insertError } = await supabase
-          .from('character_memories')
-          .insert({
-            character_id: characterId,
-            user_id: userId,
-            content: draft.content.trim(),
-            memory_type: draft.memory_type,
-            importance: draft.importance,
-          });
-        if (insertError) throw insertError;
-      }
-
-      setEditingMemory(null);
-      setDraft(emptyDraft(activeType === 'all' ? 'long_term' : activeType));
-      await loadMemories();
-    } catch (saveError) {
-      console.error('Could not save character memory:', saveError);
-      setError(saveError instanceof Error ? saveError.message : 'CHIMERA could not save this memory. Your text is still here.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const togglePinned = async (memory: CharacterMemory) => {
-    setError(null);
-    const nextImportance = memory.importance >= 10 ? 6 : 10;
-    try {
-      const { error: updateError } = await supabase
-        .from('character_memories')
-        .update({ importance: nextImportance, updated_at: new Date().toISOString() })
-        .eq('id', memory.id);
-      if (updateError) throw updateError;
-      await loadMemories();
-    } catch (pinError) {
-      console.error('Could not update memory priority:', pinError);
-      setError(pinError instanceof Error ? pinError.message : 'CHIMERA could not update this memory priority.');
-    }
-  };
-
-  const deleteMemory = async (memory: CharacterMemory) => {
-    const confirmed = window.confirm(`Forget this memory for ${characterName}? This cannot be undone.`);
-    if (!confirmed) return;
-
-    setDeletingId(memory.id);
-    setError(null);
-    try {
-      const { error: deleteError } = await supabase
-        .from('character_memories')
-        .delete()
-        .eq('id', memory.id);
-      if (deleteError) throw deleteError;
-      if (editingMemory?.id === memory.id) {
-        setEditingMemory(null);
-        setDraft(emptyDraft(activeType === 'all' ? 'long_term' : activeType));
-      }
-      await loadMemories();
-    } catch (deleteError) {
-      console.error('Could not delete character memory:', deleteError);
-      setError(deleteError instanceof Error ? deleteError.message : 'CHIMERA could not forget this memory.');
-    } finally {
-      setDeletingId(null);
-    }
-  };
+  // New Node Form State
+  const [newTopic, setNewTopic] = useState('');
+  const [newFact, setNewFact] = useState('');
+  const [newCategory, setNewCategory] = useState<MemoryNode['category']>('fact');
+  const [newWeight, setNewWeight] = useState(8);
 
   if (!isOpen) return null;
 
-  const noCharacterAvailable = !characterId || !userId;
+  const selectedNode = memoryNexusState.nodes.find((n) => n.id === selectedNodeId);
+
+  // Calculate 2D position for each node in a circular/radial layout for clean visual presentation
+  const getNodePosition = (index: number, total: number) => {
+    if (total === 1) return { x: 300, y: 200 };
+    const radius = Math.min(180, 70 + total * 10);
+    const angle = (index / total) * 2 * Math.PI - Math.PI / 2;
+    return {
+      x: 300 + radius * Math.cos(angle),
+      y: 200 + radius * Math.sin(angle),
+    };
+  };
+
+  const handleCreateNode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTopic.trim() || !newFact.trim()) return;
+
+    const newNode: MemoryNode = {
+      id: `mem-${Date.now()}`,
+      conversation_id: 'current',
+      topic: newTopic.trim(),
+      fact: newFact.trim(),
+      category: newCategory,
+      recall_weight: newWeight,
+      created_at: new Date().toISOString(),
+    };
+
+    // Automatically create a link to selected node if any
+    const newEdges = [...memoryNexusState.edges];
+    if (selectedNodeId) {
+      newEdges.push({
+        id: `edge-${Date.now()}`,
+        source_id: selectedNodeId,
+        target_id: newNode.id,
+        label: 'Connected',
+        strength: 3,
+      });
+    }
+
+    onUpdateState({
+      ...memoryNexusState,
+      nodes: [...memoryNexusState.nodes, newNode],
+      edges: newEdges,
+    });
+
+    setNewTopic('');
+    setNewFact('');
+    setIsAddingNew(false);
+    setSelectedNodeId(newNode.id);
+  };
+
+  const handleDeleteNode = (id: string) => {
+    onUpdateState({
+      ...memoryNexusState,
+      nodes: memoryNexusState.nodes.filter((n) => n.id !== id),
+      edges: memoryNexusState.edges.filter((e) => e.source_id !== id && e.target_id !== id),
+    });
+    if (selectedNodeId === id) setSelectedNodeId(null);
+    if (editingNode?.id === id) setEditingNode(null);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingNode) return;
+    onUpdateState({
+      ...memoryNexusState,
+      nodes: memoryNexusState.nodes.map((n) => (n.id === editingNode.id ? editingNode : n)),
+    });
+    setEditingNode(null);
+  };
 
   return (
-    <div className="fixed inset-0 z-[70] bg-black/75 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in duration-200">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="character-memory-cabinet-title"
-        className="w-full max-w-5xl max-h-[92vh] sm:max-h-[86vh] overflow-hidden rounded-t-[2rem] sm:rounded-[2rem] border border-amber-300/20 bg-[#171313] text-white shadow-2xl flex flex-col"
-      >
-        <header className="shrink-0 border-b border-amber-100/10 bg-gradient-to-r from-[#241b24] via-[#1b1717] to-[#171313] px-5 py-4 sm:px-7 sm:py-5 flex items-start justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="shrink-0 rounded-2xl border border-amber-300/30 bg-amber-400/10 p-2.5 text-amber-200">
-              <BookHeart size={21} />
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+      <div className="bg-warm-900 border border-warm-800 rounded-3xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden shadow-2xl relative text-white">
+        
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-warm-800 flex items-center justify-between bg-warm-950/60">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/30">
+              <Brain size={22} />
             </div>
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-[0.22em] text-amber-200/70">Private character bond</p>
-              <h2 id="character-memory-cabinet-title" className="truncate font-serif text-xl sm:text-2xl text-amber-50">
-                What {characterName || 'this character'} remembers
+            <div>
+              <h2 className="text-lg font-serif font-bold text-white flex items-center gap-2">
+                <span>Memory Visualizer Graph</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  Neural Web
+                </span>
               </h2>
-              <p className="mt-1 max-w-2xl text-xs leading-relaxed text-stone-400">
-                These are private to you and this character. CHIMERA prioritizes them in future replies; scene-specific canon stays in the chat itself.
+              <p className="text-xs text-warm-400">
+                Inspect every active memory node and visualize neural relationships in real-time.
               </p>
             </div>
           </div>
-          <button onClick={onClose} aria-label="Close character memories" className="shrink-0 rounded-xl p-2 text-stone-400 transition-colors hover:bg-white/10 hover:text-white">
-            <X size={21} />
-          </button>
-        </header>
 
-        {noCharacterAvailable ? (
-          <div className="flex min-h-72 flex-col items-center justify-center gap-3 px-6 text-center">
-            <Brain size={34} className="text-amber-200/50" />
-            <h3 className="font-serif text-xl text-amber-50">This scene has no character memory yet</h3>
-            <p className="max-w-md text-sm leading-relaxed text-stone-400">Open a one-to-one AI character roleplay first. Then their private memory cabinet will be available here.</p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsAddingNew(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shadow-sm"
+            >
+              <Plus size={14} />
+              <span>Add Memory Node</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl text-warm-400 hover:text-white hover:bg-warm-800 transition-colors"
+            >
+              <X size={20} />
+            </button>
           </div>
-        ) : (
-          <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
-              <section className="min-w-0">
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex flex-wrap gap-2" aria-label="Filter memories by type">
-                    <button onClick={() => setActiveType('all')} className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${activeType === 'all' ? 'bg-amber-300 text-[#24150b]' : 'border border-white/10 bg-white/[0.03] text-stone-300 hover:bg-white/[0.08]'}`}>All ({memories.length})</button>
-                    {MEMORY_TYPES.map((type) => (
-                      <button key={type.id} onClick={() => setActiveType(type.id)} className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${activeType === type.id ? 'bg-amber-300 text-[#24150b]' : 'border border-white/10 bg-white/[0.03] text-stone-300 hover:bg-white/[0.08]'}`}>{type.label}</button>
-                    ))}
-                  </div>
-                  <button onClick={() => beginCreate()} className="inline-flex items-center gap-1.5 rounded-xl bg-amber-300 px-3.5 py-2 text-xs font-bold text-[#24150b] shadow-[0_0_18px_rgba(251,191,36,0.16)] transition hover:bg-amber-200">
-                    <Plus size={15} /> Remember something
+        </div>
+
+        {/* Main Body (Graph + Inspector Side Panel) */}
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+          
+          {/* 2D Interactive SVG Graph Canvas */}
+          <div className="flex-1 relative bg-warm-950/80 overflow-hidden flex items-center justify-center p-4">
+            {memoryNexusState.nodes.length === 0 ? (
+              <div className="text-center p-8 max-w-sm space-y-3">
+                <Brain size={48} className="mx-auto text-purple-400/40 animate-pulse" />
+                <h4 className="font-serif font-bold text-lg text-white">No Memory Nodes Generated Yet</h4>
+                <p className="text-xs text-warm-400">
+                  Neural Memory Web automatically extracts memories every 10 messages as you chat, or you can add custom nodes manually.
+                </p>
+                <button
+                  onClick={() => setIsAddingNew(true)}
+                  className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all inline-flex items-center gap-1.5"
+                >
+                  <Plus size={14} />
+                  <span>Create First Memory</span>
+                </button>
+              </div>
+            ) : (
+              <svg className="w-full h-full min-h-[350px]" viewBox="0 0 600 400">
+                {/* Render Edges (Connecting Lines) */}
+                {memoryNexusState.edges.map((edge) => {
+                  const sourceIdx = memoryNexusState.nodes.findIndex((n) => n.id === edge.source_id);
+                  const targetIdx = memoryNexusState.nodes.findIndex((n) => n.id === edge.target_id);
+                  if (sourceIdx === -1 || targetIdx === -1) return null;
+
+                  const sPos = getNodePosition(sourceIdx, memoryNexusState.nodes.length);
+                  const tPos = getNodePosition(targetIdx, memoryNexusState.nodes.length);
+
+                  return (
+                    <g key={edge.id}>
+                      <line
+                        x1={sPos.x}
+                        y1={sPos.y}
+                        x2={tPos.x}
+                        y2={tPos.y}
+                        stroke="rgba(168, 85, 247, 0.3)"
+                        strokeWidth={edge.strength}
+                        strokeDasharray="4 2"
+                      />
+                    </g>
+                  );
+                })}
+
+                {/* Render Nodes */}
+                {memoryNexusState.nodes.map((node, index) => {
+                  const pos = getNodePosition(index, memoryNexusState.nodes.length);
+                  const isSelected = node.id === selectedNodeId;
+                  const colorConfig = CATEGORY_COLORS[node.category] || CATEGORY_COLORS.fact;
+
+                  return (
+                    <g
+                      key={node.id}
+                      onClick={() => setSelectedNodeId(node.id)}
+                      className="cursor-pointer transition-transform duration-200 hover:scale-110"
+                    >
+                      {/* Glow effect */}
+                      <circle
+                        cx={pos.x}
+                        cy={pos.y}
+                        r={isSelected ? 26 : 20}
+                        fill={colorConfig.glow}
+                        className="animate-pulse"
+                      />
+                      {/* Inner Circle */}
+                      <circle
+                        cx={pos.x}
+                        cy={pos.y}
+                        r={isSelected ? 18 : 14}
+                        fill="#181615"
+                        stroke={isSelected ? '#c084fc' : colorConfig.glow}
+                        strokeWidth={isSelected ? 3 : 2}
+                      />
+                      {/* Category icon indicator */}
+                      <text
+                        x={pos.x}
+                        y={pos.y + 4}
+                        textAnchor="middle"
+                        fill="#ffffff"
+                        fontSize={isSelected ? '12' : '10'}
+                        fontWeight="bold"
+                      >
+                        {node.category[0].toUpperCase()}
+                      </text>
+                      {/* Node Topic Label */}
+                      <text
+                        x={pos.x}
+                        y={pos.y + 32}
+                        textAnchor="middle"
+                        fill="#d4d4d8"
+                        fontSize="10"
+                        fontWeight="500"
+                        className="pointer-events-none drop-shadow"
+                      >
+                        {node.topic.length > 18 ? node.topic.substring(0, 16) + '...' : node.topic}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            )}
+
+            {/* Category Legend Bar */}
+            <div className="absolute bottom-4 left-4 flex flex-wrap gap-2 bg-warm-900/90 backdrop-blur-md px-3 py-2 rounded-2xl border border-warm-800 text-[10px]">
+              {Object.entries(CATEGORY_COLORS).map(([cat, colors]) => (
+                <div key={cat} className="flex items-center gap-1.5">
+                  <span className={`w-2.5 h-2.5 rounded-full border ${colors.border} ${colors.bg}`} />
+                  <span className="capitalize text-warm-300">{cat}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Node Inspector Side Panel */}
+          <div className="w-full md:w-80 bg-warm-900/95 border-t md:border-t-0 md:border-l border-warm-800 p-5 flex flex-col justify-between space-y-4 overflow-y-auto">
+            {isAddingNew ? (
+              <form onSubmit={handleCreateNode} className="space-y-4">
+                <h3 className="font-serif font-bold text-base text-white flex items-center gap-2">
+                  <Plus size={16} className="text-purple-400" />
+                  <span>Create Custom Memory</span>
+                </h3>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-warm-300">Topic / Key</label>
+                  <input
+                    type="text"
+                    value={newTopic}
+                    onChange={(e) => setNewTopic(e.target.value)}
+                    placeholder="e.g. Secret Artifact"
+                    className="w-full px-3 py-2 bg-warm-950 border border-warm-800 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-warm-300">Memory Fact</label>
+                  <textarea
+                    value={newFact}
+                    onChange={(e) => setNewFact(e.target.value)}
+                    rows={3}
+                    placeholder="Detail the memory or event facts..."
+                    className="w-full px-3 py-2 bg-warm-950 border border-warm-800 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500 resize-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-warm-300">Category</label>
+                  <select
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value as any)}
+                    className="w-full px-3 py-2 bg-warm-950 border border-warm-800 rounded-xl text-xs text-white focus:outline-none"
+                  >
+                    <option value="fact">Fact</option>
+                    <option value="event">Event</option>
+                    <option value="relationship">Relationship</option>
+                    <option value="secret">Secret</option>
+                    <option value="preference">Preference</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-warm-300 flex justify-between">
+                    <span>Recall Weight</span>
+                    <span className="text-purple-400 font-bold">{newWeight}/10</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    value={newWeight}
+                    onChange={(e) => setNewWeight(Number(e.target.value))}
+                    className="w-full accent-purple-500"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingNew(false)}
+                    className="flex-1 py-2 bg-warm-800 hover:bg-warm-700 text-warm-300 text-xs font-bold rounded-xl"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl shadow-sm"
+                  >
+                    Save Node
+                  </button>
+                </div>
+              </form>
+            ) : selectedNode ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-warm-800 pb-3">
+                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${CATEGORY_COLORS[selectedNode.category].bg} ${CATEGORY_COLORS[selectedNode.category].border} ${CATEGORY_COLORS[selectedNode.category].text}`}>
+                    {selectedNode.category}
+                  </span>
+                  <button
+                    onClick={() => handleDeleteNode(selectedNode.id)}
+                    className="p-1.5 text-rose-400 hover:bg-rose-500/20 rounded-lg transition-colors"
+                    title="Delete Memory Node"
+                  >
+                    <Trash2 size={16} />
                   </button>
                 </div>
 
-                {error && (
-                  <div role="alert" className="mb-4 flex items-start justify-between gap-3 rounded-2xl border border-rose-400/25 bg-rose-500/10 p-3 text-xs leading-relaxed text-rose-100">
-                    <span>{error}</span>
-                    <button onClick={() => void loadMemories()} className="shrink-0 font-bold underline underline-offset-2">Try again</button>
-                  </div>
-                )}
-
-                {loading ? (
-                  <div className="flex min-h-60 items-center justify-center text-sm text-stone-400"><Loader2 className="mr-2 animate-spin" size={18} /> Opening their memory cabinet…</div>
-                ) : visibleMemories.length === 0 ? (
-                  <div className="rounded-[1.5rem] border border-dashed border-amber-200/20 bg-[radial-gradient(circle_at_top,rgba(129,92,133,.16),transparent_55%)] px-6 py-12 text-center">
-                    <Sparkles className="mx-auto mb-3 text-amber-200/60" size={30} />
-                    <h3 className="font-serif text-xl text-amber-50">Nothing is written here yet</h3>
-                    <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-stone-400">Add a meaningful fact, boundary, relationship truth, or piece of lore that this character should carry between conversations.</p>
-                    <button onClick={() => beginCreate()} className="mt-5 inline-flex items-center gap-1.5 rounded-xl border border-amber-300/35 px-4 py-2 text-xs font-bold text-amber-100 transition hover:bg-amber-300/10"><Plus size={14} /> Write the first memory</button>
+                {editingNode?.id === selectedNode.id ? (
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={editingNode.topic}
+                      onChange={(e) => setEditingNode({ ...editingNode, topic: e.target.value })}
+                      className="w-full px-3 py-1.5 bg-warm-950 border border-warm-800 rounded-xl text-xs text-white"
+                    />
+                    <textarea
+                      value={editingNode.fact}
+                      onChange={(e) => setEditingNode({ ...editingNode, fact: e.target.value })}
+                      rows={4}
+                      className="w-full px-3 py-2 bg-warm-950 border border-warm-800 rounded-xl text-xs text-white resize-none"
+                    />
+                    <button
+                      onClick={handleSaveEdit}
+                      className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl"
+                    >
+                      Save Changes
+                    </button>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {visibleMemories.map((memory) => {
-                      const type = MEMORY_TYPES.find((item) => item.id === memory.memory_type);
-                      const isPinned = memory.importance >= 10;
-                      return (
-                        <article key={memory.id} className={`rounded-2xl border p-4 transition-colors ${isPinned ? 'border-amber-300/35 bg-amber-300/[0.06]' : 'border-white/10 bg-white/[0.025] hover:border-amber-100/20'}`}>
-                          <div className="flex gap-3">
-                            <div className={`mt-0.5 shrink-0 rounded-xl p-2 ${isPinned ? 'bg-amber-300/15 text-amber-200' : 'bg-violet-400/10 text-violet-200'}`}>{isPinned ? <Pin size={15} /> : <Brain size={15} />}</div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className="rounded-full border border-white/10 bg-black/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-stone-300">{type?.label || memory.memory_type}</span>
-                                {isPinned && <span className="rounded-full border border-amber-300/25 bg-amber-300/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-200">Held close</span>}
-                                <span className="text-[10px] text-stone-500">Importance {memory.importance}/10</span>
-                              </div>
-                              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-stone-100">{memory.content}</p>
-                              <p className="mt-3 text-[10px] text-stone-500">Last shaped {new Date(memory.updated_at).toLocaleDateString()}</p>
-                            </div>
-                            <div className="flex shrink-0 flex-col gap-1">
-                              <button onClick={() => void togglePinned(memory)} title={isPinned ? 'Remove held-close priority' : 'Hold close for priority recall'} className={`rounded-lg p-2 transition ${isPinned ? 'text-amber-200 hover:bg-amber-300/10' : 'text-stone-500 hover:bg-white/10 hover:text-stone-200'}`}><Pin size={15} /></button>
-                              <button onClick={() => beginEdit(memory)} title="Edit memory" className="rounded-lg p-2 text-stone-500 transition hover:bg-white/10 hover:text-stone-200"><Edit3 size={15} /></button>
-                              <button disabled={deletingId === memory.id} onClick={() => void deleteMemory(memory)} title="Forget memory" className="rounded-lg p-2 text-stone-500 transition hover:bg-rose-500/10 hover:text-rose-200 disabled:opacity-50">{deletingId === memory.id ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}</button>
-                            </div>
-                          </div>
-                        </article>
-                      );
-                    })}
+                    <h3 className="font-serif font-bold text-lg text-white">{selectedNode.topic}</h3>
+                    <p className="text-xs text-warm-300 leading-relaxed bg-warm-950 p-3 rounded-2xl border border-warm-850">
+                      "{selectedNode.fact}"
+                    </p>
+
+                    <div className="pt-2 flex items-center justify-between text-xs text-warm-400">
+                      <span>Recall Weight:</span>
+                      <span className="font-bold text-purple-300">{selectedNode.recall_weight} / 10</span>
+                    </div>
+
+                    <button
+                      onClick={() => setEditingNode(selectedNode)}
+                      className="w-full py-2 bg-warm-800 hover:bg-warm-700 text-warm-200 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5"
+                    >
+                      <Edit3 size={14} />
+                      <span>Edit Memory</span>
+                    </button>
                   </div>
                 )}
-              </section>
-
-              <aside className="rounded-[1.5rem] border border-amber-100/15 bg-[#20191b] p-4 sm:p-5 lg:sticky lg:top-0 lg:self-start">
-                <div className="mb-4 flex items-center gap-2 text-amber-100"><Heart size={16} className="text-rose-300" /><h3 className="font-serif text-lg">{editingMemory ? 'Shape this memory' : 'Add to their memory'}</h3></div>
-                <form onSubmit={saveMemory} className="space-y-4">
-                  <label className="block text-xs font-semibold text-stone-300">What should {characterName || 'they'} remember?
-                    <textarea autoFocus value={draft.content} onChange={(event) => setDraft((current) => ({ ...current, content: event.target.value }))} rows={6} maxLength={1000} placeholder="A clear, lasting truth in your own words…" className="mt-2 w-full resize-y rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-sm leading-relaxed text-white outline-none placeholder:text-stone-600 focus:border-amber-300/45" />
-                    <span className="mt-1 block text-right text-[10px] font-normal text-stone-500">{draft.content.length}/1000</span>
-                  </label>
-                  <label className="block text-xs font-semibold text-stone-300">Kind of memory
-                    <select value={draft.memory_type} onChange={(event) => setDraft((current) => ({ ...current, memory_type: event.target.value as MemoryType }))} className="mt-2 w-full rounded-xl border border-white/10 bg-[#171313] px-3 py-2.5 text-sm text-white outline-none focus:border-amber-300/45">
-                      {MEMORY_TYPES.map((type) => <option key={type.id} value={type.id}>{type.label} — {type.description}</option>)}
-                    </select>
-                  </label>
-                  <label className="block text-xs font-semibold text-stone-300">How central is it? <span className="float-right text-amber-200">{draft.importance}/10</span>
-                    <input type="range" min="1" max="10" value={draft.importance} onChange={(event) => setDraft((current) => ({ ...current, importance: Number(event.target.value) }))} className="mt-3 w-full accent-amber-300" />
-                    <span className="mt-1 block font-normal text-stone-500">10 is held close and prioritized. You can always revise or forget it.</span>
-                  </label>
-                  <div className="flex gap-2 pt-1">
-                    {editingMemory && <button type="button" onClick={() => { setEditingMemory(null); setDraft(emptyDraft(activeType === 'all' ? 'long_term' : activeType)); }} className="rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-stone-300 transition hover:bg-white/10">Cancel</button>}
-                    <button disabled={saving || !draft.content.trim()} type="submit" className="flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl bg-amber-300 px-3 py-2 text-xs font-bold text-[#24150b] transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50">{saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}{editingMemory ? 'Save memory' : 'Remember this'}</button>
-                  </div>
-                </form>
-              </aside>
-            </div>
+              </div>
+            ) : (
+              <div className="text-center p-6 space-y-2 my-auto">
+                <Sparkles size={32} className="mx-auto text-warm-600" />
+                <h4 className="font-bold text-sm text-warm-300">Select a Node</h4>
+                <p className="text-xs text-warm-500">
+                  Click any glowing memory node on the graph to inspect, edit, or manage its facts.
+                </p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
+
       </div>
     </div>
   );
-}
+};

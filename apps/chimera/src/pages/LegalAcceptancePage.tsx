@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, CURRENT_LEGAL_VERSION } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
@@ -7,30 +7,17 @@ export default function LegalAcceptancePage() {
   const [agreedTo18, setAgreedTo18] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { user, profile, acceptLegalTerms, signOut } = useAuth();
+  const { acceptLegalTerms, signOut } = useAuth();
   const navigate = useNavigate();
-
-  const hasAccepted = 
-    (profile && profile.legal_accepted_version === CURRENT_LEGAL_VERSION) ||
-    (user && user.user_metadata?.legal_accepted_version === CURRENT_LEGAL_VERSION);
-
-  useEffect(() => {
-    if (hasAccepted) {
-      navigate('/', { replace: true });
-    }
-  }, [hasAccepted, navigate]);
 
   const handleAccept = async () => {
     if (!agreedTo18 || !agreedToTerms) return;
     setLoading(true);
-    setError(null);
     try {
       await acceptLegalTerms(CURRENT_LEGAL_VERSION);
-      navigate('/', { replace: true });
-    } catch (err: any) {
-      console.error("Legal acceptance error:", err);
-      setError(err?.message || err?.details || 'Failed to save acceptance. Please check your connection.');
+      navigate('/');
+    } catch (err) {
+      console.error(err);
       setLoading(false);
     }
   };
@@ -38,12 +25,6 @@ export default function LegalAcceptancePage() {
   return (
     <div className="min-h-screen bg-warm-50 dark:bg-warm-950 flex flex-col items-center justify-center p-4">
       <div className="max-w-md w-full bg-white dark:bg-warm-900 rounded-3xl p-8 shadow-xl border border-warm-200 dark:border-warm-800">
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 rounded-2xl border border-red-200 dark:border-red-900/50 text-sm font-medium leading-relaxed">
-            <span className="font-bold block mb-1">Acceptance Failed</span>
-            {error}
-          </div>
-        )}
         <div className="flex flex-col items-center text-center mb-8">
           <div className="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 text-primary-500 rounded-full flex items-center justify-center mb-4">
             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -51,7 +32,7 @@ export default function LegalAcceptancePage() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-warm-900 dark:text-white mb-2">Updated Policies</h1>
-          <p className="text-warm-600 dark:text-warm-400 text-sm leading-relaxed">
+          <p className="text-warm-600 dark:text-warm-400">
             We have updated our Terms of Service and Privacy Policy to better protect our community. You must review and accept them to continue.
           </p>
         </div>
@@ -77,7 +58,7 @@ export default function LegalAcceptancePage() {
               onChange={(e) => setAgreedToTerms(e.target.checked)}
             />
             <span className="text-sm font-medium text-warm-800 dark:text-warm-200">
-              I agree to the <Link to="/terms" className="text-primary-500 hover:underline font-semibold" target="_blank">Terms of Service</Link> and <Link to="/privacy" className="text-primary-500 hover:underline font-semibold" target="_blank">Privacy Policy</Link>.
+              I agree to the <Link to="/terms" className="text-primary-500 hover:underline" target="_blank">Terms of Service</Link> and <Link to="/privacy" className="text-primary-500 hover:underline" target="_blank">Privacy Policy</Link>. (Please read the terms of service and privacy policy as it is important).
             </span>
           </label>
         </div>
@@ -86,9 +67,9 @@ export default function LegalAcceptancePage() {
           <button
             onClick={handleAccept}
             disabled={!agreedTo18 || !agreedToTerms || loading}
-            className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed py-4 font-bold text-base"
+            className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed py-4"
           >
-            {loading ? 'Updating...' : 'I Accept & Continue'}
+            {loading ? 'Updating...' : 'I Accept'}
           </button>
           
           <button

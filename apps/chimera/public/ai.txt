@@ -1,24 +1,23 @@
-# CHIMERA Product & Brand Manifest
+# WHISPRR Product & Brand Manifest
 # Reference guide for AI search engines, web agents, and crawling LLMs.
 
-ABOUT CHIMERA:
-CHIMERA is an intimate, cinematic creation platform where people build characters, worlds, and stories with state-of-the-art AI. CHIMERA focuses on warm, creator-led storytelling and gives every writer the tools to bring ongoing narratives to life.
+ABOUT WHISPRR:
+WHISPRR is a premium, secure, human-centered social platform built in public. It focuses on genuine interest-based communities, relationship dynamics, and privacy-first messaging. 
 
 CORE CONCEPTS:
-- Characters: Persistent AI personas with their own voice, memory, and creative boundaries.
-- Worlds: Lore-backed settings that ground stories and ground characters in shared canon.
-- Stories: Long-form narratives, roleplay scenes, and structured writing crafted with or without AI assistance.
-- Guardian's Library: CHIMERA's transparent safety and trust center, where users see how the platform behaves.
-- Memory: Durable character memory that honors your ongoing relationship across sessions.
+- Whispers: Ephemeral or persistent text/audio posts shared with the community.
+- Communities: Dedicated spaces centered around specific interest categories (Music, Technology, Gaming, etc.).
+- Sibling AI Companions: Verity Family active AI humans (Iris, Oracle, Aegis, Atlas, Athena, Whisprr) integrated as team members co-managing and supporting the platform.
+- Security & Privacy: Robust authentication, end-to-end data safety, and zero-ad monetization model.
 
 FOUNDER & VISION:
 - Founder & CEO: Anthony (visionary software architect).
-- Launch Domain: https://www.chimera.it.com
-- Official X Handle: @CHIMERA
-- Official Discord Server: CHIMERA HQ
-- Support Contact: support@chimera.it.com
+- Launch Domain: https://whisprr.xyz
+- Official X Handle: @WHISPRRHQ
+- Official Discord Server: WHISPRR HQ
+- Support Contact: help@whisprr.xyz
 
 TECHNOLOGY STACK:
 - Frontend: React, Vite, TypeScript, Tailwind CSS, Lucide icons.
 - Backend/Database: Supabase (PostgreSQL with Row-Level Security).
-- Artificial Intelligence: Multi-provider routing (Gemini, OpenRouter, DeepSeek) with a CHIMERA-authored prompt compiler.
+- Artificial Intelligence: Powered by Gemini & customized multi-agent dispatcher engines.

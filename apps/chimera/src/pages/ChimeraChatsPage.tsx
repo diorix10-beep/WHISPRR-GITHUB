@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { Plus, Search, MessageSquare, Loader2, Users, X, Lock, BookOpen, ShieldCheck } from 'lucide-react';
+import { Plus, Search, MessageSquare, Loader2, Users, X } from 'lucide-react';
 import type { Conversation, Profile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -11,14 +11,6 @@ import { CreateGroupRoomModal } from '../components/chat/CreateGroupRoomModal';
 interface ConversationWithProfiles extends Conversation {
   conversation_participants: { user_id: string }[];
   other_user?: Profile;
-}
-
-interface PublicRoleplayScene {
-  id: string;
-  title: string;
-  summary: string;
-  content_rating: 'limited' | 'mature';
-  published_at: string;
 }
 
 export default function ChimeraChatsPage() {
@@ -36,9 +28,6 @@ export default function ChimeraChatsPage() {
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [isCreatingChat, setIsCreatingChat] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
-  const [chatShelf, setChatShelf] = useState<'private' | 'public'>('private');
-  const [publicScenes, setPublicScenes] = useState<PublicRoleplayScene[]>([]);
-  const [loadingPublicScenes, setLoadingPublicScenes] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -164,28 +153,6 @@ export default function ChimeraChatsPage() {
     };
   }, [user]);
 
-  useEffect(() => {
-    if (chatShelf !== 'public') return;
-    const fetchPublicScenes = async () => {
-      setLoadingPublicScenes(true);
-      try {
-        const { data, error } = await supabase
-          .from('roleplay_public_scenes')
-          .select('id, title, summary, content_rating, published_at')
-          .eq('visibility', 'public')
-          .order('published_at', { ascending: false });
-        if (error) throw error;
-        setPublicScenes((data || []) as PublicRoleplayScene[]);
-      } catch (error) {
-        console.error('Could not load public roleplay scenes:', error);
-        setPublicScenes([]);
-      } finally {
-        setLoadingPublicScenes(false);
-      }
-    };
-    fetchPublicScenes();
-  }, [chatShelf]);
-
   const fetchDefaultCharacters = async () => {
     setSearching(true);
     try {
@@ -200,7 +167,6 @@ export default function ChimeraChatsPage() {
             id, user_id, display_name, username, avatar_emoji, photo_url, role
           )
         `)
-        .or(`visibility.eq.public,creator_id.eq.${user?.id}`)
         .limit(20);
 
       if (aiChars && aiChars.length > 0) {
@@ -214,7 +180,8 @@ export default function ChimeraChatsPage() {
           }));
         setSearchResults(formatted);
       } else {
-        setSearchResults([]);
+        const { data: profs } = await supabase.from('profiles').select('*').eq('role', 'ai_character').limit(20);
+        setSearchResults(profs || []);
       }
     } catch (err) {
       console.error('Error fetching characters:', err);
@@ -255,7 +222,6 @@ export default function ChimeraChatsPage() {
           )
         `)
         .or(`name.ilike.%${query}%,short_description.ilike.%${query}%`)
-        .or(`visibility.eq.public,creator_id.eq.${user?.id}`)
         .limit(20);
 
       if (aiChars && aiChars.length > 0) {
@@ -269,7 +235,12 @@ export default function ChimeraChatsPage() {
           }));
         setSearchResults(formatted);
       } else {
-        setSearchResults([]);
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
+          .limit(20);
+        setSearchResults(data || []);
       }
     } catch (error) {
       console.error('Error searching roleplay characters:', error);
@@ -362,120 +333,75 @@ export default function ChimeraChatsPage() {
   };
 
   return (
-    <div className="rp-page">
-    <div className="max-w-[1180px] mx-auto px-4 py-12 relative z-10">
+    <div className="max-w-3xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between mb-8">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <p className="rp-micro flex items-center gap-2"><MessageSquare size={14} /> Roleplay conversations</p>
-          <h1 className="rp-heading mt-3 text-4xl sm:text-5xl font-bold flex items-center gap-2">
-            Your rooms, your rules.
+          <h1 className="text-2xl font-serif font-bold text-warm-900 dark:text-warm-50 flex items-center gap-2">
+            <span className="text-red-650">🔴</span> CHIMERA Chats
           </h1>
-          <p className="rp-copy mt-3 max-w-xl text-sm leading-relaxed">
-            Private conversations stay between you and the character. Share a scene only when you decide it belongs in the wider world.
+          <p className="text-sm text-warm-500">
+            Your active storytelling and dialogues inside the CHIMERA Nexus
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowGroupModal(true)}
-            className="rp-outline-button px-4 py-3 text-xs"
+            className="flex items-center gap-1.5 bg-warm-100 dark:bg-warm-800 hover:bg-warm-200 dark:hover:bg-warm-700 text-warm-900 dark:text-warm-100 font-medium px-3.5 py-2 rounded-xl text-xs border border-warm-200 dark:border-warm-700 transition-all active:scale-95 duration-200"
           >
             <Users size={15} />
             <span>Group Room</span>
           </button>
           <button
             onClick={() => setShowNewChatModal(true)}
-            className="rp-gold-button px-4 py-3 text-sm"
+            className="flex items-center gap-1.5 bg-red-650 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-xl text-sm shadow-md transition-all active:scale-95 duration-200"
           >
             <Plus size={16} />
-            <span>Start a chat</span>
+            <span>New Chat</span>
           </button>
         </div>
       </div>
 
-      <div className="mb-7 inline-flex rounded-2xl border border-[#c99b50]/45 bg-black/35 p-1 shadow-sm">
-        <button
-          onClick={() => setChatShelf('private')}
-          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${chatShelf === 'private' ? 'bg-[#2b2116] text-[#ffe2a1] shadow-sm ring-1 ring-[#c99b50]/70' : 'text-[#bfb4a3] hover:text-[#f4d390]'}`}
-        >
-          <Lock size={14} /> Private
-        </button>
-        <button
-          onClick={() => setChatShelf('public')}
-          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${chatShelf === 'public' ? 'bg-[#2b2116] text-[#ffe2a1] shadow-sm ring-1 ring-[#c99b50]/70' : 'text-[#bfb4a3] hover:text-[#f4d390]'}`}
-        >
-          <BookOpen size={14} /> Public
-        </button>
-      </div>
-
-      {chatShelf === 'public' ? (
-        <section className="grid gap-5 lg:grid-cols-[1fr_0.48fr]">
-          <div className="rp-panel rounded-3xl p-5 sm:p-6">
-            {loadingPublicScenes ? (
-              <div className="flex min-h-56 items-center justify-center"><Loader2 className="animate-spin text-red-500" size={28} /></div>
-            ) : publicScenes.length === 0 ? (
-              <div className="px-3 py-12 text-center">
-              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl border border-[#c99b50]/35 bg-[#c99b50]/10 text-[#e6c377]"><BookOpen size={28} /></div>
-                <h2 className="rp-heading text-2xl font-bold">No public scenes yet</h2>
-                <p className="rp-copy mx-auto mt-3 max-w-md text-sm leading-relaxed">A public scene will appear here only after someone deliberately shares a private roleplay. CHIMERA never makes a chat public by accident.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {publicScenes.map((scene) => (
-                  <button key={scene.id} onClick={() => navigate(`/conversations/scenes/${scene.id}`)} className="rp-card w-full rounded-2xl p-4 text-left">
-                    <div className="flex items-center justify-between gap-3"><h2 className="font-serif text-lg font-bold text-[#fff3df]">{scene.title}</h2><span className="rounded-full border border-[#c99b50]/40 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[#d9bd82]">{scene.content_rating}</span></div>
-                    {scene.summary && <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[#c9bda9]">{scene.summary}</p>}
-                    <p className="mt-3 text-xs font-medium text-[#e6c377]">Read shared scene</p>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          <aside className="rp-card rounded-3xl p-6">
-            <ShieldCheck className="mb-4 text-amber-500" size={24} />
-            <h2 className="rp-heading text-xl font-bold">When you decide to share</h2>
-            <p className="rp-copy mt-3 text-sm leading-relaxed">Give the scene a title, choose its visibility and rating, then confirm before anyone else can read it.</p>
-          </aside>
-        </section>
-      ) : loading ? (
+      {/* Loading State */}
+      {loading ? (
         <div className="flex justify-center items-center py-12">
           <Loader2 size={32} className="animate-spin text-red-500" />
         </div>
       ) : conversations.length === 0 ? (
-        <div className="rp-panel rounded-3xl flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in space-y-6">
+        <div className="bg-white dark:bg-warm-900 rounded-3xl border border-warm-100 dark:border-warm-800 shadow-sm flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in space-y-6">
           {/* Icon */}
           <div className="relative">
-            <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-[#c99b50]/35 bg-[#c99b50]/10 shadow-inner">
-              <MessageSquare size={32} className="text-[#e6c377]" />
+            <div className="w-20 h-20 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-500/10 dark:to-rose-500/5 rounded-3xl flex items-center justify-center border border-red-100 dark:border-red-500/15 shadow-inner">
+              <MessageSquare size={32} className="text-red-400" />
             </div>
-            <div className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#17120e] bg-gradient-to-br from-amber-400 to-orange-400 text-[11px]">
+            <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center border-2 border-white dark:border-warm-900 text-[11px]">
               ✨
             </div>
           </div>
           {/* Copy */}
           <div className="space-y-2 max-w-xs">
-            <h2 className="rp-heading text-xl font-extrabold">
-              Your story is waiting.
+            <h2 className="font-serif text-xl font-extrabold text-warm-900 dark:text-white">
+              Your Story Awaits
             </h2>
-            <p className="rp-copy text-sm leading-relaxed font-medium">
-              Begin privately with any character you choose. The room is yours before it is anyone else’s.
+            <p className="text-sm text-warm-500 dark:text-warm-400 leading-relaxed font-medium">
+              Start a conversation with any character from the Nexus — or create your own — and begin your roleplay journey.
             </p>
           </div>
           {/* CTA */}
           <button
             onClick={() => setShowNewChatModal(true)}
-            className="rp-gold-button"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-rose-500 text-white font-bold text-sm rounded-2xl shadow-lg shadow-red-500/25 hover:shadow-red-500/35 hover:scale-[1.02] active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
           >
             <MessageSquare size={16} />
             Start Your First Chat
           </button>
           {/* Discovery nudge */}
-          <p className="text-xs text-[#b9ad9c] font-medium">
-            Or <button onClick={() => navigate('/discover')} className="text-[#e6c377] hover:text-[#fff0be] font-bold transition-colors underline-offset-2 hover:underline">find a doorway</button> on Discover
+          <p className="text-xs text-warm-400 dark:text-warm-500 font-medium">
+            Or <button onClick={() => navigate('/discover')} className="text-red-500 hover:text-red-400 font-bold transition-colors underline-offset-2 hover:underline">explore characters</button> on the Discover page
           </p>
         </div>
       ) : (
-        <div className="rp-panel rounded-3xl overflow-hidden">
+        <div className="bg-white dark:bg-warm-900 rounded-3xl border border-warm-200 dark:border-warm-800 overflow-hidden shadow-sm">
           {conversations.map(conv => {
             const unreadCount = unreadCounts[conv.id] || 0;
             const isGroup = conv.type === 'group';
@@ -489,7 +415,7 @@ export default function ChimeraChatsPage() {
               <button
                 key={conv.id}
                 onClick={() => navigate(`/conversations/${conv.id}`)}
-                className="group flex w-full items-center gap-4 border-b border-[#c99b50]/15 p-5 text-left last:border-0 transition-colors hover:bg-[#c99b50]/[0.06]"
+                className="w-full text-left group flex items-center gap-4 p-5 border-b border-warm-100 dark:border-warm-800 last:border-0 hover:bg-warm-50 dark:hover:bg-warm-800/50 transition-colors"
               >
                 <div className="relative">
                   <Avatar
@@ -506,11 +432,11 @@ export default function ChimeraChatsPage() {
 
                 <div className="flex-1 min-w-0 pr-4">
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <h3 className="truncate text-base font-bold text-[#fff3df] transition-colors group-hover:text-[#f0ce8e]">
+                    <h3 className="text-base font-bold text-warm-900 dark:text-warm-50 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors truncate">
                       {otherUser?.display_name || 'Unknown Character'}
                     </h3>
                     {conv.last_message_at && (
-                      <span className="whitespace-nowrap text-xs font-medium text-[#b9ad9c]">
+                      <span className="text-xs font-medium text-warm-400 dark:text-warm-500 whitespace-nowrap">
                         {formatDistanceToNow(new Date(conv.last_message_at), {
                           addSuffix: false,
                         })}
@@ -518,7 +444,7 @@ export default function ChimeraChatsPage() {
                     )}
                   </div>
 
-                  <p className={`truncate text-sm ${unreadCount > 0 ? 'font-semibold text-[#f4ead7]' : 'text-[#c9bda9]'}`}>
+                  <p className={`text-sm truncate ${unreadCount > 0 ? 'text-warm-900 dark:text-warm-100 font-semibold' : 'text-warm-500 dark:text-warm-400'}`}>
                     {conv.last_message || 'No messages yet'}
                   </p>
                 </div>
@@ -616,7 +542,6 @@ export default function ChimeraChatsPage() {
         onClose={() => setShowGroupModal(false)}
         onRoomCreated={(convId) => navigate(`/conversations/${convId}`)}
       />
-    </div>
     </div>
   );
 }

@@ -25,5 +25,5 @@ User-agent: Applebot-Extended
 Allow: /
 
 # Reference sitemaps and AI manifests
-Sitemap: https://www.chimera.it.com/sitemap.xml
+Sitemap: https://chimera.it.com/sitemap.xml
 Disallow: /oracle-verity/

@@ -28,7 +28,7 @@ export function CreatorTipModal({
   if (!isOpen) return null;
 
   const handleSendTip = () => {
-    if (shardsBalance === null || shardsBalance < selectedAmount) {
+    if (shardsBalance < selectedAmount) {
       showToast(`Insufficient Shards! You need ${selectedAmount} 💎 Shards.`, 'error');
       return;
     }
@@ -112,14 +112,14 @@ export function CreatorTipModal({
             <span>Your Balance:</span>
             <span className="font-bold text-warm-900 dark:text-white flex items-center gap-1">
               <Gem size={13} className="text-amber-500 fill-amber-500" />
-              {shardsBalance === null ? 'Loading…' : shardsBalance} 💎 Shards
+              {shardsBalance} 💎 Shards
             </span>
           </div>
 
           {/* Submit Button */}
           <button
             onClick={handleSendTip}
-              disabled={isSending || shardsBalance === null || shardsBalance < selectedAmount}
+            disabled={isSending || shardsBalance < selectedAmount}
             className="w-full py-3 rounded-xl bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {isSending ? (

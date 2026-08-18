@@ -16,34 +16,17 @@ interface UserViolation {
   updated_at: string;
 }
 import { supabase } from '../lib/supabase';
-import { CHIMERA_ORIGIN } from '../lib/supabase';
 
 interface AuthState {
   user: User | null;
   session: Session | null;
   profile: ChimeraProfile | null;
-  chimeraPreferences: ChimeraCreativePreferences | null;
   violations: UserViolation[];
   loading: boolean;
 }
 
-export type CreativePreference = 'roleplay' | 'storytelling' | 'both';
-export type CreativeMode = 'roleplay' | 'storytelling';
-
-export interface ChimeraCreativePreferences {
-  user_id: string;
-  default_ai_model: string;
-  creative_preference: CreativePreference | null;
-  default_creative_mode: CreativeMode;
-  last_creative_mode: CreativeMode;
-  chimera_onboarding_complete: boolean;
-  both_mode_welcome_seen: boolean;
-}
-
 interface AuthContextType extends AuthState {
   signIn: (email: string, password: string) => Promise<void>;
-  requestEmailOtp: (email: string) => Promise<void>;
-  verifyEmailOtp: (email: string, token: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signInWithApple: () => Promise<void>;
@@ -52,9 +35,7 @@ interface AuthContextType extends AuthState {
   resetPassword: (email: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
   updateProfile: (updates: Partial<ChimeraProfile>) => Promise<void>;
-  updateChimeraPreferences: (updates: Partial<Omit<ChimeraCreativePreferences, 'user_id'>>) => Promise<void>;
-  shardsBalance: number | null;
-  vellumBalance: number | null;
+  shardsBalance: number;
   spendShards: (amount: number, reason: string) => boolean;
   earnShards: (amount: number, reason: string) => void;
   adFreePassActive: boolean;
@@ -82,7 +63,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: null,
     session: null,
     profile: null,
-    chimeraPreferences: null,
     violations: [],
     loading: true,
   });
@@ -105,7 +85,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const initializedRef = useRef(false);
-  const latestSessionRef = useRef<Session | null | undefined>(undefined);
 
   const fetchViolations = useCallback(async (userId: string): Promise<UserViolation[]> => {
     try {
@@ -133,39 +112,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const fetchChimeraPreferences = useCallback(async (userId: string): Promise<ChimeraCreativePreferences | null> => {
-    const { data, error } = await supabase
-      .from('chimera_user_preferences')
-      .select('user_id, default_ai_model, creative_preference, default_creative_mode, last_creative_mode, chimera_onboarding_complete, both_mode_welcome_seen')
-      .eq('user_id', userId)
-      .maybeSingle();
-    if (error) return null;
-    return data as ChimeraCreativePreferences | null;
-  }, []);
-
   const refreshProfile = useCallback(async () => {
     if (state.user) {
-      const [profile, violations, chimeraPreferences] = await Promise.all([
+      const [profile, violations] = await Promise.all([
         fetchProfile(state.user.id),
-        fetchViolations(state.user.id),
-        fetchChimeraPreferences(state.user.id)
+        fetchViolations(state.user.id)
       ]);
-      setState(prev => ({ ...prev, profile, violations, chimeraPreferences }));
+      setState(prev => ({ ...prev, profile, violations }));
     }
-  }, [state.user, fetchProfile, fetchViolations, fetchChimeraPreferences]);
-
-  const updateChimeraPreferences = useCallback(async (updates: Partial<Omit<ChimeraCreativePreferences, 'user_id'>>) => {
-    if (!state.user) return;
-    const { error } = await supabase
-      .from('chimera_user_preferences')
-      .update(updates)
-      .eq('user_id', state.user.id);
-    if (error) throw error;
-    setState(prev => ({
-      ...prev,
-      chimeraPreferences: prev.chimeraPreferences ? { ...prev.chimeraPreferences, ...updates } : prev.chimeraPreferences,
-    }));
-  }, [state.user]);
+  }, [state.user, fetchProfile, fetchViolations]);
 
   const updateProfile = useCallback(async (updates: Partial<ChimeraProfile>) => {
     if (!state.user) return;
@@ -234,24 +189,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    const hydrateSession = async (session: Session | null) => {
-      if (!mounted) return;
-
-      if (session?.user) {
-        setState(prev => ({ ...prev, user: session.user, session, loading: true }));
-        const [profile, violations, chimeraPreferences] = await Promise.all([
-          fetchProfile(session.user.id),
-          fetchViolations(session.user.id),
-          fetchChimeraPreferences(session.user.id)
-        ]);
-        if (mounted) {
-          setState({ user: session.user, session, profile, chimeraPreferences, violations, loading: false });
-        }
-      } else if (mounted) {
-        setState({ user: null, session: null, profile: null, chimeraPreferences: null, violations: [], loading: false });
-      }
-    };
-
     const timeoutId = setTimeout(() => {
       if (mounted && state.loading) {
         setState(prev => ({ ...prev, loading: false }));
@@ -262,17 +199,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (_event, session) => {
         if (!mounted) return;
 
-        latestSessionRef.current = session;
-
         if (_event === 'SIGNED_OUT') {
-          setState({ user: null, session: null, profile: null, chimeraPreferences: null, violations: [], loading: false });
+          setState({ user: null, session: null, profile: null, violations: [], loading: false });
           return;
         }
 
         if (session?.user) {
-          await hydrateSession(session);
+          setState(prev => ({ ...prev, user: session.user, session, loading: true }));
+          const [profile, violations] = await Promise.all([
+            fetchProfile(session.user.id),
+            fetchViolations(session.user.id)
+          ]);
+          if (mounted) {
+            setState({ user: session.user, session, profile, violations, loading: false });
+          }
         } else {
-          setState({ user: null, session: null, profile: null, chimeraPreferences: null, violations: [], loading: false });
+          setState({ user: null, session: null, profile: null, violations: [], loading: false });
         }
       }
     );
@@ -280,12 +222,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!mounted) return;
 
-      // INITIAL_SESSION/SIGNED_IN can arrive while getSession is resolving.
-      // Never let an older null result overwrite a session already delivered
-      // by the auth event listener.
-      if (latestSessionRef.current !== undefined) return;
-      latestSessionRef.current = session;
-      await hydrateSession(session);
+      if (session?.user) {
+        const [profile, violations] = await Promise.all([
+          fetchProfile(session.user.id),
+          fetchViolations(session.user.id)
+        ]);
+        if (mounted) {
+          setState({ user: session.user, session, profile, violations, loading: false });
+        }
+      } else {
+        if (mounted) {
+          setState({ user: null, session: null, profile: null, violations: [], loading: false });
+        }
+      }
       initializedRef.current = true;
     });
 
@@ -296,7 +245,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
-  }, [fetchProfile, fetchChimeraPreferences]);
+  }, [fetchProfile]);
 
   const signUp = async (email: string, password: string) => {
     const { error } = await supabase.auth.signUp({ 
@@ -304,10 +253,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: {
         data: { 
-          access_level: 'ecosystem',
+          access_level: 'chimera',
           legal_accepted_version: CURRENT_LEGAL_VERSION
         },
-        emailRedirectTo: CHIMERA_ORIGIN
+        emailRedirectTo: window.location.origin
       }
     });
     if (error) throw error;
@@ -318,24 +267,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
-  const requestEmailOtp = async (email: string) => {
-    const { error } = await supabase.auth.signInWithOtp({ email });
-    if (error) throw error;
-  };
-
-  const verifyEmailOtp = async (email: string, token: string) => {
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token,
-      type: 'email',
-    });
-    if (error) throw error;
-  };
-
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${CHIMERA_ORIGIN}/auth` },
+      options: { redirectTo: `${window.location.origin}/auth` },
     });
     if (error) throw error;
   };
@@ -343,7 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithApple = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'apple',
-      options: { redirectTo: `${CHIMERA_ORIGIN}/auth` },
+      options: { redirectTo: `${window.location.origin}/auth` },
     });
     if (error) throw error;
   };
@@ -351,7 +286,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithDiscord = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'discord',
-      options: { redirectTo: `${CHIMERA_ORIGIN}/auth` },
+      options: { redirectTo: `${window.location.origin}/auth` },
     });
     if (error) throw error;
   };
@@ -359,61 +294,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
-    setState({ user: null, session: null, profile: null, chimeraPreferences: null, violations: [], loading: false });
+    setState({ user: null, session: null, profile: null, violations: [], loading: false });
   };
 
   const resetPassword = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${CHIMERA_ORIGIN}/reset-password`,
+      redirectTo: `${window.location.origin}/reset-password`,
     });
     if (error) throw error;
   };
 
-  const [shardsBalance, setShardsBalance] = useState<number | null>(null);
-
-  const [vellumBalance, setVellumBalance] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!state.user?.id) {
-      setShardsBalance(null);
-      return;
-    }
-
-    let active = true;
-    const loadShards = () => {
-      supabase.rpc('get_my_shards_wallet').then(({ data, error }) => {
-        if (!active || error) return;
-        setShardsBalance(data?.[0]?.available_balance ?? null);
-      });
-    };
-    loadShards();
-    window.addEventListener('chimera-shards-changed', loadShards);
-    return () => {
-      active = false;
-      window.removeEventListener('chimera-shards-changed', loadShards);
-    };
-  }, [state.user?.id]);
-
-  useEffect(() => {
-    if (!state.user?.id) {
-      setVellumBalance(null);
-      return;
-    }
-
-    let active = true;
-    const loadVellum = () => {
-      supabase.rpc('get_my_vellum_wallet').then(({ data, error }) => {
-        if (!active || error) return;
-        setVellumBalance(data?.[0]?.available_balance ?? null);
-      });
-    };
-    loadVellum();
-    window.addEventListener('chimera-vellum-changed', loadVellum);
-    return () => {
-      active = false;
-      window.removeEventListener('chimera-vellum-changed', loadVellum);
-    };
-  }, [state.user?.id]);
+  const [shardsBalance, setShardsBalance] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem('chimera_shards_balance');
+      if (stored !== null) return Number(stored);
+    } catch {}
+    return 50; // 50 Free Starting Shards
+  });
 
   const [adFreePassActive, setAdFreePassActive] = useState<boolean>(() => {
     try {
@@ -444,19 +341,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const spendShards = useCallback((amount: number, reason: string): boolean => {
-    // SHARDS changes must be performed through a server-side ledger RPC.
-    // Keeping a local-only deduction here would make the UI lie about money-like value.
-    console.warn('SHARDS spending is not connected yet.', { amount, reason });
-    return false;
-  }, []);
+    if (shardsBalance < amount) return false;
+    const newBal = shardsBalance - amount;
+    setShardsBalance(newBal);
+    try {
+      localStorage.setItem('chimera_shards_balance', String(newBal));
+    } catch {}
+    return true;
+  }, [shardsBalance]);
 
   const earnShards = useCallback((amount: number, reason: string) => {
-    // Rewards are issued only by verified server-side flows (for example, Guided Story Paths).
-    console.warn('SHARDS earning is not connected for this action.', { amount, reason });
+    setShardsBalance((prev) => {
+      const newBal = prev + amount;
+      try {
+        localStorage.setItem('chimera_shards_balance', String(newBal));
+      } catch {}
+      return newBal;
+    });
   }, []);
 
   const activateAdFreePass = useCallback((): boolean => {
-    if (shardsBalance === null || shardsBalance < 20) return false;
+    if (shardsBalance < 20) return false;
     if (spendShards(20, 'Ad-Free Pass Activation')) {
       setAdFreePassActive(true);
       try {
@@ -468,7 +373,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [shardsBalance, spendShards]);
 
   const activateRoleplayVipPass = useCallback((): boolean => {
-    if (shardsBalance === null || shardsBalance < 15) return false;
+    if (shardsBalance < 15) return false;
     if (spendShards(15, 'Roleplay VIP Pass Activation')) {
       setRoleplayVipActive(true);
       try {
@@ -480,7 +385,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [shardsBalance, spendShards]);
 
   const activateStorytellingVipPass = useCallback((): boolean => {
-    if (shardsBalance === null || shardsBalance < 15) return false;
+    if (shardsBalance < 15) return false;
     if (spendShards(15, 'Storytelling VIP Pass Activation')) {
       setStorytellingVipActive(true);
       try {
@@ -492,7 +397,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [shardsBalance, spendShards]);
 
   const activateMultiverseVipPass = useCallback((): boolean => {
-    if (shardsBalance === null || shardsBalance < 25) return false;
+    if (shardsBalance < 25) return false;
     if (spendShards(25, 'Multiverse All-Access VIP Pass Activation')) {
       setMultiverseVipActive(true);
       setRoleplayVipActive(true);
@@ -511,76 +416,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const acceptLegalTerms = async (version: string) => {
     if (!state.user) return;
-    const now = new Date().toISOString();
-
-    // 1. Update user_metadata in Supabase Auth so trigger & auth session have the legal version
-    await supabase.auth.updateUser({
-      data: { legal_accepted_version: version }
-    }).catch(err => console.warn("Failed to update user_metadata:", err));
-
-    // 2. Update profiles table
-    const { data: updatedRows, error: updateErr } = await supabase
+    const { error } = await supabase
       .from('profiles')
       .update({
         legal_accepted_version: version,
-        legal_accepted_at: now
+        legal_accepted_at: new Date().toISOString()
       })
-      .eq('user_id', state.user.id)
-      .select();
-
-    if (updateErr) {
-      console.error("Database error updating legal terms acceptance:", updateErr);
-    }
-
-    // 3. Fallback: if no profile row existed, create/upsert it so user is never trapped
-    let activeProfile = state.profile;
-    if (!updatedRows || updatedRows.length === 0) {
-      const fallbackProfile = {
-        user_id: state.user.id,
-        username: state.user.email ? state.user.email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '') : `user_${state.user.id.substring(0, 8)}`,
-        display_name: state.user.user_metadata?.full_name || state.user.email?.split('@')[0] || 'Creator',
-        legal_accepted_version: version,
-        legal_accepted_at: now,
-        onboarding_complete: false,
-        created_at: now
-      };
-
-      const { data: upsertData, error: upsertErr } = await supabase
-        .from('profiles')
-        .upsert(fallbackProfile, { onConflict: 'user_id' })
-        .select()
-        .maybeSingle();
-
-      if (!upsertErr && upsertData) {
-        activeProfile = upsertData as ChimeraProfile;
-      }
-    } else if (updatedRows && updatedRows.length > 0) {
-      activeProfile = updatedRows[0] as ChimeraProfile;
-    }
-
-    // 4. Update React state immediately and synchronously with non-null profile
-    const updatedProfile: ChimeraProfile = activeProfile
-      ? { ...activeProfile, legal_accepted_version: version, legal_accepted_at: now }
-      : {
-          user_id: state.user.id,
-          username: state.user.email ? state.user.email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '') : `user_${state.user.id.substring(0, 8)}`,
-          display_name: state.user.email?.split('@')[0] || 'Creator',
-          legal_accepted_version: version,
-          legal_accepted_at: now,
-          onboarding_complete: false,
-          created_at: now
-        } as ChimeraProfile;
-
-    setState(prev => ({
-      ...prev,
-      user: prev.user ? {
-        ...prev.user,
-        user_metadata: { ...prev.user.user_metadata, legal_accepted_version: version }
-      } : prev.user,
-      profile: updatedProfile
-    }));
-
-    // 5. Refetch profile to be 100% in sync
+      .eq('user_id', state.user.id);
+      
+    if (error) throw error;
     await refreshProfile();
   };
 
@@ -600,8 +444,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{
       ...state,
       signIn,
-      requestEmailOtp,
-      verifyEmailOtp,
       signUp,
       signInWithGoogle,
       signInWithApple,
@@ -610,9 +452,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       resetPassword,
       refreshProfile,
       updateProfile,
-      updateChimeraPreferences,
       shardsBalance,
-      vellumBalance,
       spendShards,
       earnShards,
       adFreePassActive,

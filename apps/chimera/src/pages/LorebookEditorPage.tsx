@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Save, Plus, Trash2, BookOpen, Download, Upload,
-  ChevronDown, ChevronRight, GripVertical, Search, ToggleLeft, ToggleRight, Link2, Users, Globe2
+  ChevronDown, ChevronRight, GripVertical, Search, ToggleLeft, ToggleRight
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -20,11 +20,6 @@ export default function LorebookEditorPage() {
   const [lorebook, setLorebook] = useState<Lorebook | null>(null);
   const [entries, setEntries] = useState<LorebookEntry[]>([]);
   const [expandedEntry, setExpandedEntry] = useState<string | null>(null);
-  const [linkedCharacterIds, setLinkedCharacterIds] = useState<string[]>([]);
-  const [linkedWorldIds, setLinkedWorldIds] = useState<string[]>([]);
-  const [characters, setCharacters] = useState<Array<{ id: string; short_description: string | null }>>([]);
-  const [worlds, setWorlds] = useState<Array<{ id: string; name: string }>>([]);
-  const [linkSaving, setLinkSaving] = useState<string | null>(null);
 
   // Form state
   const [title, setTitle] = useState('');
@@ -69,29 +64,6 @@ export default function LorebookEditorPage() {
   }, [id, showToast, navigate]);
 
   useEffect(() => { fetchLorebook(); }, [fetchLorebook]);
-
-  useEffect(() => {
-    if (!id || !profile?.user_id) return;
-    const loadLinkTargets = async () => {
-      const [charactersResult, worldsResult, characterLinksResult, worldLinksResult] = await Promise.all([
-        supabase.from('ai_characters').select('id, short_description').eq('creator_id', profile.user_id).order('created_at', { ascending: false }),
-        supabase.from('worlds').select('id, name').eq('user_id', profile.user_id).order('updated_at', { ascending: false }),
-        supabase.from('lorebook_characters').select('character_id').eq('lorebook_id', id),
-        supabase.from('lorebook_worlds').select('world_id').eq('lorebook_id', id),
-      ]);
-      const error = charactersResult.error || worldsResult.error || characterLinksResult.error || worldLinksResult.error;
-      if (error) {
-        console.error('Could not load lorebook links:', error);
-        showToast('Could not load linked worlds and characters', 'error');
-        return;
-      }
-      setCharacters(charactersResult.data || []);
-      setWorlds(worldsResult.data || []);
-      setLinkedCharacterIds((characterLinksResult.data || []).map((link) => link.character_id));
-      setLinkedWorldIds((worldLinksResult.data || []).map((link) => link.world_id));
-    };
-    void loadLinkTargets();
-  }, [id, profile?.user_id, showToast]);
 
   // Auto-save draft protection (Rules 25 & 26)
   useEffect(() => {
@@ -147,30 +119,6 @@ export default function LorebookEditorPage() {
 
   const toggleEntryEnabled = async (entryId: string, enabled: boolean) => {
     await updateEntry(entryId, { enabled });
-  };
-
-  const toggleCharacterLink = async (characterId: string) => {
-    if (!id) return;
-    const linked = linkedCharacterIds.includes(characterId);
-    setLinkSaving(`character:${characterId}`);
-    const { error } = linked
-      ? await supabase.from('lorebook_characters').delete().eq('lorebook_id', id).eq('character_id', characterId)
-      : await supabase.from('lorebook_characters').insert({ lorebook_id: id, character_id: characterId });
-    setLinkSaving(null);
-    if (error) { showToast(error.message || 'Could not update character link', 'error'); return; }
-    setLinkedCharacterIds((previous) => linked ? previous.filter((value) => value !== characterId) : [...previous, characterId]);
-  };
-
-  const toggleWorldLink = async (worldId: string) => {
-    if (!id) return;
-    const linked = linkedWorldIds.includes(worldId);
-    setLinkSaving(`world:${worldId}`);
-    const { error } = linked
-      ? await supabase.from('lorebook_worlds').delete().eq('lorebook_id', id).eq('world_id', worldId)
-      : await supabase.from('lorebook_worlds').insert({ lorebook_id: id, world_id: worldId });
-    setLinkSaving(null);
-    if (error) { showToast(error.message || 'Could not update world link', 'error'); return; }
-    setLinkedWorldIds((previous) => linked ? previous.filter((value) => value !== worldId) : [...previous, worldId]);
   };
 
   const handleExport = () => {
@@ -265,45 +213,6 @@ export default function LorebookEditorPage() {
         </div>
       </div>
 
-      {/* Runtime scope: these links decide which roleplay characters and worlds
-          may retrieve this book. They are saved immediately, separately from
-          the text draft above. */}
-      <section className="bg-white dark:bg-warm-800 rounded-2xl border border-warm-200 dark:border-warm-750 p-5 space-y-4">
-        <div className="flex items-start gap-3">
-          <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-300"><Link2 size={18} /></div>
-          <div>
-            <h2 className="text-sm font-semibold text-warm-900 dark:text-warm-50">Where this lore lives</h2>
-            <p className="mt-1 text-xs leading-relaxed text-warm-500">Link this book to a roleplay character, a world, or both. CHIMERA retrieves relevant entries only in those linked roleplays.</p>
-          </div>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-xl border border-warm-200 dark:border-warm-700 p-3">
-            <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-warm-600 dark:text-warm-300"><Users size={14} />Characters</p>
-            {characters.length === 0 ? <p className="text-xs text-warm-400">Create a character first, then return to connect its lore.</p> : (
-              <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">{characters.map((character) => {
-                const linked = linkedCharacterIds.includes(character.id);
-                return <label key={character.id} className="flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-2 hover:bg-warm-50 dark:hover:bg-warm-850">
-                  <span className="min-w-0 truncate text-xs text-warm-700 dark:text-warm-200">{character.short_description || `Character ${character.id.slice(0, 8)}`}</span>
-                  <input type="checkbox" checked={linked} disabled={linkSaving === `character:${character.id}`} onChange={() => toggleCharacterLink(character.id)} className="h-4 w-4 accent-amber-500" />
-                </label>;
-              })}</div>
-            )}
-          </div>
-          <div className="rounded-xl border border-warm-200 dark:border-warm-700 p-3">
-            <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-warm-600 dark:text-warm-300"><Globe2 size={14} />Worlds</p>
-            {worlds.length === 0 ? <p className="text-xs text-warm-400">Create a world first, then return to connect its shared lore.</p> : (
-              <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">{worlds.map((world) => {
-                const linked = linkedWorldIds.includes(world.id);
-                return <label key={world.id} className="flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-2 hover:bg-warm-50 dark:hover:bg-warm-850">
-                  <span className="min-w-0 truncate text-xs text-warm-700 dark:text-warm-200">{world.name}</span>
-                  <input type="checkbox" checked={linked} disabled={linkSaving === `world:${world.id}`} onChange={() => toggleWorldLink(world.id)} className="h-4 w-4 accent-amber-500" />
-                </label>;
-              })}</div>
-            )}
-          </div>
-        </div>
-      </section>
-
       {/* Entries */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -394,15 +303,6 @@ export default function LorebookEditorPage() {
                       {entry.enabled ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
                       {entry.enabled ? 'Enabled' : 'Disabled'}
                     </button>
-                    <label className="flex items-center gap-2 text-xs font-medium text-warm-600 dark:text-warm-300">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(entry.is_constant)}
-                        onChange={e => updateEntry(entry.id, { is_constant: e.target.checked })}
-                        className="h-4 w-4 accent-amber-500"
-                      />
-                      Always hold in linked roleplay
-                    </label>
                     <button
                       onClick={() => deleteEntry(entry.id)}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"

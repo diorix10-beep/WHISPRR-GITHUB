@@ -454,7 +454,7 @@ export interface ChimeraProfile {
   created_at: string;
   updated_at: string;
   // CHIMERA-specific
-  access_level?: 'whisprr' | 'chimera' | 'ecosystem'; // legacy values remain readable; new accounts are ecosystem accounts
+  access_level?: 'whisprr' | 'chimera' | 'ecosystem';
   legal_accepted_version?: string | null;
   legal_accepted_at?: string | null;
 }
@@ -729,3 +729,4 @@ export interface RpgGameState {
   available_choices: RpgChoice[];
   game_over: boolean;
 }
+

@@ -2,12 +2,8 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 export function PublicOnlyRoute() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
-
-  if (loading) {
-    return <div className="min-h-screen bg-warm-950 flex items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-300/30 border-t-purple-400" /></div>;
-  }
 
   if (user) {
     // If the user is logged in, redirect them away from the auth page.

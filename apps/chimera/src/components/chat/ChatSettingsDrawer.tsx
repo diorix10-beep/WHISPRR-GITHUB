@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { 
   X, Edit2, Share, ChevronRight, Play, Pause, Database, 
-  Calendar, Layout, Image as ImageIcon, Sparkles, BookHeart, Wand2
+  Calendar, Layout, Image as ImageIcon, Sparkles, Wand2
 } from 'lucide-react';
 import type { Profile } from '../../types';
 import { Avatar } from '../common/Avatar';
@@ -20,6 +20,8 @@ interface ChatSettingsDrawerProps {
   onSelectPersona: () => void;
   onOpenMemory: () => void;
   onOpenMemoryVisualizer?: () => void;
+  recallStrength?: number;
+  onChangeRecallStrength?: (strength: number) => void;
   aesthetics: ReturnType<typeof useChatAesthetics>;
 }
 
@@ -33,6 +35,8 @@ export function ChatSettingsDrawer({
   onSelectPersona,
   onOpenMemory,
   onOpenMemoryVisualizer,
+  recallStrength,
+  onChangeRecallStrength,
   aesthetics
 }: ChatSettingsDrawerProps) {
   const [showWallpaper, setShowWallpaper] = useState(false);
@@ -82,7 +86,7 @@ export function ChatSettingsDrawer({
             </div>
           </div>
 
-          {/* Private, durable memory control */}
+          {/* Memory Nexus Control Card */}
           <div className="mb-6 bg-warm-900 border border-warm-800 rounded-3xl p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -90,8 +94,8 @@ export function ChatSettingsDrawer({
                   <Sparkles size={18} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-white">What they remember</h3>
-                  <p className="text-[11px] text-warm-400">Private memories for this character bond</p>
+                  <h3 className="font-bold text-sm text-white">Neural Memory Web</h3>
+                  <p className="text-[11px] text-warm-400">Infinite long-term recall system</p>
                 </div>
               </div>
 
@@ -100,14 +104,36 @@ export function ChatSettingsDrawer({
                   onClick={() => { onClose(); onOpenMemoryVisualizer(); }}
                   className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5"
                 >
-                  <BookHeart size={13} />
-                  <span>Open memories</span>
+                  <Wand2 size={13} />
+                  <span>Visualize Memory Web</span>
                 </button>
               )}
             </div>
-            <p className="border-t border-warm-800 pt-3 text-[11px] leading-relaxed text-warm-400">
-              Add, edit, hold close, or forget facts. The next CHIMERA reply uses the memories you choose to keep.
-            </p>
+
+            {/* Recall Strength Slider (1 to 16) */}
+            {onChangeRecallStrength && (
+              <div className="space-y-2 pt-2 border-t border-warm-800">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-semibold text-warm-300">Recall Strength</span>
+                  <span className="font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
+                    {recallStrength || 8} / 16
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="16"
+                  value={recallStrength || 8}
+                  onChange={(e) => onChangeRecallStrength(Number(e.target.value))}
+                  className="w-full accent-purple-500 cursor-pointer"
+                />
+                <div className="flex justify-between text-[10px] text-warm-400">
+                  <span>Free (5)</span>
+                  <span>Mastermind (10)</span>
+                  <span>Omnipotent (16)</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Grid Layout */}

@@ -40,7 +40,7 @@ const CHIMERA: BrandConfig = {
   onboardingWelcome: 'Welcome to CHIMERA',
   onboardingSubtitle: "Let's set up your creator profile. Start with your name and username.",
   footerText: 'Part of the WHISPRR Ecosystem.',
-  supportEmail: 'support@chimera.it.com',
+  supportEmail: 'contact@chimera.it.com',
   ecosystem: {
     name: 'WHISPRR',
     domain: 'whisprr.xyz',

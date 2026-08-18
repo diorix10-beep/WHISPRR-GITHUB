@@ -10,7 +10,7 @@ interface AiCharacter {
   creator_id: string;
   name: string;
   avatar_url: string | null;
-  short_description: string | null;
+  tagline: string;
 }
 
 export default function MemoryManagerPage() {
@@ -48,57 +48,16 @@ export default function MemoryManagerPage() {
 
   const fetchCharacters = async () => {
     try {
-      const { data: ownedCharacters, error: ownedError } = await supabase
+      const { data, error } = await supabase
         .from('ai_characters')
-        .select('id, creator_id, name, avatar_url, short_description')
+        .select('id, creator_id, name, avatar_url, tagline')
         .eq('creator_id', user!.id)
         .order('created_at', { ascending: false });
 
-      if (ownedError) throw ownedError;
-
-      // A memory is a private bond between a player and a character, not only
-      // a creator tool. Include every character the user has actually opened a
-      // roleplay with, while the memory rows themselves remain owner-scoped.
-      const { data: roleplayConversations, error: conversationsError } = await supabase
-        .from('conversations')
-        .select('character_id')
-        .not('character_id', 'is', null);
-
-      if (conversationsError) throw conversationsError;
-
-      const characterReferences = Array.from(new Set(
-        (roleplayConversations || [])
-          .map((conversation) => conversation.character_id)
-          .filter((id): id is string => Boolean(id)),
-      ));
-
-      let roleplayedCharacters: AiCharacter[] = [];
-      if (characterReferences.length > 0) {
-        const [byCharacterId, byProfileId] = await Promise.all([
-          supabase
-            .from('ai_characters')
-            .select('id, creator_id, name, avatar_url, short_description')
-            .in('id', characterReferences),
-          supabase
-            .from('ai_characters')
-            .select('id, creator_id, name, avatar_url, short_description')
-            .in('user_id', characterReferences),
-        ]);
-
-        if (byCharacterId.error) throw byCharacterId.error;
-        if (byProfileId.error) throw byProfileId.error;
-        roleplayedCharacters = [...(byCharacterId.data || []), ...(byProfileId.data || [])] as AiCharacter[];
-      }
-
-      const charactersById = new Map<string, AiCharacter>();
-      [...(ownedCharacters || []), ...roleplayedCharacters].forEach((character) => {
-        charactersById.set(character.id, character as AiCharacter);
-      });
-      const availableCharacters = Array.from(charactersById.values());
-
-      setCharacters(availableCharacters);
-      if (availableCharacters.length > 0) {
-        setSelectedCharacter(availableCharacters[0]);
+      if (error) throw error;
+      setCharacters(data || []);
+      if (data && data.length > 0) {
+        setSelectedCharacter(data[0]);
       }
     } catch (err) {
       console.error('Error fetching characters:', err);
@@ -231,7 +190,7 @@ export default function MemoryManagerPage() {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-white">Memory Manager</h1>
-                <p className="text-sm text-white/50">Choose what a character remembers about your ongoing bond</p>
+                <p className="text-sm text-white/50">Configure persistent context for your AI characters</p>
               </div>
             </div>
             {selectedCharacter && (
@@ -253,12 +212,12 @@ export default function MemoryManagerPage() {
         <div className="w-full lg:w-72 shrink-0 flex flex-col gap-4">
           <div className="bg-[#121214] rounded-2xl border border-white/5 overflow-hidden">
             <div className="p-4 border-b border-white/5">
-              <h2 className="font-semibold text-white">Your Character Bonds</h2>
+              <h2 className="font-semibold text-white">Your Characters</h2>
             </div>
             <div className="max-h-[60vh] overflow-y-auto">
               {characters.length === 0 ? (
                 <div className="p-8 text-center text-white/50">
-                  <p className="text-sm">No roleplay characters found yet.</p>
+                  <p className="text-sm">No characters found.</p>
                   <Link to="/characters/new" className="text-[#E84C3D] text-sm hover:underline mt-2 block">
                     Create your first character
                   </Link>
@@ -284,7 +243,7 @@ export default function MemoryManagerPage() {
                         <h3 className={`font-medium truncate ${selectedCharacter?.id === char.id ? 'text-[#E84C3D]' : 'text-white'}`}>
                           {char.name}
                         </h3>
-                        <p className="text-xs text-white/40 truncate">{char.short_description || 'A story still unfolding'}</p>
+                        <p className="text-xs text-white/40 truncate">{char.tagline}</p>
                       </div>
                     </button>
                   ))}

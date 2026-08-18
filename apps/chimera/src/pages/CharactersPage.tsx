@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Search, Grid3X3, List, Filter, X, 
   Copy, Archive, Download, MoreHorizontal,
-  SortAsc, Users, Globe, Lock, Eye, Sparkles, Flame, MessageSquare, FileText
+  SortAsc, Users, Globe, Lock, Eye, Sparkles, Flame, MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -36,13 +36,6 @@ interface CharacterItem {
   };
 }
 
-interface CharacterDraftItem {
-  id: string;
-  title: string;
-  form_data: { name?: string; shortDescription?: string; avatarUrl?: string };
-  updated_at: string;
-}
-
 const CATEGORIES = [
   'All', 'Romance', 'Fantasy', 'Sci-Fi', 'Horror', 'Mystery',
   'Action', 'Adventure', 'Historical', 'Slice of Life', 'Anime',
@@ -62,12 +55,11 @@ export default function CharactersPage() {
   const { showToast } = useToast();
 
   const [characters, setCharacters] = useState<CharacterItem[]>([]);
-  const [characterDrafts, setCharacterDrafts] = useState<CharacterDraftItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [tab, setTab] = useState<'published' | 'private' | 'drafts'>('published');
+  const [tab, setTab] = useState<'mine' | 'drafts' | 'all'>('mine');
   const [sortBy, setSortBy] = useState('updated');
   const [selectedDetailChar, setSelectedDetailChar] = useState<any | null>(null);
 
@@ -75,27 +67,16 @@ export default function CharactersPage() {
     if (!profile?.user_id) return;
     try {
       setLoading(true);
-      if (tab === 'drafts') {
-        const { data, error } = await supabase
-          .from('chimera_character_drafts')
-          .select('id, title, form_data, updated_at')
-          .order('updated_at', { ascending: false })
-          .limit(100);
-        if (error) throw error;
-        const query = searchQuery.trim().toLowerCase();
-        setCharacterDrafts((data || []).filter((draft) => !query || draft.title.toLowerCase().includes(query) || draft.form_data?.shortDescription?.toLowerCase().includes(query)));
-        setCharacters([]);
-        return;
-      }
       let query = supabase
         .from('ai_characters')
         .select('*');
 
-      query = query.eq('creator_id', profile.user_id);
-      if (tab === 'published') {
-        query = query.eq('visibility', 'public');
+      if (tab === 'mine') {
+        query = query.eq('creator_id', profile.user_id);
+      } else if (tab === 'drafts') {
+        query = query.eq('creator_id', profile.user_id).eq('visibility', 'private');
       } else {
-        query = query.neq('visibility', 'public');
+        query = query.or(`visibility.eq.public,creator_id.eq.${profile.user_id}`);
       }
 
       if (selectedCategory !== 'All') {
@@ -125,7 +106,6 @@ export default function CharactersPage() {
       }
 
       setCharacters(results);
-      setCharacterDrafts([]);
     } catch (err: any) {
       console.error('Error loading characters:', err);
       setCharacters([]);
@@ -194,40 +174,40 @@ export default function CharactersPage() {
   };
 
   return (
-    <div className="rp-page font-sans pb-24 relative overflow-hidden">
+    <div className="min-h-screen bg-transparent text-warm-900 dark:text-warm-50 font-sans pb-24 relative overflow-hidden transition-colors duration-300">
       
       {/* Ambient Red Glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-b from-red-600/15 via-amber-600/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
-      <div className="max-w-[1420px] mx-auto px-4 sm:px-6 lg:px-8 space-y-10 relative z-10 pt-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 relative z-10 pt-6">
 
         {/* ── 1. HERO SECTION ── */}
-        <section className="flex flex-col items-center text-center pt-6 sm:pt-10 space-y-5">
-          <div className="rp-micro inline-flex items-center gap-2 rounded-full border border-[#c99b50]/50 bg-black/30 px-3.5 py-1.5">
+        <section className="flex flex-col items-center text-center pt-6 sm:pt-8 space-y-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-bold uppercase tracking-wider">
             <Users size={14} />
-            <span>YOUR ROLEPLAY LIBRARY</span>
+            <span>AI Character Multiverse</span>
           </div>
 
-          <h1 className="rp-heading text-4xl sm:text-6xl font-extrabold tracking-tight">
-            My Cast
+          <h1 className="font-serif text-4xl sm:text-5xl font-extrabold tracking-tight text-warm-900 dark:text-white">
+            Characters &amp; OCs
           </h1>
 
-          <p className="rp-copy text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
-            The people you’ve brought into CHIMERA. Create, protect, and return to every character whose story is still unfolding.
+          <p className="text-sm sm:text-base text-warm-600 dark:text-warm-300 max-w-xl mx-auto leading-relaxed">
+            Build, roleplay, and manage persistent AI character identities with customizable personalities, greetings, and memory.
           </p>
 
           <div className="flex items-center gap-3 pt-2 flex-wrap justify-center">
             <button
               onClick={() => navigate('/characters/new')}
-            className="rp-gold-button"
+              className="px-6 py-3 rounded-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-extrabold text-xs shadow-lg shadow-red-600/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
             >
               <Plus size={16} strokeWidth={3} />
-              <span>Bring someone into CHIMERA</span>
+              <span>Create New Character</span>
             </button>
 
             <button
               onClick={() => navigate('/characters/new?import=true')}
-            className="rp-outline-button"
+              className="px-5 py-3 rounded-full bg-white/10 dark:bg-warm-800/80 hover:bg-white/20 text-warm-800 dark:text-white font-bold text-xs border border-warm-200 dark:border-warm-700 transition-all flex items-center gap-2"
               title="Import Character Card (.json or .png from Character.AI / Janitor AI)"
             >
               <Sparkles size={15} className="text-amber-500" />
@@ -238,38 +218,38 @@ export default function CharactersPage() {
 
 
         {/* ── 2. QUICK ACTIONS & FILTER CONTROLS ── */}
-        <section className="rp-panel p-4 rounded-3xl space-y-4">
+        <section className="p-4 rounded-3xl bg-white/70 dark:bg-warm-850/80 backdrop-blur-xl border border-warm-200/80 dark:border-warm-750/80 shadow-lg space-y-4">
           
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             
             {/* Tabs */}
-            <div className="flex items-center p-1 rounded-2xl border border-[#c99b50]/35 bg-black/30 w-full sm:w-auto">
+            <div className="flex items-center p-1 rounded-2xl bg-warm-100 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 w-full sm:w-auto">
               <button
-                onClick={() => setTab('published')}
+                onClick={() => setTab('mine')}
                 className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                  tab === 'published'
-                    ? 'bg-[#2b2116] text-[#ffe2a1] shadow-md ring-1 ring-[#c99b50]/70'
-                    : 'text-[#bfb4a3] hover:text-[#f4d390]'
+                  tab === 'mine'
+                    ? 'bg-red-600 text-white shadow-md'
+                    : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
               >
-                Published
+                My Characters
               </button>
               <button
-                onClick={() => setTab('private')}
+                onClick={() => setTab('all')}
                 className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                  tab === 'private'
-                    ? 'bg-[#2b2116] text-[#ffe2a1] shadow-md ring-1 ring-[#c99b50]/70'
-                    : 'text-[#bfb4a3] hover:text-[#f4d390]'
+                  tab === 'all'
+                    ? 'bg-red-600 text-white shadow-md'
+                    : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
               >
-                Private
+                Public Multiverse
               </button>
               <button
                 onClick={() => setTab('drafts')}
                 className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                   tab === 'drafts'
-                    ? 'bg-[#2b2116] text-[#ffe2a1] shadow-md ring-1 ring-[#c99b50]/70'
-                    : 'text-[#bfb4a3] hover:text-[#f4d390]'
+                    ? 'bg-red-600 text-white shadow-md'
+                    : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
               >
                 Drafts
@@ -281,7 +261,7 @@ export default function CharactersPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 rounded-xl border border-[#c99b50]/35 bg-black/30 text-xs font-bold text-[#e6d7bf] focus:outline-none"
+                className="px-3 py-2 rounded-xl bg-warm-100 dark:bg-warm-800 border border-warm-200 dark:border-warm-700 text-xs font-bold text-warm-700 dark:text-warm-300 focus:outline-none"
               >
                 {SORT_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -290,11 +270,11 @@ export default function CharactersPage() {
                 ))}
               </select>
 
-              <div className="flex items-center p-1 rounded-xl border border-[#c99b50]/35 bg-black/30">
+              <div className="flex items-center p-1 rounded-xl bg-warm-100 dark:bg-warm-800 border border-warm-200 dark:border-warm-700">
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`p-1.5 rounded-lg transition-all ${
-                    viewMode === 'grid' ? 'bg-[#2b2116] text-[#f2d28f] shadow-sm' : 'text-[#a99e8f]'
+                    viewMode === 'grid' ? 'bg-white dark:bg-warm-700 text-red-600 dark:text-red-400 shadow-sm' : 'text-warm-400'
                   }`}
                 >
                   <Grid3X3 size={16} />
@@ -302,7 +282,7 @@ export default function CharactersPage() {
                 <button
                   onClick={() => setViewMode('list')}
                   className={`p-1.5 rounded-lg transition-all ${
-                    viewMode === 'list' ? 'bg-[#2b2116] text-[#f2d28f] shadow-sm' : 'text-[#a99e8f]'
+                    viewMode === 'list' ? 'bg-white dark:bg-warm-700 text-red-600 dark:text-red-400 shadow-sm' : 'text-warm-400'
                   }`}
                 >
                   <List size={16} />
@@ -320,8 +300,8 @@ export default function CharactersPage() {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
                   selectedCategory === cat
-                    ? 'bg-[#9b6934] text-[#fff1ce] shadow-sm'
-                    : 'border border-[#c99b50]/25 bg-black/25 text-[#c8bba7] hover:text-[#f4d390]'
+                    ? 'bg-red-600 text-white shadow-sm'
+                    : 'bg-warm-100 dark:bg-warm-800 text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
               >
                 {cat}
@@ -340,33 +320,12 @@ export default function CharactersPage() {
                 <div key={i} className="h-64 rounded-3xl bg-warm-200 dark:bg-warm-800 animate-pulse" />
               ))}
             </div>
-          ) : tab === 'drafts' ? characterDrafts.length === 0 ? (
-            <RichEmptyState
-              icon={FileText}
-              title="No private drafts yet"
-              description="When you choose Save private draft while creating a character, it will live here—visible only to you."
-              actionLabel="Create Character"
-              onAction={() => navigate('/characters/new')}
-            />
-          ) : (
-            <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
-              {characterDrafts.map((draft) => (
-                <button key={draft.id} onClick={() => navigate(`/characters/new?draftId=${draft.id}`)} className="group overflow-hidden rounded-3xl border border-[#d8b56a]/25 bg-warm-850 p-4 text-left shadow-lg transition hover:-translate-y-0.5 hover:border-[#d8b56a]/60">
-                  <div className="flex aspect-[16/8] items-center justify-center overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_50%_20%,rgba(153,103,193,0.35),transparent_35%),#1b1323]">
-                    {draft.form_data?.avatarUrl ? <img src={draft.form_data.avatarUrl} alt="" className="h-full w-full object-cover" /> : <FileText size={30} className="text-[#d8b56a]/70" />}
-                  </div>
-                  <div className="mt-4 flex items-center justify-between gap-3"><h3 className="font-serif text-lg font-semibold text-white">{draft.title}</h3><span className="rounded-full border border-[#d8b56a]/30 bg-[#d8b56a]/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#e9ca81]">Private draft</span></div>
-                  <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-warm-400">{draft.form_data?.shortDescription?.replace(/<[^>]*>/g, '') || 'An unfinished character waiting for you.'}</p>
-                  <p className="mt-4 text-[11px] font-semibold text-warm-500">Continue creating →</p>
-                </button>
-              ))}
-            </div>
           ) : characters.length === 0 ? (
             <RichEmptyState
               icon={Users}
-              title={tab === 'published' ? 'No one has stepped onto the stage yet.' : 'No private characters found'}
-              description={tab === 'published' ? 'Your published characters will appear here once you choose to share them with the multiverse.' : 'Private characters stay here for you until you decide otherwise.'}
-              actionLabel="Bring someone into CHIMERA"
+              title={tab === 'mine' ? 'No characters created yet' : 'No characters found'}
+              description={tab === 'mine' ? 'Start building your first AI character with rich backstory & greeting!' : 'Try selecting a different category or search term.'}
+              actionLabel="Create Character"
               onAction={() => navigate('/characters/new')}
             />
           ) : (
@@ -375,7 +334,7 @@ export default function CharactersPage() {
                 <CharacterCard
                   key={character.id}
                   character={character as any}
-                  onClick={() => navigate(`/characters/${character.id}`)}
+                  onClick={() => navigate(`/conversations/new?characterId=${character.id}`)}
                   onViewDetails={() => setSelectedDetailChar(character)}
                   onEdit={() => navigate(`/characters/${character.id}/edit`)}
                 />
@@ -391,7 +350,7 @@ export default function CharactersPage() {
           character={selectedDetailChar}
           onStartChat={() => {
             if (selectedDetailChar) {
-              navigate(`/characters/${selectedDetailChar.id}`);
+              navigate(`/conversations/new?characterId=${selectedDetailChar.id}`);
             }
           }}
           onEdit={
