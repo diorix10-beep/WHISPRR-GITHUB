@@ -22,13 +22,14 @@ interface NavLinkItem {
   token: string;
   icon?: any;
   comingSoon?: boolean;
+  shortLabel?: string;
 }
 
 const ROLEPLAY_NAV_LINKS: NavLinkItem[] = [
   { path: '/discover', token: 'navigation.discover', icon: Compass },
   { path: '/characters', token: 'navigation.my_cast', icon: Users },
   { path: '/conversations', token: 'navigation.chats', icon: MessageSquare },
-  { path: '/personas', token: 'navigation.who_you_are_here', icon: UserCheck },
+  { path: '/personas', token: 'navigation.who_you_are_here', icon: UserCheck, shortLabel: 'WYAH' },
 ];
 
 const STORYTELLING_NAV_LINKS: NavLinkItem[] = [
@@ -195,7 +196,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             return (
               <span className="flex items-center justify-center gap-1.5 w-full">
                 {Icon && <Icon size={15} className="shrink-0 opacity-80" />}
-                <span>{t(link.token)}</span>
+                 <span title={link.shortLabel ? t(link.token) : undefined}>{link.shortLabel || t(link.token)}</span>
                 {link.comingSoon && (
                   <span className="ml-1.5 text-[9px] uppercase tracking-wider font-bold text-warm-400 dark:text-warm-600 bg-warm-100 dark:bg-warm-800 px-1.5 py-0.5 rounded-md">
                     Soon
