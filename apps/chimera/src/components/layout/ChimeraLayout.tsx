@@ -445,7 +445,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             ) : (
               <Link
                 to="/auth"
-                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition-all"
+                className="px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white shadow-md hover:shadow-lg transition-all shrink-0 mr-1 sm:mr-2"
               >
                 Sign In
               </Link>

@@ -196,6 +196,16 @@ function AppLoader() {
         <Route path="/memory-policy" element={<MemoryPolicyPage />} />
         <Route path="/cookie-policy" element={<CookiePolicyPage />} />
 
+        {/* ── Public Platform Routes (with Layout) ───────────── */}
+        <Route element={<ChimeraLayout />}>
+          <Route path="/" element={<DiscoverPage />} />
+          <Route path="/discover" element={<DiscoverPage />} />
+          <Route path="/characters" element={<CharactersPage />} />
+          <Route path="/stories" element={<StoryReaderPage />} />
+          <Route path="/stories/:id" element={<StoryReaderPage />} />
+          <Route path="/worlds" element={<WorldsPage />} />
+        </Route>
+
         {/* ── Auth (Public Only) ────────────────────────────── */}
         <Route element={<PublicOnlyRoute />}>
           <Route path="/auth" element={<AuthPage />} />
@@ -213,10 +223,8 @@ function AppLoader() {
           {/* ── CHIMERA Platform (with Layout) ────────────── */}
           <Route element={<ChimeraLayout />}>
 
-            {/* Dashboard redirect & Discover Feed */}
+            {/* Dashboard redirect */}
             <Route path="/dashboard" element={<ChimeraHomeRedirect />} />
-            <Route path="/" element={<ChimeraHomeRedirect />} />
-            <Route path="/discover" element={<DiscoverPage />} />
             <Route path="/shards" element={<ShardsPage />} />
             <Route path="/vellum" element={<VellumPage />} />
 
