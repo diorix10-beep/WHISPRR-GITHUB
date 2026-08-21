@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import {
@@ -16,6 +16,7 @@ import { EmojiPicker } from '../components/common/EmojiPicker';
 import { ChatSettingsDrawer } from '../components/chat/ChatSettingsDrawer';
 import { ChatMemoryModal } from '../components/chat/ChatMemoryModal';
 import { MockPhoneModal } from '../components/chat/MockPhoneModal';
+import { DeviceActivityCard, DeviceSceneEventCard } from '../components/chat/DeviceActivityCard';
 import { CharacterMemoryCabinetModal } from '../components/chat/MemoryVisualizerModal';
 import { MultiCharacterHeader } from '../components/chat/MultiCharacterHeader';
 import { GuidedTurningPointCard, type GuidedTurningPoint } from '../components/chat/GuidedTurningPointCard';
@@ -37,6 +38,13 @@ import { RoleplaySafetyPauseCard } from '../components/chat/RoleplaySafetyPauseC
 import { CharacterExpressionAvatar } from '../components/character/CharacterExpressionAvatar';
 import { CharacterExpressionManagerModal } from '../components/character/CharacterExpressionManagerModal';
 import { Paperclip, AudioWaveform, Brain, Gamepad2, Users, Globe, UserCheck } from 'lucide-react';
+import {
+  createDeviceSceneEventContent,
+  parseDeviceActivityFromText,
+  parseDeviceSceneEvent,
+  type DeviceActivityApp,
+  type DeviceActivityMessage,
+} from '../lib/deviceActivity';
 
 interface MessageWithProfile extends Message {
   profiles?: Profile;
@@ -85,6 +93,7 @@ export default function ConversationPage() {
   const [sceneCanon, setSceneCanon] = useState('');
   const [sceneCanonDraft, setSceneCanonDraft] = useState('');
   const [isPhoneOpen, setIsPhoneOpen] = useState(false);
+  const [deviceActivityMessages, setDeviceActivityMessages] = useState<DeviceActivityMessage[]>([]);
 
   // Character memories are durable, user-controlled facts held privately for
   // the active player-character bond. They are retrieved by the AI runtime.
@@ -178,6 +187,52 @@ export default function ConversationPage() {
 
   const voice = useVoice();
   const aesthetics = useChatAesthetics(conversationId);
+  const firstCharacterMessageWithDeviceActivity = useMemo(() => {
+    return messages.find((message) => {
+      if (message.sender_id === user?.id) return false;
+      return parseDeviceActivityFromText(message.content).messages.length > 0;
+    }) || null;
+  }, [messages, user?.id]);
+  const parsedDeviceActivity = useMemo(
+    () => parseDeviceActivityFromText(firstCharacterMessageWithDeviceActivity?.content),
+    [firstCharacterMessageWithDeviceActivity?.content]
+  );
+  const deviceActivityAppStyle: DeviceActivityApp = deviceActivityMessages.some((message) => message.app === 'whatsapp') ? 'whatsapp' : 'imessage';
+  const deviceActivityStorageKey = conversationId ? `chimera_device_activity_${conversationId}` : null;
+
+  useEffect(() => {
+    if (!deviceActivityStorageKey) {
+      setDeviceActivityMessages([]);
+      return;
+    }
+
+    try {
+      const stored = localStorage.getItem(deviceActivityStorageKey);
+      setDeviceActivityMessages(stored ? JSON.parse(stored) : []);
+    } catch {
+      setDeviceActivityMessages([]);
+    }
+  }, [deviceActivityStorageKey]);
+
+  useEffect(() => {
+    if (!deviceActivityStorageKey || parsedDeviceActivity.messages.length === 0) return;
+
+    setDeviceActivityMessages((current) => {
+      if (current.length > 0) return current;
+      localStorage.setItem(deviceActivityStorageKey, JSON.stringify(parsedDeviceActivity.messages));
+      return parsedDeviceActivity.messages;
+    });
+  }, [deviceActivityStorageKey, parsedDeviceActivity.messages]);
+
+  const persistDeviceActivityMessages = useCallback((updater: (current: DeviceActivityMessage[]) => DeviceActivityMessage[]) => {
+    setDeviceActivityMessages((current) => {
+      const next = updater(current);
+      if (deviceActivityStorageKey) {
+        localStorage.setItem(deviceActivityStorageKey, JSON.stringify(next));
+      }
+      return next;
+    });
+  }, [deviceActivityStorageKey]);
 
   useEffect(() => {
     if (!memoryCharacter || !user?.id) {
@@ -278,7 +333,7 @@ export default function ConversationPage() {
 
   // Magic Trigger: Auto-Phone Layout Detection
   useEffect(() => {
-    if (messages.length === 0) return;
+    if (messages.length === 0 || deviceActivityMessages.filter((message) => !message.deleted).length === 0) return;
     const latestMessage = messages[messages.length - 1];
     if (!latestMessage.content) return;
     
@@ -303,7 +358,7 @@ export default function ConversationPage() {
     } else if (hasCloseKeyword && isPhoneOpen) {
       setIsPhoneOpen(false);
     }
-  }, [messages, isPhoneOpen]);
+  }, [messages, isPhoneOpen, deviceActivityMessages]);
 
   // Fetch conversation data
   useEffect(() => {
@@ -883,10 +938,36 @@ export default function ConversationPage() {
     }
   };
 
-  const handlePhoneSendMessage = async (content: string) => {
+  const handleDevicePhoneReply = async (body: string, replyTo: DeviceActivityMessage | null) => {
     if (!user || !conversationId) return;
-    
+
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const contact = replyTo?.contact || deviceActivityMessages.find((message) => !message.deleted)?.contact || otherUser?.display_name || 'Unknown';
+    const actorName = profile?.display_name || user.email?.split('@')[0] || 'You';
+    const localMessage: DeviceActivityMessage = {
+      id: `device-local-${Date.now()}`,
+      app: replyTo?.app || deviceActivityAppStyle,
+      contact,
+      body,
+      time,
+      direction: 'outgoing',
+      deleted: false,
+      edited: false,
+      replyToId: replyTo?.id || null,
+      createdAt: new Date().toISOString(),
+    };
+
+    persistDeviceActivityMessages((current) => [...current, localMessage]);
+
     try {
+      const content = createDeviceSceneEventContent({
+        actorName,
+        contact,
+        replyBody: body,
+        repliedToBody: replyTo?.body || null,
+        time,
+      });
+
       const { error: msgError } = await supabase
         .from('messages')
         .insert({
@@ -909,8 +990,21 @@ export default function ConversationPage() {
       void triggerAiReplies(getAiResponderIds());
     } catch (err: any) {
       console.error(err);
-      showToast('Failed to send text', 'error');
+      persistDeviceActivityMessages((current) => current.filter((message) => message.id !== localMessage.id));
+      showToast('Failed to send phone reply into the scene', 'error');
     }
+  };
+
+  const handleDevicePhoneUpdate = (messageId: string, body: string) => {
+    persistDeviceActivityMessages((current) => current.map((message) => (
+      message.id === messageId ? { ...message, body, edited: true } : message
+    )));
+  };
+
+  const handleDevicePhoneDelete = (messageId: string) => {
+    persistDeviceActivityMessages((current) => current.map((message) => (
+      message.id === messageId ? { ...message, deleted: true } : message
+    )));
   };
 
   // Request Selfie / Image Studio
@@ -1614,10 +1708,12 @@ export default function ConversationPage() {
       <MockPhoneModal
         isOpen={isPhoneOpen}
         onClose={() => setIsPhoneOpen(false)}
-        messages={messages}
-        onSendMessage={handlePhoneSendMessage}
-        otherUser={otherUser}
-        currentUser={profile}
+        messages={deviceActivityMessages}
+        appStyle={deviceActivityAppStyle}
+        currentUserName={profile?.display_name || 'You'}
+        onReply={handleDevicePhoneReply}
+        onUpdateMessage={handleDevicePhoneUpdate}
+        onDeleteMessage={handleDevicePhoneDelete}
       />
 
       {/* Main Layout Area */}
@@ -1703,6 +1799,20 @@ export default function ConversationPage() {
                 const isOwn = message.sender_id === user?.id;
                 const sender: any = message.profiles || (isOwn ? profile : otherUser);
                 const isAI = sender?.role === 'ai_character';
+                const deviceSceneEvent = parseDeviceSceneEvent(message.content);
+                const isDeviceGreetingMessage = firstCharacterMessageWithDeviceActivity?.id === message.id;
+                const displayContent = isDeviceGreetingMessage ? parsedDeviceActivity.textWithoutDeviceActivity : message.content;
+
+                if (deviceSceneEvent) {
+                  return (
+                    <DeviceSceneEventCard
+                      key={message.id}
+                      title={deviceSceneEvent.title}
+                      body={deviceSceneEvent.body}
+                      detail={deviceSceneEvent.detail}
+                    />
+                  );
+                }
 
                 return (
                   <div 
@@ -1741,7 +1851,15 @@ export default function ConversationPage() {
                         />
                       )}
 
-                      {message.content && message.content !== 'Sent an image' && (
+                      {isDeviceGreetingMessage && deviceActivityMessages.filter((deviceMessage) => !deviceMessage.deleted).length > 0 && (
+                        <DeviceActivityCard
+                          messages={deviceActivityMessages}
+                          appStyle={deviceActivityAppStyle}
+                          onOpen={() => setIsPhoneOpen(true)}
+                        />
+                      )}
+
+                      {displayContent && displayContent !== 'Sent an image' && (
                         <div className={`text-[15px] sm:text-base leading-relaxed text-warm-800 dark:text-warm-200 whitespace-pre-wrap font-serif
                           ${isModernLayout ? `px-4 py-2.5 rounded-2xl max-w-[85%] ${
                             isOwn 
@@ -1772,7 +1890,7 @@ export default function ConversationPage() {
                               </div>
                             </div>
                           ) : (
-                            message.content
+                            displayContent
                           )}
                         </div>
                       )}

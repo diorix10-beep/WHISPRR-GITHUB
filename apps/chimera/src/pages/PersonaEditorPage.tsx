@@ -150,7 +150,8 @@ export default function PersonaEditorPage() {
       navigate('/personas');
     } catch (err) {
       console.error('Error saving persona:', err);
-      showToast('Failed to save persona', 'error');
+      const message = err instanceof Error ? err.message : 'Failed to save persona';
+      showToast(message, 'error');
     } finally {
       setSaving(false);
     }
