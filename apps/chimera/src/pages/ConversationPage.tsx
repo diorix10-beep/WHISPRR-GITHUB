@@ -561,7 +561,10 @@ export default function ConversationPage() {
           .eq('user_id', newMsg.sender_id)
           .maybeSingle();
 
-        setMessages(prev => [...prev, { ...newMsg, profiles: senderProfile ?? undefined }]);
+        setMessages(prev => {
+          if (prev.some(message => message.id === newMsg.id)) return prev;
+          return [...prev, { ...newMsg, profiles: senderProfile ?? undefined }];
+        });
 
         if (senderProfile?.role === 'ai_character' && voiceEnabledRef.current) {
           voiceSpeakRef.current(newMsg.content);
@@ -702,6 +705,85 @@ export default function ConversationPage() {
     return data.publicUrl;
   };
 
+  const getAiResponderIds = useCallback(() => {
+    const ids = new Set<string>();
+
+    for (const participant of participants) {
+      if (participant.user_id !== user?.id && (participant.role as string) === 'ai_character') {
+        ids.add(participant.user_id);
+      }
+    }
+
+    if (otherUser && otherUser.user_id !== user?.id && (otherUser.role as string) === 'ai_character') {
+      ids.add(otherUser.user_id);
+    }
+
+    return Array.from(ids);
+  }, [otherUser, participants, user?.id]);
+
+  const triggerAiReplies = useCallback(async (botUserIds: string[]) => {
+    if (!conversationId || botUserIds.length === 0) return;
+
+    const uniqueBotIds = Array.from(new Set(botUserIds));
+    setTypingUsers(uniqueBotIds);
+
+    try {
+      const sessionRes = await supabase.auth.getSession();
+      const token = sessionRes.data.session?.access_token;
+      const failures: string[] = [];
+      let hasReply = false;
+
+      for (const botUserId of uniqueBotIds) {
+        try {
+          const res = await fetch('/api/ai-chat', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              conversation_id: conversationId,
+              bot_user_id: botUserId,
+              chat_mode: chatMode,
+              active_speaker_id: botUserId,
+            }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            throw new Error(data?.error || 'The character could not generate a reply.');
+          }
+          if (data?.pause_roleplay) {
+            setIsRoleplayPaused(true);
+          }
+          if (data?.reply) {
+            hasReply = true;
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'The character could not generate a reply.';
+          failures.push(message);
+          console.error('AI reply generation failed:', error);
+        }
+      }
+
+      if (hasReply) {
+        const { data: updatedMsgs } = await supabase
+          .from('messages')
+          .select('*, profiles:sender_id(*)')
+          .eq('conversation_id', conversationId)
+          .is('deleted_at', null)
+          .order('created_at', { ascending: true });
+        if (updatedMsgs) setMessages(updatedMsgs);
+      }
+
+      if (failures.length > 0) {
+        const firstError = failures[0];
+        showToast(`Your message was saved, but ${failures.length === 1 ? 'a character' : 'some characters'} could not reply: ${firstError}`, 'error');
+      }
+    } finally {
+      setTypingUsers([]);
+    }
+  }, [chatMode, conversationId, showToast]);
+
   // Send message
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -791,54 +873,7 @@ export default function ConversationPage() {
         })
         .eq('id', conversationId);
 
-      if (otherUser && (otherUser.role as string) === 'ai_character') {
-        // Simulate typing status immediately for fluid UI
-        setTypingUsers([otherUser.user_id]);
-
-        // Trigger AI reply generation in the background
-        const sessionRes = await supabase.auth.getSession();
-        const token = sessionRes.data.session?.access_token;
-        
-        fetch('/api/ai-chat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            conversation_id: conversationId,
-            bot_user_id: otherUser.user_id,
-            chat_mode: chatMode,
-            active_speaker_id: activeSpeakerId,
-          })
-        })
-          .then(async (res) => {
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) {
-              throw new Error(data?.error || 'The character could not generate a reply.');
-            }
-            return data;
-          })
-          .then(async (data) => {
-            setTypingUsers([]);
-            if (data?.pause_roleplay) {
-              setIsRoleplayPaused(true);
-            } else if (data?.reply) {
-              // Refresh messages immediately in case Supabase Realtime connection drops on mobile
-              const { data: updatedMsgs } = await supabase
-                .from('messages')
-                .select('*')
-                .eq('conversation_id', conversationId)
-                .order('created_at', { ascending: true });
-              if (updatedMsgs) setMessages(updatedMsgs);
-            }
-          })
-          .catch((err) => {
-            console.error('AI reply generation failed:', err);
-            setTypingUsers([]);
-            showToast('Your message was saved, but the character could not reply. Please try again.', 'error');
-          });
-      }
+      void triggerAiReplies(getAiResponderIds());
     } catch (err: any) {
       console.error(err);
       showToast('Failed to send message', 'error');
@@ -871,16 +906,7 @@ export default function ConversationPage() {
         })
         .eq('id', conversationId);
 
-      if (otherUser && (otherUser.role as string) === 'ai_character') {
-        const sessionRes = await supabase.auth.getSession();
-        const token = sessionRes.data.session?.access_token;
-        
-        fetch('/api/ai-chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ conversation_id: conversationId, bot_user_id: otherUser.user_id })
-        }).catch(err => console.error(err));
-      }
+      void triggerAiReplies(getAiResponderIds());
     } catch (err: any) {
       console.error(err);
       showToast('Failed to send text', 'error');
@@ -2456,19 +2482,32 @@ export default function ConversationPage() {
         isOpen={showAddCharModal}
         onClose={() => setShowAddCharModal(false)}
         existingIds={multiParticipants.map(p => p.character_id)}
-        onSelectCharacter={(char) => {
-          setMultiParticipants(prev => [
-            ...prev,
-            {
-              character_id: char.id,
-              display_name: char.display_name,
-              avatar_emoji: char.avatar_emoji || '🎭',
-              photo_url: char.photo_url || undefined,
-              is_active_speaker: false,
-              role: 'ai_character'
-            }
-          ]);
-          showToast(`Invited ${char.display_name} to the group scene!`, 'success');
+        onSelectCharacter={async (char) => {
+          if (!conversationId) return;
+          try {
+            const { error } = await supabase
+              .from('conversation_participants')
+              .insert({ conversation_id: conversationId, user_id: char.user_id });
+            if (error && error.code !== '23505') throw error;
+
+            setParticipants(prev => prev.some(p => p.user_id === char.user_id) ? prev : [...prev, char]);
+            setMultiParticipants(prev => prev.some(p => p.character_id === char.user_id) ? prev : [
+              ...prev,
+              {
+                character_id: char.user_id,
+                display_name: char.display_name,
+                username: char.username,
+                avatar_emoji: char.avatar_emoji || '🎭',
+                photo_url: char.photo_url || undefined,
+                personality_summary: char.bio || undefined,
+                is_active_speaker: false,
+              }
+            ]);
+            showToast(`Invited ${char.display_name} to the group scene!`, 'success');
+          } catch (error) {
+            console.error('Failed to invite character to scene:', error);
+            showToast('Could not invite that character to the scene.', 'error');
+          }
         }}
       />
 
