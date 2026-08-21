@@ -315,7 +315,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
                 title={t('common.storytelling')}
               >
                 <PenTool size={12} className="sm:w-3.5 sm:h-3.5" />
-                <span className="hidden sm:inline">{t('common.story')}</span>
+                <span className="hidden sm:inline">{t('common.storytelling')}</span>
               </button>
             </div>
 
