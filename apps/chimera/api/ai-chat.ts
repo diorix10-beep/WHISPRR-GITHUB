@@ -725,8 +725,8 @@ export default async function handler(req: Request) {
         headers: {
           'Authorization': `Bearer ${openRouterKey}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://chimera.app', // Replace with your actual domain
-          'X-Title': 'CHIMERA AI', 
+          'HTTP-Referer': 'https://chimera.it.com',
+          'X-Title': 'CHIMERA',
         },
         body: JSON.stringify({
           model: aiModel,

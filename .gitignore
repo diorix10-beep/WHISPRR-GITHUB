@@ -21,6 +21,11 @@ dist-ssr
 *.sln
 *.sw?
 .env
+.env.*
+!.env.example
 .vercel
 node_modules
 scratch/
+supabase/.temp/
+apps/chimera/android/
+apps/chimera/ios/
