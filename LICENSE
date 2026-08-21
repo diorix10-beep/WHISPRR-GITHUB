@@ -1,0 +1,94 @@
+CHIMERA Community Source License v0.1
+
+Copyright (c) 2026 Dior and CHIMERA.
+
+This license is intentionally source-available, not OSI-approved open source.
+It lets people inspect, download, run, study, and contribute to CHIMERA while
+protecting the official CHIMERA product, brand, realms, identity, and hosted
+service.
+
+1. Definitions
+
+"CHIMERA" means the CHIMERA software, web application, product identity,
+official realm network, creative systems, documentation, and related materials
+made available in this repository.
+
+"Official CHIMERA" means the CHIMERA service operated by Dior or an expressly
+authorized CHIMERA maintainer, including the official website, production
+database, official realms, official economy, official characters, official
+assets, and official community spaces.
+
+"You" means any person or organization accessing, copying, running, modifying,
+or contributing to this repository.
+
+2. Permissions
+
+You may:
+
+- view, download, and fork the repository;
+- run CHIMERA locally for personal use, learning, testing, evaluation, and
+  non-commercial development;
+- modify CHIMERA privately for local development;
+- submit issues, patches, and pull requests to the official repository;
+- quote small portions of the code for educational discussion with attribution.
+
+3. Restrictions
+
+You may not, without prior written permission from Dior or an authorized CHIMERA
+representative:
+
+- sell, rent, sublicense, or commercially host CHIMERA or a modified version of
+  CHIMERA;
+- operate a public service that competes with or impersonates Official CHIMERA
+  using this codebase;
+- use the CHIMERA name, logo, trade dress, official realm names, official
+  characters, official lore, official economy terms, official assets, or
+  confusingly similar branding in a fork, derivative project, product, service,
+  marketplace listing, or community;
+- remove or obscure CHIMERA copyright, attribution, license, safety, or brand
+  notices;
+- imply that a fork, derivative, local build, or third-party service is
+  official CHIMERA;
+- use CHIMERA to deceive users, impersonate real people, commit fraud, harvest
+  credentials, expose secrets, or violate applicable law.
+
+4. Contributions
+
+By submitting code, text, design, configuration, documentation, or other
+materials to CHIMERA, you grant Dior and CHIMERA a perpetual, worldwide,
+royalty-free license to use, modify, publish, distribute, sublicense, and
+commercialize your contribution as part of CHIMERA.
+
+You represent that you have the right to submit the contribution and that it
+does not knowingly include secrets, malware, stolen code, or content you do not
+have permission to contribute.
+
+5. Brand and assets
+
+The CHIMERA name, logo, official realms, official characters, official lore,
+official economy, visual identity, and brand assets are not licensed for reuse
+except where a separate written permission says otherwise. See BRAND.md for
+additional brand rules.
+
+6. No production access
+
+This license does not grant access to the Official CHIMERA production database,
+Supabase project, API keys, provider accounts, payment accounts, private
+datasets, user data, analytics, deployment credentials, or administrative tools.
+
+7. No warranty
+
+CHIMERA is provided "as is", without warranty of any kind, express or implied,
+including but not limited to warranties of merchantability, fitness for a
+particular purpose, and non-infringement. You use CHIMERA at your own risk.
+
+8. Termination
+
+If you violate this license, your rights under it terminate automatically. Dior
+or CHIMERA may require you to stop using CHIMERA materials, remove infringing
+copies, and stop using protected CHIMERA identity or assets.
+
+9. Commercial permission
+
+For commercial licensing, hosting permission, partnerships, or brand permission,
+contact CHIMERA through the official support or business channels.
