@@ -1,11 +1,12 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   X, User, Settings, 
-  Sparkles, Users, Globe, Volume2, Shield, ArrowUpRight
+  Sparkles, Users, Globe, Volume2, Shield, ArrowUpRight, Monitor, Download
 } from 'lucide-react';
 import { WhisprrLogo } from '../common/WhisprrLogo';
 import { ShardCrystalImage } from '../common/ShardCrystalImage';
+import { ChimeraDesktopDownloadModal } from '../common/ChimeraDesktopDownloadModal';
 
 const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
 const whisprrUrl = isLocalhost ? 'http://localhost:5174' : 'https://whisprr.xyz';
@@ -17,6 +18,7 @@ interface AppLauncherModalProps {
 
 export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
   const navigate = useNavigate();
+  const [showDesktopModal, setShowDesktopModal] = useState(false);
 
   // Close on Escape key
   useEffect(() => {
@@ -192,12 +194,38 @@ export function AppLauncherModal({ isOpen, onClose }: AppLauncherModalProps) {
           </div>
         </div>
 
+        {/* Desktop Application Banner */}
+        <div className="mx-6 mb-5 p-4 rounded-2xl bg-gradient-to-r from-red-950/80 via-warm-950/90 to-amber-950/80 border border-amber-500/30 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+              <Monitor size={18} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-white">CHIMERA Desktop Application</p>
+              <p className="text-[10px] text-warm-300">Native installer for macOS (.dmg) &amp; Windows (.exe)</p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setShowDesktopModal(true)}
+            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold text-xs shadow-md transition-all shrink-0 flex items-center gap-1.5"
+          >
+            <Download size={13} />
+            <span>Download App</span>
+          </button>
+        </div>
+
         {/* ── Footer ─────────────────────────────────────────────── */}
         <div className="px-6 py-3 border-t border-warm-100 dark:border-warm-800 bg-warm-50/80 dark:bg-warm-900/50 rounded-b-3xl">
           <p className="text-center text-[10px] text-warm-400 dark:text-warm-500 font-medium">
             © {new Date().getFullYear()} WHISPRR & CHIMERA Ecosystem · All rights reserved
           </p>
         </div>
+
+        <ChimeraDesktopDownloadModal
+          isOpen={showDesktopModal}
+          onClose={() => setShowDesktopModal(false)}
+        />
       </div>
     </div>
   );

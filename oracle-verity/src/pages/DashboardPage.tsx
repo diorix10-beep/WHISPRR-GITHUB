@@ -14,6 +14,8 @@ import { OracleMemoryPanel } from '../components/workspace/OracleMemoryPanel';
 import { ProjectAnalytics } from '../components/workspace/ProjectAnalytics';
 import { TelegramMonitor } from '../components/workspace/TelegramMonitor';
 import { OracleFamilyTree } from '../components/workspace/OracleFamilyTree';
+import { useABTest } from '../hooks/useABTest';
+import { sendEvent } from '../lib/analytics';
 
 export function DashboardPage() {
   const store = useOracleStore();
@@ -76,6 +78,12 @@ export function DashboardPage() {
 
           <div style={{ marginTop: '24px', width: '100%', maxWidth: '400px' }}>
              <ActivityTicker mode={mode} lang={lang} />
+          </div>
+
+          {/* Lead capture CTA with A/B tested headline */}
+          <div style={{ marginTop: '20px' }}>
+            {/* run a headline test */}
+            <ABCT />
           </div>
 
           {!settings.hasLLM() && (
@@ -141,6 +149,22 @@ export function DashboardPage() {
       {/* FAMILY LORE SECTION */}
       <div>
         <OracleFamilyTree accentColor={accentColor} />
+      </div>
+    </div>
+  );
+}
+
+function ABCT() {
+  const { variant } = useABTest('dashboard_cta', ['Join early access', 'Get early access — free invites']);
+
+  return (
+    <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800 }}>{variant}</div>
+        <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+          <a href="#/lead-capture" onClick={() => sendEvent('cta_click', { variant })} style={{ padding: '10px 14px', background: '#60a5fa', color: '#000', borderRadius: 8, fontWeight: 800, textDecoration: 'none' }}>Join</a>
+          <a href="#/resources" style={{ padding: '10px 14px', background: 'rgba(255,255,255,0.04)', color: 'white', borderRadius: 8, textDecoration: 'none' }}>Resources</a>
+        </div>
       </div>
     </div>
   );

@@ -14,6 +14,10 @@ import { ProfilePage } from './pages/ProfilePage';
 import { TerminalPage } from './pages/TerminalPage';
 import { CompanionWorkspacePage } from './pages/CompanionWorkspacePage';
 import { FamilyProfilePage } from './pages/FamilyProfilePage';
+import { BlogPostPage } from './pages/BlogPostPage';
+import { LeadCapturePage } from './pages/LeadCapturePage';
+import { ThankYouPage } from './pages/ThankYouPage';
+import { ResourcesPage } from './pages/ResourcesPage';
 
 export default function App() {
   return (
@@ -29,6 +33,10 @@ export default function App() {
           <Route path="telegram" element={<TelegramPage />} />
           <Route path="support" element={<SupportPage />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="resources" element={<ResourcesPage />} />
+          <Route path="lead-capture" element={<LeadCapturePage />} />
+          <Route path="thank-you" element={<ThankYouPage />} />
+          <Route path="blog/:slug" element={<BlogPostPage />} />
         </Route>
       </Routes>
     </HashRouter>
