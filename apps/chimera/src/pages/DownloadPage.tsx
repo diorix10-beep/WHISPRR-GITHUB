@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft,
-  ArrowRight,
   CheckCircle2,
   Code2,
   Copy,
@@ -15,6 +14,8 @@ import {
 } from 'lucide-react';
 
 const GITHUB_REPO_URL = 'https://github.com/diorix10-beep/WHISPRR-GITHUB';
+const GITHUB_BRANCH = 'sync/chimera-main';
+const GITHUB_ZIP_URL = `${GITHUB_REPO_URL}/archive/refs/heads/${GITHUB_BRANCH}.zip`;
 
 const setupSteps = [
   {
@@ -61,16 +62,16 @@ export default function DownloadPage() {
               </div>
               <h1 className="mt-5 font-serif text-5xl font-black leading-none text-white sm:text-6xl">
                 Download the gate.
-                <span className="block text-[#f8d796]">Enter the official realm.</span>
+                <span className="block text-[#f8d796]">Run CHIMERA locally.</span>
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-white/65">
-                CHIMERA can be used through the official web realm today. Developers and advanced users can also run a local preview from GitHub, connect their own local environment, and help build the system.
+                CHIMERA early access is download-first. Get the developer preview, run it with your own local environment, and use the official website as the front gate for updates, docs, and source access.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
-                <Link to="/auth" className="inline-flex items-center gap-2 rounded-2xl bg-[#f5d18c] px-5 py-3 text-sm font-black text-black transition hover:-translate-y-0.5 hover:bg-[#ffe0a3]">
-                  Enter official CHIMERA
-                  <ArrowRight size={16} />
-                </Link>
+                <a href={GITHUB_ZIP_URL} className="inline-flex items-center gap-2 rounded-2xl bg-[#f5d18c] px-5 py-3 text-sm font-black text-black transition hover:-translate-y-0.5 hover:bg-[#ffe0a3]">
+                  <Download size={16} />
+                  Download ZIP
+                </a>
                 <a href={GITHUB_REPO_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.06] px-5 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/10">
                   <Github size={16} />
                   Open GitHub
@@ -86,12 +87,18 @@ export default function DownloadPage() {
                 </div>
                 <div>
                   <p className="text-sm font-black uppercase tracking-[0.16em] text-white/40">Recommended now</p>
-                  <p className="text-xl font-black text-white">Use the hosted realm first</p>
+                  <p className="text-xl font-black text-white">Download the preview first</p>
                 </div>
               </div>
               <p className="mt-4 text-sm leading-7 text-white/60">
-                The GitHub version is not yet a one-click game launcher. It is a developer/local preview inspired by the self-hostable spirit of tools like SillyTavern, while CHIMERA keeps its own identity, product rules, and official hosted world.
+                The official website is the front gate, but this early-access round is for people who want to download the source, run CHIMERA locally, and help shape the system before the hosted realm becomes the main public experience.
               </p>
+              <div className="mt-5 rounded-2xl border border-[#f5d18c]/15 bg-[#f5d18c]/10 p-4">
+                <p className="text-sm font-black text-[#f8d796]">Need the files?</p>
+                <p className="mt-2 text-xs leading-5 text-white/55">
+                  Use <span className="font-bold text-white">Download ZIP</span> for the direct source archive, or use GitHub if you want to clone, fork, inspect commits, or contribute.
+                </p>
+              </div>
             </div>
           </div>
         </section>
