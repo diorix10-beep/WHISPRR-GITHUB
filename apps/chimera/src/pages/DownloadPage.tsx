@@ -16,7 +16,6 @@ import {
 
 const GITHUB_REPO_URL = 'https://github.com/diorix10-beep/WHISPRR-GITHUB';
 const GITHUB_BRANCH = 'sync/chimera-main';
-const GITHUB_ZIP_URL = `${GITHUB_REPO_URL}/archive/refs/heads/${GITHUB_BRANCH}.zip`;
 
 const setupSteps = [
   {
@@ -66,16 +65,16 @@ export default function DownloadPage() {
                 <span className="block text-[#f8d796]">Or enter the realm.</span>
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-white/65">
-                CHIMERA early access has two gates: enter the public realm online to explore what exists now, or download the developer preview to run the source locally and help build what comes next.
+                Enter CHIMERA in your browser, or install the native desktop app for a focused workspace that keeps the same characters, stories, worlds, and roleplays close at hand.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <Link to="/discover" className="inline-flex items-center gap-2 rounded-2xl bg-[#f5d18c] px-5 py-3 text-sm font-black text-black transition hover:-translate-y-0.5 hover:bg-[#ffe0a3]">
                   Enter Realm
                   <ArrowRight size={16} />
                 </Link>
-                <a href={GITHUB_ZIP_URL} className="inline-flex items-center gap-2 rounded-2xl bg-[#f5d18c] px-5 py-3 text-sm font-black text-black transition hover:-translate-y-0.5 hover:bg-[#ffe0a3]">
+                <a href="#desktop-installers" className="inline-flex items-center gap-2 rounded-2xl bg-[#f5d18c] px-5 py-3 text-sm font-black text-black transition hover:-translate-y-0.5 hover:bg-[#ffe0a3]">
                   <Download size={16} />
-                  Download ZIP
+                  Get CHIMERA Desktop
                 </a>
                 <a href={GITHUB_REPO_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.06] px-5 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/10">
                   <Github size={16} />
@@ -96,14 +95,28 @@ export default function DownloadPage() {
                 </div>
               </div>
               <p className="mt-4 text-sm leading-7 text-white/60">
-                If someone only wants to see CHIMERA, they should enter the public realm. If they want to install, inspect, modify, or contribute, they should download the source archive or open GitHub.
+                If someone only wants to see CHIMERA, they should enter the public realm. If they want a normal installed application, they should choose the desktop installer. Source code remains available separately for developers.
               </p>
               <div className="mt-5 rounded-2xl border border-[#f5d18c]/15 bg-[#f5d18c]/10 p-4">
-                <p className="text-sm font-black text-[#f8d796]">Need the files?</p>
+                <p className="text-sm font-black text-[#f8d796]">Desktop app first</p>
                 <p className="mt-2 text-xs leading-5 text-white/55">
-                  Use <span className="font-bold text-white">Download ZIP</span> for the direct source archive, or use GitHub if you want to clone, fork, inspect commits, or contribute.
+                  Install CHIMERA like a normal application. Use <span className="font-bold text-white">Developer Access</span> only when you want to inspect, clone, or contribute to the source.
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="desktop-installers" className="mt-8 scroll-mt-6 rounded-[2rem] border border-[#f5d18c]/20 bg-[#15131d] p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f8d796]">Native desktop</p>
+              <h2 className="mt-2 font-serif text-3xl font-black">Installers are being prepared</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-7 text-white/58">The Tauri 2 desktop shell is now part of the project. Signed macOS and Windows installers will appear here once their target-platform builds are produced.</p>
+            </div>
+            <div className="flex shrink-0 flex-wrap gap-2 text-xs font-black">
+              <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-2 text-white/55">macOS · .dmg pending</span>
+              <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-2 text-white/55">Windows · .msi pending</span>
             </div>
           </div>
         </section>
@@ -113,15 +126,15 @@ export default function DownloadPage() {
             <div className="flex items-start gap-3">
               <ShieldCheck className="mt-0.5 text-[#f8d796]" size={24} />
               <div>
-                <h2 className="font-serif text-3xl font-black">What this download means</h2>
+                <h2 className="font-serif text-3xl font-black">Choose your way into CHIMERA</h2>
                 <p className="mt-3 text-sm leading-7 text-white/58">
-                  Downloading CHIMERA gives you access to the developer preview code for learning, local development, and contribution. It does not grant ownership of the CHIMERA name, official realms, logo, characters, lore, economy, or hosted production service.
+                  The desktop application is for people who want to use CHIMERA. Developer Access is for people who want to study or contribute to the project. They are intentionally separate downloads.
                 </p>
               </div>
             </div>
 
             <div className="mt-6 space-y-3">
-              {['Official production lives at chimera.it.com.', 'Local development uses your own local environment values.', 'Production Supabase data is not part of the downloadable preview.', 'Forks must not pretend to be official CHIMERA.'].map((item) => (
+              {['The desktop app keeps the official CHIMERA identity.', 'Sign in with the same account you use on the web.', 'The app uses the existing secure Supabase and server API boundary.', 'Developer builds and forks must not pretend to be official CHIMERA.'].map((item) => (
                 <div key={item} className="flex gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-sm text-white/68">
                   <CheckCircle2 size={17} className="mt-0.5 shrink-0 text-emerald-300" />
                   {item}
@@ -133,7 +146,7 @@ export default function DownloadPage() {
           <div className="rounded-[2rem] border border-white/10 bg-[#0d0e15] p-6">
             <div className="flex items-center gap-3">
               <TerminalSquare className="text-[#f8d796]" size={24} />
-              <h2 className="font-serif text-3xl font-black">Run locally</h2>
+              <h2 className="font-serif text-3xl font-black">Developer Access</h2>
             </div>
             <div className="mt-5 space-y-3">
               {setupSteps.map((step, index) => (
@@ -158,16 +171,16 @@ export default function DownloadPage() {
           </div>
         </section>
 
-        <section className="mt-8 rounded-[2rem] border border-white/10 bg-gradient-to-r from-[#1d1729] to-[#101a22] p-6">
+        <section className="mt-8 rounded-[2rem] border border-[#f5d18c]/20 bg-gradient-to-r from-[#1d1729] to-[#101a22] p-6">
           <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-white/45">
                 <Code2 size={13} />
                 Source-available, not brand-free
               </div>
-              <h2 className="mt-3 font-serif text-3xl font-black">CHIMERA is Dior’s creation.</h2>
+              <h2 className="mt-3 font-serif text-3xl font-black">Need the source code?</h2>
               <p className="mt-2 max-w-3xl text-sm leading-7 text-white/58">
-                The code can be explored for learning, local development, and contribution. The official CHIMERA identity remains protected by the project license and brand rules.
+                Open the repository only if you are a developer, contributor, or auditor. The official CHIMERA identity remains protected by the project license and brand rules.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
