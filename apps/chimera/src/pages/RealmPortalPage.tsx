@@ -20,23 +20,23 @@ const GITHUB_ZIP_URL = `${GITHUB_REPO_URL}/archive/refs/heads/${GITHUB_BRANCH}.z
 const realmCards = [
   {
     title: 'Roleplay Rooms',
-    description: 'Download the developer preview to run CHIMERA locally and test AI character scenes with your own setup.',
+    description: 'Enter the public realm to discover characters, begin scenes, and preview CHIMERA’s AI roleplay systems.',
     icon: MessageCircle,
-    href: '/download',
+    href: '/characters',
     accent: 'from-[#f6c56f] to-[#c8793f]',
   },
   {
     title: 'Storytelling Desk',
-    description: 'Explore the source for VELLUM, the storytelling side of CHIMERA, and follow the local setup path.',
+    description: 'Explore VELLUM, the storytelling side of CHIMERA, where chapters, worlds, and fiction systems take shape.',
     icon: BookOpen,
-    href: '/download',
+    href: '/stories',
     accent: 'from-purple-400 to-cyan-400',
   },
   {
     title: 'Creator Systems',
-    description: 'Personas, lorebooks, memories, chat styles, and device activity are part of the local developer preview.',
+    description: 'Personas, lorebooks, memories, chat styles, and device activity are being opened feature by feature.',
     icon: ScrollText,
-    href: '/download',
+    href: '/discover',
     accent: 'from-rose-400 to-amber-300',
   },
 ];
@@ -74,13 +74,13 @@ export default function RealmPortalPage() {
             </Link>
 
             <div className="flex flex-wrap items-center gap-2">
-              <a
-                href={GITHUB_ZIP_URL}
+              <Link
+                to="/discover"
                 className="inline-flex items-center gap-2 rounded-2xl bg-[#f5d18c] px-4 py-2.5 text-sm font-black text-[#171006] shadow-lg shadow-[#f5d18c]/20 transition hover:-translate-y-0.5 hover:bg-[#ffe0a3]"
               >
-                <Download size={16} />
-                Download ZIP
-              </a>
+                Enter the Realm
+                <ArrowRight size={16} />
+              </Link>
               <Link
                 to="/download"
                 className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/8 px-4 py-2.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/12"
@@ -105,15 +105,15 @@ export default function RealmPortalPage() {
                   </span>
                 </h1>
                 <p className="mt-6 max-w-2xl text-lg leading-8 text-white/68">
-                  CHIMERA is an AI character, roleplay, storytelling, worldbuilding, persona, lorebook, and creator-fiction system. This early access round is download-first: get the source, run it locally, and enter the realm from your own setup.
+                  CHIMERA is an AI character, roleplay, storytelling, worldbuilding, persona, lorebook, and creator-fiction system. You can enter the public realm now, or download the developer preview to run the gate locally.
                 </p>
               </div>
 
               <div className="mt-8 grid gap-3 sm:grid-cols-3">
                 <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4">
                   <p className="text-3xl font-black text-[#f8d796]">01</p>
-                  <p className="mt-1 text-sm font-bold text-white">Download first</p>
-                  <p className="mt-1 text-xs leading-5 text-white/45">Source archive for local setup.</p>
+                  <p className="mt-1 text-sm font-bold text-white">Public realm</p>
+                  <p className="mt-1 text-xs leading-5 text-white/45">Enter and explore CHIMERA online.</p>
                 </div>
                 <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4">
                   <p className="text-3xl font-black text-[#f8d796]">Dev</p>
@@ -122,8 +122,8 @@ export default function RealmPortalPage() {
                 </div>
                 <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4">
                   <p className="text-3xl font-black text-[#f8d796]">Web</p>
-                  <p className="mt-1 text-sm font-bold text-white">Preview only</p>
-                  <p className="mt-1 text-xs leading-5 text-white/45">The live site explains the gate.</p>
+                  <p className="mt-1 text-sm font-bold text-white">Downloadable</p>
+                  <p className="mt-1 text-xs leading-5 text-white/45">Get the source archive too.</p>
                 </div>
               </div>
             </div>
@@ -137,27 +137,27 @@ export default function RealmPortalPage() {
                   </div>
                   <div>
                     <p className="text-xs font-black uppercase tracking-[0.24em] text-white/40">Early access path</p>
-                    <p className="mt-1 text-2xl font-black text-white">Download CHIMERA</p>
-                    <p className="text-sm font-semibold text-[#f8d796]">Run the realm locally first</p>
+                    <p className="mt-1 text-2xl font-black text-white">Enter CHIMERA</p>
+                    <p className="text-sm font-semibold text-[#f8d796]">Explore the realm or run it locally</p>
                   </div>
                 </div>
 
                 <div className="mt-5 grid grid-cols-2 gap-3">
-                  <a href={GITHUB_ZIP_URL} className="rounded-2xl border border-[#f5d18c]/20 bg-[#f5d18c]/10 p-4 transition hover:bg-[#f5d18c]/15">
-                    <Download size={18} className="text-[#f8d796]" />
-                    <p className="mt-2 text-sm font-black">Download ZIP</p>
-                  </a>
-                  <a href={GITHUB_REPO_URL} target="_blank" rel="noreferrer" className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 transition hover:bg-white/10">
-                    <Github size={18} className="text-[#f8d796]" />
-                    <p className="mt-2 text-sm font-black">GitHub repo</p>
-                  </a>
+                  <Link to="/discover" className="rounded-2xl border border-[#f5d18c]/20 bg-[#f5d18c]/10 p-4 transition hover:bg-[#f5d18c]/15">
+                    <Sparkles size={18} className="text-[#f8d796]" />
+                    <p className="mt-2 text-sm font-black">Enter Realm</p>
+                  </Link>
+                  <Link to="/characters" className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 transition hover:bg-white/10">
+                    <MessageCircle size={18} className="text-[#f8d796]" />
+                    <p className="mt-2 text-sm font-black">Characters</p>
+                  </Link>
                   <Link to="/download" className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 transition hover:bg-white/10">
                     <MonitorDown size={18} className="text-[#f8d796]" />
-                    <p className="mt-2 text-sm font-black">Setup guide</p>
+                    <p className="mt-2 text-sm font-black">Download</p>
                   </Link>
-                  <a href={`${GITHUB_REPO_URL}/blob/${GITHUB_BRANCH}/LICENSE`} target="_blank" rel="noreferrer" className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 transition hover:bg-white/10">
-                    <ShieldCheck size={18} className="text-[#f8d796]" />
-                    <p className="mt-2 text-sm font-black">License</p>
+                  <a href={GITHUB_REPO_URL} target="_blank" rel="noreferrer" className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 transition hover:bg-white/10">
+                    <Github size={18} className="text-[#f8d796]" />
+                    <p className="mt-2 text-sm font-black">GitHub</p>
                   </a>
                 </div>
               </div>
@@ -190,7 +190,7 @@ export default function RealmPortalPage() {
                 <h2 className="mt-5 font-serif text-2xl font-black text-white">{card.title}</h2>
                 <p className="mt-3 text-sm leading-6 text-white/58">{card.description}</p>
                 <p className="mt-5 inline-flex items-center gap-2 text-sm font-black text-[#f8d796]">
-                  Get the preview
+                  Open gate
                   <ArrowRight size={15} className="transition group-hover:translate-x-1" />
                 </p>
               </Link>
@@ -202,17 +202,21 @@ export default function RealmPortalPage() {
       <section className="px-4 pb-12 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[0.8fr_1.2fr]">
           <div className="rounded-[2rem] border border-[#f5d18c]/20 bg-[#121018] p-6">
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#f8d796]">Download path</p>
-            <h2 className="mt-3 font-serif text-4xl font-black text-white">Download first. Local gate for builders.</h2>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#f8d796]">Two gates</p>
+            <h2 className="mt-3 font-serif text-4xl font-black text-white">Enter the realm. Download the source.</h2>
             <p className="mt-4 text-sm leading-7 text-white/60">
-              The public site is the front gate. The actual early-access experience is the downloadable developer preview for people who want to run CHIMERA locally, study the code, or contribute.
+              The public site lets people see and enter CHIMERA. The downloadable developer preview is for people who want to run CHIMERA locally, study the code, or contribute.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
+              <Link to="/discover" className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-sm font-black text-black transition hover:bg-[#f8d796]">
+                <Sparkles size={16} />
+                Enter Realm
+              </Link>
               <a href={GITHUB_ZIP_URL} className="inline-flex items-center gap-2 rounded-2xl bg-[#f5d18c] px-4 py-2.5 text-sm font-black text-black transition hover:bg-[#ffe0a3]">
                 <Download size={16} />
                 Download ZIP
               </a>
-              <Link to="/download" className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-sm font-black text-black transition hover:bg-[#f8d796]">
+              <Link to="/download" className="inline-flex items-center gap-2 rounded-2xl border border-white/15 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/10">
                 <MonitorDown size={16} />
                 Setup guide
               </Link>

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft,
+  ArrowRight,
   CheckCircle2,
   Code2,
   Copy,
@@ -62,12 +63,16 @@ export default function DownloadPage() {
               </div>
               <h1 className="mt-5 font-serif text-5xl font-black leading-none text-white sm:text-6xl">
                 Download the gate.
-                <span className="block text-[#f8d796]">Run CHIMERA locally.</span>
+                <span className="block text-[#f8d796]">Or enter the realm.</span>
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-white/65">
-                CHIMERA early access is download-first. Get the developer preview, run it with your own local environment, and use the official website as the front gate for updates, docs, and source access.
+                CHIMERA early access has two gates: enter the public realm online to explore what exists now, or download the developer preview to run the source locally and help build what comes next.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
+                <Link to="/discover" className="inline-flex items-center gap-2 rounded-2xl bg-[#f5d18c] px-5 py-3 text-sm font-black text-black transition hover:-translate-y-0.5 hover:bg-[#ffe0a3]">
+                  Enter Realm
+                  <ArrowRight size={16} />
+                </Link>
                 <a href={GITHUB_ZIP_URL} className="inline-flex items-center gap-2 rounded-2xl bg-[#f5d18c] px-5 py-3 text-sm font-black text-black transition hover:-translate-y-0.5 hover:bg-[#ffe0a3]">
                   <Download size={16} />
                   Download ZIP
@@ -87,11 +92,11 @@ export default function DownloadPage() {
                 </div>
                 <div>
                   <p className="text-sm font-black uppercase tracking-[0.16em] text-white/40">Recommended now</p>
-                  <p className="text-xl font-black text-white">Download the preview first</p>
+                  <p className="text-xl font-black text-white">Choose your gate</p>
                 </div>
               </div>
               <p className="mt-4 text-sm leading-7 text-white/60">
-                The official website is the front gate, but this early-access round is for people who want to download the source, run CHIMERA locally, and help shape the system before the hosted realm becomes the main public experience.
+                If someone only wants to see CHIMERA, they should enter the public realm. If they want to install, inspect, modify, or contribute, they should download the source archive or open GitHub.
               </p>
               <div className="mt-5 rounded-2xl border border-[#f5d18c]/15 bg-[#f5d18c]/10 p-4">
                 <p className="text-sm font-black text-[#f8d796]">Need the files?</p>
