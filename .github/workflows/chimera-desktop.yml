@@ -43,6 +43,9 @@ jobs:
       - name: Install JavaScript dependencies
         run: npm ci
 
+      - name: Generate native application icons
+        run: npx tauri icon apps/chimera/src-tauri/icons/icon.svg --output apps/chimera/src-tauri/icons
+
       - name: Verify the CHIMERA frontend
         run: |
           npm run typecheck --workspace=chimera
