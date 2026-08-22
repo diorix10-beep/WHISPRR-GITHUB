@@ -1,0 +1,49 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "CHIMERA",
+  "version": "0.1.0",
+  "identifier": "xyz.whisprr.chimera",
+  "build": {
+    "beforeDevCommand": "npm run dev -- --host 127.0.0.1 --port 5174",
+    "devUrl": "http://127.0.0.1:5174",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "CHIMERA",
+        "width": 1440,
+        "height": 960,
+        "minWidth": 1024,
+        "minHeight": 700,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "icon": [
+      "icons/icon.png",
+      "icons/icon-192.png",
+      "icons/favicon.png"
+    ],
+    "targets": ["dmg", "nsis", "msi"],
+    "category": "Entertainment",
+    "shortDescription": "Characters with a pulse. Worlds with a soul.",
+    "longDescription": "CHIMERA is a creative studio for AI characters, roleplay, storytelling, worldbuilding, and lore.",
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    },
+    "windows": {
+      "webviewInstallMode": {
+        "type": "embedBootstrapper"
+      }
+    }
+  }
+}

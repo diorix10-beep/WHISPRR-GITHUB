@@ -1,0 +1,82 @@
+name: CHIMERA Desktop
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'desktop-v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: chimera-desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS
+            os: macos-latest
+            bundle_glob: 'apps/chimera/src-tauri/target/release/bundle/dmg/*.dmg'
+          - name: Windows
+            os: windows-latest
+            bundle_glob: 'apps/chimera/src-tauri/target/release/bundle/**/*.{msi,exe}'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out CHIMERA
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Verify the CHIMERA frontend
+        run: |
+          npm run typecheck --workspace=chimera
+          npm run build --workspace=chimera
+
+      - name: Build the native installer
+        run: npm run desktop:build --workspace=chimera
+
+      - name: Upload installer artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: chimera-${{ matrix.name }}
+          path: ${{ matrix.bundle_glob }}
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Create GitHub Release
+    if: startsWith(github.ref, 'refs/tags/desktop-v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all installers
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          pattern: chimera-*
+          merge-multiple: true
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" release-assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "CHIMERA Desktop $GITHUB_REF_NAME" \
+            --generate-notes

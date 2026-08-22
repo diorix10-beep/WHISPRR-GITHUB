@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import {
@@ -16,6 +16,7 @@ import { EmojiPicker } from '../components/common/EmojiPicker';
 import { ChatSettingsDrawer } from '../components/chat/ChatSettingsDrawer';
 import { ChatMemoryModal } from '../components/chat/ChatMemoryModal';
 import { MockPhoneModal } from '../components/chat/MockPhoneModal';
+import { DeviceActivityCard, DeviceSceneEventCard } from '../components/chat/DeviceActivityCard';
 import { CharacterMemoryCabinetModal } from '../components/chat/MemoryVisualizerModal';
 import { MultiCharacterHeader } from '../components/chat/MultiCharacterHeader';
 import { GuidedTurningPointCard, type GuidedTurningPoint } from '../components/chat/GuidedTurningPointCard';
@@ -37,6 +38,13 @@ import { RoleplaySafetyPauseCard } from '../components/chat/RoleplaySafetyPauseC
 import { CharacterExpressionAvatar } from '../components/character/CharacterExpressionAvatar';
 import { CharacterExpressionManagerModal } from '../components/character/CharacterExpressionManagerModal';
 import { Paperclip, AudioWaveform, Brain, Gamepad2, Users, Globe, UserCheck } from 'lucide-react';
+import {
+  createDeviceSceneEventContent,
+  parseDeviceActivityFromText,
+  parseDeviceSceneEvent,
+  type DeviceActivityApp,
+  type DeviceActivityMessage,
+} from '../lib/deviceActivity';
 
 interface MessageWithProfile extends Message {
   profiles?: Profile;
@@ -85,6 +93,7 @@ export default function ConversationPage() {
   const [sceneCanon, setSceneCanon] = useState('');
   const [sceneCanonDraft, setSceneCanonDraft] = useState('');
   const [isPhoneOpen, setIsPhoneOpen] = useState(false);
+  const [deviceActivityMessages, setDeviceActivityMessages] = useState<DeviceActivityMessage[]>([]);
 
   // Character memories are durable, user-controlled facts held privately for
   // the active player-character bond. They are retrieved by the AI runtime.
@@ -178,6 +187,52 @@ export default function ConversationPage() {
 
   const voice = useVoice();
   const aesthetics = useChatAesthetics(conversationId);
+  const firstCharacterMessageWithDeviceActivity = useMemo(() => {
+    return messages.find((message) => {
+      if (message.sender_id === user?.id) return false;
+      return parseDeviceActivityFromText(message.content).messages.length > 0;
+    }) || null;
+  }, [messages, user?.id]);
+  const parsedDeviceActivity = useMemo(
+    () => parseDeviceActivityFromText(firstCharacterMessageWithDeviceActivity?.content),
+    [firstCharacterMessageWithDeviceActivity?.content]
+  );
+  const deviceActivityAppStyle: DeviceActivityApp = deviceActivityMessages.some((message) => message.app === 'whatsapp') ? 'whatsapp' : 'imessage';
+  const deviceActivityStorageKey = conversationId ? `chimera_device_activity_${conversationId}` : null;
+
+  useEffect(() => {
+    if (!deviceActivityStorageKey) {
+      setDeviceActivityMessages([]);
+      return;
+    }
+
+    try {
+      const stored = localStorage.getItem(deviceActivityStorageKey);
+      setDeviceActivityMessages(stored ? JSON.parse(stored) : []);
+    } catch {
+      setDeviceActivityMessages([]);
+    }
+  }, [deviceActivityStorageKey]);
+
+  useEffect(() => {
+    if (!deviceActivityStorageKey || parsedDeviceActivity.messages.length === 0) return;
+
+    setDeviceActivityMessages((current) => {
+      if (current.length > 0) return current;
+      localStorage.setItem(deviceActivityStorageKey, JSON.stringify(parsedDeviceActivity.messages));
+      return parsedDeviceActivity.messages;
+    });
+  }, [deviceActivityStorageKey, parsedDeviceActivity.messages]);
+
+  const persistDeviceActivityMessages = useCallback((updater: (current: DeviceActivityMessage[]) => DeviceActivityMessage[]) => {
+    setDeviceActivityMessages((current) => {
+      const next = updater(current);
+      if (deviceActivityStorageKey) {
+        localStorage.setItem(deviceActivityStorageKey, JSON.stringify(next));
+      }
+      return next;
+    });
+  }, [deviceActivityStorageKey]);
 
   useEffect(() => {
     if (!memoryCharacter || !user?.id) {
@@ -278,7 +333,7 @@ export default function ConversationPage() {
 
   // Magic Trigger: Auto-Phone Layout Detection
   useEffect(() => {
-    if (messages.length === 0) return;
+    if (messages.length === 0 || deviceActivityMessages.filter((message) => !message.deleted).length === 0) return;
     const latestMessage = messages[messages.length - 1];
     if (!latestMessage.content) return;
     
@@ -303,7 +358,7 @@ export default function ConversationPage() {
     } else if (hasCloseKeyword && isPhoneOpen) {
       setIsPhoneOpen(false);
     }
-  }, [messages, isPhoneOpen]);
+  }, [messages, isPhoneOpen, deviceActivityMessages]);
 
   // Fetch conversation data
   useEffect(() => {
@@ -561,7 +616,10 @@ export default function ConversationPage() {
           .eq('user_id', newMsg.sender_id)
           .maybeSingle();
 
-        setMessages(prev => [...prev, { ...newMsg, profiles: senderProfile ?? undefined }]);
+        setMessages(prev => {
+          if (prev.some(message => message.id === newMsg.id)) return prev;
+          return [...prev, { ...newMsg, profiles: senderProfile ?? undefined }];
+        });
 
         if (senderProfile?.role === 'ai_character' && voiceEnabledRef.current) {
           voiceSpeakRef.current(newMsg.content);
@@ -702,6 +760,85 @@ export default function ConversationPage() {
     return data.publicUrl;
   };
 
+  const getAiResponderIds = useCallback(() => {
+    const ids = new Set<string>();
+
+    for (const participant of participants) {
+      if (participant.user_id !== user?.id && (participant.role as string) === 'ai_character') {
+        ids.add(participant.user_id);
+      }
+    }
+
+    if (otherUser && otherUser.user_id !== user?.id && (otherUser.role as string) === 'ai_character') {
+      ids.add(otherUser.user_id);
+    }
+
+    return Array.from(ids);
+  }, [otherUser, participants, user?.id]);
+
+  const triggerAiReplies = useCallback(async (botUserIds: string[]) => {
+    if (!conversationId || botUserIds.length === 0) return;
+
+    const uniqueBotIds = Array.from(new Set(botUserIds));
+    setTypingUsers(uniqueBotIds);
+
+    try {
+      const sessionRes = await supabase.auth.getSession();
+      const token = sessionRes.data.session?.access_token;
+      const failures: string[] = [];
+      let hasReply = false;
+
+      for (const botUserId of uniqueBotIds) {
+        try {
+          const res = await fetch('/api/ai-chat', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              conversation_id: conversationId,
+              bot_user_id: botUserId,
+              chat_mode: chatMode,
+              active_speaker_id: botUserId,
+            }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            throw new Error(data?.error || 'The character could not generate a reply.');
+          }
+          if (data?.pause_roleplay) {
+            setIsRoleplayPaused(true);
+          }
+          if (data?.reply) {
+            hasReply = true;
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'The character could not generate a reply.';
+          failures.push(message);
+          console.error('AI reply generation failed:', error);
+        }
+      }
+
+      if (hasReply) {
+        const { data: updatedMsgs } = await supabase
+          .from('messages')
+          .select('*, profiles:sender_id(*)')
+          .eq('conversation_id', conversationId)
+          .is('deleted_at', null)
+          .order('created_at', { ascending: true });
+        if (updatedMsgs) setMessages(updatedMsgs);
+      }
+
+      if (failures.length > 0) {
+        const firstError = failures[0];
+        showToast(`Your message was saved, but ${failures.length === 1 ? 'a character' : 'some characters'} could not reply: ${firstError}`, 'error');
+      }
+    } finally {
+      setTypingUsers([]);
+    }
+  }, [chatMode, conversationId, showToast]);
+
   // Send message
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -791,54 +928,7 @@ export default function ConversationPage() {
         })
         .eq('id', conversationId);
 
-      if (otherUser && (otherUser.role as string) === 'ai_character') {
-        // Simulate typing status immediately for fluid UI
-        setTypingUsers([otherUser.user_id]);
-
-        // Trigger AI reply generation in the background
-        const sessionRes = await supabase.auth.getSession();
-        const token = sessionRes.data.session?.access_token;
-        
-        fetch('/api/ai-chat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            conversation_id: conversationId,
-            bot_user_id: otherUser.user_id,
-            chat_mode: chatMode,
-            active_speaker_id: activeSpeakerId,
-          })
-        })
-          .then(async (res) => {
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) {
-              throw new Error(data?.error || 'The character could not generate a reply.');
-            }
-            return data;
-          })
-          .then(async (data) => {
-            setTypingUsers([]);
-            if (data?.pause_roleplay) {
-              setIsRoleplayPaused(true);
-            } else if (data?.reply) {
-              // Refresh messages immediately in case Supabase Realtime connection drops on mobile
-              const { data: updatedMsgs } = await supabase
-                .from('messages')
-                .select('*')
-                .eq('conversation_id', conversationId)
-                .order('created_at', { ascending: true });
-              if (updatedMsgs) setMessages(updatedMsgs);
-            }
-          })
-          .catch((err) => {
-            console.error('AI reply generation failed:', err);
-            setTypingUsers([]);
-            showToast('Your message was saved, but the character could not reply. Please try again.', 'error');
-          });
-      }
+      void triggerAiReplies(getAiResponderIds());
     } catch (err: any) {
       console.error(err);
       showToast('Failed to send message', 'error');
@@ -848,10 +938,36 @@ export default function ConversationPage() {
     }
   };
 
-  const handlePhoneSendMessage = async (content: string) => {
+  const handleDevicePhoneReply = async (body: string, replyTo: DeviceActivityMessage | null) => {
     if (!user || !conversationId) return;
-    
+
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const contact = replyTo?.contact || deviceActivityMessages.find((message) => !message.deleted)?.contact || otherUser?.display_name || 'Unknown';
+    const actorName = profile?.display_name || user.email?.split('@')[0] || 'You';
+    const localMessage: DeviceActivityMessage = {
+      id: `device-local-${Date.now()}`,
+      app: replyTo?.app || deviceActivityAppStyle,
+      contact,
+      body,
+      time,
+      direction: 'outgoing',
+      deleted: false,
+      edited: false,
+      replyToId: replyTo?.id || null,
+      createdAt: new Date().toISOString(),
+    };
+
+    persistDeviceActivityMessages((current) => [...current, localMessage]);
+
     try {
+      const content = createDeviceSceneEventContent({
+        actorName,
+        contact,
+        replyBody: body,
+        repliedToBody: replyTo?.body || null,
+        time,
+      });
+
       const { error: msgError } = await supabase
         .from('messages')
         .insert({
@@ -871,20 +987,24 @@ export default function ConversationPage() {
         })
         .eq('id', conversationId);
 
-      if (otherUser && (otherUser.role as string) === 'ai_character') {
-        const sessionRes = await supabase.auth.getSession();
-        const token = sessionRes.data.session?.access_token;
-        
-        fetch('/api/ai-chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ conversation_id: conversationId, bot_user_id: otherUser.user_id })
-        }).catch(err => console.error(err));
-      }
+      void triggerAiReplies(getAiResponderIds());
     } catch (err: any) {
       console.error(err);
-      showToast('Failed to send text', 'error');
+      persistDeviceActivityMessages((current) => current.filter((message) => message.id !== localMessage.id));
+      showToast('Failed to send phone reply into the scene', 'error');
     }
+  };
+
+  const handleDevicePhoneUpdate = (messageId: string, body: string) => {
+    persistDeviceActivityMessages((current) => current.map((message) => (
+      message.id === messageId ? { ...message, body, edited: true } : message
+    )));
+  };
+
+  const handleDevicePhoneDelete = (messageId: string) => {
+    persistDeviceActivityMessages((current) => current.map((message) => (
+      message.id === messageId ? { ...message, deleted: true } : message
+    )));
   };
 
   // Request Selfie / Image Studio
@@ -1588,10 +1708,12 @@ export default function ConversationPage() {
       <MockPhoneModal
         isOpen={isPhoneOpen}
         onClose={() => setIsPhoneOpen(false)}
-        messages={messages}
-        onSendMessage={handlePhoneSendMessage}
-        otherUser={otherUser}
-        currentUser={profile}
+        messages={deviceActivityMessages}
+        appStyle={deviceActivityAppStyle}
+        currentUserName={profile?.display_name || 'You'}
+        onReply={handleDevicePhoneReply}
+        onUpdateMessage={handleDevicePhoneUpdate}
+        onDeleteMessage={handleDevicePhoneDelete}
       />
 
       {/* Main Layout Area */}
@@ -1677,6 +1799,20 @@ export default function ConversationPage() {
                 const isOwn = message.sender_id === user?.id;
                 const sender: any = message.profiles || (isOwn ? profile : otherUser);
                 const isAI = sender?.role === 'ai_character';
+                const deviceSceneEvent = parseDeviceSceneEvent(message.content);
+                const isDeviceGreetingMessage = firstCharacterMessageWithDeviceActivity?.id === message.id;
+                const displayContent = isDeviceGreetingMessage ? parsedDeviceActivity.textWithoutDeviceActivity : message.content;
+
+                if (deviceSceneEvent) {
+                  return (
+                    <DeviceSceneEventCard
+                      key={message.id}
+                      title={deviceSceneEvent.title}
+                      body={deviceSceneEvent.body}
+                      detail={deviceSceneEvent.detail}
+                    />
+                  );
+                }
 
                 return (
                   <div 
@@ -1715,7 +1851,15 @@ export default function ConversationPage() {
                         />
                       )}
 
-                      {message.content && message.content !== 'Sent an image' && (
+                      {isDeviceGreetingMessage && deviceActivityMessages.filter((deviceMessage) => !deviceMessage.deleted).length > 0 && (
+                        <DeviceActivityCard
+                          messages={deviceActivityMessages}
+                          appStyle={deviceActivityAppStyle}
+                          onOpen={() => setIsPhoneOpen(true)}
+                        />
+                      )}
+
+                      {displayContent && displayContent !== 'Sent an image' && (
                         <div className={`text-[15px] sm:text-base leading-relaxed text-warm-800 dark:text-warm-200 whitespace-pre-wrap font-serif
                           ${isModernLayout ? `px-4 py-2.5 rounded-2xl max-w-[85%] ${
                             isOwn 
@@ -1746,7 +1890,7 @@ export default function ConversationPage() {
                               </div>
                             </div>
                           ) : (
-                            message.content
+                            displayContent
                           )}
                         </div>
                       )}
@@ -2456,19 +2600,32 @@ export default function ConversationPage() {
         isOpen={showAddCharModal}
         onClose={() => setShowAddCharModal(false)}
         existingIds={multiParticipants.map(p => p.character_id)}
-        onSelectCharacter={(char) => {
-          setMultiParticipants(prev => [
-            ...prev,
-            {
-              character_id: char.id,
-              display_name: char.display_name,
-              avatar_emoji: char.avatar_emoji || '🎭',
-              photo_url: char.photo_url || undefined,
-              is_active_speaker: false,
-              role: 'ai_character'
-            }
-          ]);
-          showToast(`Invited ${char.display_name} to the group scene!`, 'success');
+        onSelectCharacter={async (char) => {
+          if (!conversationId) return;
+          try {
+            const { error } = await supabase
+              .from('conversation_participants')
+              .insert({ conversation_id: conversationId, user_id: char.user_id });
+            if (error && error.code !== '23505') throw error;
+
+            setParticipants(prev => prev.some(p => p.user_id === char.user_id) ? prev : [...prev, char]);
+            setMultiParticipants(prev => prev.some(p => p.character_id === char.user_id) ? prev : [
+              ...prev,
+              {
+                character_id: char.user_id,
+                display_name: char.display_name,
+                username: char.username,
+                avatar_emoji: char.avatar_emoji || '🎭',
+                photo_url: char.photo_url || undefined,
+                personality_summary: char.bio || undefined,
+                is_active_speaker: false,
+              }
+            ]);
+            showToast(`Invited ${char.display_name} to the group scene!`, 'success');
+          } catch (error) {
+            console.error('Failed to invite character to scene:', error);
+            showToast('Could not invite that character to the scene.', 'error');
+          }
         }}
       />
 
