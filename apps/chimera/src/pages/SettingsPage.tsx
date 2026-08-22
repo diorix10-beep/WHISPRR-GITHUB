@@ -5,12 +5,14 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
+import { ChimeraDesktopDownloadModal } from '../components/common/ChimeraDesktopDownloadModal';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { user, profile, updateProfile, signOut } = useAuth();
   const { preference, setPreference } = useTheme();
   const { showToast } = useToast();
+  const [showDesktopModal, setShowDesktopModal] = useState(false);
 
   const [notificationSettings, setNotificationSettings] = useState({
     email_notifications: true,
@@ -429,6 +431,18 @@ export default function SettingsPage() {
           </button>
           <div className="border-t border-warm-200 dark:border-warm-700 pt-3">
             <button
+              onClick={() => setShowDesktopModal(true)}
+              className="w-full flex items-center justify-between gap-3 text-left hover:opacity-80 transition-opacity"
+            >
+              <div>
+                <p className="font-semibold text-warm-900 dark:text-warm-50 text-sm">Download CHIMERA Desktop</p>
+                <p className="text-xs text-warm-500 mt-0.5">Native installers for macOS (.dmg) &amp; Windows (.exe)</p>
+              </div>
+              <Monitor size={16} className="text-amber-500 flex-shrink-0" />
+            </button>
+          </div>
+          <div className="border-t border-warm-200 dark:border-warm-700 pt-3">
+            <button
               onClick={handleRequestDataExport}
               className="w-full flex items-center justify-between gap-3 text-left hover:opacity-80 transition-opacity"
             >
@@ -556,6 +570,12 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+
+      {/* Desktop App Download Modal */}
+      <ChimeraDesktopDownloadModal
+        isOpen={showDesktopModal}
+        onClose={() => setShowDesktopModal(false)}
+      />
     </div>
   );
 }
