@@ -56,6 +56,7 @@ export function WebLayout() {
 
   const navItems = [
     { path: '/', icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
+    { path: '/resources', icon: <FolderOpen size={18} />, label: 'Resources' },
     { path: '/projects', icon: <FolderOpen size={18} />, label: 'Projects', badge: projectsUnread > 0 ? projectsUnread : undefined },
     { path: '/github', icon: <Github size={18} />, label: 'GitHub Intel', badge: githubUnread > 0 ? githubUnread : undefined },
     { path: '/terminal', icon: <Terminal size={18} />, label: 'Terminal OS', badge: terminalUnread > 0 ? terminalUnread : undefined },
