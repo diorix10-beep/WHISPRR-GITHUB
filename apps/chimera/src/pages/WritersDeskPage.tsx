@@ -304,7 +304,7 @@ export default function WritersDeskPage() {
           <div className="flex items-center gap-4">
             <h1 className="font-serif text-xl font-bold text-white flex items-center gap-2">
               <PenTool size={20} className="text-purple-500" />
-              My Works
+              Story Projects
             </h1>
           </div>
           {!isEditingStory && !selectedStory && (
@@ -313,7 +313,7 @@ export default function WritersDeskPage() {
               className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg font-bold text-sm shadow-sm transition-all flex items-center gap-2"
             >
               <Plus size={16} />
-              New Story
+              New Story Project
             </button>
           )}
         </div>
@@ -350,7 +350,7 @@ export default function WritersDeskPage() {
         {isEditingStory ? (
           <div className="max-w-3xl mx-auto bg-warm-850 rounded-2xl border border-warm-800 p-8 shadow-xl">
             <h2 className="font-serif text-2xl font-bold text-white mb-8 border-b border-warm-800 pb-4">
-              {selectedStory ? 'Story Details' : 'Create a New Story'}
+              {selectedStory ? 'Story Project Details' : 'Create a Story Project'}
             </h2>
             <form onSubmit={handleSaveStory} className="space-y-6">
               
@@ -484,7 +484,7 @@ export default function WritersDeskPage() {
               className="flex items-center gap-2 text-warm-400 hover:text-white font-bold text-sm mb-6 transition-all"
             >
               <ChevronLeft size={16} />
-              Back to My Works
+              Back to Story Projects
             </button>
 
             {/* Story Header */}
@@ -511,7 +511,7 @@ export default function WritersDeskPage() {
                     {selectedStory.status}
                   </span>
                   <span className="w-1 h-1 rounded-full bg-warm-600"></span>
-                  <span className="text-purple-400">{chapters.length} Parts</span>
+                  <span className="text-purple-400">{chapters.length} Chapters</span>
                 </div>
 
                 <p className="text-sm text-warm-300 line-clamp-4 leading-relaxed mb-6 max-w-2xl">
@@ -538,7 +538,7 @@ export default function WritersDeskPage() {
                     className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-bold shadow-md transition-all flex items-center gap-2"
                   >
                     <Plus size={16} />
-                    New Part
+                    New Chapter
                   </button>
                 </div>
               </div>
@@ -548,7 +548,7 @@ export default function WritersDeskPage() {
             <div className="bg-warm-850 border border-warm-800 rounded-2xl overflow-hidden">
               <div className="px-6 py-4 border-b border-warm-800 flex justify-between items-center bg-warm-900/50">
                 <h3 className="font-serif text-lg font-bold text-white">Table of Contents</h3>
-                <span className="text-xs font-bold text-warm-500 uppercase tracking-wider">{chapters.length} Parts</span>
+                <span className="text-xs font-bold text-warm-500 uppercase tracking-wider">{chapters.length} Chapters</span>
               </div>
               
               {chaptersLoading ? (
@@ -556,12 +556,12 @@ export default function WritersDeskPage() {
               ) : chapters.length === 0 ? (
                 <div className="p-12 text-center flex flex-col items-center border-b border-warm-800 last:border-0">
                   <FileText size={48} className="text-warm-700 mb-4" />
-                  <p className="text-warm-400 font-medium mb-4">This story has no parts yet.</p>
+                  <p className="text-warm-400 font-medium mb-4">This story project has no chapters yet.</p>
                   <button
                     onClick={handleCreateChapter}
                     className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-bold shadow-md transition-all"
                   >
-                    Write the first part
+                    Write the first chapter
                   </button>
                 </div>
               ) : (
