@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, BookOpen, Clock3, Compass, Feather, Globe2, PenLine, Plus, Sparkles, Star } from 'lucide-react';
+import { ArrowRight, BookOpen, Clock3, Compass, Feather, Globe2, PenLine, Plus, Sparkles, Star, UsersRound } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -89,7 +89,7 @@ export default function CreatorStudioPage() {
           <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#080d1b] to-transparent" />
           <div className="relative max-w-xl">
             <div className="flex items-center justify-between gap-4">
-              <span className="inline-flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200"><Feather size={14} /> Storytelling workspace</span>
+              <span className="inline-flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200"><Feather size={14} /> Story House · Storytelling</span>
               <button onClick={() => navigate('/vellum')} className="inline-flex items-center gap-2 rounded-lg border border-amber-200/30 bg-[#0b1020]/75 px-3 py-2 text-xs font-bold text-amber-100 transition hover:border-amber-100/70 hover:bg-[#10182a]"><img src="/images/vellum-sigil.svg" alt="VELLUM" className="h-5 w-5 rounded-md" /> {vellumBalance === null ? 'VELLUM' : `${vellumBalance.toLocaleString()} VELLUM`}</button>
             </div>
             <h1 className="mt-12 max-w-md font-serif text-5xl font-medium leading-[0.95] tracking-tight text-[#f4e1c3] sm:text-6xl">Where stories<br />become yours.</h1>
@@ -130,7 +130,7 @@ export default function CreatorStudioPage() {
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(207,169,102,0.26),transparent_48%)]" />
             <div className="relative"><Globe2 className="text-amber-200" size={21} /><h2 className="mt-3 font-serif text-2xl text-[#f4e1c3]">Your worlds</h2><p className="mt-2 max-w-sm text-sm text-warm-300">Places, people, histories, and all the things that make a story breathe.</p><span className="mt-8 inline-flex items-center gap-2 text-xs font-bold text-amber-200">Open worlds <ArrowRight size={14} className="transition group-hover:translate-x-1" /></span></div>
           </button>
-          <div className="rounded-2xl border border-amber-200/20 bg-[#10182a] p-6 shadow-xl"><Sparkles className="text-amber-200" size={21} /><h2 className="mt-3 font-serif text-2xl text-[#f4e1c3]">Start something new</h2><div className="mt-5 grid grid-cols-2 gap-3"><button onClick={() => navigate('/stories')} className="rounded-xl border border-amber-200/25 bg-white/[0.03] p-5 text-center transition hover:bg-white/[0.07]"><BookOpen className="mx-auto text-amber-200" size={27} /><span className="mt-3 block font-serif text-lg text-warm-100">Story</span></button><button onClick={() => navigate('/worlds')} className="rounded-xl border border-amber-200/25 bg-white/[0.03] p-5 text-center transition hover:bg-white/[0.07]"><Globe2 className="mx-auto text-amber-200" size={27} /><span className="mt-3 block font-serif text-lg text-warm-100">World</span></button></div></div>
+          <div className="rounded-2xl border border-amber-200/20 bg-[#10182a] p-6 shadow-xl"><Sparkles className="text-amber-200" size={21} /><h2 className="mt-3 font-serif text-2xl text-[#f4e1c3]">Start something new</h2><div className="mt-5 grid grid-cols-3 gap-3"><button onClick={() => navigate('/stories')} className="rounded-xl border border-amber-200/25 bg-white/[0.03] p-4 text-center transition hover:bg-white/[0.07]"><BookOpen className="mx-auto text-amber-200" size={25} /><span className="mt-3 block font-serif text-base text-warm-100">Write</span></button><button onClick={() => navigate('/worlds')} className="rounded-xl border border-amber-200/25 bg-white/[0.03] p-4 text-center transition hover:bg-white/[0.07]"><Globe2 className="mx-auto text-amber-200" size={25} /><span className="mt-3 block font-serif text-base text-warm-100">World</span></button><button onClick={() => navigate('/stories')} className="rounded-xl border border-amber-200/25 bg-white/[0.03] p-4 text-center transition hover:bg-white/[0.07]"><UsersRound className="mx-auto text-amber-200" size={25} /><span className="mt-3 block font-serif text-base text-warm-100">Collaborate</span></button></div></div>
         </section>
 
         {hasWork && !loading && (
