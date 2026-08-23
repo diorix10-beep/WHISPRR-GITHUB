@@ -177,10 +177,10 @@ export default function ChapterEditorPage() {
           >
             <ArrowLeft size={18} />
           </button>
-          <div className="hidden sm:block">
+          <div className="min-w-0 hidden sm:block">
             <h1 className="text-sm text-white font-bold">{story?.title}</h1>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-warm-500 font-semibold uppercase tracking-wider">Part {chapter?.chapter_number}</span>
+              <span className="text-[10px] text-warm-500 font-semibold uppercase tracking-wider">Chapter {chapter?.chapter_number}</span>
               <span className="text-[10px] text-warm-500 flex items-center gap-1">
                 {saveStatus === 'saving' && <span className="text-yellow-500">Saving...</span>}
                 {saveStatus === 'saved' && <><Check size={10} className="text-green-500" /> Saved</>}
@@ -190,7 +190,7 @@ export default function ChapterEditorPage() {
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {status === 'draft' ? (
             <>
               <button
@@ -198,7 +198,7 @@ export default function ChapterEditorPage() {
                 disabled={saving}
                 className="text-warm-300 hover:text-white font-bold text-sm transition-all"
               >
-                Save
+                Save draft
               </button>
               <button
                 onClick={() => handleSaveDraft('published')}
@@ -280,10 +280,10 @@ export default function ChapterEditorPage() {
       </header>
 
       {/* Editor Layout */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-0">
         
         {/* Main Editor Panel */}
-        <div className="flex-1 overflow-y-auto bg-[#F7F5F0] dark:bg-[#1A1817] flex justify-center py-12 px-6">
+        <div className="flex-1 overflow-y-auto bg-[#F7F5F0] dark:bg-[#1A1817] flex justify-center py-6 sm:py-12 px-4 sm:px-6">
           <div className="max-w-[700px] w-full flex flex-col h-full relative">
             
             {/* Mock Rich Text Toolbar (Visual Only) */}
@@ -301,7 +301,7 @@ export default function ChapterEditorPage() {
             {/* Title field */}
             <input
               type="text"
-              placeholder="Untitled Part"
+              placeholder="Untitled Chapter"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full text-4xl font-serif font-bold bg-transparent border-0 focus:ring-0 px-0 pb-6 text-[#1A1817] dark:text-[#F7F5F0] placeholder-[#8A8580] dark:placeholder-[#6A6867]"
@@ -309,7 +309,7 @@ export default function ChapterEditorPage() {
 
             {/* Content field */}
             <textarea
-              placeholder="Tap here to start writing..."
+              placeholder="Begin writing your story..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
               className="w-full flex-1 min-h-[60vh] text-lg font-serif bg-transparent border-0 focus:ring-0 px-0 text-[#2A2827] dark:text-[#E5E0D8] placeholder-[#8A8580] dark:placeholder-[#6A6867] resize-none leading-relaxed"
