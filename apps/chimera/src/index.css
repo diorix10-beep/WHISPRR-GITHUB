@@ -161,6 +161,26 @@
     isolation: isolate;
   }
 
+  .chimera-atmosphere {
+    position: fixed;
+    inset: 0;
+    z-index: -10;
+    pointer-events: none;
+    background-image: var(--chimera-bg-overlay), var(--chimera-bg-image);
+    background-position: var(--chimera-bg-position);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    opacity: .92;
+  }
+
+  @media (max-width: 1023px) {
+    .chimera-atmosphere {
+      background-position: var(--chimera-bg-position-mobile);
+      background-attachment: scroll;
+    }
+  }
+
   .dark body,
   .dark {
     @apply bg-warm-950 text-warm-100 bg-fixed bg-cover bg-[position:right_center] bg-no-repeat;
