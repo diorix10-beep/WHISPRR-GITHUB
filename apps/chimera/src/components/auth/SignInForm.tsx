@@ -13,6 +13,14 @@ export function SignInForm({ onSuccess, onForgotPassword }: SignInFormProps) {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const describeSignInError = (err: unknown) => {
+    const message = err instanceof Error ? err.message : '';
+    if (message.toLowerCase().includes('failed to fetch') || message.toLowerCase().includes('network')) {
+      return 'CHIMERA is temporarily unable to reach its sign-in service. Your account and data have not been deleted. Please try again later.';
+    }
+    return message || 'Sign in failed. Please try again.';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -28,7 +36,7 @@ export function SignInForm({ onSuccess, onForgotPassword }: SignInFormProps) {
       await signIn(email, password);
       onSuccess?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Sign in failed. Please try again.');
+      setError(describeSignInError(err));
       setIsLoading(false);
     }
   };
