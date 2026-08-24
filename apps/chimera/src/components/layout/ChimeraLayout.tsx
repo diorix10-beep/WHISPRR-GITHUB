@@ -28,7 +28,7 @@ interface NavLinkItem {
 const ROLEPLAY_NAV_LINKS: NavLinkItem[] = [
   { path: '/discover', token: 'navigation.discover', icon: Compass },
   { path: '/characters', token: 'navigation.my_cast', icon: Users },
-  { path: '/human-roleplay', token: 'navigation.human_roleplay', icon: Users, shortLabel: 'Human RP' },
+  { path: '/human-roleplay', token: 'navigation.human_roleplay', icon: Users, shortLabel: 'Game Hubs' },
   { path: '/conversations', token: 'navigation.chats', icon: MessageSquare },
   { path: '/personas', token: 'navigation.who_you_are_here', icon: UserCheck, shortLabel: 'WYAH' },
 ];
