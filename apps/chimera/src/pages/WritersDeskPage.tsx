@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PenTool, Plus, BookOpen, Trash2, Edit, ChevronLeft, Globe, Eye, Settings, Share2, FileText, Image as ImageIcon, UploadCloud, Feather } from 'lucide-react';
+import { PenTool, Plus, BookOpen, Trash2, Edit, ChevronLeft, Globe, Eye, Settings, Share2, FileText, Image as ImageIcon, UploadCloud, Feather, UsersRound } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Story, StoryChapter } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,6 +8,7 @@ import { useToast } from '../contexts/ToastContext';
 import StoryImporterModal from '../components/stories/StoryImporterModal';
 import { UniversalImagePicker } from '../components/common/UniversalImagePicker';
 import { checkUserPromptSafety, CRISIS_HELPLINE_INFO } from '../lib/safetyGuard';
+import { CollaboratorsModal } from '../components/collaboration/CollaboratorsModal';
 
 export default function WritersDeskPage() {
   const navigate = useNavigate();
@@ -34,6 +35,7 @@ export default function WritersDeskPage() {
   const [isImporterOpen, setIsImporterOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'community' | 'mine'>('community');
   const [communityStories, setCommunityStories] = useState<Story[]>([]);
+  const [collaboratorsOpen, setCollaboratorsOpen] = useState(false);
 
   useEffect(() => {
     fetchCommunityStories();
@@ -299,12 +301,12 @@ export default function WritersDeskPage() {
     <div className="min-h-screen bg-warm-900 text-warm-100 font-sans pb-24">
       
       {/* Top Navbar Header */}
-      <header className="bg-warm-850 border-b border-warm-800 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <header className="bg-warm-850/95 backdrop-blur border-b border-warm-800 sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
           <div className="flex items-center gap-4">
             <h1 className="font-serif text-xl font-bold text-white flex items-center gap-2">
               <PenTool size={20} className="text-purple-500" />
-              My Works
+              Story Projects
             </h1>
           </div>
           {!isEditingStory && !selectedStory && (
@@ -313,7 +315,7 @@ export default function WritersDeskPage() {
               className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg font-bold text-sm shadow-sm transition-all flex items-center gap-2"
             >
               <Plus size={16} />
-              New Story
+              New Story Project
             </button>
           )}
         </div>
@@ -348,15 +350,15 @@ export default function WritersDeskPage() {
 
         {/* Story Metadata Editor Modal/View */}
         {isEditingStory ? (
-          <div className="max-w-3xl mx-auto bg-warm-850 rounded-2xl border border-warm-800 p-8 shadow-xl">
+          <div className="w-full max-w-3xl mx-auto bg-warm-850/95 sm:rounded-2xl border border-warm-800 p-4 sm:p-8 shadow-xl min-h-[calc(100dvh-4rem)] sm:min-h-0">
             <h2 className="font-serif text-2xl font-bold text-white mb-8 border-b border-warm-800 pb-4">
-              {selectedStory ? 'Story Details' : 'Create a New Story'}
+              {selectedStory ? 'Story Project Details' : 'Create a Story Project'}
             </h2>
             <form onSubmit={handleSaveStory} className="space-y-6">
               
-              <div className="flex flex-col md:flex-row gap-8">
+              <div className="flex flex-col md:flex-row gap-6 md:gap-8">
                 {/* Left: Cover Upload */}
-                <div className="w-full md:w-56 flex flex-col gap-3 flex-shrink-0">
+                <div className="w-full md:w-56 flex flex-col gap-3 flex-shrink-0 max-w-[280px] mx-auto md:mx-0">
                   <UniversalImagePicker
                     value={formCoverUrl || null}
                     onChange={(url) => setFormCoverUrl(url || '')}
@@ -391,7 +393,7 @@ export default function WritersDeskPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold uppercase text-warm-400 tracking-wider mb-2">Category</label>
                       <select
@@ -434,7 +436,7 @@ export default function WritersDeskPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold uppercase text-warm-400 tracking-wider mb-2">Copyright</label>
                       <select
@@ -459,7 +461,7 @@ export default function WritersDeskPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-6 border-t border-warm-800">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-warm-800">
                 <button
                   type="button"
                   onClick={() => setIsEditingStory(false)}
@@ -484,7 +486,7 @@ export default function WritersDeskPage() {
               className="flex items-center gap-2 text-warm-400 hover:text-white font-bold text-sm mb-6 transition-all"
             >
               <ChevronLeft size={16} />
-              Back to My Works
+              Back to Story Projects
             </button>
 
             {/* Story Header */}
@@ -511,7 +513,7 @@ export default function WritersDeskPage() {
                     {selectedStory.status}
                   </span>
                   <span className="w-1 h-1 rounded-full bg-warm-600"></span>
-                  <span className="text-purple-400">{chapters.length} Parts</span>
+                  <span className="text-purple-400">{chapters.length} Chapters</span>
                 </div>
 
                 <p className="text-sm text-warm-300 line-clamp-4 leading-relaxed mb-6 max-w-2xl">
@@ -534,11 +536,18 @@ export default function WritersDeskPage() {
                     Import Chapters
                   </button>
                   <button
+                    onClick={() => setCollaboratorsOpen(true)}
+                    className="px-4 py-2 bg-warm-800 hover:bg-warm-700 border border-warm-700 text-white rounded-lg text-sm font-bold transition-all flex items-center gap-2"
+                  >
+                    <UsersRound size={16} />
+                    Duo / Collaboration
+                  </button>
+                  <button
                     onClick={handleCreateChapter}
                     className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-bold shadow-md transition-all flex items-center gap-2"
                   >
                     <Plus size={16} />
-                    New Part
+                    New Chapter
                   </button>
                 </div>
               </div>
@@ -548,7 +557,7 @@ export default function WritersDeskPage() {
             <div className="bg-warm-850 border border-warm-800 rounded-2xl overflow-hidden">
               <div className="px-6 py-4 border-b border-warm-800 flex justify-between items-center bg-warm-900/50">
                 <h3 className="font-serif text-lg font-bold text-white">Table of Contents</h3>
-                <span className="text-xs font-bold text-warm-500 uppercase tracking-wider">{chapters.length} Parts</span>
+                <span className="text-xs font-bold text-warm-500 uppercase tracking-wider">{chapters.length} Chapters</span>
               </div>
               
               {chaptersLoading ? (
@@ -556,12 +565,12 @@ export default function WritersDeskPage() {
               ) : chapters.length === 0 ? (
                 <div className="p-12 text-center flex flex-col items-center border-b border-warm-800 last:border-0">
                   <FileText size={48} className="text-warm-700 mb-4" />
-                  <p className="text-warm-400 font-medium mb-4">This story has no parts yet.</p>
+                  <p className="text-warm-400 font-medium mb-4">This story project has no chapters yet.</p>
                   <button
                     onClick={handleCreateChapter}
                     className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-bold shadow-md transition-all"
                   >
-                    Write the first part
+                    Write the first chapter
                   </button>
                 </div>
               ) : (
@@ -766,6 +775,15 @@ export default function WritersDeskPage() {
           storyId={selectedStory.id}
           existingChapterCount={chapters.length}
           onImportComplete={() => fetchChapters(selectedStory.id)}
+        />
+      )}
+      {selectedStory && (
+        <CollaboratorsModal
+          isOpen={collaboratorsOpen}
+          onClose={() => setCollaboratorsOpen(false)}
+          projectId={selectedStory.id}
+          projectType="story"
+          projectTitle={selectedStory.title}
         />
       )}
 

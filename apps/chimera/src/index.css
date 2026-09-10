@@ -143,8 +143,42 @@
 
   html, body, #root {
     @apply bg-warm-950 text-warm-100 font-sans antialiased min-h-screen bg-fixed bg-cover bg-[position:right_center] bg-no-repeat;
+    width: 100%;
+    max-width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
     background-image: linear-gradient(to right, rgba(9, 9, 11, 0.94), rgba(9, 9, 11, 0.78), rgba(9, 9, 11, 0.55)), url('/images/chimera_castle_hero_bg.jpg') !important;
     -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    overscroll-behavior-x: none;
+  }
+
+  #root {
+    isolation: isolate;
+  }
+
+  .chimera-atmosphere {
+    position: fixed;
+    inset: 0;
+    z-index: -10;
+    pointer-events: none;
+    background-image: var(--chimera-bg-overlay), var(--chimera-bg-image);
+    background-position: var(--chimera-bg-position);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    opacity: .92;
+  }
+
+  @media (max-width: 1023px) {
+    .chimera-atmosphere {
+      background-position: var(--chimera-bg-position-mobile);
+      background-attachment: scroll;
+    }
   }
 
   .dark body,
@@ -155,6 +189,21 @@
 
   *:focus-visible {
     @apply outline-none ring-2 ring-primary-500 ring-offset-2 ring-offset-warm-50 dark:ring-offset-warm-900;
+  }
+
+  /* Every page must fit the viewport before any feature-specific layout is
+     applied. Desktop panels can scroll internally; the document itself must
+     never force a phone to zoom out or pan sideways. */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  img, svg, video, canvas {
+    max-width: 100%;
+  }
+
+  button, input, textarea, select {
+    max-width: 100%;
   }
 
   /* Ensure headings have good contrast */

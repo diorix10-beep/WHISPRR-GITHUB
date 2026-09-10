@@ -12,7 +12,7 @@ export function BottomNav() {
     { path: '/discover', icon: Compass, label: 'Discover' },
     { path: '/stories', icon: BookOpen, label: 'Stories' },
     { path: '/conversations', icon: MessageCircle, label: 'Chat', badge: true },
-    { path: '/write/desk', icon: Plus, label: 'Create' },
+    { path: '/write/desk', icon: Plus, label: 'Create', isAction: true },
     { path: '/profile', icon: User, label: 'Me' },
   ];
 
@@ -36,7 +36,7 @@ export function BottomNav() {
         {items.map((item) => {
           const { path, icon: Icon, label } = item;
           const isAction = 'isAction' in item && item.isAction;
-          const isMessages = label === 'Messages' || label === 'Chats';
+          const isMessages = label === 'Messages' || label === 'Chats' || label === 'Chat';
           const isNotifications = label === 'Notifications';
           const badgeCount = isMessages ? unreadMessageCount : isNotifications ? unreadCount : 0;
 
@@ -92,4 +92,3 @@ export function BottomNav() {
     </nav>
   );
 }
-

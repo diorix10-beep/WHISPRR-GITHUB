@@ -1,17 +1,28 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Globe, MoreHorizontal, AlignLeft, Bold, Italic, Underline, Link, Image as ImageIcon, Check, Sparkles, Download, Maximize2, Feather, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Globe, MoreHorizontal, AlignLeft, Bold, Italic, Underline, Link, Image as ImageIcon, Check, Sparkles, Download, Maximize2, Feather, Plus, Trash2, Eye, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Story, StoryChapter } from '../types';
 import { checkUserPromptSafety, CRISIS_HELPLINE_INFO } from '../lib/safetyGuard';
 import { useToast } from '../contexts/ToastContext';
+import { useAuth } from '../contexts/AuthContext';
 import { AiCoPilotDrawer } from '../components/writers/AiCoPilotDrawer';
 import { SceneIllustrationModal } from '../components/writers/SceneIllustrationModal';
+
+type ChapterRevision = {
+  id: string;
+  title: string;
+  content: string;
+  status: 'draft' | 'published';
+  choices: { id: string; text: string; target_chapter_id?: string | null }[];
+  created_at: string;
+};
 
 export default function ChapterEditorPage() {
   const { storyId, chapterId } = useParams<{ storyId: string; chapterId: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { user } = useAuth();
 
   const [story, setStory] = useState<Story | null>(null);
   const [chapter, setChapter] = useState<StoryChapter | null>(null);
@@ -30,6 +41,10 @@ export default function ChapterEditorPage() {
   const [isHandcrafted, setIsHandcrafted] = useState(true);
   const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
   const [sceneIllustrationOpen, setSceneIllustrationOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [revisions, setRevisions] = useState<ChapterRevision[]>([]);
+  const [selectedRevision, setSelectedRevision] = useState<ChapterRevision | null>(null);
   const [sceneIllustrations, setSceneIllustrations] = useState<{ id: string; signedUrl: string }[]>([]);
 
   // Word count logic
@@ -63,11 +78,20 @@ export default function ChapterEditorPage() {
         .single();
 
       if (error) throw error;
+
       setChapter(chapData);
       setTitle(chapData.title);
       setContent(chapData.content || '');
       setStatus(chapData.status);
       setChoices(chapData.choices || []);
+
+      const { data: revisionData, error: revisionError } = await supabase
+        .from('story_chapter_revisions')
+        .select('id, title, content, status, choices, created_at')
+        .eq('chapter_id', chapterId)
+        .order('created_at', { ascending: false });
+      if (revisionError) throw revisionError;
+      setRevisions((revisionData || []) as ChapterRevision[]);
 
       const { data: illustrations, error: illustrationsError } = await supabase
         .from('story_scene_illustrations')
@@ -125,6 +149,13 @@ export default function ChapterEditorPage() {
         .eq('id', chapterId);
 
       if (error) throw error;
+
+      if (user?.id && !isAutoSave) {
+        const { error: revisionError } = await supabase
+          .from('story_chapter_revisions')
+          .insert({ chapter_id: chapterId, author_id: user.id, title, content, status: activeStatus, choices });
+        if (revisionError) throw revisionError;
+      }
       
       setStatus(activeStatus);
       
@@ -177,10 +208,10 @@ export default function ChapterEditorPage() {
           >
             <ArrowLeft size={18} />
           </button>
-          <div className="hidden sm:block">
+          <div className="min-w-0 hidden sm:block">
             <h1 className="text-sm text-white font-bold">{story?.title}</h1>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-warm-500 font-semibold uppercase tracking-wider">Part {chapter?.chapter_number}</span>
+              <span className="text-[10px] text-warm-500 font-semibold uppercase tracking-wider">Chapter {chapter?.chapter_number}</span>
               <span className="text-[10px] text-warm-500 flex items-center gap-1">
                 {saveStatus === 'saving' && <span className="text-yellow-500">Saving...</span>}
                 {saveStatus === 'saved' && <><Check size={10} className="text-green-500" /> Saved</>}
@@ -190,7 +221,7 @@ export default function ChapterEditorPage() {
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {status === 'draft' ? (
             <>
               <button
@@ -198,7 +229,7 @@ export default function ChapterEditorPage() {
                 disabled={saving}
                 className="text-warm-300 hover:text-white font-bold text-sm transition-all"
               >
-                Save
+                Save draft
               </button>
               <button
                 onClick={() => handleSaveDraft('published')}
@@ -276,14 +307,30 @@ export default function ChapterEditorPage() {
             <ImageIcon size={16} />
             <span className="hidden lg:inline">Illustrate</span>
           </button>
+          <button
+            onClick={() => setPreviewOpen(true)}
+            className="inline-flex items-center gap-1 rounded-xl border border-[#e4c77e]/30 bg-[#e4c77e]/10 p-2 text-xs font-bold text-[#e4c77e] transition-all hover:bg-[#e4c77e]/20"
+            title="Preview chapter"
+          >
+            <Eye size={16} />
+            <span className="hidden lg:inline">Preview</span>
+          </button>
+          <button
+            onClick={() => setHistoryOpen(true)}
+            className="inline-flex items-center gap-1 rounded-xl border border-white/10 bg-white/[.03] p-2 text-xs font-bold text-[#b9aea3] transition-all hover:bg-white/10 hover:text-white"
+            title="Revision history"
+          >
+            <Download size={16} />
+            <span className="hidden lg:inline">History</span>
+          </button>
         </div>
       </header>
 
       {/* Editor Layout */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-0">
         
         {/* Main Editor Panel */}
-        <div className="flex-1 overflow-y-auto bg-[#F7F5F0] dark:bg-[#1A1817] flex justify-center py-12 px-6">
+        <div className="flex-1 overflow-y-auto bg-[#F7F5F0] dark:bg-[#1A1817] flex justify-center py-6 sm:py-12 px-4 sm:px-6">
           <div className="max-w-[700px] w-full flex flex-col h-full relative">
             
             {/* Mock Rich Text Toolbar (Visual Only) */}
@@ -301,7 +348,7 @@ export default function ChapterEditorPage() {
             {/* Title field */}
             <input
               type="text"
-              placeholder="Untitled Part"
+              placeholder="Untitled Chapter"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full text-4xl font-serif font-bold bg-transparent border-0 focus:ring-0 px-0 pb-6 text-[#1A1817] dark:text-[#F7F5F0] placeholder-[#8A8580] dark:placeholder-[#6A6867]"
@@ -309,7 +356,7 @@ export default function ChapterEditorPage() {
 
             {/* Content field */}
             <textarea
-              placeholder="Tap here to start writing..."
+              placeholder="Begin writing your story..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
               className="w-full flex-1 min-h-[60vh] text-lg font-serif bg-transparent border-0 focus:ring-0 px-0 text-[#2A2827] dark:text-[#E5E0D8] placeholder-[#8A8580] dark:placeholder-[#6A6867] resize-none leading-relaxed"
@@ -404,6 +451,65 @@ export default function ChapterEditorPage() {
           chapterContent={content}
           onGenerated={handleSceneIllustration}
         />
+      )}
+      {previewOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 p-4 sm:p-8" role="dialog" aria-modal="true" aria-label="Chapter preview">
+          <div className="mx-auto min-h-full max-w-3xl rounded-3xl border border-[#c99b50]/30 bg-[#11121a] p-5 text-[#f7f5f0] shadow-2xl sm:p-10">
+            <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-5">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[.2em] text-[#e8c378]">Reader preview</p>
+                <h2 className="mt-2 font-serif text-3xl font-bold">{title || 'Untitled Chapter'}</h2>
+              </div>
+              <button onClick={() => setPreviewOpen(false)} className="rounded-xl p-2 text-[#b9aea3] transition hover:bg-white/10 hover:text-white" aria-label="Close preview">
+                <X size={20} />
+              </button>
+            </div>
+            <article className="prose prose-invert mt-8 max-w-none whitespace-pre-wrap font-serif text-lg leading-relaxed text-[#e6d9ca]">
+              {content || 'This chapter has no text yet.'}
+            </article>
+            {choices.length > 0 && (
+              <section className="mt-10 border-t border-white/10 pt-6">
+                <h3 className="font-serif text-xl text-[#e8c378]">What happens next?</h3>
+                <div className="mt-4 grid gap-3">
+                  {choices.filter((choice) => choice.text.trim()).map((choice) => (
+                    <div key={choice.id} className="rounded-2xl border border-[#c99b50]/30 bg-[#c99b50]/10 px-4 py-3 text-sm text-[#f2dfbb]">{choice.text}</div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        </div>
+      )}
+      {historyOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 p-4 sm:p-8" role="dialog" aria-modal="true" aria-label="Revision history">
+          <div className="mx-auto min-h-full max-w-4xl rounded-3xl border border-[#c99b50]/30 bg-[#11121a] p-5 text-[#f7f5f0] shadow-2xl sm:p-8">
+            <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-5">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[.2em] text-[#e8c378]">Storytelling archive</p>
+                <h2 className="mt-2 font-serif text-3xl font-bold">Revision history</h2>
+                <p className="mt-2 text-sm text-[#b9aea3]">Choose an earlier saved version. Restoring only changes the editor until you save.</p>
+              </div>
+              <button onClick={() => { setHistoryOpen(false); setSelectedRevision(null); }} className="rounded-xl p-2 text-[#b9aea3] transition hover:bg-white/10 hover:text-white" aria-label="Close revision history"><X size={20} /></button>
+            </div>
+            {revisions.length === 0 ? (
+              <div className="mt-8 rounded-2xl border border-dashed border-white/15 px-5 py-12 text-center text-sm text-[#a99d91]">No manual revisions yet. Save the chapter once to create the first snapshot.</div>
+            ) : (
+              <div className="mt-6 grid gap-4 lg:grid-cols-[.8fr_1.2fr]">
+                <div className="space-y-3">
+                  {revisions.map((revision) => (
+                    <button key={revision.id} onClick={() => setSelectedRevision(revision)} className={`w-full rounded-2xl border p-4 text-left transition ${selectedRevision?.id === revision.id ? 'border-[#e8c378] bg-[#c99b50]/15' : 'border-white/10 bg-white/[.03] hover:bg-white/[.07]'}`}>
+                      <p className="font-serif text-lg">{revision.title || 'Untitled Chapter'}</p>
+                      <p className="mt-1 text-xs text-[#a99d91]">{new Date(revision.created_at).toLocaleString()} · {revision.status}</p>
+                    </button>
+                  ))}
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/[.03] p-5">
+                  {selectedRevision ? <><p className="font-serif text-2xl">{selectedRevision.title || 'Untitled Chapter'}</p><p className="mt-4 max-h-[28rem] overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed text-[#e6d9ca]">{selectedRevision.content || 'This revision has no text.'}</p><button onClick={() => { setTitle(selectedRevision.title); setContent(selectedRevision.content); setChoices(selectedRevision.choices || []); setHistoryOpen(false); setSelectedRevision(null); showToast('Revision restored to the editor. Save when ready.', 'info'); }} className="mt-5 w-full rounded-xl bg-[#d9b66c] px-4 py-3 text-sm font-extrabold text-[#2a1c12]">Restore to editor</button></> : <p className="py-16 text-center text-sm text-[#a99d91]">Select a revision to preview it.</p>}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

@@ -216,14 +216,14 @@ export default function DiscoverPage() {
   const featuredStory = stories[0];
 
   return (
-    <div className={`${isStoryMode ? 'min-h-screen bg-transparent text-warm-900 dark:text-warm-50' : 'rp-page'} font-sans pb-24 relative overflow-hidden transition-colors duration-300`}>
+    <div className={`${isStoryMode ? 'min-h-screen bg-transparent text-warm-900 dark:text-warm-50' : 'rp-page'} font-sans pb-[calc(6rem+env(safe-area-inset-bottom))] relative min-w-0 overflow-x-hidden transition-colors duration-300`}>
       
       {/* Ambient Lighting & Glow Spheres */}
       <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full blur-3xl pointer-events-none ${
         isStoryMode ? 'bg-gradient-to-b from-purple-600/15 via-indigo-600/10 to-transparent' : 'bg-gradient-to-b from-red-600/15 via-amber-600/10 to-transparent'
       }`} />
 
-      <div className={`${isStoryMode ? 'max-w-7xl' : 'max-w-[1420px]'} mx-auto px-4 sm:px-6 lg:px-8 space-y-12 relative z-10 pt-8`}>
+      <div className={`${isStoryMode ? 'max-w-7xl' : 'max-w-[1420px]'} mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-12 relative z-10 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:pt-8`}>
 
         {/* ── 1. CINEMATIC HERO SECTION ── */}
         <section className={`flex flex-col items-center text-center ${isStoryMode ? 'pt-6 sm:pt-10' : 'pt-8 sm:pt-14'} space-y-6`}>
@@ -280,29 +280,29 @@ export default function DiscoverPage() {
 
 
         {/* ── 2. ROLEPLAY ACTIONS ── */}
-        {!isStoryMode && <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {!isStoryMode && <section className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-3">
           <button
             onClick={() => navigate('/characters')}
-            className="rp-card group relative min-h-56 overflow-hidden rounded-2xl p-7 text-left"
+            className="rp-card group relative min-h-44 overflow-hidden rounded-2xl p-5 text-left sm:min-h-56 sm:p-7"
           >
             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(12,9,17,0.30),rgba(12,9,17,0.80)),url('/images/bg_characters.png')] bg-cover bg-center opacity-70 transition group-hover:scale-105" />
-            <div className="relative mt-28 flex items-center gap-3"><span className="rounded-full border border-[#ab80d0]/70 bg-[#24162f]/80 p-3 text-[#d8b6f7]"><Users size={20} /></span><span className="font-serif text-2xl font-semibold text-[#fff3dd]">Characters</span></div>
+            <div className="relative mt-20 flex items-center gap-3 sm:mt-28"><span className="rounded-full border border-[#ab80d0]/70 bg-[#24162f]/80 p-3 text-[#d8b6f7]"><Users size={20} /></span><span className="font-serif text-xl font-semibold text-[#fff3dd] sm:text-2xl">Characters</span></div>
           </button>
 
           <button
             onClick={() => navigate('/conversations')}
-            className="rp-card group relative min-h-56 overflow-hidden rounded-2xl p-7 text-left"
+            className="rp-card group relative min-h-44 overflow-hidden rounded-2xl p-5 text-left sm:min-h-56 sm:p-7"
           >
             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(12,9,17,0.22),rgba(12,9,17,0.80)),url('/images/bg_worlds.jpg')] bg-cover bg-center opacity-70 transition group-hover:scale-105" />
-            <div className="relative mt-28 flex items-center gap-3"><span className="rounded-full border border-[#8aa5d2]/70 bg-[#142238]/80 p-3 text-[#a8c5fb]"><MessageSquare size={20} /></span><span className="font-serif text-2xl font-semibold text-[#fff3dd]">Chats</span></div>
+            <div className="relative mt-20 flex items-center gap-3 sm:mt-28"><span className="rounded-full border border-[#8aa5d2]/70 bg-[#142238]/80 p-3 text-[#a8c5fb]"><MessageSquare size={20} /></span><span className="font-serif text-xl font-semibold text-[#fff3dd] sm:text-2xl">Chats</span></div>
           </button>
 
           <button
             onClick={() => navigate('/characters/new')}
-            className="rp-card group relative min-h-56 overflow-hidden rounded-2xl p-7 text-left"
+            className="rp-card group relative min-h-44 overflow-hidden rounded-2xl p-5 text-left sm:min-h-56 sm:p-7"
           >
             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(12,9,17,0.30),rgba(12,9,17,0.83)),url('/images/bg_worlds.jpg')] bg-cover bg-center opacity-60 transition group-hover:scale-105" />
-            <div className="relative mt-28 flex items-center gap-3"><span className="rounded-full border border-[#d7b06c]/70 bg-[#312313]/80 p-3 text-[#f0cf8a]"><Sparkles size={20} /></span><span className="font-serif text-2xl font-semibold text-[#fff3dd]">Start with a spark</span></div>
+            <div className="relative mt-20 flex items-center gap-3 sm:mt-28"><span className="rounded-full border border-[#d7b06c]/70 bg-[#312313]/80 p-3 text-[#f0cf8a]"><Sparkles size={20} /></span><span className="font-serif text-xl font-semibold text-[#fff3dd] sm:text-2xl">Start with a spark</span></div>
           </button>
         </section>}
 

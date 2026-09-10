@@ -194,12 +194,12 @@ export default function CharactersPage() {
   };
 
   return (
-    <div className="rp-page font-sans pb-24 relative overflow-hidden">
+    <div className="rp-page relative min-w-0 overflow-x-hidden pb-[calc(6rem+env(safe-area-inset-bottom))] font-sans">
       
       {/* Ambient Red Glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-b from-red-600/15 via-amber-600/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
-      <div className="max-w-[1420px] mx-auto px-4 sm:px-6 lg:px-8 space-y-10 relative z-10 pt-10">
+      <div className="max-w-[1420px] mx-auto space-y-8 px-4 pt-[calc(1.5rem+env(safe-area-inset-top))] relative z-10 sm:space-y-10 sm:px-6 sm:pt-10 lg:px-8">
 
         {/* ── 1. HERO SECTION ── */}
         <section className="flex flex-col items-center text-center pt-6 sm:pt-10 space-y-5">
@@ -208,7 +208,7 @@ export default function CharactersPage() {
             <span>YOUR ROLEPLAY LIBRARY</span>
           </div>
 
-          <h1 className="rp-heading text-4xl sm:text-6xl font-extrabold tracking-tight">
+          <h1 className="rp-heading text-3xl sm:text-6xl font-extrabold tracking-tight">
             My Cast
           </h1>
 
@@ -216,10 +216,10 @@ export default function CharactersPage() {
             The people you’ve brought into CHIMERA. Create, protect, and return to every character whose story is still unfolding.
           </p>
 
-          <div className="flex items-center gap-3 pt-2 flex-wrap justify-center">
+          <div className="flex w-full items-center justify-center gap-3 pt-2 flex-wrap sm:w-auto">
             <button
               onClick={() => navigate('/characters/new')}
-            className="rp-gold-button"
+            className="rp-gold-button w-full sm:w-auto"
             >
               <Plus size={16} strokeWidth={3} />
               <span>Bring someone into CHIMERA</span>
@@ -227,7 +227,7 @@ export default function CharactersPage() {
 
             <button
               onClick={() => navigate('/characters/new?import=true')}
-            className="rp-outline-button"
+            className="rp-outline-button w-full sm:w-auto"
               title="Import Character Card (.json or .png from Character.AI / Janitor AI)"
             >
               <Sparkles size={15} className="text-amber-500" />
@@ -240,7 +240,7 @@ export default function CharactersPage() {
         {/* ── 2. QUICK ACTIONS & FILTER CONTROLS ── */}
         <section className="rp-panel p-4 rounded-3xl space-y-4">
           
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-center">
             
             {/* Tabs */}
             <div className="flex items-center p-1 rounded-2xl border border-[#c99b50]/35 bg-black/30 w-full sm:w-auto">
@@ -277,7 +277,7 @@ export default function CharactersPage() {
             </div>
 
             {/* View Mode & Sort */}
-            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+              <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-end">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}

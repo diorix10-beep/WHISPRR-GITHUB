@@ -25,7 +25,6 @@ jobs:
             bundle_glob: 'apps/chimera/src-tauri/target/release/bundle/dmg/*.dmg'
           - name: Windows
             os: windows-latest
-            bundle_glob: 'apps/chimera/src-tauri/target/release/bundle/**/*.{msi,exe}'
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out CHIMERA
@@ -43,6 +42,9 @@ jobs:
       - name: Install JavaScript dependencies
         run: npm ci
 
+      - name: Generate native application icons
+        run: npx tauri icon apps/chimera/src-tauri/icons/icon.svg --output apps/chimera/src-tauri/icons
+
       - name: Verify the CHIMERA frontend
         run: |
           npm run typecheck --workspace=chimera
@@ -51,11 +53,23 @@ jobs:
       - name: Build the native installer
         run: npm run desktop:build --workspace=chimera
 
-      - name: Upload installer artifacts
+      - name: Upload macOS installer artifacts
+        if: matrix.name == 'macOS'
         uses: actions/upload-artifact@v4
         with:
           name: chimera-${{ matrix.name }}
-          path: ${{ matrix.bundle_glob }}
+          path: apps/chimera/src-tauri/target/release/bundle/dmg/*.dmg
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Windows installer artifacts
+        if: matrix.name == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: chimera-${{ matrix.name }}
+          path: |
+            apps/chimera/src-tauri/target/release/bundle/nsis/*.exe
+            apps/chimera/src-tauri/target/release/bundle/msi/*.msi
           if-no-files-found: error
           retention-days: 14
 

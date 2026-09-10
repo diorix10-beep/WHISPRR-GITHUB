@@ -362,30 +362,30 @@ export default function ChimeraChatsPage() {
   };
 
   return (
-    <div className="rp-page">
-    <div className="max-w-[1180px] mx-auto px-4 py-12 relative z-10">
+    <div className="rp-page min-w-0 overflow-x-hidden pb-[calc(6rem+env(safe-area-inset-bottom))]">
+    <div className="max-w-[1180px] mx-auto px-4 pb-8 pt-[calc(1.5rem+env(safe-area-inset-top))] relative z-10 sm:px-6 sm:py-12">
       {/* Header */}
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between mb-8">
+      <div className="mb-7 flex flex-col gap-5 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="rp-micro flex items-center gap-2"><MessageSquare size={14} /> Roleplay conversations</p>
-          <h1 className="rp-heading mt-3 text-4xl sm:text-5xl font-bold flex items-center gap-2">
+          <h1 className="rp-heading mt-3 flex items-center gap-2 text-3xl font-bold sm:text-5xl">
             Your rooms, your rules.
           </h1>
           <p className="rp-copy mt-3 max-w-xl text-sm leading-relaxed">
             Private conversations stay between you and the character. Share a scene only when you decide it belongs in the wider world.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-stretch gap-2 sm:w-auto sm:items-center">
           <button
             onClick={() => setShowGroupModal(true)}
-            className="rp-outline-button px-4 py-3 text-xs"
+            className="rp-outline-button flex-1 px-3 py-3 text-xs sm:flex-none sm:px-4"
           >
             <Users size={15} />
             <span>Group Room</span>
           </button>
           <button
             onClick={() => setShowNewChatModal(true)}
-            className="rp-gold-button px-4 py-3 text-sm"
+            className="rp-gold-button flex-1 px-3 py-3 text-sm sm:flex-none sm:px-4"
           >
             <Plus size={16} />
             <span>Start a chat</span>
@@ -393,16 +393,16 @@ export default function ChimeraChatsPage() {
         </div>
       </div>
 
-      <div className="mb-7 inline-flex rounded-2xl border border-[#c99b50]/45 bg-black/35 p-1 shadow-sm">
+      <div className="mb-6 flex w-full rounded-2xl border border-[#c99b50]/45 bg-black/35 p-1 shadow-sm sm:mb-7 sm:inline-flex sm:w-auto">
         <button
           onClick={() => setChatShelf('private')}
-          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${chatShelf === 'private' ? 'bg-[#2b2116] text-[#ffe2a1] shadow-sm ring-1 ring-[#c99b50]/70' : 'text-[#bfb4a3] hover:text-[#f4d390]'}`}
+          className={`inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition sm:flex-none sm:px-4 ${chatShelf === 'private' ? 'bg-[#2b2116] text-[#ffe2a1] shadow-sm ring-1 ring-[#c99b50]/70' : 'text-[#bfb4a3] hover:text-[#f4d390]'}`}
         >
           <Lock size={14} /> Private
         </button>
         <button
           onClick={() => setChatShelf('public')}
-          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${chatShelf === 'public' ? 'bg-[#2b2116] text-[#ffe2a1] shadow-sm ring-1 ring-[#c99b50]/70' : 'text-[#bfb4a3] hover:text-[#f4d390]'}`}
+          className={`inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition sm:flex-none sm:px-4 ${chatShelf === 'public' ? 'bg-[#2b2116] text-[#ffe2a1] shadow-sm ring-1 ring-[#c99b50]/70' : 'text-[#bfb4a3] hover:text-[#f4d390]'}`}
         >
           <BookOpen size={14} /> Public
         </button>

@@ -144,7 +144,7 @@ function MobileNavDrawerContent({
   const mainLinks = creativeMode === 'roleplay' ? [
     { path: '/discover', label: t('navigation.discover'), icon: Compass },
     { path: '/characters', label: t('navigation.my_cast'), icon: Users },
-    { path: '/human-roleplay', label: t('navigation.human_roleplay'), icon: Users },
+    { path: '/human-roleplay', label: 'Game Hubs', icon: Users },
     { path: '/conversations', label: t('navigation.chats'), icon: MessageSquare },
     { path: '/personas', label: t('navigation.who_you_are_here'), icon: User },
   ] : [
@@ -165,7 +165,7 @@ function MobileNavDrawerContent({
       <div className={`relative z-50 flex h-[100dvh] max-h-[100dvh] w-80 max-w-[85vw] flex-col overflow-hidden border-r shadow-2xl animate-in slide-in-from-left duration-200 ${isRoleplay ? 'border-[#c99b50]/35 bg-[#0a0b11] text-[#f5ead7]' : 'border-warm-200 bg-white dark:border-warm-800 dark:bg-warm-900'}`}>
         
         {/* Header */}
-        <div className={`flex shrink-0 items-center justify-between border-b p-4 ${isRoleplay ? 'border-[#c99b50]/25 bg-[#090a10]/90' : 'border-warm-200 bg-warm-50/50 dark:border-warm-800 dark:bg-warm-950/50'}`}>
+        <div className={`flex shrink-0 items-center justify-between border-b px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] ${isRoleplay ? 'border-[#c99b50]/25 bg-[#090a10]/90' : 'border-warm-200 bg-warm-50/50 dark:border-warm-800 dark:bg-warm-950/50'}`}>
           <div className="flex items-center gap-2">
             <span className={`font-serif text-lg font-extrabold tracking-wider bg-clip-text text-transparent ${
               creativeMode === 'storytelling'
@@ -305,7 +305,7 @@ function MobileNavDrawerContent({
         </div>
 
         {/* Footer: User Profile & Preferences */}
-        <div className={`shrink-0 space-y-3 border-t p-4 ${isRoleplay ? 'border-[#c99b50]/25 bg-[#090a10]/90' : 'border-warm-200 bg-warm-50/50 dark:border-warm-800 dark:bg-warm-950/50'}`}>
+        <div className={`shrink-0 space-y-3 border-t px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 ${isRoleplay ? 'border-[#c99b50]/25 bg-[#090a10]/90' : 'border-warm-200 bg-warm-50/50 dark:border-warm-800 dark:bg-warm-950/50'}`}>
           
           {/* Theme Selector */}
           <div className={`flex rounded-lg p-0.5 text-xs ${isRoleplay ? 'border border-[#c99b50]/25 bg-black/30' : 'bg-warm-200/50 dark:bg-warm-800/50'}`}>

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type ReactNode } from 'react';
+import { useState, useRef, useEffect, type ReactNode, type CSSProperties } from 'react';
 import { Outlet, useNavigate, NavLink, useLocation, Link } from 'react-router-dom';
 import {
   Menu, Sun, Moon, Monitor, Search, Plus, LayoutGrid, Settings, LogOut,
@@ -12,6 +12,7 @@ import { MobileNavDrawer } from './MobileNavDrawer';
 import { ShardsHubModal } from '../common/ShardsHubModal';
 import { ShardCrystalImage } from '../common/ShardCrystalImage';
 import { useTranslation } from '../../hooks/useTranslation';
+import { CHIMERA_BACKGROUNDS } from '../../brand/backgroundLibrary';
 
 interface ChimeraLayoutProps {
   children?: ReactNode;
@@ -28,7 +29,7 @@ interface NavLinkItem {
 const ROLEPLAY_NAV_LINKS: NavLinkItem[] = [
   { path: '/discover', token: 'navigation.discover', icon: Compass },
   { path: '/characters', token: 'navigation.my_cast', icon: Users },
-  { path: '/human-roleplay', token: 'navigation.human_roleplay', icon: Users, shortLabel: 'Human RP' },
+  { path: '/human-roleplay', token: 'navigation.human_roleplay', icon: Users, shortLabel: 'Game Hubs' },
   { path: '/conversations', token: 'navigation.chats', icon: MessageSquare },
   { path: '/personas', token: 'navigation.who_you_are_here', icon: UserCheck, shortLabel: 'WYAH' },
 ];
@@ -219,13 +220,16 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
   return (
     <div className={`min-h-screen bg-transparent transition-colors duration-300 flex flex-col font-sans relative ${creativeMode === 'storytelling' ? 'bg-[#081426]' : 'bg-[#07080c]'}`}>
-      {creativeMode === 'storytelling' && (
-        <div
-          aria-hidden="true"
-          className="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat opacity-[0.16]"
-          style={{ backgroundImage: "linear-gradient(rgba(8,20,38,0.88), rgba(8,20,38,0.94)), url('/images/storytelling-workspace-hero-v1.png')" }}
-        />
-      )}
+      <div
+        aria-hidden="true"
+        className="chimera-atmosphere"
+        style={{
+          '--chimera-bg-image': `url('${CHIMERA_BACKGROUNDS[creativeMode].image}')`,
+          '--chimera-bg-overlay': CHIMERA_BACKGROUNDS[creativeMode].overlay,
+          '--chimera-bg-position': CHIMERA_BACKGROUNDS[creativeMode].desktopPosition,
+          '--chimera-bg-position-mobile': CHIMERA_BACKGROUNDS[creativeMode].mobilePosition,
+        } as CSSProperties}
+      />
       {/* Top Navigation Header */}
       <header className={`sticky top-0 z-40 w-full backdrop-blur-2xl border-b shadow-lg transition-colors duration-300 ${creativeMode === 'roleplay' ? 'border-[#c99b50]/25 bg-[#08090e]/90 shadow-black/50' : 'bg-warm-950/70 dark:bg-warm-950/80 border-warm-800/60'}`}>
         <div className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
