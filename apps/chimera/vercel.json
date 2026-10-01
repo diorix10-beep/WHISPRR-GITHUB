@@ -7,5 +7,10 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "codex/chimera-phase1-security-preservation": false
+    }
+  }
 }

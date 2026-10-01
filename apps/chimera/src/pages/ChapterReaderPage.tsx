@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import {ChapterRoleplayChooser} from '../components/writers/ChapterRoleplayChooser';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, BookOpen, ArrowLeft, Sun, Moon, Type, Sparkles, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, ArrowLeft, Sun, Moon, Type, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Story, StoryChapter } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,7 +15,9 @@ export default function ChapterReaderPage() {
 
   const [story, setStory] = useState<Story | null>(null);
   const [chapter, setChapter] = useState<StoryChapter | null>(null);
-  const [totalChapters, setTotalChapters] = useState(0);
+  const [publishedChapters,setPublishedChapters]=useState<Array<{id:string;chapter_number:number}>>([]);
+  const totalChapters=publishedChapters.length;
+  const loadSequence=useRef(0);
   const [loading, setLoading] = useState(true);
 
   // Styling settings
@@ -24,7 +27,10 @@ export default function ChapterReaderPage() {
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [isSummarizing, setIsSummarizing] = useState(false);
 
-  const chapNum = parseInt(chapterNumber || '1', 10);
+  const chapterById=!!chapterNumber&&!/^\d+$/.test(chapterNumber);
+  const chapterIndex=publishedChapters.findIndex(c=>c.id===chapter?.id);
+  const previousChapter=publishedChapters[chapterIndex-1];
+  const nextChapter=chapterIndex>=0?publishedChapters[chapterIndex+1]:undefined;
 
   useEffect(() => {
     if (storyId) {
@@ -33,6 +39,7 @@ export default function ChapterReaderPage() {
   }, [storyId, chapterNumber]);
 
   const fetchChapterData = async () => {
+    const sequence=++loadSequence.current;
     try {
       setLoading(true);
       
@@ -43,27 +50,25 @@ export default function ChapterReaderPage() {
         .eq('id', storyId)
         .single();
       
+      if(sequence!==loadSequence.current)return;
       setStory(storyData);
 
-      // Fetch Total chapter count
-      const { count } = await supabase
-        .from('story_chapters')
-        .select('*', { count: 'exact', head: true })
-        .eq('story_id', storyId)
-        .eq('status', 'published');
-      
-      setTotalChapters(count || 0);
+      const {data:published,error:publishedError}=await supabase.from('story_chapters').select('id,chapter_number').eq('story_id',storyId).eq('status','published').order('chapter_number');
+      if(publishedError)throw publishedError;
+      if(sequence!==loadSequence.current)return;
+      setPublishedChapters(published||[]);
 
       // Fetch active chapter by number
       const { data: chapData, error: chapError } = await supabase
         .from('story_chapters')
         .select('*')
         .eq('story_id', storyId)
-        .eq('chapter_number', chapNum)
+        .eq(chapterById?'id':'chapter_number',chapterById?chapterNumber:parseInt(chapterNumber||'1',10))
         .eq('status', 'published')
         .maybeSingle();
 
       if (chapError) throw chapError;
+      if(sequence!==loadSequence.current)return;
 
       if (!chapData) {
         setChapter(null);
@@ -77,7 +82,7 @@ export default function ChapterReaderPage() {
     } catch (err: any) {
       showToast(err.message || 'Error loading chapter content', 'error');
     } finally {
-      setLoading(false);
+      if(sequence===loadSequence.current)setLoading(false);
     }
   };
 
@@ -117,14 +122,14 @@ export default function ChapterReaderPage() {
   };
 
   const handlePrevChapter = () => {
-    if (chapNum > 1) {
-      navigate(`/story/${storyId}/chapter/${chapNum - 1}`);
+    if (previousChapter) {
+      navigate(`/stories/${storyId}/chapter/${previousChapter.chapter_number}`);
     }
   };
 
   const handleNextChapter = () => {
-    if (chapNum < totalChapters) {
-      navigate(`/story/${storyId}/chapter/${chapNum + 1}`);
+    if (nextChapter) {
+      navigate(`/stories/${storyId}/chapter/${nextChapter.chapter_number}`);
     }
   };
 
@@ -147,44 +152,7 @@ export default function ChapterReaderPage() {
     mono: 'font-mono'
   }[fontFamily];
 
-  const [steppingIntoRoleplay, setSteppingIntoRoleplay] = useState(false);
-  const handleStepIntoRoleplay = async () => {
-    if (!profile?.user_id || !story || !chapter) return;
-    setSteppingIntoRoleplay(true);
-    try {
-      const { data: conv, error: convError } = await supabase
-        .from('conversations')
-        .insert({
-          created_by: profile.user_id,
-          type: 'dm',
-          name: `Roleplay: ${story.title}`
-        })
-        .select()
-        .single();
-
-      if (convError) throw convError;
-
-      await supabase.from('conversation_participants').insert({
-        conversation_id: conv.id,
-        user_id: profile.user_id,
-        role: 'member'
-      });
-
-      await supabase.from('messages').insert({
-        conversation_id: conv.id,
-        user_id: profile.user_id,
-        content: `*Scene Context from Chapter ${chapter.chapter_number}: ${chapter.title}*\n\n${chapter.content.slice(0, 300)}...\n\n*Stepping into interactive roleplay mode...*`
-      });
-
-      showToast('Stepped into interactive Roleplay mode!', 'success');
-      navigate(`/conversations/${conv.id}`);
-    } catch (err: any) {
-      console.error('Error stepping into roleplay:', err);
-      showToast(err.message || 'Failed to step into roleplay', 'error');
-    } finally {
-      setSteppingIntoRoleplay(false);
-    }
-  };
+  const [roleplayChooser, setRoleplayChooser] = useState(false);
 
   if (loading) {
     return (
@@ -198,7 +166,7 @@ export default function ChapterReaderPage() {
     return (
       <div className="min-h-screen bg-warm-50 dark:bg-warm-900 flex flex-col items-center justify-center p-8">
         <h2 className="font-serif text-2xl font-bold text-warm-900 dark:text-white">Chapter not found</h2>
-        <button onClick={() => navigate(`/story/${storyId}`)} className="mt-4 bg-red-650 text-white font-semibold px-4 py-2 rounded-xl">
+        <button onClick={() => navigate(`/stories/${storyId}`)} className="mt-4 bg-red-650 text-white font-semibold px-4 py-2 rounded-xl">
           Back to Story Hub
         </button>
       </div>
@@ -212,7 +180,7 @@ export default function ChapterReaderPage() {
       <header className="sticky top-0 bg-white/80 dark:bg-warm-850/80 backdrop-blur-lg border-b border-warm-200/50 dark:border-warm-800 z-50 px-4 py-3">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <button
-            onClick={() => navigate(`/story/${storyId}`)}
+            onClick={() => navigate(`/stories/${storyId}`)}
             className="flex items-center gap-1.5 text-xs font-semibold text-warm-600 dark:text-warm-300 hover:text-red-650 transition-colors"
           >
             <ArrowLeft size={16} />
@@ -224,19 +192,19 @@ export default function ChapterReaderPage() {
               {story.title}
             </h1>
             <span className="text-[10px] text-warm-500 dark:text-warm-400 block mt-0.5">
-              Chapter {chapter.chapter_number} of {totalChapters}
+              Chapter {chapter.chapter_number} · {chapterIndex+1} of {totalChapters} published
             </span>
           </div>
 
           {/* Reader Preferences Bar (AO3 / Wattpad Style) */}
           <div className="flex items-center gap-2 flex-wrap justify-end">
             <button
-              onClick={handleStepIntoRoleplay}
-              disabled={steppingIntoRoleplay}
+              onClick={() => setRoleplayChooser(true)}
+              disabled={false}
               className="flex items-center gap-1.5 text-xs font-extrabold px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-500 hover:to-purple-500 text-white shadow-md transition-all hover:scale-103 active:scale-97"
-              title="Step inside this exact chapter scene and talk with the characters in live roleplay!"
+              title="Choose AI or Human Roleplay for a separate scene"
             >
-              {steppingIntoRoleplay ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} className="text-amber-300 fill-amber-300" />}
+              <Sparkles size={14} className="text-amber-300 fill-amber-300" />
               <span>Step Inside Scene 🌀</span>
             </button>
 
@@ -348,9 +316,9 @@ export default function ChapterReaderPage() {
                   key={choice.id || idx}
                   onClick={() => {
                     if (choice.target_chapter_id) {
-                      navigate(`/story/${storyId}/chapter/${choice.target_chapter_id}`);
-                    } else if (chapNum < totalChapters) {
-                      navigate(`/story/${storyId}/chapter/${chapNum + 1}`);
+                      navigate(`/stories/${storyId}/chapter/${choice.target_chapter_id}`);
+                    } else if (nextChapter) {
+                      navigate(`/stories/${storyId}/chapter/${nextChapter.chapter_number}`);
                     } else {
                       showToast('End of path reached! Stay tuned for updates.', 'info');
                     }
@@ -371,7 +339,7 @@ export default function ChapterReaderPage() {
         <div className="max-w-2xl mx-auto px-6 flex items-center justify-between">
           <button
             onClick={handlePrevChapter}
-            disabled={chapNum <= 1}
+            disabled={!previousChapter}
             className="flex items-center gap-1.5 text-xs font-bold px-4 py-2.5 rounded-xl border border-warm-200 dark:border-warm-750 bg-white dark:bg-warm-850 text-warm-750 dark:text-warm-250 hover:bg-warm-50 dark:hover:bg-warm-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
             <ChevronLeft size={16} />
@@ -384,7 +352,7 @@ export default function ChapterReaderPage() {
 
           <button
             onClick={handleNextChapter}
-            disabled={chapNum >= totalChapters}
+            disabled={!nextChapter}
             className="flex items-center gap-1.5 text-xs font-bold px-4 py-2.5 rounded-xl border border-warm-200 dark:border-warm-750 bg-white dark:bg-warm-850 text-warm-750 dark:text-warm-250 hover:bg-warm-50 dark:hover:bg-warm-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
             Next
@@ -392,11 +360,12 @@ export default function ChapterReaderPage() {
           </button>
         </div>
       </footer>
+      {roleplayChooser && <ChapterRoleplayChooser key={chapter.id} storyTitle={story.title} chapterTitle={chapter.title} chapterNumber={chapter.chapter_number} content={chapter.content} onClose={() => setRoleplayChooser(false)} onCreated={(mode,id) => navigate(mode === 'ai' ? `/conversations/${id}` : `/human-roleplay/${id}`)} />}
 
     </div>
   );
 
   function progressReadPercent() {
-    return Math.round((chapNum / totalChapters) * 100);
+    return totalChapters?Math.round(((chapterIndex+1) / totalChapters) * 100):0;
   }
 }

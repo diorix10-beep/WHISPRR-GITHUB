@@ -319,7 +319,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const requestEmailOtp = async (email: string) => {
-    const { error } = await supabase.auth.signInWithOtp({ email });
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
     if (error) throw error;
   };
 
@@ -415,33 +415,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [state.user?.id]);
 
-  const [adFreePassActive, setAdFreePassActive] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('chimera_ad_free_pass') === 'true';
-    } catch {}
-    return false;
-  });
-
-  const [roleplayVipActive, setRoleplayVipActive] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('chimera_roleplay_vip') === 'true' || localStorage.getItem('chimera_multiverse_vip') === 'true';
-    } catch {}
-    return false;
-  });
-
-  const [storytellingVipActive, setStorytellingVipActive] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('chimera_storytelling_vip') === 'true' || localStorage.getItem('chimera_multiverse_vip') === 'true';
-    } catch {}
-    return false;
-  });
-
-  const [multiverseVipActive, setMultiverseVipActive] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('chimera_multiverse_vip') === 'true';
-    } catch {}
-    return false;
-  });
+  // Founder decision: pass benefits and duration require specification before sale.
+  // Browser preferences cannot establish paid entitlements.
+  const adFreePassActive = false;
+  const roleplayVipActive = false;
+  const storytellingVipActive = false;
+  const multiverseVipActive = false;
 
   const spendShards = useCallback((amount: number, reason: string): boolean => {
     // SHARDS changes must be performed through a server-side ledger RPC.
@@ -455,59 +434,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.warn('SHARDS earning is not connected for this action.', { amount, reason });
   }, []);
 
-  const activateAdFreePass = useCallback((): boolean => {
-    if (shardsBalance === null || shardsBalance < 20) return false;
-    if (spendShards(20, 'Ad-Free Pass Activation')) {
-      setAdFreePassActive(true);
-      try {
-        localStorage.setItem('chimera_ad_free_pass', 'true');
-      } catch {}
-      return true;
-    }
-    return false;
-  }, [shardsBalance, spendShards]);
-
-  const activateRoleplayVipPass = useCallback((): boolean => {
-    if (shardsBalance === null || shardsBalance < 15) return false;
-    if (spendShards(15, 'Roleplay VIP Pass Activation')) {
-      setRoleplayVipActive(true);
-      try {
-        localStorage.setItem('chimera_roleplay_vip', 'true');
-      } catch {}
-      return true;
-    }
-    return false;
-  }, [shardsBalance, spendShards]);
-
-  const activateStorytellingVipPass = useCallback((): boolean => {
-    if (shardsBalance === null || shardsBalance < 15) return false;
-    if (spendShards(15, 'Storytelling VIP Pass Activation')) {
-      setStorytellingVipActive(true);
-      try {
-        localStorage.setItem('chimera_storytelling_vip', 'true');
-      } catch {}
-      return true;
-    }
-    return false;
-  }, [shardsBalance, spendShards]);
-
-  const activateMultiverseVipPass = useCallback((): boolean => {
-    if (shardsBalance === null || shardsBalance < 25) return false;
-    if (spendShards(25, 'Multiverse All-Access VIP Pass Activation')) {
-      setMultiverseVipActive(true);
-      setRoleplayVipActive(true);
-      setStorytellingVipActive(true);
-      setAdFreePassActive(true);
-      try {
-        localStorage.setItem('chimera_multiverse_vip', 'true');
-        localStorage.setItem('chimera_roleplay_vip', 'true');
-        localStorage.setItem('chimera_storytelling_vip', 'true');
-        localStorage.setItem('chimera_ad_free_pass', 'true');
-      } catch {}
-      return true;
-    }
-    return false;
-  }, [shardsBalance, spendShards]);
+  const activateAdFreePass = useCallback((): boolean => false, []);
+  const activateRoleplayVipPass = useCallback((): boolean => false, []);
+  const activateStorytellingVipPass = useCallback((): boolean => false, []);
+  const activateMultiverseVipPass = useCallback((): boolean => false, []);
 
   const acceptLegalTerms = async (version: string) => {
     if (!state.user) return;

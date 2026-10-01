@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": { "target": "ES2022", "lib": ["ES2022", "DOM", "DOM.Iterable"], "types": ["node"] },
+  "include": ["api/ai-chat.ts", "api/voice.ts", "api/create-shards-checkout.ts", "api/stripe-webhook.ts", "api/scene-recall.ts", "api/room-ai.ts", "api/writing-suggestions.ts", "api/illustration-status.ts", "api/roleplay-turning-point.ts", "api/generate-scene-illustration.ts", "api/_lib/**/*.ts", "src/lib/chimeraModels.ts", "src/lib/lorebookRuntime.ts", "src/lib/voiceCatalog.ts"]
+}

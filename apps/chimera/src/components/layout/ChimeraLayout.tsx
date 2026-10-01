@@ -228,13 +228,15 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
       )}
       {/* Top Navigation Header */}
       <header className={`sticky top-0 z-40 w-full backdrop-blur-2xl border-b shadow-lg transition-colors duration-300 ${creativeMode === 'roleplay' ? 'border-[#c99b50]/25 bg-[#08090e]/90 shadow-black/50' : 'bg-warm-950/70 dark:bg-warm-950/80 border-warm-800/60'}`}>
-        <div className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-2 flex flex-wrap xl:flex-nowrap items-center justify-between gap-2 sm:gap-4">
           
           {/* 1. BLOC GAUCHE — Logo */}
           <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="lg:hidden p-2 -ml-1 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
+              aria-label="Open navigation menu"
+              aria-expanded={isMenuOpen}
               title="Open Navigation Menu"
             >
               <Menu size={20} />
@@ -272,14 +274,15 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
           </div>
 
           {/* 3. BLOC DROITE — Actions */}
-          <div className="flex items-center justify-end gap-1.5 sm:gap-3 shrink-0">
+          <div className="flex w-full xl:w-auto max-w-full flex-wrap items-center justify-start xl:justify-end gap-1.5 sm:gap-3 shrink-0">
 
             {/* Sélecteur de Langue Mondial (Global Language Picker) */}
             <div className="relative">
               <select
                 onChange={(e) => setLocale(e.target.value)}
                 value={supportedLocales.some(l => l.code === (locale || 'en')) ? (locale || 'en') : 'en'}
-                className="appearance-none bg-warm-200/70 dark:bg-warm-800/90 text-warm-900 dark:text-white text-xs font-bold px-2.5 py-1.5 rounded-xl border border-warm-200/90 dark:border-warm-750/90 cursor-pointer focus:outline-none hover:bg-warm-300 dark:hover:bg-warm-750 transition-all pr-6"
+                className="appearance-none bg-warm-200/70 dark:bg-warm-800/90 text-warm-900 dark:text-white text-xs font-bold min-h-[44px] px-2.5 py-1.5 rounded-xl border border-warm-200/90 dark:border-warm-750/90 cursor-pointer focus:outline-none hover:bg-warm-300 dark:hover:bg-warm-750 transition-all pr-6"
+                aria-label={t('settings.language')}
                 title={t('settings.language')}
               >
                 {supportedLocales.map((l) => (
@@ -295,11 +298,13 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             <div className={`flex items-center p-0.5 sm:p-1 rounded-xl sm:rounded-2xl border shadow-inner ${creativeMode === 'roleplay' ? 'border-[#c99b50]/55 bg-black/35' : 'bg-warm-200/70 dark:bg-warm-800/90 border-warm-200/90 dark:border-warm-750/90'}`}>
               <button
                 onClick={() => toggleCreativeMode('roleplay')}
-                className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all duration-300 ${
+                className={`min-h-[44px] min-w-[44px] justify-center flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all duration-300 ${
                   creativeMode === 'roleplay'
                     ? 'bg-[#2b2116] text-[#ffe7b5] shadow-md ring-1 ring-[#c99b50]/70'
                     : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
+                aria-label={t('common.roleplay')}
+                aria-pressed={creativeMode === 'roleplay'}
                 title={t('common.roleplay')}
               >
                 <MessageSquare size={12} className="sm:w-3.5 sm:h-3.5" />
@@ -307,11 +312,13 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               </button>
               <button
                 onClick={() => toggleCreativeMode('storytelling')}
-                className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all duration-300 ${
+                className={`min-h-[44px] min-w-[44px] justify-center flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all duration-300 ${
                   creativeMode === 'storytelling' 
                     ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30' 
                     : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
+                aria-label={t('common.storytelling')}
+                aria-pressed={creativeMode === 'storytelling'}
                 title={t('common.storytelling')}
               >
                 <PenTool size={12} className="sm:w-3.5 sm:h-3.5" />
@@ -322,17 +329,18 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             {/* Mode-aware creative reserve: real VELLUM in Storytelling, SHARDS in Roleplay. */}
             <button
               onClick={() => navigate(creativeMode === 'storytelling' ? '/vellum' : '/shards')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-md transition-all font-bold text-xs shadow-lg hover:scale-105 active:scale-95 group shrink-0 ${creativeMode === 'storytelling' ? 'bg-[#10213b]/80 hover:bg-[#173050]/90 text-[#f1d9aa] border border-[#c89d57]/50 hover:border-[#f1d9aa]' : 'bg-purple-950/60 hover:bg-purple-900/70 text-amber-200 border border-amber-500/40 hover:border-amber-400 hover:shadow-purple-900/30'}`}
+              aria-label={creativeMode === 'storytelling' ? 'Open VELLUM reserve' : 'Open SHARDS reserve'}
+              className={`min-h-[44px] flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-full backdrop-blur-md transition-all font-bold text-xs shadow-lg hover:scale-105 active:scale-95 group shrink-0 ${creativeMode === 'storytelling' ? 'bg-[#10213b]/80 hover:bg-[#173050]/90 text-[#f1d9aa] border border-[#c89d57]/50 hover:border-[#f1d9aa]' : 'bg-purple-950/60 hover:bg-purple-900/70 text-amber-200 border border-amber-500/40 hover:border-amber-400 hover:shadow-purple-900/30'}`}
               title={creativeMode === 'storytelling' ? 'VELLUM story reserve' : t('navigation.shards_hub')}
             >
               <img src={creativeMode === 'storytelling' ? '/images/vellum-sigil.svg' : '/images/shards_amethyst_logo.png'} alt={creativeMode === 'storytelling' ? 'VELLUM' : 'SHARDS'} className="w-5 h-5 object-contain rounded-md" />
-              <span className="font-serif font-black text-xs tracking-wide">{creativeMode === 'storytelling' ? (vellumBalance === null ? 'VELLUM · loading…' : `${formatNumber(vellumBalance)} VELLUM`) : (shardsBalance === null ? 'SHARDS · loading…' : `${formatNumber(shardsBalance)} SHARDS`)}</span>
+              <span className="hidden sm:inline font-serif font-black text-xs tracking-wide">{creativeMode === 'storytelling' ? (vellumBalance === null ? 'VELLUM · loading…' : `${formatNumber(vellumBalance)} VELLUM`) : (shardsBalance === null ? 'SHARDS · loading…' : `${formatNumber(shardsBalance)} SHARDS`)}</span>
             </button>
 
             {/* Search — icon only, no text label on smaller screens */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="p-2 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-850 text-warm-500 hover:border-warm-300 dark:hover:border-warm-650 transition-colors shrink-0"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-850 text-warm-500 hover:border-warm-300 dark:hover:border-warm-650 transition-colors shrink-0"
               aria-label={t('common.search')}
             >
               <Search size={16} />
@@ -341,14 +349,15 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             {/* Mode-Specific Primary CTA — Identical Fixed Layout width */}
             <button
               onClick={() => navigate(creativeMode === 'storytelling' ? '/stories/new' : '/characters/new')}
-              className={`min-w-[125px] justify-center flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs text-white shadow-md active:scale-[0.98] transition-all shrink-0 ${
+              aria-label={creativeMode === 'storytelling' ? 'Create story' : 'Create character'}
+              className={`min-h-[44px] min-w-[44px] sm:min-w-[125px] justify-center flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs text-white shadow-md active:scale-[0.98] transition-all shrink-0 ${
                 creativeMode === 'storytelling'
                   ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-600/30'
                   : 'border border-[#dfb96e] bg-[linear-gradient(135deg,#8d5f2e,#c9964f,#7f532a)] text-[#fff6e3] shadow-[#6b451f]/40 hover:brightness-110'
               }`}
             >
               <Plus size={16} />
-              <span>{t('common.create')}</span>
+              <span className="hidden sm:inline">{t('common.create')}</span>
             </button>
 
             {/* Theme Toggle */}
@@ -455,7 +464,8 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-7xl mx-auto">
+      <a href="#chimera-main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[1000] focus:bg-white focus:text-black focus:p-3">Skip to main content</a>
+      <main id="chimera-main" tabIndex={-1} className="flex-1 w-full max-w-7xl mx-auto">
         {children || <Outlet context={{ creativeMode }} />}
       </main>
 
