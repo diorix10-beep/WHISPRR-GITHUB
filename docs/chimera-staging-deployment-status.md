@@ -6,6 +6,8 @@ Restored all 118 paths from the user-provided `CHIMERA-phases1-6-transfer.zip` o
 
 Two `messages.at(-1)` calls were replaced with equivalent ES2020-compatible indexed access because the restored app's tracked TypeScript configuration targets ES2020. Reverification: 29 Node/PGlite plus 27 Vitest tests passed (56 total), app/API typechecks passed, and build passed with synthetic public configuration. No deployed E2E or browser/accessibility rerun is claimed. Manifest covers all 118 transferred paths; a credential-pattern scan of transferred text found no matches. Build-generated version metadata is excluded from the recovery commit.
 
+Recovery implementation commit: `1ab6d03ba0f952ec498b736ecd56995aa5373b69`. Git push succeeded in this session. Draft PR toward `main`: https://github.com/diorix10-beep/WHISPRR-GITHUB/pull/6 (unmerged). The historical 403 blocker below no longer applies to this session.
+
 Both Vercel configs continue disabling automatic Git deployments for this branch. Supabase metadata still lists `sukxlukpqudfxkgefqdt` as inactive and `gcknzlnumcryvqjvjnyg` as active; neither is verified staging. Vercel project lookup still fails with the connector's `idOrName` argument-mapping error. All eight migrations remain unapplied. No production database, data, deployment or domain was accessed or changed. Earlier sections below record the previous session and its original commit identifiers.
 
 2026-09-30. The founder approved commit/push/PR and a verified nonproduction deployment/database rollout. Production, production data, production alias and `chimera.it.com` remain excluded.
