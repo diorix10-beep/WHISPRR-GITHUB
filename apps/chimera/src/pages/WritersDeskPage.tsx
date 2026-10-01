@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { CollaborationInvitations } from '../components/collaboration/CollaborationInvitations';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PenTool, Plus, BookOpen, Trash2, Edit, ChevronLeft, Globe, Eye, Settings, Share2, FileText, Image as ImageIcon, UploadCloud, Feather } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Story, StoryChapter } from '../types';
@@ -11,6 +12,9 @@ import { checkUserPromptSafety, CRISIS_HELPLINE_INFO } from '../lib/safetyGuard'
 
 export default function WritersDeskPage() {
   const navigate = useNavigate();
+  const [searchParams,setSearchParams]=useSearchParams();
+  const requestedStoryId=searchParams.get("story");
+  const openedStoryRef=useRef<string|null>(null);
   const { profile } = useAuth();
   const { showToast } = useToast();
   
@@ -32,7 +36,7 @@ export default function WritersDeskPage() {
 
   // Importer & Tab state
   const [isImporterOpen, setIsImporterOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'community' | 'mine'>('community');
+  const [activeTab, setActiveTab] = useState<'community' | 'mine'>('mine');
   const [communityStories, setCommunityStories] = useState<Story[]>([]);
 
   useEffect(() => {
@@ -68,7 +72,10 @@ export default function WritersDeskPage() {
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
-      setStories(data || []);
+      const {data:members}=await supabase.from('project_collaborators').select('project_id').eq('user_id',profile.user_id).eq('project_type','story').eq('status','accepted');
+      const ids=(members||[]).map(m=>m.project_id);
+      const {data:shared}=ids.length?await supabase.from('stories').select('*').in('id',ids):{data:[]};
+      setStories([...new Map([...(data||[]),...(shared||[])].map(story=>[story.id,story])).values()]);
     } catch (err: any) {
       showToast(err.message || 'Error fetching stories', 'error');
     } finally {
@@ -76,7 +83,7 @@ export default function WritersDeskPage() {
     }
   };
 
-  const fetchChapters = async (storyId: string) => {
+  const fetchChapters = useCallback(async (storyId: string) => {
     try {
       setChaptersLoading(true);
       const { data, error } = await supabase
@@ -92,7 +99,14 @@ export default function WritersDeskPage() {
     } finally {
       setChaptersLoading(false);
     }
-  };
+  },[showToast]);
+
+  useEffect(()=>{
+    if(!requestedStoryId){openedStoryRef.current=null;return;}
+    if(openedStoryRef.current===requestedStoryId)return;
+    const story=stories.find(item=>item.id===requestedStoryId);
+    if(story){openedStoryRef.current=requestedStoryId;setSelectedStory(story);void fetchChapters(story.id);}
+  },[requestedStoryId,stories,fetchChapters]);
 
   const handleSelectStory = (story: Story) => {
     setSelectedStory(story);
@@ -100,6 +114,7 @@ export default function WritersDeskPage() {
   };
 
   const handleBackToDashboard = () => {
+    if(requestedStoryId){const next=new URLSearchParams(searchParams);next.delete("story");setSearchParams(next,{replace:true});}
     setSelectedStory(null);
     setChapters([]);
     fetchStories();
@@ -128,6 +143,7 @@ export default function WritersDeskPage() {
   };
 
   const handleSaveStory = async (e: React.FormEvent) => {
+    if(selectedStory && selectedStory.user_id!==profile?.user_id){e.preventDefault();showToast('Only the creator can change story metadata.','error');return;}
     e.preventDefault();
     if (!profile?.user_id) return showToast('You must be logged in to save a story.', 'error');
     if (!formTitle.trim()) return showToast('Title is required', 'info');
@@ -189,6 +205,7 @@ export default function WritersDeskPage() {
   };
 
   const handleDeleteStory = async (storyId: string) => {
+    if(stories.find(s=>s.id===storyId)?.user_id!==profile?.user_id){showToast('Only the creator can delete a story.','error');return;}
     if (!confirm('Are you sure you want to delete this story? This will permanently delete all chapters.')) return;
     try {
       setLoading(true);
@@ -298,6 +315,7 @@ export default function WritersDeskPage() {
   return (
     <div className="min-h-screen bg-warm-900 text-warm-100 font-sans pb-24">
       
+      <CollaborationInvitations onChanged={()=>void fetchStories()}/>
       {/* Top Navbar Header */}
       <header className="bg-warm-850 border-b border-warm-800 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">

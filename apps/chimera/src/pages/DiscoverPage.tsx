@@ -66,9 +66,9 @@ const AO3_TROPES = [
   'Cyberpunk'
 ];
 
-export default function DiscoverPage() {
+export default function DiscoverPage({mode}:{mode?:'roleplay'|'storytelling'}={}) {
   const outletContext = useOutletContext<{ creativeMode?: 'roleplay' | 'storytelling' }>();
-  const creativeMode = outletContext?.creativeMode || 'roleplay';
+  const creativeMode = mode || outletContext?.creativeMode || 'roleplay';
   const isStoryMode = creativeMode === 'storytelling';
 
   const [characters, setCharacters] = useState<any[]>([]);

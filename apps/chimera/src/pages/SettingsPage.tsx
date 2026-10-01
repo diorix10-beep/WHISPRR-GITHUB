@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
+import { useDialogFocus } from '../hooks/useDialogFocus';
 import { ChimeraDesktopDownloadModal } from '../components/common/ChimeraDesktopDownloadModal';
 
 export default function SettingsPage() {
@@ -32,6 +33,7 @@ export default function SettingsPage() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const removalDialogRef=useDialogFocus(showDeleteAccountModal,()=>{setShowDeleteAccountModal(false);setDeleteConfirmText('')});
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
@@ -155,17 +157,14 @@ export default function SettingsPage() {
       return;
     }
     try {
-      // Mark account for deletion — actual deletion processed server-side within 30 days
-      await supabase.from('profiles').update({ 
-        display_name: '[Deleted User]',
-        bio: null,
-        photo_url: null,
-      }).eq('user_id', user?.id);
-      await signOut();
-      navigate('/auth');
-      showToast('Account deletion requested. Your data will be removed within 30 days.', 'success');
+      if (!user) throw new Error('Sign in to request removal.');
+      const { error } = await supabase.rpc('request_chimera_data_removal');
+      if (error) throw error;
+      setShowDeleteAccountModal(false);
+      setDeleteConfirmText('');
+      showToast('CHIMERA data removal requested for review. Nothing has been deleted; your shared account is preserved.', 'success');
     } catch (err) {
-      showToast('Failed to submit deletion request. Please contact support.', 'error');
+      showToast('Could not submit the CHIMERA removal request. No data was changed; please contact support.', 'error');
     }
   };
 
@@ -464,13 +463,13 @@ export default function SettingsPage() {
         </div>
         <div className="bg-error-50 dark:bg-error-900/20 border border-error-200 dark:border-error-800 p-4 rounded-2xl">
            <p className="text-sm text-warm-700 dark:text-warm-300 mb-3">
-             Request permanent account deletion. Support will confirm the request and explain the removal timeline before processing it.
+             Request review of removing CHIMERA creative data while preserving your shared account and WHISPRR data. Support must confirm the scope before any removal.
           </p>
           <button
             onClick={() => setShowDeleteAccountModal(true)}
             className="btn-danger text-sm py-2 px-4"
           >
-            Delete My Account
+            Request CHIMERA Data Removal
           </button>
         </div>
       </section>
@@ -483,7 +482,7 @@ export default function SettingsPage() {
           aria-modal="true"
           aria-labelledby="password-modal-title"
         >
-          <div className="bg-white dark:bg-warm-800 rounded-2xl shadow-xl w-full max-w-sm p-6">
+          <div ref={removalDialogRef} tabIndex={-1} className="bg-white dark:bg-warm-800 rounded-2xl shadow-xl w-full max-w-sm p-6">
             <h3 id="password-modal-title" className="font-serif text-xl font-semibold text-warm-900 dark:text-warm-50 mb-6">
               Change Password
             </h3>
@@ -543,17 +542,18 @@ export default function SettingsPage() {
       )}
       {/* Account Deletion Modal */}
       {showDeleteAccountModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-          <div className="bg-white dark:bg-warm-800 rounded-2xl shadow-xl w-full max-w-sm p-6">
-            <h3 className="font-serif text-xl font-semibold text-error-700 dark:text-error-400 mb-2">Delete Account</h3>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Request CHIMERA data removal">
+          <div ref={removalDialogRef} tabIndex={-1} className="bg-white dark:bg-warm-800 rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <h3 className="font-serif text-xl font-semibold text-error-700 dark:text-error-400 mb-2">Request CHIMERA Data Removal</h3>
             <p className="text-sm text-warm-600 dark:text-warm-400 mb-4">
-              This is permanent and cannot be undone. Your profile, posts, messages, and all data will be removed within 30 days.
+              Request review of removing your CHIMERA creative data. This does not delete your shared account or WHISPRR data. Nothing is removed automatically; support must review collaborative content and financial record retention before confirming the scope.
             </p>
             <p className="text-sm font-medium text-warm-900 dark:text-warm-50 mb-2">
               Type <strong>DELETE</strong> to confirm:
             </p>
             <input
               type="text"
+              aria-label="Type DELETE to request review"
               value={deleteConfirmText}
               onChange={e => setDeleteConfirmText(e.target.value)}
               className="input-field mb-4"
@@ -561,7 +561,7 @@ export default function SettingsPage() {
             />
             <div className="flex gap-3">
               <button onClick={handleDeleteAccount} disabled={deleteConfirmText !== 'DELETE'} className="flex-1 btn-danger">
-                Delete Account
+                Submit Removal Request
               </button>
               <button onClick={() => { setShowDeleteAccountModal(false); setDeleteConfirmText(''); }} className="flex-1 btn-secondary">
                 Cancel

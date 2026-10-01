@@ -1,0 +1,17 @@
+{
+  "name": "chimera-phase1-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "cd .. && tests/node_modules/.bin/tsx --test tests/phase1-security.test.ts tests/phase1-preservation.test.ts tests/phase234-database.test.ts tests/phase234-continuity.test.ts tests/phase56-database.test.ts && tests/node_modules/.bin/vitest run --config vitest.phase1.config.ts"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.3.14",
+    "@testing-library/react": "16.3.3",
+    "jsdom": "25.0.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "tsx": "4.20.5",
+    "vitest": "2.1.9"
+  }
+}

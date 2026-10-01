@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Save, Map, MapPin, Shield, Clock,
@@ -10,6 +10,8 @@ import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import type { World, WorldLocation, WorldFaction, WorldTimelineEvent } from '../types';
 import { WorldCanvasTab } from '../components/world/WorldCanvasTab';
+import { clearSavedDraft, draftKey, draftMatches, readDraft, writeDraft, type DraftRecord } from '../lib/draftJournal';
+import { CollaboratorsModal } from '../components/collaboration/CollaboratorsModal';
 import { UniversalImagePicker } from '../components/common/UniversalImagePicker';
 
 type TabId = 'overview' | 'canvas' | 'locations' | 'factions' | 'timeline' | 'characters' | 'lorebooks' | 'settings';
@@ -28,9 +30,19 @@ const TABS: { id: TabId; label: string; icon: typeof Map }[] = [
 export default function WorldBuilderPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
+  const userId=user?.id;
   const { showToast } = useToast();
 
+  type OverviewDraft = { name:string; description:string; scenario:string; tags:string; visibility:'public'|'private'|'unlisted'; coverUrl:string|null };
+  const key = user?.id && id ? draftKey(user.id,'world',id) : null;
+  const scopeRef = useRef(key); scopeRef.current = key;
+  const revisionRef = useRef<string>();
+  const [recovery,setRecovery] = useState<DraftRecord<OverviewDraft>|null>(null);
+  const [storageFailed,setStorageFailed] = useState(false);
+  const [collaboratorsOpen,setCollaboratorsOpen] = useState(false);
+  const saveLock = useRef(false);
+  const fetchSequence = useRef(0);
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -52,34 +64,28 @@ export default function WorldBuilderPage() {
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
 
   const fetchWorld = useCallback(async () => {
-    if (!id) return;
+    if (!id || !userId) return;
+    const sequence = ++fetchSequence.current;
+    setRecovery(null);
     try {
       setLoading(true);
       const { data, error } = await supabase.from('worlds').select('*').eq('id', id).single();
       if (error) throw error;
+      if (sequence !== fetchSequence.current) return;
       setWorld(data);
+      setVisibility(data.visibility);
+      revisionRef.current = data.updated_at;
       setName(data.name);
       setDescription(data.description);
       setScenario(data.scenario);
       setTags((data.tags || []).join(', '));
       setCoverUrl(data.cover_url || data.image_url || data.banner_url || null);
 
-      // Check for local draft (Rules 25 & 26)
-      const draftKey = `chimera_world_draft_${id}`;
-      const savedDraft = localStorage.getItem(draftKey);
-      if (savedDraft) {
-        try {
-          const parsed = JSON.parse(savedDraft);
-          if (parsed.name) setName(parsed.name);
-          if (parsed.description) setDescription(parsed.description);
-          if (parsed.scenario) setScenario(parsed.scenario);
-          if (parsed.tags !== undefined) setTags(parsed.tags);
-          if (parsed.visibility) setVisibility(parsed.visibility);
-          if (parsed.coverUrl !== undefined) setCoverUrl(parsed.coverUrl);
-          showToast('Restored unsaved local draft', 'info');
-        } catch (e) {
-          console.error('Failed to parse draft:', e);
-        }
+      const serverDraft:OverviewDraft={name:data.name,description:data.description,scenario:data.scenario,tags:(data.tags||[]).join(', '),visibility:data.visibility,coverUrl:data.cover_url||data.image_url||data.banner_url||null};
+      const draft = key ? readDraft<OverviewDraft>(key) : null;
+      if (draft && typeof draft.value.name==='string' && typeof draft.value.description==='string' && typeof draft.value.scenario==='string' && typeof draft.value.tags==='string' && ['public','private','unlisted'].includes(draft.value.visibility)) {
+        if (!draftMatches(draft,serverDraft)) setRecovery(draft);
+        else if (key) clearSavedDraft(key,serverDraft);
       }
 
       // Fetch sub-data in parallel
@@ -91,6 +97,7 @@ export default function WorldBuilderPage() {
         supabase.from('lorebook_worlds').select('*, lorebook:lorebooks(id, title, entry_count)').eq('world_id', id),
       ]);
 
+      if (sequence !== fetchSequence.current) return;
       setLocations(locRes.data || []);
       setFactions(facRes.data || []);
       setTimeline(tlRes.data || []);
@@ -100,45 +107,38 @@ export default function WorldBuilderPage() {
       showToast(err.message || 'Error loading world', 'error');
       navigate('/worlds');
     } finally {
-      setLoading(false);
+      if (sequence === fetchSequence.current) setLoading(false);
     }
-  }, [id, showToast, navigate]);
+  }, [id, key, userId, showToast, navigate]);
 
   useEffect(() => { fetchWorld(); }, [fetchWorld]);
 
   // Auto-save draft protection (Rules 25 & 26)
   useEffect(() => {
-    if (!id || loading) return;
-    const draftKey = `chimera_world_draft_${id}`;
-    const timer = setTimeout(() => {
-      localStorage.setItem(draftKey, JSON.stringify({
-        name, description, scenario, tags, visibility, coverUrl, savedAt: Date.now()
-      }));
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [id, loading, name, description, scenario, tags, visibility, coverUrl]);
+    if (!key || loading || recovery) return;
+    setStorageFailed(!writeDraft(key,{name,description,scenario,tags,visibility,coverUrl},revisionRef.current));
+  }, [key, loading, recovery, name, description, scenario, tags, visibility, coverUrl]);
 
   const handleSaveOverview = async () => {
-    if (!id) return;
+    if (!id || !key || loading || recovery || saveLock.current) return;
+    saveLock.current=true;
+    const activeScope=key;
+    const submitted:OverviewDraft={name,description,scenario,tags,visibility,coverUrl};
     try {
       setSaving(true);
-      const cleanStr = (s: string) => (s || '').replace(/\u0000/g, '').replace(/\x00/g, '').trim();
-
-      const { error } = await supabase.from('worlds').update({
-        name: cleanStr(name),
-        description: cleanStr(description),
-        scenario: cleanStr(scenario),
-        visibility,
-      }).eq('id', id);
-
+      const cleanStr = (s: string) => (s || '').replace(/\u0000/g, '').trim();
+      const { data, error } = await supabase.rpc('save_chimera_world_overview',{
+        p_world_id:id,p_expected_updated_at:revisionRef.current,
+        p_fields:{name:cleanStr(name),description:cleanStr(description),scenario:cleanStr(scenario),visibility,tags:tags.split(',').map(t=>t.trim()).filter(Boolean),cover_url:coverUrl},
+      });
       if (error) throw error;
-      localStorage.removeItem(`chimera_world_draft_${id}`);
+      if(scopeRef.current!==activeScope)return;
+      revisionRef.current=data;
+      clearSavedDraft(activeScope,submitted);
       showToast('World saved successfully!', 'success');
-    } catch (err: any) {
-      showToast(err.message || 'Error saving world', 'error');
-    } finally {
-      setSaving(false);
-    }
+    } catch {
+      if(scopeRef.current===activeScope)showToast('World was not saved. Your draft is preserved. Compare the latest server version before retrying.', 'error');
+    } finally { saveLock.current=false;setSaving(false); }
   };
 
   // Location CRUD
@@ -223,6 +223,10 @@ export default function WorldBuilderPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+      {storageFailed && <p role="alert">Browser draft storage is unavailable. Save or copy your changes before leaving.</p>}
+      {recovery && <div role="status" className="p-3 border rounded-xl"><p>An unsaved world draft is available. Review it before saving over the current server version.</p><button className="btn-secondary" onClick={()=>{const d=recovery.value;setName(d.name);setDescription(d.description);setScenario(d.scenario);setTags(d.tags);setVisibility(d.visibility);setCoverUrl(d.coverUrl);setRecovery(null)}}>Restore draft</button><button className="btn-secondary" onClick={()=>setRecovery(null)}>Keep server version</button></div>}
+      {world.user_id===user?.id && <button className="btn-secondary" onClick={()=>setCollaboratorsOpen(true)}>Manage collaborators</button>}
+      <CollaboratorsModal projectId={world.id} projectType="world" projectTitle={world.name} isOpen={collaboratorsOpen} onClose={()=>setCollaboratorsOpen(false)}/>
       {/* Header */}
       <div className="flex items-center gap-3">
         <button onClick={() => navigate('/worlds')} className="p-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 transition shrink-0">
@@ -234,7 +238,7 @@ export default function WorldBuilderPage() {
         </div>
         <button
           onClick={handleSaveOverview}
-          disabled={saving}
+          disabled={saving || Boolean(recovery)}
           className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 disabled:opacity-50 shadow-md shadow-purple-600/20 transition-all shrink-0"
         >
           <Save size={14} />

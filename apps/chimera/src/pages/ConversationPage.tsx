@@ -10,10 +10,19 @@ import type { Conversation, Message, Profile, ChatMode, MultiCharacterParticipan
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
+import { requestAiChat } from "../lib/aiRequests";
+import { persistRoleplayMessage } from "../lib/messagePersistence";
+import {
+  clearSavedDraft,
+  draftKey,
+  readDraft,
+  writeDraft,
+} from "../lib/draftJournal";
 import { Avatar } from '../components/common/Avatar';
 import { UserBadges } from '../components/common/UserBadges';
 import { EmojiPicker } from '../components/common/EmojiPicker';
 import { ChatSettingsDrawer } from '../components/chat/ChatSettingsDrawer';
+import { ScenePersonaSelector } from "../components/chat/ScenePersonaSelector";
 import { ChatMemoryModal } from '../components/chat/ChatMemoryModal';
 import { MockPhoneModal } from '../components/chat/MockPhoneModal';
 import { DeviceActivityCard, DeviceSceneEventCard } from '../components/chat/DeviceActivityCard';
@@ -46,6 +55,14 @@ import {
   type DeviceActivityMessage,
 } from '../lib/deviceActivity';
 
+interface MessageDraft {
+  text: string;
+  attemptId?: string;
+  imageUrl?: string | null;
+  attachmentName?: string;
+  isOoc?: boolean;
+}
+
 interface MessageWithProfile extends Message {
   profiles?: Profile;
 }
@@ -68,6 +85,54 @@ export default function ConversationPage() {
   const [otherUser, setOtherUser] = useState<Profile | null>(null);
   const [participants, setParticipants] = useState<Profile[]>([]);
   const [messageInput, setMessageInput] = useState('');
+  const sendLockRef = useRef(false);
+  const messageAttemptRef = useRef<MessageDraft | null>(null);
+  const messageDraftScope =
+    user?.id && conversationId
+      ? draftKey(user.id, "message", conversationId)
+      : null;
+  const messageDraftReady = useRef<string | null>(null);
+  const [loadedMessageDraftScope, setLoadedMessageDraftScope] = useState<
+    string | null
+  >(null);
+  const [draftStorageFailed, setDraftStorageFailed] = useState(false);
+  const [failedAiBots, setFailedAiBots] = useState<string[]>([]);
+
+  useEffect(() => {
+    messageDraftReady.current = null;
+    messageAttemptRef.current = null;
+    sendLockRef.current = false;
+    setFailedAiBots([]);
+    const saved = messageDraftScope
+      ? readDraft<MessageDraft>(messageDraftScope)
+      : null;
+    setMessageInput(
+      typeof saved?.value.text === "string" ? saved.value.text : "",
+    );
+    setIsOocMode(saved?.value.isOoc === true);
+    if (saved?.value.attemptId) messageAttemptRef.current = saved.value;
+    messageDraftReady.current = messageDraftScope;
+    setLoadedMessageDraftScope(messageDraftScope);
+    if (saved?.value.attachmentName && !saved.value.imageUrl) {
+      showToast(
+        "Your text was recovered. Please reselect the attachment before sending.",
+        "info",
+      );
+    }
+  }, [messageDraftScope, showToast]);
+
+  useEffect(() => {
+    if (
+      !messageDraftScope ||
+      loadedMessageDraftScope !== messageDraftScope ||
+      messageDraftReady.current !== messageDraftScope
+    )
+      return;
+    const attempt = messageAttemptRef.current;
+    const snapshot =
+      attempt?.text === messageInput ? attempt : { text: messageInput };
+    setDraftStorageFailed(!writeDraft(messageDraftScope, snapshot));
+  }, [messageDraftScope, loadedMessageDraftScope, messageInput]);
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
@@ -91,6 +156,7 @@ export default function ConversationPage() {
   const [showMemoryModal, setShowMemoryModal] = useState(false);
   const [showSceneCanon, setShowSceneCanon] = useState(false);
   const [sceneCanon, setSceneCanon] = useState('');
+  const [canonRevision, setCanonRevision] = useState(0);
   const [sceneCanonDraft, setSceneCanonDraft] = useState('');
   const [isPhoneOpen, setIsPhoneOpen] = useState(false);
   const [deviceActivityMessages, setDeviceActivityMessages] = useState<DeviceActivityMessage[]>([]);
@@ -98,6 +164,7 @@ export default function ConversationPage() {
   // Character memories are durable, user-controlled facts held privately for
   // the active player-character bond. They are retrieved by the AI runtime.
   const [showMemoryVisualizer, setShowMemoryVisualizer] = useState(false);
+  const [scenePersonaId, setScenePersonaId] = useState<string | null>(null);
   const [memoryCharacter, setMemoryCharacter] = useState<{ id: string; name: string } | null>(null);
   const [memoryCount, setMemoryCount] = useState(0);
   const [showExporterModal, setShowExporterModal] = useState(false);
@@ -131,7 +198,9 @@ export default function ConversationPage() {
 
   // Lore-Style Response Length, Story Tone, POV & Pinned Messages Controls
   const [creativeMode, setCreativeModeState] = useState<'roleplay' | 'storytelling'>(() => {
-    return (localStorage.getItem('chimera_creative_mode') as 'roleplay' | 'storytelling') || 'roleplay';
+    return (
+      (localStorage.getItem('chimera_creative_mode') as 'roleplay' | 'storytelling') || 'roleplay'
+    );
   });
   const [storyTone, setStoryTone] = useState<'Romantic' | 'Dark' | 'Comedy' | 'Mystery' | 'Fantasy' | 'Slice of Life'>('Fantasy');
   const [storyPov, setStoryPov] = useState<'First Person' | 'Third Person' | 'Character POV'>('Third Person');
@@ -188,10 +257,12 @@ export default function ConversationPage() {
   const voice = useVoice();
   const aesthetics = useChatAesthetics(conversationId);
   const firstCharacterMessageWithDeviceActivity = useMemo(() => {
-    return messages.find((message) => {
+    return (
+      messages.find((message) => {
       if (message.sender_id === user?.id) return false;
       return parseDeviceActivityFromText(message.content).messages.length > 0;
-    }) || null;
+    }) || null
+    );
   }, [messages, user?.id]);
   const parsedDeviceActivity = useMemo(
     () => parseDeviceActivityFromText(firstCharacterMessageWithDeviceActivity?.content),
@@ -246,6 +317,10 @@ export default function ConversationPage() {
         .select('*', { count: 'exact', head: true })
         .eq('character_id', memoryCharacter.id)
         .eq('user_id', user.id)
+        .eq("approval_status", "approved")
+        .is("session_id", null)
+        .or(`conversation_id.is.null,conversation_id.eq.${conversationId}`)
+        .or(`persona_id.${scenePersonaId ? `eq.${scenePersonaId}` : "is.null"}`)
         .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
 
       if (error) {
@@ -256,7 +331,7 @@ export default function ConversationPage() {
     };
 
     void loadMemoryCount();
-  }, [memoryCharacter, user?.id]);
+  }, [memoryCharacter, user?.id, scenePersonaId, conversationId]);
 
   const loreTriggerResult = resolveLorebookContext(messages.slice(-scanDepth).map((message) => message.content), lorebookEntries);
 
@@ -336,7 +411,7 @@ export default function ConversationPage() {
     if (messages.length === 0 || deviceActivityMessages.filter((message) => !message.deleted).length === 0) return;
     const latestMessage = messages[messages.length - 1];
     if (!latestMessage.content) return;
-    
+
     const contentLower = latestMessage.content.toLowerCase();
     const phoneKeywords = [
       'open my phone', 'opened my phone', 'took out my phone', 'take out my phone',
@@ -352,7 +427,7 @@ export default function ConversationPage() {
 
     const hasPhoneKeyword = phoneKeywords.some(kw => contentLower.includes(kw));
     const hasCloseKeyword = closePhoneKeywords.some(kw => contentLower.includes(kw));
-    
+
     if (hasPhoneKeyword && !isPhoneOpen && !hasCloseKeyword) {
       setIsPhoneOpen(true);
     } else if (hasCloseKeyword && isPhoneOpen) {
@@ -382,6 +457,7 @@ export default function ConversationPage() {
         if (!isParticipant) { navigate('/conversations'); return; }
 
         setConversation(conv);
+        setCanonRevision(conv.canon_revision || 0);
         setSceneCanon(conv.memory_summary || '');
         setSceneCanonDraft(conv.memory_summary || '');
 
@@ -458,15 +534,37 @@ export default function ConversationPage() {
           .select('*, profiles:sender_id(*)')
           .eq('conversation_id', conversationId)
           .is('deleted_at', null)
-          .order('created_at', { ascending: true });
+          .order('created_at', { ascending: true })
+          .order("id", { ascending: true });
 
         if (msgsError) throw msgsError;
         const loadedMsgs = msgs || [];
         setMessages(loadedMsgs);
+        const persistedVariations: Record<
+          string,
+          { variations: string[]; currentIndex: number }
+        > = {};
+        for (const message of loadedMsgs) {
+          const versions = (message.response_versions || []) as Array<{
+            content: string;
+          }>;
+          const variations = [
+            ...new Set([
+              ...versions.map((v) => v.content),
+              message.content || "",
+            ]),
+          ];
+          if (variations.length > 1)
+            persistedVariations[message.id] = {
+              variations,
+              currentIndex: variations.indexOf(message.content || ""),
+            };
+        }
+        setSwipesMap(persistedVariations);
 
         // Check if we should trigger an AI initiation response or insert character greeting
         if (conv.type === 'dm' && profiles) {
-          const other = profiles.find(p => p.user_id !== user.id);
+          const other = profiles.find((p) => p.user_id !== user.id);
           if (other && (other.role as string) === 'ai_character') {
             if (loadedMsgs.length === 0) {
               // Fetch character greeting from ai_characters table if available
@@ -474,7 +572,7 @@ export default function ConversationPage() {
               try {
                 const { data: charData } = await supabase
                   .from('ai_characters')
-                  .select('greeting, name, short_description')
+                  .select("greeting, short_description")
                   .or(`user_id.eq.${other.user_id},id.eq.${other.user_id}`)
                   .maybeSingle();
 
@@ -482,19 +580,23 @@ export default function ConversationPage() {
               } catch {}
 
               if (greetingText) {
-                const { data: newGreetingMsg, error: greetingError } = await supabase
-                  .from('messages')
-                  .insert({
-                    conversation_id: conversationId,
-                    sender_id: other.user_id,
-                    content: greetingText,
-                    read: true
-                  })
-                  .select('*, profiles:sender_id(*)')
-                  .single();
-
+                const { error: greetingError } = await supabase.rpc(
+                  "respond_as_ai_character",
+                  {
+                    p_conversation_id: conversationId,
+                    p_bot_id: other.user_id,
+                    p_content: greetingText,
+                  },
+                );
                 if (greetingError) throw greetingError;
-                if (newGreetingMsg) setMessages([newGreetingMsg]);
+                const { data: greetingMessages } = await supabase
+          .from('messages')
+          .select('*, profiles:sender_id(*)')
+          .eq('conversation_id', conversationId)
+          .is('deleted_at', null)
+          .order("created_at")
+                  .order("id");
+                if (greetingMessages) setMessages(greetingMessages);
               } else {
                 // A missing creator greeting is not permission to fabricate a
                 // generic assistant greeting. Let the character runtime open
@@ -503,11 +605,11 @@ export default function ConversationPage() {
                 try {
                   const sessionRes = await supabase.auth.getSession();
                   const token = sessionRes.data.session?.access_token;
-                  const response = await fetch('/api/ai-chat', {
+                  const response = await requestAiChat({
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${token}`,
+                      Authorization: `Bearer ${token}`,
                     },
                     body: JSON.stringify({
                       conversation_id: conversationId,
@@ -523,7 +625,8 @@ export default function ConversationPage() {
                     .from('messages')
                     .select('*')
                     .eq('conversation_id', conversationId)
-                    .order('created_at', { ascending: true });
+                    .order('created_at', { ascending: true })
+                    .order("id", { ascending: true });
                   if (updatedMsgs) setMessages(updatedMsgs);
                 } finally {
                   setInitiating(false);
@@ -539,28 +642,29 @@ export default function ConversationPage() {
                 setInitiating(true);
                 const sessionRes = await supabase.auth.getSession();
                 const token = sessionRes.data.session?.access_token;
-                
-                fetch('/api/ai-chat', {
+
+                requestAiChat({
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    Authorization: `Bearer ${token}`
                   },
                   body: JSON.stringify({
-                    conversation_id: conversationId,
-                    bot_user_id: other.user_id,
-                    is_initiation: true
-                  })
+                      conversation_id: conversationId,
+                      bot_user_id: other.user_id,
+                      is_initiation: true,
+                    })
                 })
                   .then(async (res) => {
                     setInitiating(false);
                     const data = await res.json();
                     if (data?.reply) {
                       const { data: updatedMsgs } = await supabase
-                        .from('messages')
-                        .select('*')
-                        .eq('conversation_id', conversationId)
-                        .order('created_at', { ascending: true });
+                    .from('messages')
+                    .select('*')
+                    .eq('conversation_id', conversationId)
+                    .order('created_at', { ascending: true })
+                        .order("id", { ascending: true });
                       if (updatedMsgs) setMessages(updatedMsgs);
                     }
                   })
@@ -574,7 +678,8 @@ export default function ConversationPage() {
         }
 
         // Mark unread as read
-        const unread = (msgs || []).filter(m => !m.read && m.sender_id !== user.id);
+        const unread = (msgs || []).filter(
+          (m) => !m.read && m.sender_id !== user.id);
         if (unread.length > 0) {
           await supabase
             .from('messages')
@@ -678,9 +783,17 @@ export default function ConversationPage() {
   const saveSceneCanon = async () => {
     if (!conversationId) return;
     const next = sceneCanonDraft.trim();
-    const { error } = await supabase.from('conversations').update({ memory_summary: next }).eq('id', conversationId);
+    const { data: revision, error } = await supabase.rpc(
+      "save_chimera_scene_canon",
+      {
+        p_conversation_id: conversationId,
+        p_expected_revision: canonRevision,
+        p_content: next,
+      },
+    );
     if (error) { showToast('Could not save the scene canon.', 'error'); return; }
     setSceneCanon(next);
+    setCanonRevision(revision);
     setShowSceneCanon(false);
     showToast('This scene will remember that.', 'success');
   };
@@ -786,15 +899,16 @@ export default function ConversationPage() {
       const sessionRes = await supabase.auth.getSession();
       const token = sessionRes.data.session?.access_token;
       const failures: string[] = [];
-      let hasReply = false;
+        const failedBots: string[] = [];
+        let hasReply = false;
 
       for (const botUserId of uniqueBotIds) {
         try {
-          const res = await fetch('/api/ai-chat', {
+          const res = await requestAiChat({
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
+                Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
               conversation_id: conversationId,
@@ -816,6 +930,7 @@ export default function ConversationPage() {
         } catch (error) {
           const message = error instanceof Error ? error.message : 'The character could not generate a reply.';
           failures.push(message);
+            failedBots.push(botUserId);
           console.error('AI reply generation failed:', error);
         }
       }
@@ -826,11 +941,13 @@ export default function ConversationPage() {
           .select('*, profiles:sender_id(*)')
           .eq('conversation_id', conversationId)
           .is('deleted_at', null)
-          .order('created_at', { ascending: true });
+          .order('created_at', { ascending: true })
+            .order("id", { ascending: true });
         if (updatedMsgs) setMessages(updatedMsgs);
       }
 
-      if (failures.length > 0) {
+        setFailedAiBots(failedBots);
+        if (failures.length > 0) {
         const firstError = failures[0];
         showToast(`Your message was saved, but ${failures.length === 1 ? 'a character' : 'some characters'} could not reply: ${firstError}`, 'error');
       }
@@ -842,98 +959,135 @@ export default function ConversationPage() {
   // Send message
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !conversationId || (!messageInput.trim() && !imageFile)) return;
-
-    let content = messageInput.trim();
-
-    // Check Safety Guard for self-harm/suicide or severe policy violations
-    const safetyCheck = checkUserPromptSafety(content);
+    if (!user || !conversationId ||
+      sendLockRef.current ||
+      (!messageInput.trim() && !imageFile &&
+        !messageAttemptRef.current?.imageUrl)
+    )
+      return;
+    const rawText = messageInput;
+    const selectedImage = imageFile;
+    const scope = messageDraftScope;
+    const safetyCheck = checkUserPromptSafety(rawText.trim());
     if (!safetyCheck.isSafe) {
-      if (safetyCheck.crisisTriggered) {
-        showToast(`💜 Help is available. Call/text ${CRISIS_HELPLINE_INFO.phone} (${CRISIS_HELPLINE_INFO.name}). You are not alone.`, 'error');
-      }
+      if (safetyCheck.crisisTriggered)
+        showToast(
+          `💜 Help is available. Call/text ${CRISIS_HELPLINE_INFO.phone} (${CRISIS_HELPLINE_INFO.name}). Your draft is still here.`,
+          "error",
+        );
       setIsRoleplayPaused(true);
-      setMessageInput('');
       return;
     }
-
-    // Reset safety pause if user sends compliant message
     setIsRoleplayPaused(false);
+    let content = rawText.trim();
 
-    if (isOocMode && content && !content.startsWith('(OOC:') && !content.startsWith('[OOC:')) {
+    if (isOocMode && content && !content.startsWith('(OOC:') && !content.startsWith('[OOC:'))
       content = `(OOC: ${content})`;
+    const priorAttempt = messageAttemptRef.current;
+    const attempt: MessageDraft =
+      priorAttempt?.text === rawText &&
+      priorAttempt.isOoc === isOocMode &&
+      priorAttempt.attachmentName === selectedImage?.name
+        ? priorAttempt
+        : {
+            text: rawText,
+            attemptId: crypto.randomUUID(),
+            attachmentName: selectedImage?.name,
+            isOoc: isOocMode,
+          };
+    // Reuse a recovered uploaded attachment when its file object no longer exists.
+    if (
+      !selectedImage &&
+      priorAttempt?.text === rawText &&
+      priorAttempt.isOoc === isOocMode &&
+      priorAttempt.imageUrl
+    ) {
+      attempt.attemptId = priorAttempt.attemptId;
+      attempt.imageUrl = priorAttempt.imageUrl;
+      attempt.attachmentName = priorAttempt.attachmentName;
     }
-
-    // Check OOC Lore Request
-    const oocParsed = parseOocMessage(content);
-    if (oocParsed.isOoc) {
-      // Only persist instructions that establish continuing scene canon or
-      // writing preferences. Regular OOC questions remain one-turn context.
-      const isPersistentInstruction = /\b(remember|keep|always|never|scene|setting|location|tone|style|pace|do not|don't)\b/i.test(oocParsed.oocContent);
-      if (isPersistentInstruction) {
-        const { data: currentConversation, error: contextLoadError } = await supabase
-          .from('conversations')
-          .select('memory_summary')
-          .eq('id', conversationId)
-          .single();
-
-        if (contextLoadError) throw contextLoadError;
-
-        const instruction = `• ${oocParsed.oocContent}`;
-        const existingContext = currentConversation?.memory_summary || '';
-        if (!existingContext.includes(instruction)) {
-          const { error: contextSaveError } = await supabase
-            .from('conversations')
-            .update({ memory_summary: [existingContext, instruction].filter(Boolean).join('\n') })
-            .eq('id', conversationId);
-          if (contextSaveError) throw contextSaveError;
-          showToast('Scene instruction saved for this roleplay.', 'success');
-        }
-      }
-    }
-    if (oocParsed.isOoc && oocParsed.isCreateLoreRequest) {
-      showToast('Lore stays creator-owned. Add it from a linked Lorebook so it persists for future roleplays.', 'info');
-    }
-
-    setMessageInput('');
+    messageAttemptRef.current = attempt;
+    if (scope) setDraftStorageFailed(!writeDraft(scope, attempt));
+    sendLockRef.current = true;
     setSending(true);
     broadcastTyping(false);
-
     try {
-      let imageUrl: string | null = null;
-      if (imageFile) {
+      if (selectedImage && !attempt.imageUrl) {
         setUploadingImage(true);
-        imageUrl = await uploadImage(imageFile);
-        clearImage();
-        setUploadingImage(false);
+        attempt.imageUrl = await uploadImage(selectedImage);
+        if (scope) setDraftStorageFailed(!writeDraft(scope, attempt));
       }
-
-      const { error: msgError } = await supabase
-        .from('messages')
-        .insert({
-          conversation_id: conversationId,
-          sender_id: user.id,
-          content: content || (imageUrl ? 'Sent an image' : ''),
-          image_url: imageUrl,
-          read: false,
-        });
-
-      if (msgError) throw msgError;
-
-      await supabase
-        .from('conversations')
+      const storedContent =
+        content || (attempt.imageUrl ? "Sent an image" : "");
+      await persistRoleplayMessage(supabase, {
+        id: attempt.attemptId!,
+        conversation_id: conversationId,
+        sender_id: user.id,
+        content: storedContent,
+        image_url: attempt.imageUrl || null,
+      });
+      if (messageDraftReady.current !== scope) return;
+      if (scope) clearSavedDraft(scope, attempt);
+      setMessageInput((current) => (current === rawText ? "" : current));
+      if (selectedImage) clearImage();
+      messageAttemptRef.current = null;
+      const { error: previewError } = await supabase
+        .from("conversations")
         .update({
-          last_message: content || 'Sent an image',
+          last_message: storedContent,
           last_message_at: new Date().toISOString(),
         })
-        .eq('id', conversationId);
-
+        .eq("id", conversationId);
+      if (previewError)
+        showToast(
+          "Your message was saved. The conversation preview will refresh later.",
+          "info",
+        );
+      // Keep the existing OOC canon behavior, but a canon failure cannot lose or
+      // misreport the user's successfully stored message.
+      const oocParsed = parseOocMessage(content);
+    if (oocParsed.isOoc &&
+        /\b(remember|keep|always|never|scene|setting|location|tone|style|pace|do not|don't)\b/i.test(oocParsed.oocContent)
+      ) {
+        const { data: canon, error: canonReadError } = await supabase
+          .from("conversations")
+          .select("memory_summary,canon_revision")
+          .eq("id", conversationId)
+          .single();
+        const instruction = `• ${oocParsed.oocContent}`;
+        const next = canon?.memory_summary?.includes(instruction)
+          ? canon.memory_summary
+          : [canon?.memory_summary, instruction].filter(Boolean).join("\n");
+        const { data: canonVersion, error: canonError } = canonReadError
+          ? { data: null, error: canonReadError }
+          : await supabase.rpc("save_chimera_scene_canon", {
+              p_conversation_id: conversationId,
+              p_expected_revision: canon?.canon_revision,
+              p_content: next,
+            });
+        if (canonError)
+          showToast(
+            "Your message was saved, but its scene instruction could not be saved. Please retry it from scene canon.",
+            "info",
+          );
+        else {
+          setSceneCanon(next);
+          setSceneCanonDraft(next);
+          setCanonRevision(canonVersion);
+        }
+      }
+      if (oocParsed.isOoc && oocParsed.isCreateLoreRequest)
+        showToast('Lore stays creator-owned. Add it from a linked Lorebook so it persists for future roleplays.', 'info');
       void triggerAiReplies(getAiResponderIds());
-    } catch (err: any) {
-      console.error(err);
-      showToast('Failed to send message', 'error');
+    } catch {
+      showToast(
+        "Your message could not be confirmed. Your draft is still here; retrying will not send it twice.",
+        "error",
+      );
     } finally {
+      sendLockRef.current = false;
       setSending(false);
+      setUploadingImage(false);
       msgInputRef.current?.focus();
     }
   };
@@ -996,15 +1150,19 @@ export default function ConversationPage() {
   };
 
   const handleDevicePhoneUpdate = (messageId: string, body: string) => {
-    persistDeviceActivityMessages((current) => current.map((message) => (
-      message.id === messageId ? { ...message, body, edited: true } : message
-    )));
+    persistDeviceActivityMessages((current) =>
+      current.map((message) =>
+        message.id === messageId ? { ...message, body, edited: true } : message,
+      ),
+    );
   };
 
   const handleDevicePhoneDelete = (messageId: string) => {
-    persistDeviceActivityMessages((current) => current.map((message) => (
-      message.id === messageId ? { ...message, deleted: true } : message
-    )));
+    persistDeviceActivityMessages((current) =>
+      current.map((message) =>
+        message.id === messageId ? { ...message, deleted: true } : message,
+      ),
+    );
   };
 
   // Request Selfie / Image Studio
@@ -1017,7 +1175,7 @@ export default function ConversationPage() {
       const characterName = otherUser.display_name;
       const prompt = `a highly detailed, beautiful selfie photo of ${characterName}, realistic, atmospheric lighting, 8k, photorealistic`;
       const encodedPrompt = encodeURIComponent(prompt);
-      
+
       const seed = Math.floor(Math.random() * 1000000);
       const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=1200&nologo=true&seed=${seed}`;
 
@@ -1033,7 +1191,7 @@ export default function ConversationPage() {
 
       if (msgError) throw msgError;
       showToast('Image generated successfully!', 'success');
-      
+
       if (aesthetics.layoutStyle !== 'phone') {
         aesthetics.setLayout('phone');
         aesthetics.setChatStyle('imessage');
@@ -1112,10 +1270,16 @@ export default function ConversationPage() {
   const handleSaveEdit = async () => {
     if (!editingMessageId || !editContent.trim()) return;
     try {
-      await supabase.from('messages').update({ content: editContent.trim() }).eq('id', editingMessageId);
+      const original = messages.find((m) => m.id === editingMessageId);
+      const { data, error } = await supabase.from('messages').update({ content: editContent.trim() }).eq('id', editingMessageId)
+        .eq("content", original?.content || "")
+        .select("id")
+        .maybeSingle();
+      if (error || !data)
+        throw new Error("Message changed or editing is not permitted.");
       setMessages(prev => prev.map(m => m.id === editingMessageId ? { ...m, content: editContent.trim() } : m));
       setEditingMessageId(null);
-      showToast('Message updated', 'success');
+      showToast("Message updated", "success");
     } catch (error) {
       console.error('Error editing message:', error);
       showToast('Failed to update message', 'error');
@@ -1123,84 +1287,212 @@ export default function ConversationPage() {
   };
 
   // Response Swiping Engine (Janitor AI & SillyTavern Style)
-  const handleSwipeChange = async (messageId: string, direction: 'left' | 'right') => {
+  const handleSwipeChange = async (
+    messageId: string,
+    direction: "left" | "right",
+  ) => {
     const current = swipesMap[messageId];
-    if (!current || current.variations.length <= 1) return;
-
-    let newIndex = direction === 'left' ? current.currentIndex - 1 : current.currentIndex + 1;
-    if (newIndex < 0) newIndex = current.variations.length - 1;
-    if (newIndex >= current.variations.length) newIndex = 0;
-
-    const newContent = current.variations[newIndex];
-    setSwipesMap(prev => ({
+    const target = messages.find((m) => m.id === messageId);
+    if (
+      !current ||
+      !target ||
+      current.variations.length <= 1 ||
+      sendLockRef.current
+    )
+      return;
+    const newIndex =
+      (current.currentIndex +
+        (direction === "left" ? -1 : 1) +
+        current.variations.length) %
+      current.variations.length;
+    sendLockRef.current = true;
+    try {
+      const earlier = messages[messages.length - 1]?.id !== messageId;
+      const branch = earlier
+        ? await createBranch(messageId)
+        : { conversation_id: conversationId, message_id: messageId };
+      const { error } = await supabase.rpc("restore_chimera_response_variant", {
+        p_conversation_id: branch.conversation_id,
+        p_message_id: branch.message_id,
+        p_expected_content: target.content,
+        p_content: current.variations[newIndex],
+      });
+      if (error)
+        throw new Error(
+          "The saved variation could not be selected. Refresh if the response changed.",
+        );
+      if (earlier) {
+        clearBranchAttempt(messageId);
+        showToast("A separate variation branch is ready. Review inherited scene canon.","success");
+        navigate(`/conversations/${branch.conversation_id}`);
+        return;
+      }
+      setSwipesMap(prev => ({
       ...prev,
       [messageId]: { ...current, currentIndex: newIndex }
     }));
-
-    setMessages(prev => prev.map(m => m.id === messageId ? { ...m, content: newContent } : m));
-    await supabase.from('messages').update({ content: newContent }).eq('id', messageId);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId
+            ? { ...m, content: current.variations[newIndex] }
+            : m,
+        ),
+      );
+    } catch (error) {
+      showToast(
+        error instanceof Error
+          ? error.message
+          : "The variation could not be selected.",
+        "error",
+      );
+    } finally {
+      sendLockRef.current = false;
+    }
   };
 
+  const branchRequestRef = useRef<Record<string, string>>({});
+  const clearBranchAttempt=(messageId:string)=>{
+    const id=branchRequestRef.current[messageId];
+    if(id&&user&&conversationId)clearSavedDraft(draftKey(user.id,'message','branch',conversationId,messageId),{id});
+    delete branchRequestRef.current[messageId];
+  };
+  const createBranch = async (messageId: string) => {
+    const journal = draftKey(
+      user!.id,
+      "message",
+      "branch",
+      conversationId!,
+      messageId,
+    );
+    const key = (branchRequestRef.current[messageId] ||=
+      readDraft<{ id: string }>(journal)?.value.id || crypto.randomUUID());
+    if (!writeDraft(journal, { id: key }))
+      throw new Error(
+        "Local retry recovery is unavailable. The original scene is unchanged.",
+      );
+    const { data, error } = await supabase.rpc("branch_chimera_conversation", {
+      p_conversation_id: conversationId,
+      p_message_id: messageId,
+      p_request_id: key,
+    });
+    if (error || !data)
+      throw new Error(
+        "The branch could not be created. Your original scene is unchanged.",
+      );
+    return data as { conversation_id: string; message_id: string };
+  };
   const handleSwipeNew = async (messageId: string) => {
-    if (!conversationId || !otherUser || (otherUser.role as string) !== 'ai_character') return;
+    if (!conversationId || sendLockRef.current) return;
+    const target = messages.find((m) => m.id === messageId);
+    if (!target || (target.profiles?.role as string) !== "ai_character") return;
+    const operationScope=messageDraftScope;
+    sendLockRef.current = true;
+    setTypingUsers([target.sender_id]);
     try {
-      const targetMsg = messages.find(m => m.id === messageId);
-      if (!targetMsg) return;
-
-      showToast('Generating new response variation...', 'info');
-      setTypingUsers([otherUser.user_id]);
-
-      const sessionRes = await supabase.auth.getSession();
-      const token = sessionRes.data.session?.access_token;
-
-      const res = await fetch('/api/ai-chat', {
-        method: 'POST',
+      const earlier = messages[messages.length - 1]?.id !== messageId;
+      const branch = earlier
+        ? await createBranch(messageId)
+        : { conversation_id: conversationId, message_id: messageId };
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const retryKey = draftKey(
+        user!.id,
+        "message",
+        "regeneration",
+        branch.conversation_id,
+        branch.message_id,
+      );
+      const pending = readDraft<{ id: string; expected: string }>(retryKey)
+        ?.value || { id: crypto.randomUUID(), expected: target.content || "" };
+      if (!writeDraft(retryKey, pending))
+        throw new Error(
+          "Local retry recovery is unavailable. Your response is unchanged.",
+        );
+      const res = await requestAiChat({
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token || ""}`,
+          "Idempotency-Key": pending.id,
         },
         body: JSON.stringify({
-          conversation_id: conversationId,
-          bot_user_id: otherUser.user_id,
-          is_swipe: true
-        })
+          conversation_id: branch.conversation_id,
+          bot_user_id: target.sender_id,
+          is_swipe: true,
+          target_message_id: branch.message_id,
+          expected_content: pending.expected,
+        }),
       });
-
       const data = await res.json();
-      if (data && data.reply) {
-        const newVariation = data.reply;
-        const existing = swipesMap[messageId] || { variations: [targetMsg.content || ''], currentIndex: 0 };
-        const updatedVariations = [...existing.variations, newVariation];
-        const newIdx = updatedVariations.length - 1;
-
-        setSwipesMap(prev => ({
-          ...prev,
-          [messageId]: { variations: updatedVariations, currentIndex: newIdx }
-        }));
-
-        setMessages(prev => prev.map(m => m.id === messageId ? { ...m, content: newVariation } : m));
-        await supabase.from('messages').update({ content: newVariation }).eq('id', messageId);
-        showToast(`Swiped variation (${newIdx + 1}/${updatedVariations.length})`, 'success');
+      if (!res.ok || !data.reply) {
+        if (
+          res.status === 409 &&
+          typeof data.error === "string" &&
+          data.error.includes("response changed")
+        )
+          clearSavedDraft(retryKey, pending);
+        throw new Error(
+          data.error || "The response could not be regenerated. Please retry.",
+        );
       }
-    } catch (err) {
-      console.error('Failed to swipe new variation:', err);
-      showToast('Failed to generate swipe variation', 'error');
+      clearSavedDraft(retryKey, pending);
+      if(messageDraftReady.current!==operationScope)return;
+      if (earlier) {
+        clearBranchAttempt(messageId);
+        showToast(
+          "Variation saved in a separate branch. Review inherited scene canon.",
+          "success",
+        );
+        navigate(`/conversations/${branch.conversation_id}`);
+        return;
+      }
+      const existing = swipesMap[messageId] || {
+        variations: [target.content || ""],
+        currentIndex: 0,
+      };
+      setSwipesMap((prev) => ({
+        ...prev,
+        [messageId]: {
+          variations: [...existing.variations, data.reply],
+          currentIndex: existing.variations.length,
+        },
+      }));
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId ? { ...m, content: data.reply } : m,
+        ),
+      );
+      showToast("Response variation saved.", "success");
+    } catch (error) {
+      if(messageDraftReady.current!==operationScope)return;
+      showToast(
+        error instanceof Error
+          ? error.message
+          : "The response could not be regenerated.",
+        "error",
+      );
     } finally {
-      setTypingUsers([]);
+      if(messageDraftReady.current===operationScope){sendLockRef.current = false;setTypingUsers([]);}
     }
   };
-
   const handleBranchFromMessage = async (messageId: string) => {
-    const targetIdx = messages.findIndex(m => m.id === messageId);
-    if (targetIdx === -1) return;
-
-    showToast('Branching narrative from this point...', 'info');
-    const toDelete = messages.slice(targetIdx + 1).map(m => m.id);
-    if (toDelete.length > 0) {
-      await supabase.from('messages').update({ deleted_at: new Date().toISOString() }).in('id', toDelete);
-      setMessages(prev => prev.slice(0, targetIdx + 1));
+    try {
+      const branch = await createBranch(messageId);
+      clearBranchAttempt(messageId);
+      navigate(`/conversations/${branch.conversation_id}`);
+      showToast(
+        "A separate branch is ready. Review inherited scene canon.",
+        "success",
+      );
+    } catch (error) {
+      showToast(
+        error instanceof Error
+          ? error.message
+          : "The branch could not be created.",
+        "error",
+      );
     }
-    showToast('Narrative branched!', 'success');
   };
 
   // Regenerate AI Response
@@ -1264,12 +1556,12 @@ export default function ConversationPage() {
   const handleMemberSearch = async (query: string) => {
     setMemberSearchQuery(query);
     if (!user) return;
-    
+
     if (query.trim() === '') {
       fetchFollowedForAdd();
       return;
     }
-    
+
     const existingIds = participants.map(p => p.user_id);
     existingIds.push(user.id);
 
@@ -1346,10 +1638,11 @@ export default function ConversationPage() {
       const snapshots = activeMessages.map((message, position) => ({
         scene_id: scene.id,
         source_message_id: message.id,
-        author_label: message.sender_id === user.id
-          ? (profile?.display_name || 'You')
-          : (otherUser?.display_name || 'Character'),
-        author_kind: message.sender_id === user.id ? 'member' : 'character',
+        author_label:
+          message.sender_id === user.id
+            ? profile?.display_name || "You"
+            : otherUser?.display_name || "Character",
+        author_kind: message.sender_id === user.id ? "member" : "character",
         content: message.content.trim(),
         position,
       }));
@@ -1382,8 +1675,10 @@ export default function ConversationPage() {
     return `${names.join(', ')} are typing...`;
   };
 
-  const isGroupAdmin = conversation?.type === 'group' && conversation?.created_by === user?.id;
-  const canPublishScene = conversation?.type === 'dm' && conversation?.created_by === user?.id;
+  const isGroupAdmin =
+    conversation?.type === "group" && conversation?.created_by === user?.id;
+  const canPublishScene =
+    conversation?.type === "dm" && conversation?.created_by === user?.id;
 
   if (loading) {
     return (
@@ -1404,23 +1699,21 @@ export default function ConversationPage() {
     }
   };
 
-  const isPhoneLayout = aesthetics.layoutStyle === 'phone';
-  const isModernLayout = aesthetics.layoutStyle === 'modern' || isPhoneLayout;
+  const isPhoneLayout = aesthetics.layoutStyle === "phone";
+  const isModernLayout = aesthetics.layoutStyle === "modern" || isPhoneLayout;
 
   return (
     <div className={`h-screen flex flex-col font-sans ${getStyleClasses()} ${isPhoneLayout ? 'bg-warm-100 dark:bg-black items-center justify-center p-0 sm:p-4' : 'bg-white dark:bg-warm-950'}`}>
-      
       {/* Phone Wrapper & Touch Swipe Area */}
-      <div 
+      <div
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         className={`w-full h-full flex flex-col relative overflow-hidden bg-white dark:bg-warm-950 transition-all ${
         isPhoneLayout ? 'sm:max-w-[400px] sm:h-[850px] sm:max-h-[90vh] sm:rounded-[3rem] sm:border-[12px] sm:border-black sm:shadow-2xl sm:ring-1 sm:ring-warm-800' : ''
       }`}>
-
-      {/* Dynamic Wallpaper */}
-      {aesthetics.wallpaperUrl && (
-        <div 
+        {/* Dynamic Wallpaper */}
+        {aesthetics.wallpaperUrl && (
+        <div
           className="fixed inset-0 z-0 opacity-40 pointer-events-none"
           style={{
             backgroundImage: `url(${aesthetics.wallpaperUrl})`,
@@ -1430,24 +1723,23 @@ export default function ConversationPage() {
           }}
         />
       )}
-      
-      {/* Header */}
-      <header className={`flex-none sticky top-0 z-30 bg-white/90 dark:bg-warm-900/90 backdrop-blur-md border-b border-warm-200 dark:border-warm-800 ${isPhoneLayout ? 'sm:pt-8' : ''}`}>
-        <div className={`max-w-7xl mx-auto px-4 py-3 flex items-center justify-between ${isPhoneLayout ? 'relative justify-center' : ''}`}>
-          
-          <div className={`flex items-center gap-3 flex-1 min-w-0 ${isPhoneLayout ? 'absolute left-4' : ''}`}>
+
+        {/* Header */}
+        <header className={`flex-none sticky top-0 z-30 bg-white/90 dark:bg-warm-900/90 backdrop-blur-md border-b border-warm-200 dark:border-warm-800 ${isPhoneLayout ? 'sm:pt-8' : ''}`}>
+          <div className={`max-w-7xl mx-auto px-4 py-3 flex items-center justify-between ${isPhoneLayout ? 'relative justify-center' : ''}`}>
+            <div className={`flex items-center gap-3 flex-1 min-w-0 ${isPhoneLayout ? 'absolute left-4' : ''}`}>
             <button onClick={() => navigate('/conversations')} className="p-2 -ml-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500 transition-colors">
               <ArrowLeft size={24} />
             </button>
           </div>
 
-          <div className={`flex items-center justify-center min-w-0 ${isPhoneLayout ? 'flex-col gap-1' : 'flex-1 gap-3 ml-3'}`}>
-            {conversation?.type === 'dm' && otherUser && (
-              <div 
+            <div className={`flex items-center justify-center min-w-0 ${isPhoneLayout ? 'flex-col gap-1' : 'flex-1 gap-3 ml-3'}`}>
+              {conversation?.type === "dm" && otherUser && (
+                <div
                 className={`flex items-center min-w-0 cursor-pointer hover:bg-warm-50 dark:hover:bg-warm-800/50 p-1 -ml-1 rounded-xl transition-colors ${isPhoneLayout ? 'flex-col gap-1' : 'gap-3'}`}
                 onClick={() => setShowSettingsDrawer(true)}
               >
-                <div className="relative group">
+                  <div className="relative group">
                   {/* Mood Halo Effect */}
                   <div className="absolute -inset-1.5 rounded-full bg-gradient-to-r from-red-600 via-purple-600 to-indigo-600 opacity-70 blur-sm group-hover:opacity-100 transition-all animate-pulse pointer-events-none" />
                   <CharacterExpressionAvatar
@@ -1462,12 +1754,12 @@ export default function ConversationPage() {
                     🎙️
                   </div>
                 </div>
-                <div className={`min-w-0 ${isPhoneLayout ? 'text-center' : ''}`}>
-                  <h1 className="font-serif font-bold text-lg text-warm-900 dark:text-warm-50 truncate flex items-center gap-1.5">
+                  <div className={`min-w-0 ${isPhoneLayout ? 'text-center' : ''}`}>
+                    <h1 className="font-serif font-bold text-lg text-warm-900 dark:text-warm-50 truncate flex items-center gap-1.5">
                     {otherUser.display_name}
                     <UserBadges badges={otherUser.badges} role={otherUser.role} size="sm" />
                     {otherUser.role === 'ai_character' && (
-                      <button 
+                      <button
                         onClick={(e) => { e.stopPropagation(); setShowMemoryModal(true); }}
                         className="text-warm-400 hover:text-primary-500 transition-colors p-1 rounded-md hover:bg-warm-100 dark:hover:bg-warm-800"
                         title="Memory"
@@ -1476,30 +1768,34 @@ export default function ConversationPage() {
                       </button>
                     )}
                   </h1>
-                  <p className="text-xs text-warm-500">@{otherUser.username}</p>
+                    <p className="text-xs text-warm-500">
+                      @{otherUser.username}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {conversation?.type === 'group' && (
-              <div 
+              {conversation?.type === "group" && (
+                <div
                 className="min-w-0 cursor-pointer hover:bg-warm-50 dark:hover:bg-warm-800/50 p-1 -ml-1 rounded-xl transition-colors"
                 onClick={() => setShowGroupSettings(true)}
               >
-                <h1 className="font-serif font-bold text-lg text-warm-900 dark:text-warm-50 truncate">
+                  <h1 className="font-serif font-bold text-lg text-warm-900 dark:text-warm-50 truncate">
                   {conversation.name || 'Group Chat'}
                 </h1>
-                <p className="text-xs text-warm-500">{participants.length} members</p>
-              </div>
-            )}
-          </div>
+                  <p className="text-xs text-warm-500">
+                    {participants.length} members
+                  </p>
+                </div>
+              )}
+            </div>
 
-          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
             {conversation?.type === 'dm' && (
               <>
                 {/* Expressions Avatars Manager Button */}
                 {otherUser?.role === 'ai_character' && (
-                  <button 
+                  <button
                     onClick={() => setShowExpressionModal(true)}
                     className="p-2 rounded-xl hover:bg-amber-500/10 text-amber-600 dark:text-amber-400 transition-colors flex items-center gap-1"
                     title="Manage Emotion Expression Avatars"
@@ -1511,7 +1807,7 @@ export default function ConversationPage() {
                   </button>
                 )}
                 {/* Private, durable character memories */}
-                <button 
+                <button
                   onClick={() => setShowMemoryVisualizer(true)}
                   className="p-2 rounded-xl hover:bg-purple-500/10 text-purple-600 dark:text-purple-400 transition-colors flex items-center gap-1"
                   title="Open what this character remembers"
@@ -1547,7 +1843,7 @@ export default function ConversationPage() {
                 </button>
 
                 {/* Janitor AI Lorebook Inspector Button */}
-                <button 
+                <button
                   onClick={() => setShowLorebookDrawer(true)}
                   className="p-2 rounded-xl hover:bg-purple-500/10 text-purple-600 dark:text-purple-400 transition-colors flex items-center gap-1 relative"
                   title="Open Lorebook Inspector (Janitor AI Engine)"
@@ -1558,7 +1854,7 @@ export default function ConversationPage() {
                   </span>
                 </button>
 
-                <button 
+                <button
                   onClick={() => setShowExporterModal(true)}
                   className="p-2 rounded-xl hover:bg-purple-500/10 text-purple-600 dark:text-purple-400 transition-colors flex items-center gap-1 text-xs font-bold"
                   title="Roleplay Web Novel Exporter Studio"
@@ -1592,7 +1888,7 @@ export default function ConversationPage() {
                 <button className="p-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500 transition-colors">
                   <Paperclip size={20} />
                 </button>
-                <button 
+                <button
                   onClick={handleRequestImage}
                   disabled={requestingImage}
                   className={`p-2 rounded-xl transition-colors flex items-center gap-1 ${requestingImage ? 'text-primary-500 animate-pulse' : 'hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500'}`}
@@ -1601,14 +1897,14 @@ export default function ConversationPage() {
                   <Camera size={20} />
                   <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">FREE</span>
                 </button>
-                <button 
-                  onClick={voice.toggleVoice} 
+                <button
+                  onClick={voice.toggleVoice}
                   className={`p-2 rounded-xl transition-colors ${voice.isEnabled ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500'}`}
                   title="Toggle Voice TTS"
                 >
                   <AudioWaveform size={20} />
                 </button>
-                <button 
+                <button
                   onClick={() => setIsPhoneOpen(true)}
                   className="p-2 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 text-warm-500 transition-colors"
                   title="Open Phone Modal"
@@ -1623,11 +1919,11 @@ export default function ConversationPage() {
               </button>
             )}
           </div>
-        </div>
+          </div>
 
-        {/* Mode Switcher Bar */}
-        <div className="bg-warm-50 dark:bg-warm-900 px-4 py-1.5 border-t border-warm-200/50 dark:border-warm-800/50 flex items-center justify-between text-xs overflow-x-auto no-scrollbar">
-          <div className="flex items-center gap-1">
+          {/* Mode Switcher Bar */}
+          <div className="bg-warm-50 dark:bg-warm-900 px-4 py-1.5 border-t border-warm-200/50 dark:border-warm-800/50 flex items-center justify-between text-xs overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-1">
             {[
               { id: 'one_on_one', label: '1-on-1 RP', icon: Users },
               { id: 'group_chat', label: 'Group Chat', icon: Users },
@@ -1653,14 +1949,27 @@ export default function ConversationPage() {
             })}
           </div>
 
-          <div className="flex items-center gap-2 text-[11px] text-warm-500 dark:text-warm-400 font-medium">
-            <span>Private memories: <strong className="text-purple-500 font-bold">{memoryCount}</strong></span>
+            <div className="flex items-center gap-2 text-[11px] text-warm-500 dark:text-warm-400 font-medium">
+              <span>
+                Private memories:{" "}
+                <strong className="text-purple-500 font-bold">
+                  {memoryCount}
+                </strong>
+              </span>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Settings Drawer */}
-      {otherUser && (
+        {conversationId && (
+          <div className="px-4 py-2 border-b border-warm-200 dark:border-warm-800">
+            <ScenePersonaSelector
+              conversationId={conversationId}
+              onChange={setScenePersonaId}
+            />
+          </div>
+        )}
+        {/* Settings Drawer */}
+        {otherUser && (
         <ChatSettingsDrawer
           isOpen={showSettingsDrawer}
           onClose={() => setShowSettingsDrawer(false)}
@@ -1675,18 +1984,20 @@ export default function ConversationPage() {
         />
       )}
 
-      {/* Durable, private player-character memory cabinet */}
-      <CharacterMemoryCabinetModal
-        isOpen={showMemoryVisualizer}
-        onClose={() => setShowMemoryVisualizer(false)}
-        characterId={memoryCharacter?.id || null}
-        characterName={memoryCharacter?.name || otherUser?.display_name || 'this character'}
-        userId={user?.id}
-        onMemoryCountChange={setMemoryCount}
-      />
+        {/* Durable, private player-character memory cabinet */}
+        <CharacterMemoryCabinetModal
+          isOpen={showMemoryVisualizer}
+          onClose={() => setShowMemoryVisualizer(false)}
+          characterId={memoryCharacter?.id || null}
+          personaId={scenePersonaId}
+          conversationId={conversationId}
+          characterName={memoryCharacter?.name || otherUser?.display_name || 'this character'}
+          userId={user?.id}
+          onMemoryCountChange={setMemoryCount}
+        />
 
-      {/* Janitor AI Lorebook Drawer & Inspector */}
-      <LorebookDrawer
+        {/* Janitor AI Lorebook Drawer & Inspector */}
+        <LorebookDrawer
         isOpen={showLorebookDrawer}
         onClose={() => setShowLorebookDrawer(false)}
         entries={lorebookEntries}
@@ -1694,18 +2005,18 @@ export default function ConversationPage() {
         onManageLorebooks={() => navigate('/lorebooks')}
       />
 
-      {/* Memory Modal */}
-      {otherUser && (
-        <ChatMemoryModal 
-          isOpen={showMemoryModal} 
-          onClose={() => setShowMemoryModal(false)} 
-          character={otherUser} 
+        {/* Memory Modal */}
+        {otherUser && (
+        <ChatMemoryModal
+          isOpen={showMemoryModal}
+          onClose={() => setShowMemoryModal(false)}
+          character={otherUser}
           conversationId={conversationId}
         />
       )}
 
-      {/* Mock Phone Modal */}
-      <MockPhoneModal
+        {/* Mock Phone Modal */}
+        <MockPhoneModal
         isOpen={isPhoneOpen}
         onClose={() => setIsPhoneOpen(false)}
         messages={deviceActivityMessages}
@@ -1716,94 +2027,106 @@ export default function ConversationPage() {
         onDeleteMessage={handleDevicePhoneDelete}
       />
 
-      {/* Main Layout Area */}
-      <div className="flex-1 overflow-hidden w-full max-w-7xl mx-auto flex relative">
-        
-        {/* Chat Column */}
-        <div className="flex-1 flex flex-col min-w-0 relative">
-          
-          {/* Multi-Character Participant Header Bar */}
-          {(chatMode === 'group_chat' || chatMode === 'story_mode' || multiParticipants.length > 1) && (
-            <MultiCharacterHeader
-              participants={multiParticipants}
-              activeSpeakerId={activeSpeakerId}
-              onSelectActiveSpeaker={(id) => {
+        {/* Main Layout Area */}
+        <div className="flex-1 overflow-hidden w-full max-w-7xl mx-auto flex relative">
+          {/* Chat Column */}
+          <div className="flex-1 flex flex-col min-w-0 relative">
+            {/* Multi-Character Participant Header Bar */}
+            {(chatMode === 'group_chat' || chatMode === 'story_mode' || multiParticipants.length > 1) && (
+              <MultiCharacterHeader
+                participants={multiParticipants}
+                activeSpeakerId={activeSpeakerId}
+                onSelectActiveSpeaker={(id) => {
                 setActiveSpeakerId(id);
                 setMultiParticipants((prev) =>
                   prev.map((p) => ({ ...p, is_active_speaker: p.character_id === id }))
                 );
               }}
-              onTriggerAiSpeaker={async () => {
-                const speakerId = activeSpeakerId || multiParticipants[0]?.character_id;
-                if (!speakerId || !conversationId) return;
+                onTriggerAiSpeaker={async () => {
+                  const speakerId =
+                    activeSpeakerId || multiParticipants[0]?.character_id;
+                  if (!speakerId || !conversationId) return;
 
-                showToast('Triggering character response...', 'info');
-                setTypingUsers([speakerId]);
+                  showToast("Triggering character response...", "info");
+                  setTypingUsers([speakerId]);
 
-                const sessionRes = await supabase.auth.getSession();
-                const token = sessionRes.data.session?.access_token;
+                  const sessionRes = await supabase.auth.getSession();
+                  const token = sessionRes.data.session?.access_token;
 
-                fetch('/api/ai-chat', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                  },
-                  body: JSON.stringify({
+                  requestAiChat({
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
                     conversation_id: conversationId,
                     bot_user_id: speakerId
-                  })
-                }).catch(err => {
+                  }),
+                  }).catch(err => {
                   console.error('Error triggering AI speaker:', err);
                   setTypingUsers([]);
                 });
-              }}
-              onAddCharacter={() => setShowAddCharModal(true)}
-              onRemoveCharacter={(id) => {
+                }}
+                onAddCharacter={() => setShowAddCharModal(true)}
+                onRemoveCharacter={(id) => {
                 setMultiParticipants((prev) => prev.filter((p) => p.character_id !== id));
                 showToast('Character removed from scene', 'info');
               }}
-            />
-          )}
-
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 space-y-6 scroll-smooth">
-            {conversation?.type === 'dm' && otherUser?.role === 'ai_character' && (
-              <section className="rounded-2xl border border-purple-500/20 bg-purple-500/5 dark:bg-purple-950/20 px-4 py-3">
-                <button onClick={() => setShowSceneCanon(v => !v)} className="w-full flex items-center justify-between gap-3 text-left">
-                  <span className="flex items-center gap-2 text-xs font-bold text-purple-700 dark:text-purple-200"><Brain size={15} /> This scene remembers</span>
-                  <span className="text-[11px] text-warm-500">{showSceneCanon ? 'Close' : 'View & edit'}</span>
-                </button>
-                {!showSceneCanon && sceneCanon && <p className="mt-2 text-xs leading-relaxed text-warm-600 dark:text-warm-300 line-clamp-2">{sceneCanon.replace(/^•\s*/gm, '• ')}</p>}
-                {showSceneCanon && (
-                  <div className="mt-3 space-y-2">
-                    <p className="text-[11px] text-warm-500">Facts, scene rules, tone, promises, and writing preferences the character should quietly honor.</p>
-                    <textarea value={sceneCanonDraft} onChange={(e) => setSceneCanonDraft(e.target.value)} placeholder="• Paris, in the rain\n• Keep the tone slow and romantic\n• He never uses that nickname" rows={6} className="w-full rounded-xl border border-warm-200 dark:border-warm-700 bg-white/80 dark:bg-warm-950/40 p-3 text-sm text-warm-800 dark:text-warm-100 focus:outline-none focus:ring-2 focus:ring-purple-500/40" />
-                    <div className="flex justify-end gap-2"><button onClick={() => { setSceneCanonDraft(sceneCanon); setShowSceneCanon(false); }} className="text-xs font-bold text-warm-500 px-3 py-2">Cancel</button><button onClick={saveSceneCanon} className="rounded-lg bg-purple-600 px-3 py-2 text-xs font-bold text-white">Save scene</button></div>
-                  </div>
-                )}
-              </section>
+              />
             )}
-            
-            {/* Guided paths are optional; ordinary roleplay remains fully freeform. */}
-            {chatMode === 'game_mode' && conversation?.type === 'dm' && otherUser?.role === 'ai_character' && (
+
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 space-y-6 scroll-smooth">
+              {conversation?.type === "dm" &&
+                otherUser?.role === "ai_character" && (
+                  <section className="rounded-2xl border border-purple-500/20 bg-purple-500/5 dark:bg-purple-950/20 px-4 py-3">
+                    <button onClick={() => setShowSceneCanon(v => !v)} className="w-full flex items-center justify-between gap-3 text-left">
+                      <span className="flex items-center gap-2 text-xs font-bold text-purple-700 dark:text-purple-200">
+                        <Brain size={15} /> This scene remembers
+                      </span>
+                      <span className="text-[11px] text-warm-500">
+                        {showSceneCanon ? "Close" : "View & edit"}
+                      </span>
+                    </button>
+                    {!showSceneCanon && sceneCanon && (
+                      <p className="mt-2 text-xs leading-relaxed text-warm-600 dark:text-warm-300 line-clamp-2">
+                        {sceneCanon.replace(/^•\s*/gm, "• ")}
+                      </p>
+                    )}
+                    {showSceneCanon && (
+                      <div className="mt-3 space-y-2">
+                        <p className="text-[11px] text-warm-500">Facts, scene rules, tone, promises, and writing preferences the character should quietly honor.</p>
+                        <textarea value={sceneCanonDraft} onChange={(e) => setSceneCanonDraft(e.target.value)} placeholder="• Paris, in the rain\n• Keep the tone slow and romantic\n• He never uses that nickname" rows={6} className="w-full rounded-xl border border-warm-200 dark:border-warm-700 bg-white/80 dark:bg-warm-950/40 p-3 text-sm text-warm-800 dark:text-warm-100 focus:outline-none focus:ring-2 focus:ring-purple-500/40" />
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => { setSceneCanonDraft(sceneCanon); setShowSceneCanon(false); }} className="text-xs font-bold text-warm-500 px-3 py-2">Cancel</button>
+                          <button onClick={saveSceneCanon} className="rounded-lg bg-purple-600 px-3 py-2 text-xs font-bold text-white">Save scene</button>
+                        </div>
+                      </div>
+                    )}
+                  </section>
+                )}
+
+              {/* Guided paths are optional; ordinary roleplay remains fully freeform. */}
+              {chatMode === 'game_mode' && conversation?.type === 'dm' && otherUser?.role === 'ai_character' && (
               <GuidedTurningPointCard point={turningPoint} loading={turningPointLoading} onOpen={openTurningPoint} onChoose={chooseTurningPoint} />
             )}
-            {messages.length === 0 ? (
+              {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-warm-500 space-y-3">
                 <BookOpen size={32} className="opacity-20" />
                 <p className="font-serif italic text-lg opacity-60">The story begins...</p>
               </div>
             ) : (
-              messages.map((message, index) => {
-                const isOwn = message.sender_id === user?.id;
-                const sender: any = message.profiles || (isOwn ? profile : otherUser);
-                const isAI = sender?.role === 'ai_character';
-                const deviceSceneEvent = parseDeviceSceneEvent(message.content);
-                const isDeviceGreetingMessage = firstCharacterMessageWithDeviceActivity?.id === message.id;
-                const displayContent = isDeviceGreetingMessage ? parsedDeviceActivity.textWithoutDeviceActivity : message.content;
+                messages.map((message, index) => {
+                  const isOwn = message.sender_id === user?.id;
+                  const sender: any =
+                    message.profiles || (isOwn ? profile : otherUser);
+                  const isAI = sender?.role === "ai_character";
+                  const deviceSceneEvent = parseDeviceSceneEvent(message.content);
+                  const isDeviceGreetingMessage = firstCharacterMessageWithDeviceActivity?.id === message.id;
+                  const displayContent = isDeviceGreetingMessage ? parsedDeviceActivity.textWithoutDeviceActivity : message.content;
 
-                if (deviceSceneEvent) {
+                  if (deviceSceneEvent) {
                   return (
                     <DeviceSceneEventCard
                       key={message.id}
@@ -1814,24 +2137,24 @@ export default function ConversationPage() {
                   );
                 }
 
-                return (
-                  <div 
-                    key={message.id} 
+                  return (
+                    <div
+                    key={message.id}
                     className={`group relative flex gap-4 p-2 sm:p-4 rounded-2xl transition-colors
                       ${isModernLayout && isOwn ? 'flex-row-reverse -mr-2 sm:-mr-4' : '-mx-2 sm:-mx-4'}
                       ${isModernLayout && isOwn ? '' : 'hover:bg-warm-50 dark:hover:bg-warm-900/30'}
                     `}
                   >
-                    {/* Avatar Column */}
-                    {!(isModernLayout && isOwn) && (
+                      {/* Avatar Column */}
+                      {!(isModernLayout && isOwn) && (
                       <div className="flex-shrink-0 mt-1">
                         <Avatar emoji={sender?.avatar_emoji || '?'} photoUrl={sender?.photo_url || null} size="md" />
                       </div>
                     )}
 
-                    {/* Content Column */}
-                    <div className={`flex-1 min-w-0 space-y-1.5 ${isModernLayout && isOwn ? 'flex flex-col items-end' : ''}`}>
-                      {!(isModernLayout && isOwn) && (
+                      {/* Content Column */}
+                      <div className={`flex-1 min-w-0 space-y-1.5 ${isModernLayout && isOwn ? 'flex flex-col items-end' : ''}`}>
+                        {!(isModernLayout && isOwn) && (
                         <div className="flex items-baseline gap-2">
                           <span className={`font-bold ${isOwn ? 'text-warm-900 dark:text-warm-100' : 'text-primary-600 dark:text-primary-400'}`}>
                             {sender?.display_name || 'Unknown'}
@@ -1842,7 +2165,7 @@ export default function ConversationPage() {
                         </div>
                       )}
 
-                      {message.image_url && (
+                        {message.image_url && (
                         <img
                           src={message.image_url}
                           alt="Shared image"
@@ -1851,7 +2174,7 @@ export default function ConversationPage() {
                         />
                       )}
 
-                      {isDeviceGreetingMessage && deviceActivityMessages.filter((deviceMessage) => !deviceMessage.deleted).length > 0 && (
+                        {isDeviceGreetingMessage && deviceActivityMessages.filter((deviceMessage) => !deviceMessage.deleted).length > 0 && (
                         <DeviceActivityCard
                           messages={deviceActivityMessages}
                           appStyle={deviceActivityAppStyle}
@@ -1859,15 +2182,22 @@ export default function ConversationPage() {
                         />
                       )}
 
-                      {displayContent && displayContent !== 'Sent an image' && (
-                        <div className={`text-[15px] sm:text-base leading-relaxed text-warm-800 dark:text-warm-200 whitespace-pre-wrap font-serif
-                          ${isModernLayout ? `px-4 py-2.5 rounded-2xl max-w-[85%] ${
-                            isOwn 
-                              ? (aesthetics.chatStyle === 'imessage' ? 'bg-[#007AFF] text-white rounded-tr-sm' : 'bg-primary-600 text-white rounded-tr-sm') 
-                              : (aesthetics.chatStyle === 'imessage' ? 'bg-[#E5E5EA] text-black dark:bg-[#262628] dark:text-white rounded-tl-sm' : 'bg-warm-100 dark:bg-warm-900 rounded-tl-sm')
-                          }` : ''}
-                        `}>
-                          {editingMessageId === message.id ? (
+                        {displayContent &&
+                          displayContent !== "Sent an image" && (
+                            <div
+                              className={`text-[15px] sm:text-base leading-relaxed text-warm-800 dark:text-warm-200 whitespace-pre-wrap font-serif
+                          ${
+                            isModernLayout
+                              ? `px-4 py-2.5 rounded-2xl max-w-[85%] ${
+                                  isOwn
+                                    ? aesthetics.chatStyle === 'imessage' ? 'bg-[#007AFF] text-white rounded-tr-sm' : 'bg-primary-600 text-white rounded-tr-sm'
+                                    : aesthetics.chatStyle === 'imessage' ? 'bg-[#E5E5EA] text-black dark:bg-[#262628] dark:text-white rounded-tl-sm' : 'bg-warm-100 dark:bg-warm-900 rounded-tl-sm'
+                                }`
+                              : ""
+                          }
+                        `}
+                            >
+                              {editingMessageId === message.id ? (
                             <div className="mt-1 flex flex-col gap-2">
                               <textarea
                                 value={editContent}
@@ -1875,13 +2205,13 @@ export default function ConversationPage() {
                                 className="w-full bg-white dark:bg-warm-900 border border-warm-300 dark:border-warm-700 rounded-lg p-2 text-sm focus:outline-none focus:border-red-500 min-h-[80px]"
                               />
                               <div className="flex justify-end gap-2">
-                                <button 
+                                <button
                                   onClick={() => setEditingMessageId(null)}
                                   className="text-xs px-3 py-1.5 rounded-md hover:bg-warm-200 dark:hover:bg-warm-800 text-warm-600 dark:text-warm-300 transition-colors font-medium"
                                 >
                                   Cancel
                                 </button>
-                                <button 
+                                <button
                                   onClick={handleSaveEdit}
                                   className="text-xs px-3 py-1.5 rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors font-medium"
                                 >
@@ -1892,33 +2222,35 @@ export default function ConversationPage() {
                           ) : (
                             displayContent
                           )}
-                        </div>
-                      )}
+                            </div>
+                          )}
 
-                      {/* Swiping Toolbar & Branching Controls */}
-                      {isAI && (
-                        <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-warm-400">
-                          <div className="flex items-center gap-1 bg-warm-900/60 px-2 py-0.5 rounded-lg border border-warm-800">
-                            <button
+                        {/* Swiping Toolbar & Branching Controls */}
+                        {isAI && (
+                          <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-warm-400">
+                            <div className="flex items-center gap-1 bg-warm-900/60 px-2 py-0.5 rounded-lg border border-warm-800">
+                              <button
                               onClick={() => handleSwipeChange(message.id, 'left')}
                               className="p-1 hover:text-white transition-colors font-bold"
                               title="Previous response variation"
                             >
                               ◀
                             </button>
-                            <span className="font-mono text-[11px] font-bold text-warm-200 px-1">
-                              {(swipesMap[message.id]?.currentIndex ?? 0) + 1} / {swipesMap[message.id]?.variations.length || 1}
-                            </span>
-                            <button
+                              <span className="font-mono text-[11px] font-bold text-warm-200 px-1">
+                                {(swipesMap[message.id]?.currentIndex ?? 0) + 1}{" "}
+                                /{" "}
+                                {swipesMap[message.id]?.variations.length || 1}
+                              </span>
+                              <button
                               onClick={() => handleSwipeChange(message.id, 'right')}
                               className="p-1 hover:text-white transition-colors font-bold"
                               title="Next response variation"
                             >
                               ▶
                             </button>
-                          </div>
+                            </div>
 
-                          <button
+                            <button
                             onClick={() => handleSwipeNew(message.id)}
                             className="p-1 px-2 rounded-lg bg-warm-800/60 hover:bg-warm-750 text-warm-300 hover:text-white transition-colors flex items-center gap-1 font-bold text-[11px] border border-warm-700/50"
                             title="Generate new swipe variation"
@@ -1927,8 +2259,8 @@ export default function ConversationPage() {
                             <span>Swipe New</span>
                           </button>
 
-                          {/* Character.ai Audio Voice Playback Speaker */}
-                          <button
+                            {/* Character.ai Audio Voice Playback Speaker */}
+                            <button
                             onClick={() => {
                               if (speakingMessageId === message.id) {
                                 voiceEngine.stop();
@@ -1947,11 +2279,13 @@ export default function ConversationPage() {
                             }`}
                             title="Play character voice audio (Character.ai style)"
                           >
-                            <Volume2 size={13} className={speakingMessageId === message.id ? 'animate-bounce' : ''} />
-                            <span>{speakingMessageId === message.id ? 'Stop Voice' : 'Listen Voice'}</span>
-                          </button>
+                              <Volume2 size={13} className={speakingMessageId === message.id ? 'animate-bounce' : ''} />
+                              <span>
+                                {speakingMessageId === message.id ? 'Stop Voice' : 'Listen Voice'}
+                              </span>
+                            </button>
 
-                          <button
+                            <button
                             onClick={() => handleBranchFromMessage(message.id)}
                             className="p-1 px-2 rounded-lg bg-purple-950/40 hover:bg-purple-900/60 text-purple-300 hover:text-white transition-colors flex items-center gap-1 font-bold text-[11px] border border-purple-800/40"
                             title="Branch conversation from here"
@@ -1959,12 +2293,12 @@ export default function ConversationPage() {
                             <Brain size={11} />
                             <span>Branch</span>
                           </button>
-                        </div>
-                      )}
-                    </div>
+                          </div>
+                        )}
+                      </div>
 
-                    {/* Hover Actions */}
-                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-white/90 dark:bg-warm-800/90 backdrop-blur-sm px-2 py-1 rounded-lg border border-warm-200 dark:border-warm-700 shadow-sm">
+                      {/* Hover Actions */}
+                      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-white/90 dark:bg-warm-800/90 backdrop-blur-sm px-2 py-1 rounded-lg border border-warm-200 dark:border-warm-700 shadow-sm">
                       <button
                         onClick={() => togglePinMessage(message.id)}
                         className={`p-1.5 rounded-md transition-colors ${pinnedMessageIds.includes(message.id) ? 'text-amber-500 bg-amber-500/10' : 'text-warm-500 hover:text-amber-500 hover:bg-warm-100 dark:hover:bg-warm-700'}`}
@@ -1972,17 +2306,17 @@ export default function ConversationPage() {
                       >
                         📌
                       </button>
-                      <button 
+                      <button
                         className="p-1.5 text-warm-500 hover:text-warm-900 dark:hover:text-white rounded-md hover:bg-warm-100 dark:hover:bg-warm-700 transition-colors"
                         title="Copy message"
                         onClick={() => navigator.clipboard.writeText(message.content || '')}
                       >
                         <Copy size={14} />
                       </button>
-                      
+
                       {isOwn && (
                         <>
-                          <button 
+                          <button
                             onClick={() => {
                               setEditingMessageId(message.id);
                               setEditContent(message.content || '');
@@ -2025,7 +2359,7 @@ export default function ConversationPage() {
                           >
                             <Volume2 size={14} />
                           </button>
-                          <button 
+                          <button
                             onClick={() => {
                               setEditingMessageId(message.id);
                               setEditContent(message.content || '');
@@ -2036,7 +2370,7 @@ export default function ConversationPage() {
                             <Edit3 size={14} />
                           </button>
                           {index === messages.length - 1 && (
-                            <button 
+                            <button
                               onClick={() => handleRegenerateMessage(message.id)}
                               className="p-1.5 text-warm-500 hover:text-primary-600 dark:hover:text-primary-400 rounded-md hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
                               title="Regenerate response"
@@ -2047,25 +2381,27 @@ export default function ConversationPage() {
                         </>
                       )}
                     </div>
-                  </div>
-                );
-              })
-            )}
+                    </div>
+                  );
+                })
+              )}
 
-        {/* Typing indicator */}
-        {getTypingDisplay() && (
-          <div className="flex items-center gap-2 px-2">
-            <div className="flex gap-1">
+              {/* Typing indicator */}
+              {getTypingDisplay() && (
+                <div className="flex items-center gap-2 px-2">
+                  <div className="flex gap-1">
               <span className="w-2 h-2 bg-warm-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
               <span className="w-2 h-2 bg-warm-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
               <span className="w-2 h-2 bg-warm-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
-            <span className="text-xs text-warm-500 font-medium">{getTypingDisplay()}</span>
-          </div>
-        )}
+                  <span className="text-xs text-warm-500 font-medium">
+                    {getTypingDisplay()}
+                  </span>
+                </div>
+              )}
 
-        {/* Roleplay Safety Intervention System Card */}
-        {isRoleplayPaused && (
+              {/* Roleplay Safety Intervention System Card */}
+              {isRoleplayPaused && (
           <RoleplaySafetyPauseCard
             onEditPreviousMessage={() => {
               const lastUserMsg = [...messages].reverse().find(m => m.sender_id === user?.id);
@@ -2086,11 +2422,35 @@ export default function ConversationPage() {
           />
         )}
 
-            <div ref={messagesEndRef} className="h-4" />
-          </div>
+              <div ref={messagesEndRef} className="h-4" />
+            </div>
 
-          {/* Image Preview */}
-          {imagePreview && (
+            {draftStorageFailed && (
+              <p role="alert" className="px-4 py-2 text-sm text-amber-600">
+                This browser cannot save a recovery copy. Keep this tab open or
+                copy your text before leaving.
+              </p>
+            )}
+            {failedAiBots.length > 0 && (
+              <div
+                role="status"
+                className="flex flex-wrap items-center gap-3 px-4 py-2 text-sm"
+              >
+                <span>
+                  Your message is saved. A character reply is still pending.
+                </span>
+                <button
+                  type="button"
+                  disabled={typingUsers.length > 0}
+                  onClick={() => void triggerAiReplies(failedAiBots)}
+                  className="min-h-11 rounded-xl border px-3 py-2 disabled:opacity-50"
+                >
+                  Retry character reply
+                </button>
+              </div>
+            )}
+            {/* Image Preview */}
+            {imagePreview && (
             <div className="px-4 pb-2">
               <div className="relative inline-block border border-warm-200 dark:border-warm-700 rounded-xl p-1 bg-white dark:bg-warm-800 shadow-sm">
                 <img src={imagePreview} alt="Preview" className="h-24 rounded-lg object-cover" />
@@ -2104,11 +2464,10 @@ export default function ConversationPage() {
             </div>
           )}
 
-          {/* Message Input Area */}
-          <div className="flex-none p-4 sm:p-6 bg-white dark:bg-warm-950 border-t border-warm-100 dark:border-warm-800/50">
-            <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto relative">
-              
-              {showEmojiPicker && (
+            {/* Message Input Area */}
+            <div className="flex-none p-4 sm:p-6 bg-white dark:bg-warm-950 border-t border-warm-100 dark:border-warm-800/50">
+              <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto relative">
+                {showEmojiPicker && (
                 <div className="absolute bottom-full mb-4 left-0 animate-scale-in z-50 shadow-2xl rounded-2xl border border-warm-200 dark:border-warm-700">
                   <EmojiPicker
                     onSelect={emoji => {
@@ -2121,10 +2480,9 @@ export default function ConversationPage() {
                 </div>
               )}
 
-              <div className="flex items-end gap-3 bg-warm-50 dark:bg-warm-900 border border-warm-200 dark:border-warm-700 rounded-3xl p-2 shadow-sm focus-within:border-red-400 dark:focus-within:border-red-600 focus-within:ring-4 focus-within:ring-red-500/10 transition-all">
-                
-                {/* Studio Action Bar Pills (+ Narrate, Actions, Thoughts, OOC) */}
-                <div className="flex items-center gap-2 px-3 pt-2.5 overflow-x-auto text-xs font-bold border-b border-warm-800/40 pb-2 scrollbar-none select-none">
+                <div className="flex items-end gap-3 bg-warm-50 dark:bg-warm-900 border border-warm-200 dark:border-warm-700 rounded-3xl p-2 shadow-sm focus-within:border-red-400 dark:focus-within:border-red-600 focus-within:ring-4 focus-within:ring-red-500/10 transition-all">
+                  {/* Studio Action Bar Pills (+ Narrate, Actions, Thoughts, OOC) */}
+                  <div className="flex items-center gap-2 px-3 pt-2.5 overflow-x-auto text-xs font-bold border-b border-warm-800/40 pb-2 scrollbar-none select-none">
                   <button
                     type="button"
                     onClick={() => {
@@ -2168,9 +2526,9 @@ export default function ConversationPage() {
                   </button>
                 </div>
 
-                <div className="flex items-center gap-3 p-3">
-                  <input type="file" ref={fileInputRef} accept="image/*" onChange={handleImageSelect} className="hidden" />
-                  <button
+                  <div className="flex items-center gap-3 p-3">
+                    <input type="file" ref={fileInputRef} accept="image/*" onChange={handleImageSelect} className="hidden" />
+                    <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     className="p-2 rounded-xl text-warm-400 hover:text-white hover:bg-warm-800 transition-colors"
@@ -2180,7 +2538,7 @@ export default function ConversationPage() {
                     <ImageIcon size={18} />
                   </button>
 
-                  <textarea
+                    <textarea
                     ref={msgInputRef}
                     value={messageInput}
                     onChange={e => handleInputChange(e.target.value)}
@@ -2198,70 +2556,82 @@ export default function ConversationPage() {
                     rows={1}
                   />
 
-                  {/* Gold Metallic Send Feather Button */}
-                  <button
-                    type="submit"
-                    disabled={sending || (!messageInput.trim() && !imageFile)}
-                    className="bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-warm-950 font-bold rounded-2xl p-3 flex items-center justify-center disabled:opacity-40 transition-all shadow-lg shadow-amber-500/20 active:scale-95 shrink-0"
-                    title="Send message"
-                  >
-                    {sending || uploadingImage ? (
+                    {/* Gold Metallic Send Feather Button */}
+                    <button
+                      type="submit"
+                      disabled={
+                        sending ||
+                        (!messageInput.trim() &&
+                          !imageFile &&
+                          !messageAttemptRef.current?.imageUrl)
+                      }
+                      className="bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-warm-950 font-bold rounded-2xl p-3 flex items-center justify-center disabled:opacity-40 transition-all shadow-lg shadow-amber-500/20 active:scale-95 shrink-0"
+                      title="Send message"
+                    >
+                      {sending || uploadingImage ? (
                       <Loader2 size={18} className="animate-spin text-warm-950" />
                     ) : (
                       <Send size={18} />
                     )}
-                  </button>
+                    </button>
+                  </div>
                 </div>
-              </div>
-              
-              {messageInput.length > MSG_LIMIT * 0.85 && (
+
+                {messageInput.length > MSG_LIMIT * 0.85 && (
                 <p className={`absolute -bottom-5 right-4 text-[10px] font-medium tracking-wide ${messageInput.length > MSG_LIMIT ? 'text-red-500' : 'text-warm-400'}`}>
                   {messageInput.length} / {MSG_LIMIT}
                 </p>
               )}
-            </form>
+              </form>
+            </div>
           </div>
-        </div>
 
-        {/* Right Sidebar: Context Drawer */}
-        {showContextDrawer && conversation?.type === 'dm' && otherUser && (
-          <div className="hidden md:flex flex-col w-80 flex-shrink-0 bg-warm-50 dark:bg-warm-900 border-l border-warm-200 dark:border-warm-800 overflow-y-auto animate-fade-in">
-            <div className="p-6 space-y-6">
-              {/* Character Profile Summary */}
-              <div className="text-center space-y-3">
-                <Avatar emoji={otherUser.avatar_emoji} photoUrl={otherUser.photo_url} size="xl" />
-                <div>
-                  <h2 className="font-serif font-bold text-xl text-warm-900 dark:text-warm-50">{otherUser.display_name}</h2>
-                  <p className="text-sm text-warm-500">@{otherUser.username}</p>
+          {/* Right Sidebar: Context Drawer */}
+          {showContextDrawer && conversation?.type === "dm" && otherUser && (
+            <div className="hidden md:flex flex-col w-80 flex-shrink-0 bg-warm-50 dark:bg-warm-900 border-l border-warm-200 dark:border-warm-800 overflow-y-auto animate-fade-in">
+              <div className="p-6 space-y-6">
+                {/* Character Profile Summary */}
+                <div className="text-center space-y-3">
+                  <Avatar emoji={otherUser.avatar_emoji} photoUrl={otherUser.photo_url} size="xl" />
+                  <div>
+                    <h2 className="font-serif font-bold text-xl text-warm-900 dark:text-warm-50">
+                      {otherUser.display_name}
+                    </h2>
+                    <p className="text-sm text-warm-500">
+                      @{otherUser.username}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <hr className="border-warm-200 dark:border-warm-800" />
+                <hr className="border-warm-200 dark:border-warm-800" />
 
-              {/* Memory / Lore Section Placeholder & Live SillyTavern Lore Trigger Inspector */}
-              <div className="space-y-3">
-                <h3 className="font-bold text-sm text-warm-900 dark:text-warm-100 uppercase tracking-wider flex items-center gap-2">
+                {/* Memory / Lore Section Placeholder & Live SillyTavern Lore Trigger Inspector */}
+                <div className="space-y-3">
+                  <h3 className="font-bold text-sm text-warm-900 dark:text-warm-100 uppercase tracking-wider flex items-center gap-2">
                   <BookOpen size={14} className="text-amber-500" /> Triggered Lore &amp; Context
                 </h3>
 
-                {loreTriggerResult.triggeredEntries.length === 0 ? (
+                  {loreTriggerResult.triggeredEntries.length === 0 ? (
                   <p className="text-xs text-warm-500 leading-relaxed bg-white dark:bg-warm-800 p-3.5 rounded-xl border border-warm-200 dark:border-warm-700 italic">
                     No lorebook entries triggered yet. Mention keywords from your world or persona lorebooks to inject them into chat context.
                   </p>
                 ) : (
-                  <div className="space-y-2">
-                    {loreTriggerResult.triggeredEntries.map((entry) => {
-                      const matches = loreTriggerResult.matchedKeywordsMap[entry.id] || [];
-                      return (
-                        <div key={entry.id} className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs space-y-1">
-                          <div className="flex items-center justify-between font-bold">
+                    <div className="space-y-2">
+                      {loreTriggerResult.triggeredEntries.map((entry) => {
+                        const matches =
+                          loreTriggerResult.matchedKeywordsMap[entry.id] || [];
+                        return (
+                          <div key={entry.id} className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs space-y-1">
+                            <div className="flex items-center justify-between font-bold">
                             <span className="truncate">{entry.title}</span>
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">
                               Order: {entry.insertion_order}
                             </span>
                           </div>
-                          <p className="text-[11px] opacity-80 line-clamp-2">{entry.content}</p>
-                          {matches.length > 0 && (
+                            <p className="text-[11px] opacity-80 line-clamp-2">
+                              {entry.content}
+                            </p>
+                            {matches.length > 0 && (
                             <div className="flex items-center gap-1 flex-wrap pt-1">
                               <span className="text-[10px] opacity-60">Matched:</span>
                               {matches.map((m, idx) => (
@@ -2271,17 +2641,17 @@ export default function ConversationPage() {
                               ))}
                             </div>
                           )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
 
-              <hr className="border-warm-800" />
+                <hr className="border-warm-800" />
 
-              {/* Model Settings & Sliders Inspector (Matching Mockup) */}
-              <div className="space-y-4">
+                {/* Model Settings & Sliders Inspector (Matching Mockup) */}
+                <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-xs text-warm-400 uppercase tracking-wider">Model Settings</h3>
                   <button onClick={() => setShowSettingsDrawer(true)} className="text-[11px] text-amber-400 font-bold hover:underline">
@@ -2354,32 +2724,36 @@ export default function ConversationPage() {
                   </div>
                 </div>
               </div>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
-      {/* Deliberate public-scene snapshot modal. This never changes the private conversation itself. */}
-      {showPublishSceneModal && canPublishScene && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/65 p-0 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="share-scene-title">
-          <div className="w-full max-w-lg rounded-t-3xl border border-warm-200 bg-white p-6 shadow-2xl dark:border-warm-700 dark:bg-warm-900 sm:rounded-3xl">
-            <div className="flex items-start justify-between gap-4">
-              <div>
+        {/* Deliberate public-scene snapshot modal. This never changes the private conversation itself. */}
+        {showPublishSceneModal && canPublishScene && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/65 p-0 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="share-scene-title">
+            <div className="w-full max-w-lg rounded-t-3xl border border-warm-200 bg-white p-6 shadow-2xl dark:border-warm-700 dark:bg-warm-900 sm:rounded-3xl">
+              <div className="flex items-start justify-between gap-4">
+                <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-300">Private by default</p>
                 <h2 id="share-scene-title" className="mt-1 font-serif text-2xl font-bold text-warm-900 dark:text-white">Share a scene, not your live chat</h2>
               </div>
-              <button onClick={() => setShowPublishSceneModal(false)} className="rounded-xl p-2 text-warm-500 transition hover:bg-warm-100 dark:hover:bg-warm-800" aria-label="Close share scene dialog"><X size={20} /></button>
-            </div>
-            <p className="mt-3 text-sm leading-relaxed text-warm-600 dark:text-warm-300">CHIMERA will make a separate snapshot of the messages currently in this roleplay. Future messages, edits, and private notes remain private.</p>
+                <button onClick={() => setShowPublishSceneModal(false)} className="rounded-xl p-2 text-warm-500 transition hover:bg-warm-100 dark:hover:bg-warm-800" aria-label="Close share scene dialog">
+                  <X size={20} />
+                </button>
+              </div>
+              <p className="mt-3 text-sm leading-relaxed text-warm-600 dark:text-warm-300">CHIMERA will make a separate snapshot of the messages currently in this roleplay. Future messages, edits, and private notes remain private.</p>
 
-            <div className="mt-6 space-y-4">
-              <label className="block text-sm font-bold text-warm-800 dark:text-warm-100">Scene title
+              <div className="mt-6 space-y-4">
+                <label className="block text-sm font-bold text-warm-800 dark:text-warm-100">Scene title
                 <input value={sceneTitle} onChange={(event) => setSceneTitle(event.target.value)} maxLength={140} className="mt-2 w-full rounded-xl border border-warm-200 bg-white px-3 py-2.5 text-sm text-warm-900 outline-none transition focus:border-emerald-500 dark:border-warm-700 dark:bg-warm-800 dark:text-white" placeholder="The title readers will see" />
               </label>
-              <label className="block text-sm font-bold text-warm-800 dark:text-warm-100">A short note <span className="font-normal text-warm-500">(optional)</span>
-                <textarea value={sceneSummary} onChange={(event) => setSceneSummary(event.target.value)} maxLength={600} rows={3} className="mt-2 w-full resize-none rounded-xl border border-warm-200 bg-white px-3 py-2.5 text-sm text-warm-900 outline-none transition focus:border-emerald-500 dark:border-warm-700 dark:bg-warm-800 dark:text-white" placeholder="Give readers a little context without revealing more than you mean to." />
-              </label>
-              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block text-sm font-bold text-warm-800 dark:text-warm-100">
+                  A short note{" "}
+                  <span className="font-normal text-warm-500">(optional)</span>
+                  <textarea value={sceneSummary} onChange={(event) => setSceneSummary(event.target.value)} maxLength={600} rows={3} className="mt-2 w-full resize-none rounded-xl border border-warm-200 bg-white px-3 py-2.5 text-sm text-warm-900 outline-none transition focus:border-emerald-500 dark:border-warm-700 dark:bg-warm-800 dark:text-white" placeholder="Give readers a little context without revealing more than you mean to." />
+                </label>
+                <div className="grid gap-3 sm:grid-cols-2">
                 <label className="rounded-2xl border border-warm-200 p-3 dark:border-warm-700">
                   <span className="block text-xs font-bold uppercase tracking-wide text-warm-500">Visibility</span>
                   <select value={sceneVisibility} onChange={(event) => setSceneVisibility(event.target.value as 'unlisted' | 'public')} className="mt-2 w-full bg-transparent text-sm font-bold text-warm-900 outline-none dark:text-white">
@@ -2395,23 +2769,28 @@ export default function ConversationPage() {
                   </select>
                 </label>
               </div>
-            </div>
+              </div>
 
-            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-              <button onClick={() => setShowPublishSceneModal(false)} disabled={publishingScene} className="rounded-xl px-4 py-2.5 text-sm font-bold text-warm-600 transition hover:bg-warm-100 disabled:opacity-50 dark:text-warm-300 dark:hover:bg-warm-800">Keep it private</button>
-              <button onClick={handlePublishScene} disabled={publishingScene} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60">
-                {publishingScene ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />} {sceneVisibility === 'public' ? 'Publish scene' : 'Create unlisted scene'}
-              </button>
+              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button onClick={() => setShowPublishSceneModal(false)} disabled={publishingScene} className="rounded-xl px-4 py-2.5 text-sm font-bold text-warm-600 transition hover:bg-warm-100 disabled:opacity-50 dark:text-warm-300 dark:hover:bg-warm-800">Keep it private</button>
+                <button onClick={handlePublishScene} disabled={publishingScene} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60">
+                  {publishingScene ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Share2 size={16} />
+                  )}{" "}
+                  {sceneVisibility === 'public' ? 'Publish scene' : 'Create unlisted scene'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Group Settings Modal */}
-      {showGroupSettings && conversation?.type === 'group' && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
-          <div className="bg-white dark:bg-warm-800 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md mx-4 max-h-[80vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white dark:bg-warm-800 border-b border-warm-200 dark:border-warm-700 p-4 flex items-center justify-between rounded-t-3xl">
+        {/* Group Settings Modal */}
+        {showGroupSettings && conversation?.type === "group" && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
+            <div className="bg-white dark:bg-warm-800 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md mx-4 max-h-[80vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white dark:bg-warm-800 border-b border-warm-200 dark:border-warm-700 p-4 flex items-center justify-between rounded-t-3xl">
               <h2 className="font-serif text-xl font-bold text-warm-900 dark:text-warm-100">
                 Group Settings
               </h2>
@@ -2420,9 +2799,9 @@ export default function ConversationPage() {
               </button>
             </div>
 
-            <div className="p-4 space-y-4">
-              {/* Group Name */}
-              <div>
+              <div className="p-4 space-y-4">
+                {/* Group Name */}
+                <div>
                 <label className="text-sm font-medium text-warm-700 dark:text-warm-300 mb-2 block">Group Name</label>
                 {editingName ? (
                   <div className="flex gap-2">
@@ -2450,8 +2829,8 @@ export default function ConversationPage() {
                 )}
               </div>
 
-              {/* Members */}
-              <div>
+                {/* Members */}
+                <div>
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-sm font-medium text-warm-700 dark:text-warm-300">
                     Members ({participants.length})
@@ -2495,13 +2874,13 @@ export default function ConversationPage() {
                 </div>
               </div>
 
-              {/* Add Members Panel */}
-              {showAddMembers && (
-                <div className="space-y-3">
-                  <label className="text-sm font-medium text-warm-700 dark:text-warm-300 block">
+                {/* Add Members Panel */}
+                {showAddMembers && (
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-warm-700 dark:text-warm-300 block">
                     Add members
                   </label>
-                  <div className="relative">
+                    <div className="relative">
                     <Search size={16} className="absolute left-3 top-2.5 text-warm-400" />
                     <input
                       type="text"
@@ -2511,20 +2890,24 @@ export default function ConversationPage() {
                       className="input-field pl-9 py-1.5 text-sm"
                     />
                   </div>
-                  {followedUsers.length === 0 ? (
+                    {followedUsers.length === 0 ? (
                     <p className="text-sm text-warm-500 py-4 text-center">
                       No matching users found
                     </p>
                   ) : (
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {followedUsers.map(fu => (
-                        <div key={fu.user_id} className="flex items-center gap-3 p-2 rounded-xl">
-                          <Avatar emoji={fu.avatar_emoji} photoUrl={fu.photo_url} size="sm" />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-warm-900 dark:text-warm-100 truncate text-sm">{fu.display_name}</p>
-                            <p className="text-xs text-warm-500">@{fu.username}</p>
-                          </div>
-                          <button
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {followedUsers.map((fu) => (
+                          <div key={fu.user_id} className="flex items-center gap-3 p-2 rounded-xl">
+                            <Avatar emoji={fu.avatar_emoji} photoUrl={fu.photo_url} size="sm" />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-warm-900 dark:text-warm-100 truncate text-sm">
+                                {fu.display_name}
+                              </p>
+                              <p className="text-xs text-warm-500">
+                                @{fu.username}
+                              </p>
+                            </div>
+                            <button
                             onClick={() => {
                               handleAddMember(fu.user_id);
                               setMemberSearchQuery('');
@@ -2533,36 +2916,36 @@ export default function ConversationPage() {
                           >
                             Add
                           </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-              {/* Leave Group */}
-              <button
+                {/* Leave Group */}
+                <button
                 onClick={handleLeaveGroup}
                 className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
               >
                 <LogOut size={18} />
                 Leave Group
               </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* In-Chat Persona Switcher Drawer */}
-      <InChatPersonaDrawer
+        {/* In-Chat Persona Switcher Drawer */}
+        <InChatPersonaDrawer
         isOpen={showPersonaDrawer}
         onClose={() => setShowPersonaDrawer(false)}
         activePersonaId={activePersona?.id}
         onSelectPersona={(p) => setActivePersona(p)}
       />
 
-      {/* Character Expression Manager Modal */}
-      <CharacterExpressionManagerModal
+        {/* Character Expression Manager Modal */}
+        <CharacterExpressionManagerModal
         isOpen={showExpressionModal}
         onClose={() => setShowExpressionModal(false)}
         characterName={otherUser?.display_name || 'AI Character'}
@@ -2570,15 +2953,15 @@ export default function ConversationPage() {
         onSaveExpressions={(updated) => setCharacterExpressions(updated)}
       />
 
-      {/* World Relationship Network Modal */}
-      <WorldRelationshipModal
+        {/* World Relationship Network Modal */}
+        <WorldRelationshipModal
         isOpen={showWorldModal}
         onClose={() => setShowWorldModal(false)}
-        worldName={otherUser?.display_name ? `${otherUser.display_name}'s Realm` : 'Eldoria Nexus'}
+        characterProfileId={otherUser?.user_id}
       />
 
-      {/* Roleplay Web Novel Exporter Studio */}
-      <TranscriptsExporterModal
+        {/* Roleplay Web Novel Exporter Studio */}
+        <TranscriptsExporterModal
         isOpen={showExporterModal}
         onClose={() => setShowExporterModal(false)}
         characterName={otherUser?.display_name || 'AI Character'}
@@ -2587,16 +2970,16 @@ export default function ConversationPage() {
         conversationTitle={conversation?.name || `Chronicle of ${otherUser?.display_name || 'Hero'}`}
       />
 
-      {/* Multilingual AI Translation Modal */}
-      <LanguageSelectorModal
+        {/* Multilingual AI Translation Modal */}
+        <LanguageSelectorModal
         isOpen={showLangModal}
         onClose={() => setShowLangModal(false)}
         currentLanguage={targetLang}
         onSelectLanguage={(lang) => setTargetLang(lang)}
       />
 
-      {/* Add AI Character to Group Room Modal */}
-      <AddCharacterToGroupModal
+        {/* Add AI Character to Group Room Modal */}
+        <AddCharacterToGroupModal
         isOpen={showAddCharModal}
         onClose={() => setShowAddCharModal(false)}
         existingIds={multiParticipants.map(p => p.character_id)}

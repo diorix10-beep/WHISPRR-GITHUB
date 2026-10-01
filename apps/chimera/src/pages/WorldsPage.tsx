@@ -1,3 +1,4 @@
+import { CollaborationInvitations } from '../components/collaboration/CollaborationInvitations';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Globe, Lock, Eye, Map, Users, Clock, MoreHorizontal, Copy, Trash2, Compass, BookOpen, Layers, Sparkles, Flame } from 'lucide-react';
@@ -37,7 +38,10 @@ export default function WorldsPage() {
 
       const { data, error } = await query;
       if (error) throw error;
-      setWorlds(data || []);
+      const {data:members}=await supabase.from('project_collaborators').select('project_id').eq('project_type','world').eq('status','accepted').eq('user_id',profile.user_id);
+      const ids=(members||[]).map(m=>m.project_id);
+      const {data:shared}=ids.length?await supabase.from('worlds').select('*').in('id',ids):{data:[]};
+      setWorlds([...new globalThis.Map([...(data||[]),...(shared||[]).filter(w=>!searchQuery.trim() || w.name.toLowerCase().includes(searchQuery.toLowerCase()))].map(w=>[w.id,w])).values()]);
     } catch (err: any) {
       showToast(err.message || 'Error loading worlds', 'error');
     } finally {
@@ -63,6 +67,7 @@ export default function WorldsPage() {
   };
 
   const handleDelete = async (id: string) => {
+    if(worlds.find(w=>w.id===id)?.user_id!==profile?.user_id){showToast('Only the creator can delete this world.','error');return;}
     if (!confirm('Delete this world? All locations, factions, and timeline events will be lost.')) return;
     try {
       const { error } = await supabase.from('worlds').delete().eq('id', id);
@@ -80,7 +85,7 @@ export default function WorldsPage() {
       const { data } = await supabase.from('worlds').select('*').eq('id', id).single();
       if (!data || !profile) return;
       const { id: _id, created_at, updated_at, ...rest } = data;
-      const { error } = await supabase.from('worlds').insert({ ...rest, name: `${data.name} (Copy)` });
+      const { error } = await supabase.from('worlds').insert({ ...rest, canvas_layout:undefined, canvas_revision:undefined, user_id:profile.user_id, name: `${data.name} (Copy)` });
       if (error) throw error;
       showToast('World duplicated', 'success');
       fetchWorlds();
@@ -103,6 +108,7 @@ export default function WorldsPage() {
   return (
     <div className="min-h-screen bg-transparent text-warm-900 dark:text-warm-50 font-sans pb-24 relative overflow-hidden transition-colors duration-300">
       
+      <CollaborationInvitations onChanged={()=>void fetchWorlds()}/>
       {/* Ambient Purple Glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-b from-purple-600/15 via-indigo-600/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
@@ -222,6 +228,10 @@ export default function WorldsPage() {
                 <div
                   key={w.id}
                   className="group relative rounded-3xl bg-white dark:bg-warm-850 border border-warm-200 dark:border-warm-750 overflow-hidden hover:border-purple-400 dark:hover:border-purple-600 hover:shadow-xl hover:shadow-purple-500/10 transition-all cursor-pointer flex flex-col justify-between"
+                  role="link"
+                  tabIndex={0}
+                  aria-label={`Open world ${w.name}`}
+                  onKeyDown={e=>{if(e.target===e.currentTarget && (e.key==='Enter' || e.key===' ')){e.preventDefault();navigate(`/worlds/${w.id}`)}}}
                   onClick={() => navigate(`/worlds/${w.id}`)}
                 >
                   <div className="h-36 bg-gradient-to-br from-purple-900/60 via-indigo-950/40 to-warm-900 flex items-center justify-center relative overflow-hidden">
