@@ -804,7 +804,7 @@ export default async function handler(req: Request) {
         "A retry identifier is required for regeneration.",
       );
     const turn = is_initiation
-      ? `opening:${allMessages.at(-1)?.id || "empty"}:${personaId || "self"}`
+      ? `opening:${allMessages[allMessages.length - 1]?.id || "empty"}:${personaId || "self"}`
       : is_swipe
         ? `swipe:${target_message_id}:${retryId}`
         : `turn:${latestHumanMessage?.id || "empty"}:${personaId || "self"}`;

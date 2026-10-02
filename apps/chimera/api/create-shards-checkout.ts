@@ -46,7 +46,7 @@ export default async function handler(req: NodeRequest, res: NodeResponse) {
     const retryHeader = req.headers['idempotency-key'];
     const requestId = Array.isArray(retryHeader) ? retryHeader[0] : retryHeader;
     if (!uuid(requestId)) return res.status(400).json({ error: 'A checkout retry identifier is required.' });
-    if (!package_id || !Object.hasOwn(SHARDS_PACKAGES,package_id)) return res.status(400).json({ error: 'Choose a valid SHARDS package.' });
+    if (!package_id || !Object.prototype.hasOwnProperty.call(SHARDS_PACKAGES,package_id)) return res.status(400).json({ error: 'Choose a valid SHARDS package.' });
 
     const pack = SHARDS_PACKAGES[package_id as ShardsPackageId];
     const adminSupabase = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
