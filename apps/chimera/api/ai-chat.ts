@@ -1,5 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
-import { resolveLorebookContext, type RuntimeLorebookEntry } from '../src/lib/lorebookRuntime.js';
+import { loadLinkedLore } from "./_lib/linkedLore.js";
+import { AVAILABLE_CHAT_MODELS } from "../src/lib/chimeraModels.js";
+import { loadSceneRecall } from "./_lib/sceneRecall.js";
+import {
+  fingerprint,
+  finishRequest,
+  providerFetch,
+  readPayload,
+  requestFailure,
+  RequestError,
+  reserveRequest,
+  serverClient,
+  uuid,
+} from "./_lib/requestProtection.js";
 
 export const config = {
   runtime: 'edge',
@@ -50,6 +63,7 @@ interface PersonaData {
 }
 
 interface ChatMessage {
+  profiles?: { display_name?: string; role?: string } | null;
   sender_id: string;
   content: string;
 }
@@ -67,7 +81,7 @@ interface CharacterMemory {
  * model context. Scene canon is stored separately on the conversation and is
  * always compiled before this window.
  */
-function selectRecentHistory(messages: ChatMessage[]): ChatMessage[] {
+export function selectRecentHistory(messages: ChatMessage[]): ChatMessage[] {
   const maxMessages = 32;
   const maxCharacters = 28_000;
   const selected: ChatMessage[] = [];
@@ -82,6 +96,7 @@ function selectRecentHistory(messages: ChatMessage[]): ChatMessage[] {
     if (remainingCharacters <= 0 || selected.length >= maxMessages) break;
 
     selected.push({
+      ...message,
       sender_id: message.sender_id,
       // Keep the newest part of an unusually long message: it is usually the
       // current action, dialogue, or instruction that the character must answer.
@@ -145,7 +160,7 @@ function formatCharacterMemoryContext(memories: CharacterMemory[]): string {
  * - Partner (User) Persona & Relationship Dynamics
  * - Memory & Contextual Continuity
  */
-function buildSystemPrompt(
+export function buildSystemPrompt(
   character: CharacterData,
   botProfile: BotProfile,
   persona: PersonaData | null,
@@ -363,7 +378,8 @@ function buildSystemPrompt(
  * - Preference-Aware Generation (removes meta-commentary on forbidden word lists)
  * - Guardian Compliance Check
  */
-function validateAndSanitizeChimeraResponse(rawReply: string): { isCompliant: boolean; sanitizedReply: string; pauseTriggered?: boolean } {
+export function validateAndSanitizeChimeraResponse(rawReply: string): { isCompliant: boolean; sanitizedReply: string; pauseTriggered?: boolean;
+} {
   let text = rawReply.trim();
 
   // 1. Robotic Boilerplate & Customer Support Phrasing Filters
@@ -407,28 +423,35 @@ function validateAndSanitizeChimeraResponse(rawReply: string): { isCompliant: bo
 }
 
 export default async function handler(req: Request) {
-  if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
+  if (req.method !== "POST") {
+    return new Response("Method Not Allowed", { status: 405 });
   }
 
+  let admin: ReturnType<typeof serverClient> | undefined;
+  let reservation: Awaited<ReturnType<typeof reserveRequest>> | undefined;
+  let completed = false;
   try {
+    const payload = await readPayload(req);
     const {
       conversation_id,
       bot_user_id,
       is_initiation,
-    } = await req.json();
+      is_swipe,
+      target_message_id,
+      expected_content,
+    } = payload;
 
-    if (!conversation_id || !bot_user_id) {
+    if (!uuid(conversation_id) || !uuid(bot_user_id)) {
       return new Response(JSON.stringify({ error: 'Missing conversation_id or bot_user_id' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-    const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-    const authHeader = req.headers.get('Authorization');
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
+    const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || "";
+    admin = serverClient();
+    const authHeader = req.headers.get("Authorization");
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
@@ -462,6 +485,17 @@ export default async function handler(req: Request) {
       });
     }
 
+    if (
+      is_swipe &&
+      (typeof expected_content !== "string" || expected_content.length > 32000)
+    )
+      throw new RequestError(
+        400,
+        "The original response is required for safe regeneration.",
+      );
+    if (is_swipe && !uuid(target_message_id))
+      throw new RequestError(400, "Choose the response to regenerate.");
+
     // Conversation-owned canon is persistent. Linked lore remains optional
     // turn-specific context; browser-only Memory Nexus data is deliberately
     // not treated as durable character memory.
@@ -492,32 +526,41 @@ export default async function handler(req: Request) {
       });
     }
 
+    const [
+      { data: botMember, error: botMemberError },
+      { data: identity, error: identityError },
+    ] = await Promise.all([
+      supabase
+      .from('conversation_participants')
+      .select('user_id')
+      .eq('conversation_id', conversation_id)
+      .eq("user_id", bot_user_id)
+        .maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("role")
+        .eq("user_id", bot_user_id)
+        .maybeSingle(),
+    ]);
+    if (
+      botMemberError ||
+      !botMember ||
+      identityError ||
+      identity?.role !== "ai_character"
+    ) {
+      throw new RequestError(
+        403,
+        "This character is not a participant in your roleplay.",
+      );
+    }
+
     // Lore is resolved here, after the caller has been authenticated and the
     // character has been established. The browser may inspect shareable lore,
     // but it can never decide what arbitrary text reaches the model.
-    const lorebookAdmin = serviceRoleKey
-      ? createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } })
-      : null;
 
     // User-controlled memories are durable across devices and sessions. They
     // belong to this requester and this character only; scene-specific canon
     // is still read separately from the conversation below.
-    const { data: characterMemories, error: memoryError } = await supabase
-      .from('character_memories')
-      .select('content, memory_type, importance, expires_at')
-      .eq('character_id', character.id)
-      .eq('user_id', requester.id)
-      .order('importance', { ascending: false })
-      .order('updated_at', { ascending: false })
-      .limit(24);
-
-    if (memoryError) {
-      return new Response(JSON.stringify({ error: 'Failed to retrieve durable character memory' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
     // 2. Fetch bot profile details
     const { data: botProfile, error: profileError } = await supabase
       .from('profiles')
@@ -534,11 +577,13 @@ export default async function handler(req: Request) {
 
     // 3. Resolve the human participant
     const { data: participants } = await supabase
-      .from('conversation_participants')
-      .select('user_id, persona_id')
-      .eq('conversation_id', conversation_id);
+      .from("conversation_participants")
+      .select("user_id, persona_id, persona_selected")
+      .eq("conversation_id", conversation_id);
 
-    const humanParticipant = participants?.find(p => p.user_id !== bot_user_id);
+    const humanParticipant = participants?.find(
+      (p) => p.user_id === requester.id,
+    );
     const userId = humanParticipant?.user_id;
 
     // 4. Fetch the user's active persona (if any)
@@ -548,11 +593,18 @@ export default async function handler(req: Request) {
       // otherwise fall back to the user's default persona.
       let personaQuery = supabase
         .from('personas')
-        .select('name, description, gender, age, pronouns, personality, appearance, backstory, occupation')
+        .select(
+          "id, name, description, gender, age, pronouns, personality, appearance, backstory, occupation, relationships, lorebook_ids",
+        )
         .eq('user_id', userId);
 
       // Try to use persona_id from the participant record if available
-      if (humanParticipant?.persona_id) {
+      if (humanParticipant?.persona_selected && !humanParticipant.persona_id) {
+        personaQuery = personaQuery.eq(
+          "id",
+          "00000000-0000-0000-0000-000000000000",
+        );
+      } else if (humanParticipant?.persona_id) {
         personaQuery = personaQuery.eq('id', humanParticipant.persona_id);
       } else {
         personaQuery = personaQuery.eq('is_default', true);
@@ -568,13 +620,22 @@ export default async function handler(req: Request) {
     // conversations.memory_summary; the model receives a bounded recent window
     // so the character definition remains more important than old transcript
     // noise.
-    const { data: messages, error: msgError } = await supabase
+    const personaId =
+      (persona as unknown as { id?: string } | null)?.id || null;
+    let historyQuery = supabase
       .from('messages')
-      .select('sender_id, content')
+      .select(
+        "id, sender_id, content, persona_id, profiles:sender_id(role,display_name)",
+      )
       .eq('conversation_id', conversation_id)
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
+      .order("id", { ascending: false })
       .limit(80);
+    historyQuery = personaId
+      ? historyQuery.eq("persona_id", personaId)
+      : historyQuery.is("persona_id", null);
+    const { data: messages, error: msgError } = await historyQuery;
 
     if (msgError) {
       return new Response(JSON.stringify({ error: 'Failed to fetch conversation history' }), {
@@ -583,69 +644,71 @@ export default async function handler(req: Request) {
       });
     }
 
+    const targetMessage = is_swipe
+      ? (messages || []).find(
+          (message) =>
+            message.id === target_message_id &&
+            message.sender_id === bot_user_id,
+        )
+      : null;
+    if (is_swipe && !targetMessage)
+      throw new RequestError(
+        409,
+        "That response is unavailable. Refresh before regenerating.",
+      );
+    if (is_swipe && (messages || [])[0]?.id !== target_message_id)
+      throw new RequestError(
+        409,
+        "Create a branch before regenerating an earlier response.",
+      );
     const allMessages = (messages || [])
-      .filter(m => m.content && m.content.trim() !== '')
+      .filter(
+        (m) => m.content && m.content.trim() !== '' &&
+          (!is_swipe || m.id !== target_message_id) &&
+          (m.persona_id === undefined ||
+            (m.persona_id || null) ===
+              ((persona as unknown as { id?: string } | null)?.id || null)),
+      )
       .reverse(); // chronological order (oldest first)
 
     // 6. The persisted scene canon above is the long-term memory. This is the
     // short-term conversational window, selected from newest to oldest and
     // then restored to chronological order.
-    const historySummary = null;
-    const recentMessages = selectRecentHistory(allMessages);
+    const recall = await loadSceneRecall(supabase, {
+      userId: requester.id,
+      characterId: character.id,
+      conversationId: conversation_id,
+      personaId,
+      recentText: allMessages.slice(-10).map((m) => m.content),
+    });
+    const characterMemories = recall.memories;
+    const historySummary = recall.prompt;
+    const recentMessages = selectRecentHistory(
+      allMessages as unknown as ChatMessage[],
+    );
 
-    let linkedLorebookContext = '';
-    if (lorebookAdmin) {
-      const [characterLinksResult, worldLinksResult] = await Promise.all([
-        lorebookAdmin
-          .from('lorebook_characters')
-          .select('lorebook_id')
-          .eq('character_id', character.id),
-        character.world_id
-          ? lorebookAdmin
-              .from('lorebook_worlds')
-              .select('lorebook_id')
-              .eq('world_id', character.world_id)
-          : Promise.resolve({ data: [], error: null }),
-      ]);
-
-      if (characterLinksResult.error || worldLinksResult.error) {
-        return new Response(JSON.stringify({ error: 'Failed to retrieve linked lorebook scope' }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      const lorebookIds = [...new Set([
-        ...(characterLinksResult.data || []).map((link) => link.lorebook_id),
-        ...(worldLinksResult.data || []).map((link) => link.lorebook_id),
-      ])];
-
-      if (lorebookIds.length > 0) {
-        const { data: loreEntries, error: loreEntriesError } = await lorebookAdmin
-          .from('lorebook_entries')
-          .select('id, title, content, keywords, priority, enabled, insertion_order, is_constant, case_sensitive')
-          .in('lorebook_id', lorebookIds)
-          .eq('enabled', true);
-
-        if (loreEntriesError) {
-          return new Response(JSON.stringify({ error: 'Failed to retrieve linked lorebook entries' }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' },
-          });
-        }
-
-        linkedLorebookContext = resolveLorebookContext(
-          allMessages.slice(-10).map((message) => message.content),
-          (loreEntries || []) as RuntimeLorebookEntry[],
-        ).prompt;
-      }
-    }
+    const loreRecall = await loadLinkedLore(admin, supabase, {
+      characterId: character.id,
+      creatorId: character.creator_id,
+      worldId: character.world_id,
+      userId: requester.id,
+      personaLoreIds:
+        (persona as unknown as { lorebook_ids?: string[] } | null)
+          ?.lorebook_ids || [],
+      recentText: allMessages.slice(-10).map((m) => m.content),
+    });
+    let linkedLorebookContext = loreRecall.prompt;
+    const recalledLoreEntries = loreRecall.entries;
 
     // 8. Format history into Gemini API contents structure
-    const formattedHistory: Array<{ role: string; parts: Array<{ text: string }> }> = recentMessages
-      .map(m => ({
+    const formattedHistory: Array<{ role: string; parts: Array<{ text: string }>;
+    }> = recentMessages
+      .map((m) => ({
         role: m.sender_id === bot_user_id ? 'model' : 'user',
-        parts: [{ text: m.content }]
+        parts: [{ text: m.sender_id === bot_user_id
+              ? m.content
+              : `[${(m.profiles as unknown as { display_name?: string } | null)?.display_name || "Participant"}] ${m.content}`,
+        }]
       }));
 
     // 9. If this is the first message (initiation), inject a gentle directive
@@ -669,6 +732,13 @@ export default async function handler(req: Request) {
       }
     }
 
+    const personaRelationships = (
+      persona as unknown as { relationships?: string } | null
+    )?.relationships;
+    if (personaRelationships)
+      linkedLorebookContext +=
+        "\n## Creator-authored persona relationships\n" +
+        personaRelationships.slice(0, 2000);
     // 10. Build the structured system prompt
     const baseSystemPrompt = buildSystemPrompt(
       character as CharacterData,
@@ -703,8 +773,84 @@ export default async function handler(req: Request) {
     // A member's Model House choice is the account-level default. OpenRouter
     // models (including DeepSeek IDs) use CHIMERA's server-side gateway key.
     const aiProvider = memberModel
-      ? (memberModel.includes('/') ? 'openrouter' : 'gemini')
-      : (character.ai_provider || 'gemini');
+      ? memberModel.includes('/') ? 'openrouter' : 'gemini'
+      : character.ai_provider || 'gemini';
+
+    if (!AVAILABLE_CHAT_MODELS.some((model) => model.id === aiModel)) {
+      throw new RequestError(400, "Please select an available CHIMERA model.");
+    }
+    // Reject oversized context explicitly; never silently rewrite creator prompts.
+    if (
+      systemPrompt.length +
+        formattedHistory.reduce(
+          (size, message) => size + message.parts[0].text.length,
+          0,
+        ) >
+      100_000
+    ) {
+      throw new RequestError(
+        413,
+        "This character context is too large to generate safely.",
+      );
+    }
+    const latestHumanMessage = [...allMessages].reverse().find((message) => {
+      const sender = message.profiles as unknown as { role?: string } | null;
+      return sender?.role !== "ai_character";
+    });
+    const retryId = req.headers.get("Idempotency-Key");
+    if (is_swipe && !retryId)
+      throw new RequestError(
+        400,
+        "A retry identifier is required for regeneration.",
+      );
+    const turn = is_initiation
+      ? `opening:${allMessages[allMessages.length - 1]?.id || "empty"}:${personaId || "self"}`
+      : is_swipe
+        ? `swipe:${target_message_id}:${retryId}`
+        : `turn:${latestHumanMessage?.id || "empty"}:${personaId || "self"}`;
+    reservation = await reserveRequest(
+      admin,
+      requester.id,
+      "chat",
+      `${conversation_id}:${bot_user_id}`,
+      turn,
+      await fingerprint({
+        conversation_id,
+        bot_user_id,
+        turn,
+        aiModel,
+        persona_id: personaId,
+        expected: is_swipe ? expected_content : undefined,
+      }),
+    );
+    if (reservation.state === "completed") {
+      completed = true;
+      return new Response(JSON.stringify(reservation.result), {
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store",
+        },
+      });
+    }
+
+    if (is_swipe && targetMessage!.content !== expected_content)
+      throw new RequestError(
+        409,
+        "The response changed. Refresh before requesting a new variation.",
+      );
+    const { error: scopeError } = await admin.rpc(
+      "bind_chimera_persona_request",
+      {
+        p_request_id: reservation.id,
+        p_lease: reservation.lease,
+        p_persona_id: personaId,
+      },
+    );
+    if (scopeError)
+      throw new RequestError(
+        409,
+        "Your persona changed. Please retry in the current scene.",
+      );
 
     if (aiProvider === 'openrouter') {
       const openRouterKey = process.env.OPENROUTER_API_KEY;
@@ -720,10 +866,10 @@ export default async function handler(req: Request) {
         }))
       ];
 
-      const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      const orRes = await providerFetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openRouterKey}`,
+            Authorization: `Bearer ${openRouterKey}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': 'https://chimera.it.com',
           'X-Title': 'CHIMERA',
@@ -738,8 +884,10 @@ export default async function handler(req: Request) {
       });
 
       if (!orRes.ok) {
-        const errText = await orRes.text();
-        return new Response(JSON.stringify({ error: 'OpenRouter error', details: errText }), { status: 502 });
+        throw new RequestError(
+          502,
+          "The character provider is temporarily unavailable.",
+        );
       }
 
       const orData = await orRes.json();
@@ -753,7 +901,7 @@ export default async function handler(req: Request) {
       }
 
       const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`;
-      const geminiRes = await fetch(geminiUrl, {
+      const geminiRes = await providerFetch(geminiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -771,8 +919,10 @@ export default async function handler(req: Request) {
       });
 
       if (!geminiRes.ok) {
-        const errText = await geminiRes.text();
-        return new Response(JSON.stringify({ error: 'Gemini error', details: errText }), { status: 502 });
+        throw new RequestError(
+          502,
+          "The character provider is temporarily unavailable.",
+        );
       }
 
       const geminiData = await geminiRes.json();
@@ -786,8 +936,8 @@ export default async function handler(req: Request) {
     // 12. CHIMERA Validation Layer (Post-Processor Verification)
     const validationResult = validateAndSanitizeChimeraResponse(replyText);
     if (!validationResult.isCompliant || !validationResult.sanitizedReply) {
-      return new Response(JSON.stringify({ 
-        error: 'CHIMERA Guardian Intervention', 
+      return new Response(JSON.stringify({
+        error: 'CHIMERA Guardian Intervention',
         pause_roleplay: true,
         reason: 'Safety and authenticity standards intervention'
       }), { status: 200, headers: { 'Content-Type': 'application/json' } });
@@ -796,28 +946,56 @@ export default async function handler(req: Request) {
     const finalReply = validationResult.sanitizedReply;
 
     // 13. Insert the validated CHIMERA reply
-    const { error: rpcError } = await supabase.rpc('respond_as_ai_character', {
-      p_conversation_id: conversation_id,
+    const { error: rpcError } = is_swipe
+      ? await admin.rpc("complete_chimera_regeneration", {
+          p_request_id: reservation.id,
+          p_lease: reservation.lease,
+          p_conversation_id: conversation_id,
+          p_bot_id: bot_user_id,
+          p_message_id: target_message_id,
+          p_expected_content: expected_content,
+          p_content: finalReply,
+        })
+      : await admin.rpc("complete_chimera_chat_request", {
+          p_request_id: reservation.id,
+          p_lease: reservation.lease,
+          p_conversation_id: conversation_id,
       p_bot_id: bot_user_id,
       p_content: finalReply
     });
 
     if (rpcError) {
-      return new Response(JSON.stringify({ error: 'Failed to insert AI response', details: rpcError.message }), {
+      return new Response(JSON.stringify({ error:
+            "Your message is saved, but the reply could not be confirmed. Please retry.",
+        }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    return new Response(JSON.stringify({ reply: finalReply }), {
+    completed = true;
+    return new Response(JSON.stringify({ reply: finalReply,
+        recall: {
+          ...recall,
+          lore: recalledLoreEntries,
+          canon: conversation.memory_summary,
+        },
+      }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
 
-  } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+  } catch (error) {
+    return requestFailure(error);
+  } finally {
+    if (admin && reservation?.state === "reserved" && !completed) {
+      await finishRequest(
+        admin,
+        reservation.id,
+        reservation.lease,
+        null,
+        true,
+      ).catch(() => undefined);
+    }
   }
 }

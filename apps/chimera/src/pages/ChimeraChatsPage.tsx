@@ -1,3 +1,4 @@
+import {singleRpcRecord} from '../lib/rpcRecord';
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
@@ -308,50 +309,9 @@ export default function ChimeraChatsPage() {
       }
 
       // Create new conversation
-      const { data: newConv, error: createError } = await supabase
-        .from('conversations')
-        .insert({
-          type: 'dm',
-          created_by: user.id,
-        })
-        .select()
-        .maybeSingle();
-
-      if (createError) throw createError;
-      if (!newConv) throw new Error('Failed to create conversation record.');
-
-      // Add participants
-      await supabase
-        .from('conversation_participants')
-        .insert([
-          { conversation_id: newConv.id, user_id: user.id },
-          { conversation_id: newConv.id, user_id: selectedBot.user_id },
-        ]);
-
-      // Seed greeting
-      const { data: charDetails } = await supabase
-        .from('ai_characters')
-        .select('greeting')
-        .eq('user_id', selectedBot.user_id)
-        .maybeSingle();
-
-      const greetingContent = charDetails?.greeting || "Hello! Let's start our roleplay.";
-
-      await supabase.from('messages').insert({
-        conversation_id: newConv.id,
-        sender_id: selectedBot.user_id,
-        content: greetingContent,
-        read: false
-      });
-
-      await supabase
-        .from('conversations')
-        .update({
-          last_message: greetingContent,
-          last_message_at: new Date().toISOString()
-        })
-        .eq('id', newConv.id);
-
+      const { data: rawScene, error: createError } = await supabase.rpc('create_chimera_scene', {p_bot_ids:[selectedBot.user_id]});
+      const newConv=singleRpcRecord<{id:string}>(rawScene);
+      if(createError || !newConv)throw new Error('The scene could not be created. Please retry.');
       navigate(`/conversations/${newConv.id}`);
     } catch (error: any) {
       console.error('Error starting roleplay chat:', error);

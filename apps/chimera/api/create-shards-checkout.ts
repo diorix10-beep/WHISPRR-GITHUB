@@ -1,5 +1,7 @@
+import {singleRpcRecord} from '../src/lib/rpcRecord.js';
 import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
+import { uuid } from './_lib/requestProtection.js';
 
 type NodeRequest = {
   method?: string;
@@ -41,28 +43,34 @@ export default async function handler(req: NodeRequest, res: NodeResponse) {
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
     const { package_id } = (body || {}) as { package_id?: string };
-    if (!package_id || !(package_id in SHARDS_PACKAGES)) return res.status(400).json({ error: 'Choose a valid SHARDS package.' });
+    const retryHeader = req.headers['idempotency-key'];
+    const requestId = Array.isArray(retryHeader) ? retryHeader[0] : retryHeader;
+    if (!uuid(requestId)) return res.status(400).json({ error: 'A checkout retry identifier is required.' });
+    if (!package_id || !Object.prototype.hasOwnProperty.call(SHARDS_PACKAGES,package_id)) return res.status(400).json({ error: 'Choose a valid SHARDS package.' });
 
     const pack = SHARDS_PACKAGES[package_id as ShardsPackageId];
     const adminSupabase = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
-    const { data: order, error: orderError } = await adminSupabase
-      .from('shards_purchase_orders')
-      .insert({ user_id: user.id, package_id, shards_amount: pack.shards, bonus_shards: pack.bonus, amount_cents: pack.amountCents })
-      .select('id')
-      .single();
-    if (orderError || !order) {
-      console.error('Could not create pending SHARDS order', {
-        code: orderError?.code,
-        message: orderError?.message,
-        details: orderError?.details,
-        hint: orderError?.hint,
-      });
-      throw new Error('CHIMERA could not prepare this SHARDS order.');
-    }
-
+    const appUrl = process.env.CHIMERA_APP_URL;
+    if (!appUrl) return res.status(503).json({ error:'The checkout return address is not configured. No payment has been started.' });
+    const destination = new URL(appUrl);
+    if (destination.protocol !== 'https:' || destination.username || destination.password || destination.pathname !== '/' || destination.search || destination.hash) return res.status(503).json({error:'The checkout return address is invalid.'});
+    const { data: rawOrder, error: orderError } = await adminSupabase.rpc('prepare_chimera_shards_order',{
+      p_user_id:user.id,p_request_id:requestId,p_package_id:package_id,p_shards:pack.shards,p_bonus:pack.bonus,p_amount:pack.amountCents,
+    });
+    const order=singleRpcRecord<{id:string;status:string;stripe_checkout_session_id:string|null;created_at:string}>(rawOrder);
+    if (orderError || !order) throw new Error('CHIMERA could not prepare this SHARDS order.');
+    if (order.status !== 'pending') return res.status(409).json({resolved:true,error:'This checkout has already been resolved. Review your wallet before starting a new purchase.'});
     const stripe = new Stripe(stripeSecretKey, { typescript: true });
-    const host = Array.isArray(req.headers.host) ? req.headers.host[0] : req.headers.host;
-    const appUrl = (process.env.CHIMERA_APP_URL || `https://${host || 'www.chimera.it.com'}`).replace(/\/$/, '');
+    if(order.stripe_checkout_session_id){
+      const existing=await stripe.checkout.sessions.retrieve(order.stripe_checkout_session_id);
+      if(existing.status==='open' && existing.url)return res.status(200).json({checkout_url:existing.url,package:{id:package_id,shards:pack.shards+pack.bonus}});
+      if(existing.status==='complete')return res.status(409).json({error:'This payment is awaiting wallet confirmation. Review your wallet before another purchase.'});
+      if(existing.status==='expired'){
+        const {error}=await adminSupabase.from('shards_purchase_orders').update({status:'failed'}).eq('id',order.id).eq('status','pending');
+        if(error)throw error;return res.status(409).json({resolved:true,error:'This checkout expired. No new payment was started. You may start a new purchase.'});
+      }
+    }
+    if(Date.now()-Date.parse(order.created_at)>23*60*60*1000)return res.status(409).json({error:'This unconfirmed order requires support review before retrying. No new checkout was started.'});
     const totalShards = pack.shards + pack.bonus;
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
@@ -80,9 +88,9 @@ export default async function handler(req: NodeRequest, res: NodeResponse) {
           },
         },
       }],
-      success_url: `${appUrl}/shards?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appUrl}/shards?checkout=cancelled`,
-    });
+      success_url: `${destination.origin}/shards?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${destination.origin}/shards?checkout=cancelled`,
+    }, { idempotencyKey:`chimera-shards-${order.id}` });
 
     if (!session.url) throw new Error('Stripe did not return a checkout URL.');
     const { error: sessionError } = await adminSupabase
@@ -92,8 +100,7 @@ export default async function handler(req: NodeRequest, res: NodeResponse) {
     if (sessionError) throw new Error('CHIMERA could not secure this checkout session.');
 
     return res.status(200).json({ checkout_url: session.url, package: { id: package_id, shards: totalShards } });
-  } catch (error) {
-    console.error('Could not create SHARDS checkout', error);
-    return res.status(500).json({ error: error instanceof Error ? error.message : 'CHIMERA could not start checkout.' });
+  } catch {
+    return res.status(500).json({ error: 'CHIMERA could not start checkout. Retry the same purchase; no wallet credit occurs without verified payment.' });
   }
 }

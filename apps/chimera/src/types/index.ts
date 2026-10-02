@@ -197,6 +197,7 @@ export interface LorebookTriggerResult {
 // ── Stories ──────────────────────────────────────────────────
 
 export interface Story {
+  world_id?: string | null;
   id: string;
   user_id: string;
   title: string;
@@ -257,6 +258,10 @@ export interface StoryScene {
 export type MemoryType = 'long_term' | 'short_term' | 'personality' | 'relationship' | 'lore';
 
 export interface CharacterMemory {
+  persona_id?: string | null;
+  conversation_id?: string | null;
+  session_id?: string | null;
+  approval_status?: 'approved' | 'proposed';
   id: string;
   character_id: string;
   user_id: string;

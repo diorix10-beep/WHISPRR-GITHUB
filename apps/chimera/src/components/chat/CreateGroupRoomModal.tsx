@@ -1,3 +1,4 @@
+import {singleRpcRecord} from '../../lib/rpcRecord';
 import { useState, useEffect } from 'react';
 import { X, Users, Plus, Check, Sparkles } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -90,27 +91,9 @@ export function CreateGroupRoomModal({ isOpen, onClose, onRoomCreated }: CreateG
       setLoading(true);
 
       // Create group conversation
-      const { data: conv, error: convError } = await supabase
-        .from('conversations')
-        .insert({
-          is_group: true,
-          title: roomName.trim(),
-          scenario: scenario.trim() || undefined,
-          created_by: user.id,
-        })
-        .select()
-        .single();
-
-      if (convError) throw convError;
-
-      // Add user participant
-      const participants = [
-        { conversation_id: conv.id, user_id: user.id, role: 'owner' },
-        ...selectedIds.map(id => ({ conversation_id: conv.id, user_id: id, role: 'ai_character' }))
-      ];
-
-      await supabase.from('conversation_participants').insert(participants);
-
+      const {data:rawScene,error:convError}=await supabase.rpc('create_chimera_scene',{p_bot_ids:selectedIds,p_name:roomName.trim(),p_canon:scenario.trim()});
+      const conv=singleRpcRecord<{id:string}>(rawScene);
+      if(convError || !conv)throw new Error('The room could not be created. Please retry.');
       showToast('Multi-Character Group Room created!', 'success');
       onRoomCreated(conv.id);
       onClose();

@@ -392,7 +392,7 @@ export default function StoryReaderPage() {
                   {chapters.map((chap) => (
                     <div
                       key={chap.id}
-                      onClick={() => navigate(`/story/${story.id}/chapter/${chap.chapter_number}`)}
+                      onClick={() => navigate(`/stories/${story.id}/chapter/${chap.chapter_number}`)}
                       className="flex items-center justify-between py-3.5 group cursor-pointer"
                     >
                       <div className="flex items-center gap-3">
