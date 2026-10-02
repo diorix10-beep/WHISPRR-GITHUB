@@ -43,7 +43,8 @@ function localApiPlugin(): Plugin {
     name: 'chimera-local-api',
     apply: 'serve',
     configureServer(server) {
-      server.middlewares.use('/api/ai-chat', async (req, res) => {
+      for (const endpoint of ['ai-chat', 'voice', 'roleplay-turning-point', 'generate-scene-illustration', 'scene-recall', 'room-ai', 'writing-suggestions', 'illustration-status']) {
+      server.middlewares.use(`/api/${endpoint}`, async (req, res) => {
         try {
           const body = await readRequestBody(req);
           const url = new URL(req.url || '/', 'http://127.0.0.1');
@@ -61,7 +62,7 @@ function localApiPlugin(): Plugin {
             headers,
             body: body.length ? body : undefined,
           });
-          const module = await server.ssrLoadModule('/api/ai-chat.ts');
+          const module = await server.ssrLoadModule(`/api/${endpoint}.ts`);
           const response = await module.default(request);
           await sendWebResponse(res, response);
         } catch (error) {
@@ -71,6 +72,7 @@ function localApiPlugin(): Plugin {
           res.end(JSON.stringify({ error: 'Local CHIMERA API failed' }));
         }
       });
+      }
     },
   };
 }
@@ -84,6 +86,7 @@ export default defineConfig(({ mode }) => {
     'GEMINI_API_KEY_SERVER',
     'GEMINI_API_KEY',
     'OPENROUTER_API_KEY',
+    'ELEVENLABS_API_KEY',
   ]) {
     if (!process.env[key] && env[key]) {
       process.env[key] = env[key];
@@ -131,27 +134,11 @@ export default defineConfig(({ mode }) => {
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'gstatic-fonts-cache',
-              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-        ],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,ttf}'],
+        // Large decorative media stays optional rather than consuming mobile installation bandwidth.
+        globIgnores: ['images/**/*.{png,jpg,jpeg,webp}'],
+        // Only public static assets are precached. No authenticated API/database responses.
+        runtimeCaching: [],
       },
       }),
     ],

@@ -50,7 +50,7 @@ export default function MemoryManagerPage() {
     try {
       const { data: ownedCharacters, error: ownedError } = await supabase
         .from('ai_characters')
-        .select('id, creator_id, name, avatar_url, short_description')
+        .select('id, creator_id, avatar_url, short_description, bot_profile:profiles!ai_characters_user_id_fkey(display_name)')
         .eq('creator_id', user!.id)
         .order('created_at', { ascending: false });
 
@@ -59,40 +59,34 @@ export default function MemoryManagerPage() {
       // A memory is a private bond between a player and a character, not only
       // a creator tool. Include every character the user has actually opened a
       // roleplay with, while the memory rows themselves remain owner-scoped.
-      const { data: roleplayConversations, error: conversationsError } = await supabase
-        .from('conversations')
-        .select('character_id')
-        .not('character_id', 'is', null);
-
-      if (conversationsError) throw conversationsError;
-
-      const characterReferences = Array.from(new Set(
-        (roleplayConversations || [])
-          .map((conversation) => conversation.character_id)
-          .filter((id): id is string => Boolean(id)),
-      ));
+      const {data:memberships,error:membershipError}=await supabase.from('conversation_participants').select('conversation_id').eq('user_id',user!.id);
+      if(membershipError)throw membershipError;
+      const sceneIds=(memberships||[]).map(m=>m.conversation_id);
+      const {data:roleplayed,error:roleplayedError}=sceneIds.length?await supabase.from('conversation_participants').select('user_id').in('conversation_id',sceneIds):{data:[],error:null};
+      if(roleplayedError)throw roleplayedError;
+      const characterReferences=[...new Set((roleplayed||[]).map(p=>p.user_id))];
 
       let roleplayedCharacters: AiCharacter[] = [];
       if (characterReferences.length > 0) {
         const [byCharacterId, byProfileId] = await Promise.all([
           supabase
             .from('ai_characters')
-            .select('id, creator_id, name, avatar_url, short_description')
+            .select('id, creator_id, avatar_url, short_description, bot_profile:profiles!ai_characters_user_id_fkey(display_name)')
             .in('id', characterReferences),
           supabase
             .from('ai_characters')
-            .select('id, creator_id, name, avatar_url, short_description')
+            .select('id, creator_id, avatar_url, short_description, bot_profile:profiles!ai_characters_user_id_fkey(display_name)')
             .in('user_id', characterReferences),
         ]);
 
         if (byCharacterId.error) throw byCharacterId.error;
         if (byProfileId.error) throw byProfileId.error;
-        roleplayedCharacters = [...(byCharacterId.data || []), ...(byProfileId.data || [])] as AiCharacter[];
+        roleplayedCharacters = [...(byCharacterId.data || []), ...(byProfileId.data || [])] as unknown as AiCharacter[];
       }
 
       const charactersById = new Map<string, AiCharacter>();
       [...(ownedCharacters || []), ...roleplayedCharacters].forEach((character) => {
-        charactersById.set(character.id, character as AiCharacter);
+        charactersById.set(character.id, { ...character, name: (character as unknown as {bot_profile?: {display_name?: string}}).bot_profile?.display_name || 'Character' } as AiCharacter);
       });
       const availableCharacters = Array.from(charactersById.values());
 

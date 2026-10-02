@@ -1,4 +1,4 @@
-const ELEVENLABS_API_KEY = 'sk_616a104d4c1e1fac4c0743f4e5464b9378660459cbc90507';
+import { supabase } from './supabase';
 
 export interface ElevenLabsVoice {
   id: string;
@@ -59,38 +59,18 @@ export const ELEVENLABS_VOICE_ROSTER: ElevenLabsVoice[] = [
 ];
 
 export async function generateElevenLabsAudio(text: string, voiceId: string = '21m00Tcm4TlvDq8ikWAM'): Promise<string> {
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
-  
-  // Clean text of markdown formatting (*actions*, quotes) for natural narration
-  const cleanText = text
-    .replace(/\*.*?\*/g, '') // remove action tags for voice
-    .replace(/[#_*`~]/g, '')
-    .trim() || text;
-
-  const response = await fetch(url, {
+  const { data } = await supabase.auth.getSession();
+  if (!data.session) throw new Error('Please sign in to use this voice.');
+  const response = await fetch('/api/voice', {
     method: 'POST',
     headers: {
-      'Accept': 'audio/mpeg',
       'Content-Type': 'application/json',
-      'xi-api-key': ELEVENLABS_API_KEY
+      Authorization: `Bearer ${data.session.access_token}`,
+      'Idempotency-Key': crypto.randomUUID(),
     },
-    body: JSON.stringify({
-      text: cleanText,
-      model_id: 'eleven_multilingual_v2', // Ultra-HD Human Emotion Model
-      voice_settings: {
-        stability: 0.35, // Lower stability = more expressive & human-like pitch variation
-        similarity_boost: 0.85,
-        style: 0.45, // High emotion & performance style
-        use_speaker_boost: true
-      }
-    })
+    body: JSON.stringify({ text, voice_id: voiceId }),
   });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    console.error('[ElevenLabs API Diagnostic Error]:', response.status, errText);
-    throw new Error(`ElevenLabs API error (${response.status}): ${errText}`);
-  }
+  if (!response.ok) throw new Error('Voice audio is temporarily unavailable.');
 
   const audioBlob = await response.blob();
   return URL.createObjectURL(audioBlob);

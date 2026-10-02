@@ -1,3 +1,4 @@
+import {singleRpcRecord} from '../lib/rpcRecord';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Heart, Layers, MessageSquare, Sparkles, Tag, UserRound } from 'lucide-react';
@@ -21,7 +22,7 @@ export default function CharacterProfilePage() {
     const loadCharacter = async () => {
       if (!id) return;
       setLoading(true);
-      const { data, error } = await supabase.from('ai_characters').select('*').eq('id', id).single();
+      const { data, error } = await supabase.from('ai_characters').select('*, bot_profile:profiles!ai_characters_user_id_fkey(display_name, username, photo_url)').eq('id', id).single();
       if (error) {
         console.error('Unable to load character profile', error);
         setCharacter(null);
@@ -56,40 +57,9 @@ export default function CharacterProfilePage() {
     if (!character) return;
     setStarting(true);
     try {
-      const { data: conversation, error } = await supabase
-        .from('conversations')
-        .insert({
-          type: 'dm',
-          created_by: user.id,
-          character_id: character.id,
-          last_message: details.greeting,
-          last_message_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
-      if (error) throw error;
-
-      // A roleplay is a real two-party conversation: the human and the
-      // character's bot profile. The AI response RPC also validates this
-      // relationship before it may write on behalf of the character.
-      const { error: participantError } = await supabase
-        .from('conversation_participants')
-        .insert([
-          { conversation_id: conversation.id, user_id: user.id },
-          { conversation_id: conversation.id, user_id: character.user_id },
-        ]);
-      if (participantError) throw participantError;
-
-      // Persist the authored opening instead of showing a local-only greeting.
-      // This makes the first scene visible after a refresh and part of the
-      // context that the character receives on its next turn.
-      const { error: greetingError } = await supabase.rpc('respond_as_ai_character', {
-        p_conversation_id: conversation.id,
-        p_bot_id: character.user_id,
-        p_content: details.greeting,
-      });
-      if (greetingError) throw greetingError;
-
+      const {data:rawScene,error}=await supabase.rpc('create_chimera_scene',{p_bot_ids:[character.user_id]});
+      const conversation=singleRpcRecord<{id:string}>(rawScene);
+      if(error || !conversation)throw new Error('The scene could not be created.');
       navigate(`/conversations/${conversation.id}`);
     } catch (error) {
       console.error('Unable to begin scene', error);

@@ -39,8 +39,8 @@ export default async function handler(req: NodeRequest, res: NodeResponse) {
   try {
     const stripe = new Stripe(stripeSecretKey, { typescript: true });
     event = stripe.webhooks.constructEvent(await rawBody(req), signature, webhookSecret);
-  } catch (error) {
-    console.error('Invalid Stripe webhook signature', error);
+  } catch {
+    console.warn('Stripe webhook signature rejected.');
     return res.status(400).json({ error: 'Invalid Stripe signature.' });
   }
 
@@ -57,6 +57,9 @@ export default async function handler(req: NodeRequest, res: NodeResponse) {
     if (session.client_reference_id !== expectedUserId) return res.status(400).json({ error: 'Checkout owner mismatch.' });
 
     const adminSupabase = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
+    const {data:order,error:orderError}=await adminSupabase.from('shards_purchase_orders').select('user_id,package_id,amount_cents,currency,status,stripe_checkout_session_id').eq('id',orderId).maybeSingle();
+    if(orderError)throw new Error('Order lookup unavailable.');
+    if(!order || order.user_id!==expectedUserId || order.package_id!==session.metadata?.package_id || order.amount_cents!==session.amount_total || order.currency!==session.currency || order.stripe_checkout_session_id!==session.id || !['pending','paid'].includes(order.status))return res.status(400).json({error:'Checkout does not match the pending order.'});
     const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id || null;
     const { error: fulfillError } = await adminSupabase.rpc('fulfill_shards_purchase', {
       p_order_id: orderId,
@@ -65,8 +68,8 @@ export default async function handler(req: NodeRequest, res: NodeResponse) {
     });
     if (fulfillError) throw fulfillError;
     return res.status(200).json({ received: true });
-  } catch (error) {
-    console.error('Could not fulfil SHARDS purchase', error);
+  } catch {
+    console.warn('SHARDS fulfilment needs retry.');
     // Stripe retries non-2xx responses, which is exactly what we want for a transient database failure.
     return res.status(500).json({ error: 'CHIMERA could not fulfil this purchase yet.' });
   }

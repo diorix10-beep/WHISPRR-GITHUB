@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ToastProvider } from './contexts/ToastContext';
@@ -38,7 +38,6 @@ const CookiePolicyPage         = lazy(() => import('./pages/legal/CookiePolicyPa
 const TrustPage                = lazy(() => import('./pages/TrustPage'));
 
 // ── Dashboard ──────────────────────────────────────────────
-const CreatorDashboardPage = lazy(() => import('./pages/CreatorDashboardPage'));
 const RealmPortalPage = lazy(() => import('./pages/RealmPortalPage'));
 const DownloadPage = lazy(() => import('./pages/DownloadPage'));
 const DiscoverPage = lazy(() => import('./pages/DiscoverPage'));
@@ -198,13 +197,16 @@ function AppLoader() {
         <Route path="/memory-policy" element={<MemoryPolicyPage />} />
         <Route path="/cookie-policy" element={<CookiePolicyPage />} />
 
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/restricted" element={<ChimeraPlaceholderPage title="Access restricted" description="This account does not have access to CHIMERA. Return to your ecosystem account settings." />} />
+
         {/* ── Public Platform Routes (with Layout) ───────────── */}
         <Route element={<ChimeraLayout />}>
           <Route path="/" element={<RealmPortalPage />} />
           <Route path="/download" element={<DownloadPage />} />
           <Route path="/discover" element={<DiscoverPage />} />
           <Route path="/characters" element={<CharactersPage />} />
-          <Route path="/stories" element={<StoryReaderPage />} />
+          <Route path="/stories" element={<DiscoverPage mode="storytelling" />} />
           <Route path="/stories/:id" element={<StoryReaderPage />} />
           <Route path="/worlds" element={<WorldsPage />} />
         </Route>
@@ -212,7 +214,7 @@ function AppLoader() {
         {/* ── Auth (Public Only) ────────────────────────────── */}
         <Route element={<PublicOnlyRoute />}>
           <Route path="/auth" element={<AuthPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
+
         </Route>
 
         {/* ── Protected Platform ────────────────────────────── */}
@@ -232,13 +234,13 @@ function AppLoader() {
             <Route path="/vellum" element={<VellumPage />} />
 
             {/* Characters Module */}
-            <Route path="/characters" element={<CharactersPage />} />
+
             <Route path="/characters/new" element={<AiCharacterCreator />} />
             <Route path="/characters/:id" element={<CharacterProfilePage />} />
             <Route path="/characters/:id/edit" element={<AiCharacterCreator />} />
 
             {/* Worlds Module */}
-            <Route path="/worlds" element={<WorldsPage />} />
+
             <Route path="/worlds/new" element={<WorldsPage />} />
             <Route path="/worlds/:id" element={<WorldBuilderPage />} />
 
@@ -247,10 +249,10 @@ function AppLoader() {
             <Route path="/lorebooks/:id" element={<LorebookEditorPage />} />
 
             {/* Stories Module */}
-            <Route path="/stories" element={<WritersDeskPage />} />
-            <Route path="/write/desk" element={<Navigate to="/stories" replace />} />
+
+            <Route path="/write/desk" element={<WritersDeskPage />} />
             <Route path="/stories/new" element={<WritersDeskPage />} />
-            <Route path="/stories/:id" element={<StoryReaderPage />} />
+
             <Route path="/stories/:storyId/chapter/:chapterNumber" element={<ChapterReaderPage />} />
             <Route path="/stories/:storyId/chapters/:chapterNumber" element={<ChapterReaderPage />} />
             <Route path="/stories/:storyId/edit/chapter/:chapterId" element={<ChapterEditorPage />} />
@@ -269,7 +271,7 @@ function AppLoader() {
             <Route path="/human-roleplay/:sessionId" element={<HumanRoleplaySessionPage />} />
             {/* Legacy routes redirect */}
             <Route path="/chats" element={<Navigate to="/conversations" replace />} />
-            <Route path="/chat/:id" element={<Navigate to="/conversations/:id" replace />} />
+            <Route path="/chat/:id" element={<LegacyChatRedirect />} />
 
             {/* Memory Module */}
             <Route path="/memory" element={<MemoryManagerPage />} />
@@ -297,8 +299,8 @@ function AppLoader() {
             {/* Legacy routes redirect */}
             <Route path="/roleplay" element={<Navigate to="/characters" replace />} />
             <Route path="/create" element={<Navigate to="/characters/new" replace />} />
-            <Route path="/write" element={<Navigate to="/stories" replace />} />
-            <Route path="/library" element={<Navigate to="/stories" replace />} />
+            <Route path="/write" element={<Navigate to="/write/desk" replace />} />
+            <Route path="/library" element={<Navigate to="/write/desk" replace />} />
           </Route>
         </Route>
 
@@ -333,3 +335,5 @@ function App() {
 }
 
 export default App;
+
+function LegacyChatRedirect() { const { id } = useParams(); return <Navigate to={`/conversations/${encodeURIComponent(id || "")}`} replace />; }

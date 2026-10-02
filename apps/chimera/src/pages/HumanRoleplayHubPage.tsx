@@ -7,6 +7,8 @@ type Session = { id: string; title: string; description: string; visibility: str
 
 export default function HumanRoleplayHubPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [invites,setInvites]=useState<Array<{id:string;session_id:string;title:string}>>([]);
+  const [error,setError]=useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -16,10 +18,13 @@ export default function HumanRoleplayHubPage() {
       setLoading(false);
     };
     void load();
+    void supabase.rpc('get_my_human_room_invites').then(({data,error})=>{if(error)setError('Your invitations could not be loaded.');else setInvites(data||[]);});
   }, []);
 
   return <main className="min-h-screen bg-[#08090e] px-4 py-10 text-white sm:px-6 lg:px-8">
     <div className="mx-auto max-w-6xl">
+      {error&&<p role="alert">{error}</p>}
+      {invites.map(invite=><div key={invite.id} className="my-3 rounded-xl border border-white/20 p-4"><p>Invitation to {invite.title}</p><button className="min-h-11 px-3" onClick={async()=>{const {error}=await supabase.rpc('accept_human_roleplay_invite',{p_invite_id:invite.id});if(error)setError('That invitation could not be accepted. It may have expired or the room may be full.');else window.location.assign(`/human-roleplay/${invite.session_id}`);}}>Accept invitation</button><button className="min-h-11 px-3" onClick={async()=>{const {error}=await supabase.rpc('decline_human_room_invite',{p_invite_id:invite.id});if(error)setError('The invitation could not be declined. Please retry.');else setInvites(current=>current.filter(i=>i.id!==invite.id));}}>Decline</button></div>)}
       <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div><p className="text-xs font-bold uppercase tracking-[.2em] text-[#e8c378]">Human Roleplay</p><h1 className="mt-3 font-serif text-4xl font-extrabold sm:text-5xl">Enter a shared world.</h1><p className="mt-4 max-w-2xl text-sm leading-relaxed text-[#cfc2b4]">Create a private scenario and invite real people to shape it with you. This space is separate from AI Roleplay and AI characters.</p></div>
         <Link to="/human-roleplay/create" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#d9b66c] px-5 py-3 text-sm font-extrabold text-[#2a1c12]"><Plus size={17} /> Create a session</Link>

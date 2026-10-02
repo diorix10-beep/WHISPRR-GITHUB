@@ -1,186 +1,220 @@
-import { useState, useEffect } from 'react';
-import { ChevronLeft, Info, Plus, Trash2, Sparkles, Brain, Check } from 'lucide-react';
-import type { Profile } from '../../types';
-import { Avatar } from '../common/Avatar';
-import { supabase } from '../../lib/supabase';
-
-interface ChatMemoryModalProps {
+import { useEffect, useState } from "react";
+import type { Profile } from "../../types";
+import { supabase } from "../../lib/supabase";
+import type { ContinuitySource, ScopedFact } from "../../lib/continuity";
+interface Props {
   isOpen: boolean;
   onClose: () => void;
   character: Profile;
   conversationId?: string;
 }
-
-export function ChatMemoryModal({ isOpen, onClose, character, conversationId }: ChatMemoryModalProps) {
-  const [activeTab, setActiveTab] = useState<'story' | 'character'>('character');
-  const [memories, setMemories] = useState<string[]>([
-    `${character.display_name} remembers that you possess an ancient runic blade.`,
-    `You promised to meet ${character.display_name} at the Obsidian Citadel.`,
-    `Shared history: Escaped together from the Whispering Catacombs.`
-  ]);
-  const [newMemory, setNewMemory] = useState('');
-
+type Recall = {
+  canon: string;
+  recentSources: Array<{ id: string; excerpt: string }>;
+  lore: Array<{ id: string; title: string; content: string }>;
+  personaRelationships: string;
+  memories: ScopedFact[];
+  sources: ContinuitySource[];
+  relationships: Array<{
+    id: string;
+    relationship_type: string;
+    description: string;
+  }>;
+  scope: { persona_id: string | null };
+};
+export function ChatMemoryModal({
+  isOpen,
+  onClose,
+  character,
+  conversationId,
+}: Props) {
+  const [recall, setRecall] = useState<Recall | null>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [fact, setFact] = useState("");
+  const [source, setSource] = useState("");
+  const [saving, setSaving] = useState(false);
   useEffect(() => {
-    if (isOpen && conversationId) {
-      fetchMemories();
+    if (!isOpen || !conversationId) return;
+    let active = true;
+    setLoading(true);
+    setError("");
+    void supabase.auth
+      .getSession()
+      .then(async ({ data }) => {
+        const res = await fetch("/api/scene-recall", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${data.session?.access_token || ""}`,
+          },
+          body: JSON.stringify({
+            conversation_id: conversationId,
+            bot_user_id: character.user_id,
+          }),
+        });
+        if (!res.ok)
+          throw new Error("Scene recall could not be loaded. Please retry.");
+        const value = await res.json();
+        if (active) setRecall(value);
+      })
+      .catch(() => {
+        if (active)
+          setError("Scene recall could not be loaded. Please reopen to retry.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isOpen, conversationId, character.user_id]);
+  const propose = async () => {
+    if (!source || !fact.trim()) return;
+    setSaving(true);
+    setError("");
+    const { data: definition } = await supabase
+      .from("ai_characters")
+      .select("id")
+      .eq("user_id", character.user_id)
+      .maybeSingle();
+    const { error } = await supabase.rpc("propose_chimera_memory", {
+      p_conversation_id: conversationId,
+      p_character_id: definition?.id,
+      p_content: fact,
+      p_source_ids: [source],
+      p_memory_type: "long_term",
+    });
+    setSaving(false);
+    if (error) {
+      setError("The fact could not be proposed. Your text is still here.");
+      return;
     }
-  }, [isOpen, conversationId]);
-
-  const fetchMemories = async () => {
-    if (!conversationId) return;
-    try {
-      const { data } = await supabase
-        .from('conversations')
-        .select('memory_summary')
-        .eq('id', conversationId)
-        .maybeSingle();
-
-      if (data?.memory_summary) {
-        const lines = data.memory_summary.split('\n').filter((l: string) => l.trim().length > 0);
-        if (lines.length > 0) setMemories(lines);
-      }
-    } catch (e) {}
+    setFact("");
+    setError(
+      "Proposal saved. Approve it in the private memory cabinet before it can be recalled.",
+    );
   };
-
-  const handleAddMemory = async () => {
-    if (!newMemory.trim()) return;
-    const updated = [...memories, newMemory.trim()];
-    setMemories(updated);
-    setNewMemory('');
-
-    if (conversationId) {
-      await supabase
-        .from('conversations')
-        .update({ memory_summary: updated.join('\n') })
-        .eq('id', conversationId);
-    }
-  };
-
-  const handleDeleteMemory = async (index: number) => {
-    const updated = memories.filter((_, i) => i !== index);
-    setMemories(updated);
-
-    if (conversationId) {
-      await supabase
-        .from('conversations')
-        .update({ memory_summary: updated.join('\n') })
-        .eq('id', conversationId);
-    }
-  };
-
   if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md sm:p-6 font-sans">
-      <div className="w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-md bg-[#121212] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden text-white border border-white/10">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0 bg-[#1A1A1C]">
-          <div className="flex items-center gap-2">
-            <button onClick={onClose} className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors">
-              <ChevronLeft size={22} />
-            </button>
-            <h2 className="text-lg font-bold flex items-center gap-2">
-              <Brain size={18} className="text-purple-400" />
-              <span>Living Character Memory</span>
-            </h2>
-          </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors">
-            <Info size={18} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3">
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-label="Scene recall"
+        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 text-warm-900 dark:bg-warm-950 dark:text-warm-100"
+      >
+        <div className="flex justify-between">
+          <h2 className="text-xl font-bold">Scene recall</h2>
+          <button className="min-h-11 px-3" onClick={onClose}>
+            Close
           </button>
         </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-5">
-          
-          {/* Memory Usage Card */}
-          <div className="bg-[#1C1C1E] rounded-2xl p-4 border border-white/10 shadow-inner">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-sm text-purple-300 flex items-center gap-1.5">
-                <Sparkles size={14} /> Infinite Memory Active
-              </h3>
-              <span className="text-[10px] bg-purple-500/20 text-purple-300 font-extrabold px-2 py-0.5 rounded-full uppercase">
-                {memories.length} Memories Retained
-              </span>
-            </div>
-            
-            {/* Progress Bar */}
-            <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden mb-3">
-              <div className="w-full h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full animate-pulse" />
-            </div>
-            
-            <p className="text-xs text-white/70 leading-relaxed">
-              Rule 33: {character.display_name} remembers key plot points, user secrets, and shared history across all roleplay sessions.
-            </p>
-          </div>
-
-          {/* Context Chips */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            <button 
-              onClick={() => setActiveTab('character')}
-              className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${
-                activeTab === 'character' ? 'bg-purple-600 text-white shadow-md' : 'bg-[#1C1C1E] text-white/70 hover:bg-[#2C2C2E]'
-              }`}
-            >
-              <Avatar emoji={character.avatar_emoji} photoUrl={character.photo_url} size="xs" />
-              <span>{character.display_name}'s Memory</span>
-            </button>
-            
-            <button 
-              onClick={() => setActiveTab('story')}
-              className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all ${
-                activeTab === 'story' ? 'bg-purple-600 text-white shadow-md' : 'bg-[#1C1C1E] text-white/70 hover:bg-[#2C2C2E]'
-              }`}
-            >
-              Story Setting
-            </button>
-          </div>
-
-          {/* Memory List */}
-          <div className="space-y-2.5">
-            <h4 className="text-[10px] uppercase font-bold text-white/50 tracking-wider px-1">
-              Retained Memories ({memories.length})
-            </h4>
-
-            {memories.map((mem, idx) => (
-              <div key={idx} className="p-3.5 rounded-xl bg-[#1C1C1E] border border-white/10 flex items-start justify-between gap-3 text-xs leading-relaxed group">
-                <p className="flex-1 text-white/90">{mem}</p>
-                <button
-                  onClick={() => handleDeleteMemory(idx)}
-                  className="p-1 text-white/40 hover:text-rose-400 rounded transition-colors opacity-80 sm:opacity-0 group-hover:opacity-100"
-                  title="Forget Memory"
+        <p className="mt-2 text-sm">
+          Context selected now. Source excerpts support continuity; only your
+          approved facts are durable canon. Private facts stay with your persona
+          and scope.
+        </p>
+        {loading && <p role="status">Loading recall…</p>}
+        {error && (
+          <p role="status" className="mt-3 text-sm">
+            {error}
+          </p>
+        )}
+        {recall && (
+          <div className="space-y-5 mt-4">
+            <section>
+              <h3 className="font-bold">Creator-controlled scene canon</h3>
+              <p className="whitespace-pre-wrap">
+                {recall.canon || "No scene canon yet."}
+              </p>
+            </section>
+            <section>
+              <h3 className="font-bold">Approved private facts</h3>
+              {recall.memories.map((m) => (
+                <p key={m.id} className="mt-2">
+                  [{m.memory_type}] {m.content}
+                </p>
+              ))}
+              {!recall.memories.length && (
+                <p>No approved facts in this scope.</p>
+              )}
+            </section>
+            <section>
+              <h3 className="font-bold">Earlier source excerpts</h3>
+              {recall.sources.map((s) => (
+                <details key={s.id} className="mt-2">
+                  <summary className="min-h-11 cursor-pointer">
+                    {s.excerpt.slice(0, 90)}
+                  </summary>
+                  <p className="whitespace-pre-wrap">{s.excerpt}</p>
+                  <small>Source: {s.id}</small>
+                </details>
+              ))}
+            </section>
+            <section>
+              <h3 className="font-bold">Linked lore selected now</h3>
+              {(recall.lore || []).map((entry) => (
+                <details key={entry.id}>
+                  <summary className="min-h-11 cursor-pointer">
+                    {entry.title}
+                  </summary>
+                  <p className="whitespace-pre-wrap">{entry.content}</p>
+                </details>
+              ))}
+              <p className="whitespace-pre-wrap">
+                {recall.personaRelationships}
+              </p>
+            </section>
+            <section>
+              <h3 className="font-bold">Character relationships</h3>
+              {recall.relationships.map((r) => (
+                <p key={r.id}>
+                  {r.relationship_type}: {r.description}
+                </p>
+              ))}
+            </section>
+            <section className="border-t pt-4">
+              <h3 className="font-bold">Propose a durable fact</h3>
+              <p className="text-sm">
+                Edit the wording, choose its source, then approve separately in
+                the memory cabinet.
+              </p>
+              <label className="block mt-2">
+                Source
+                <select
+                  className="block w-full min-h-11 border rounded bg-transparent"
+                  value={source}
+                  onChange={(e) => setSource(e.target.value)}
                 >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* Add Custom Memory Input */}
-          <div className="pt-3 border-t border-white/10 space-y-2">
-            <label className="block text-[10px] uppercase font-bold text-white/50 tracking-wider">
-              Teach {character.display_name} a New Fact:
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newMemory}
-                onChange={(e) => setNewMemory(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddMemory()}
-                placeholder={`e.g. You know that ${character.display_name} is afraid of dragons...`}
-                className="flex-1 bg-[#1C1C1E] border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white placeholder-white/40 focus:outline-none focus:border-purple-500"
+                  <option value="">Choose a source turn</option>
+                  {[...(recall.recentSources || []), ...recall.sources].map(
+                    (s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.excerpt.slice(0, 80)}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </label>
+              <textarea
+                aria-label="Proposed fact"
+                value={fact}
+                onChange={(e) => setFact(e.target.value)}
+                maxLength={4000}
+                className="mt-2 w-full rounded border bg-transparent p-2"
               />
               <button
-                onClick={handleAddMemory}
-                disabled={!newMemory.trim()}
-                className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1 transition-all shrink-0"
+                className="min-h-11 px-3 rounded bg-purple-600 text-white disabled:opacity-50"
+                disabled={saving || !source || !fact.trim()}
+                onClick={() => void propose()}
               >
-                <Plus size={14} /> Add
+                Save for approval
               </button>
-            </div>
+            </section>
           </div>
-
-        </div>
-      </div>
+        )}
+      </section>
     </div>
   );
 }
