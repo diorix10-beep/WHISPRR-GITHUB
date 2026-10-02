@@ -56,3 +56,13 @@ The founder subsequently approved publishing the saved Lyra homepage. Commit `e8
 Deployment `dpl_3pSh4c8sXHugWnADhvD51zApB3TA` is **READY**, assigned to both CHIMERA custom domains. Deployment URL: https://chimera-jehqpsloi-diorix10-4413.vercel.app/
 
 Fresh app type check and production build passed. A live browser verified both homepage headings, navigation to `/try`, the explicit prewritten-response disclaimer, all three distinct endings, restart between paths, and `/characters/new` links. Direct `/try` fetch returned HTTP 200. The browser initially retained the prior service-worker build; clicking the existing **Refresh CHIMERA** notification loaded the new homepage successfully.
+
+## Responsive navigation follow-up
+
+Source commit: `09deca5c13a4bc926454eed164cb6a074387b879`.
+
+The mobile header groups secondary controls in the navigation drawer. The drawer now exposes language and ecosystem controls, larger touch targets, a modal focus trap, Escape dismissal, focus restoration and background scroll locking. Desktop navigation uses a separate row below 1536px to keep labels readable. Personas replaces the abbreviated WYAH label, and signed-out reserves no longer display an indefinite loading balance.
+
+Validation: app TypeScript and production build passed. Local Chromium confirmed no horizontal overflow at 320, 390 and 1024px, a 65px header at 320px, keyboard wrapping within the drawer, Escape dismissal and restoration to the opener. These browser checks used a signed-out session with synthetic backend configuration; signed-in account flows were not exercised.
+
+Production deployment: `dpl_8H8u1uSvJaHMmtcyuMnWcWt2Vxo5`.
