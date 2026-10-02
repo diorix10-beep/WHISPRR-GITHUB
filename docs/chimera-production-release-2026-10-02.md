@@ -48,3 +48,11 @@ The integration run passed 56 disposable Node/PGlite/Vitest tests, application/A
 The configured variable names include the production Supabase browser settings, service role, Gemini/OpenRouter settings, Stripe keys and app URL. Values were not decrypted, printed or changed. `ELEVENLABS_API_KEY` is absent, so voice remains unavailable until the owner configures a replacement server-side credential. No previous exposed voice credential was reused.
 
 No real signed-in session, AI provider request, payment transaction, removal operation, storage upload, or full deployed E2E test was performed. No database backup was created or destructive rollback performed. The prior production application is `dpl_74yEFBiEKgfTrzxTx3ZEWJhnFvyN`; reverting to its old client after security/schema changes is not assumed compatible. Prefer audited forward corrections that preserve creator content and ledger records.
+
+## Homepage publication — subsequent founder approval
+
+The founder subsequently approved publishing the saved Lyra homepage. Commit `e88aaebad9294b880d79238623496fd2c4de3c63` restores the clear introduction, primary sample-story action, original Lyra character card, public `/try` route, and Discover sample entry on top of the phases release. No additional database changes were needed.
+
+Deployment `dpl_3pSh4c8sXHugWnADhvD51zApB3TA` is **READY**, assigned to both CHIMERA custom domains. Deployment URL: https://chimera-jehqpsloi-diorix10-4413.vercel.app/
+
+Fresh app type check and production build passed. A live browser verified both homepage headings, navigation to `/try`, the explicit prewritten-response disclaimer, all three distinct endings, restart between paths, and `/characters/new` links. Direct `/try` fetch returned HTTP 200. The browser initially retained the prior service-worker build; clicking the existing **Refresh CHIMERA** notification loaded the new homepage successfully.
