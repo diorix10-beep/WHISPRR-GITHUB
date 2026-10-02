@@ -39,6 +39,7 @@ const TrustPage                = lazy(() => import('./pages/TrustPage'));
 
 // ── Dashboard ──────────────────────────────────────────────
 const RealmPortalPage = lazy(() => import('./pages/RealmPortalPage'));
+const SampleStoryPage = lazy(() => import('./pages/SampleStoryPage'));
 const DownloadPage = lazy(() => import('./pages/DownloadPage'));
 const DiscoverPage = lazy(() => import('./pages/DiscoverPage'));
 const ShardsPage = lazy(() => import('./pages/ShardsPage'));
@@ -203,6 +204,7 @@ function AppLoader() {
         {/* ── Public Platform Routes (with Layout) ───────────── */}
         <Route element={<ChimeraLayout />}>
           <Route path="/" element={<RealmPortalPage />} />
+          <Route path="/try" element={<SampleStoryPage />} />
           <Route path="/download" element={<DownloadPage />} />
           <Route path="/discover" element={<DiscoverPage />} />
           <Route path="/characters" element={<CharactersPage />} />
