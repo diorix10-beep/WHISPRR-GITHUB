@@ -1,4 +1,5 @@
 import { loadLinkedLore } from "./_lib/linkedLore.js";
+import { requireAdultContentAccess } from "./_lib/adultContentGate.js";
 import { AVAILABLE_CHAT_MODELS } from "../src/lib/chimeraModels.js";
 import {
   formatContinuity,
@@ -84,6 +85,7 @@ export default async function handler(req: Request) {
       .maybeSingle();
     if (!character)
       throw new RequestError(403, "This AI character is unavailable.");
+    await requireAdultContentAccess(supabase, character.content_rating);
     const { data: bot } = await supabase
       .from("profiles")
       .select("display_name,username,role")

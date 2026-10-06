@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { RichEmptyState } from '../components/common/RichEmptyState';
+import { isAdultRating, useAdultContentAccess } from '../hooks/useAdultContentAccess';
 
 type Character = Record<string, any>;
 
@@ -17,6 +18,8 @@ export default function CharacterProfilePage() {
   const [character, setCharacter] = useState<Character | null>(null);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
+  const { allowed: adultAccess, loading: adultAccessLoading } = useAdultContentAccess();
+  const adultBlocked = isAdultRating(character?.content_rating) && !adultAccess;
 
   useEffect(() => {
     const loadCharacter = async () => {
@@ -55,6 +58,10 @@ export default function CharacterProfilePage() {
       return;
     }
     if (!character) return;
+    if (adultBlocked) {
+      showToast('This character is rated Mature or NSFW. Verify your age and turn on adult content to continue.', 'error');
+      return;
+    }
     setStarting(true);
     try {
       const {data:rawScene,error}=await supabase.rpc('create_chimera_scene',{p_bot_ids:[character.user_id]});
@@ -107,7 +114,13 @@ export default function CharacterProfilePage() {
                 <p className="text-xs uppercase tracking-wider font-bold text-red-500 flex items-center gap-2"><Layers size={14} /> The opening scene</p>
                 <p className="font-serif text-xl text-warm-900 dark:text-white">{details.scenario}</p>
                 <p className="text-sm text-warm-600 dark:text-warm-300 italic leading-relaxed">{details.greeting}</p>
-                <button onClick={beginScene} disabled={starting} className="w-full sm:w-auto mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-red-500 px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-red-600/25 transition hover:from-red-500 hover:to-red-400 disabled:opacity-60">
+                {adultBlocked && !adultAccessLoading && (
+                  <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+                    This character is rated Mature or NSFW. It is available only to members whose age is verified and who have turned on adult content in the Guardian&apos;s Library.{' '}
+                    <button type="button" onClick={() => navigate('/trust')} className="font-bold underline">Open the Guardian&apos;s Library</button>
+                  </p>
+                )}
+                <button onClick={beginScene} disabled={starting || adultBlocked || adultAccessLoading} className="w-full sm:w-auto mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-red-500 px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-red-600/25 transition hover:from-red-500 hover:to-red-400 disabled:opacity-60">
                   <MessageSquare size={16} /> {starting ? 'Opening scene…' : 'Begin a scene'}
                 </button>
               </section>

@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { loadLinkedLore } from "./_lib/linkedLore.js";
 import { AVAILABLE_CHAT_MODELS } from "../src/lib/chimeraModels.js";
 import { loadSceneRecall } from "./_lib/sceneRecall.js";
+import { requireAdultContentAccess } from "./_lib/adultContentGate.js";
 import {
   fingerprint,
   finishRequest,
@@ -525,6 +526,10 @@ export default async function handler(req: Request) {
         headers: { 'Content-Type': 'application/json' }
       });
     }
+
+    // Mature / NSFW characters are only for verified adults who opted in. The
+    // database decides; the check runs before any model provider is contacted.
+    await requireAdultContentAccess(supabase, character.content_rating);
 
     const [
       { data: botMember, error: botMemberError },
