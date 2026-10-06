@@ -41,7 +41,7 @@ export default async function handler(req: NodeRequest, res: NodeResponse) {
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
     const { package_id } = (body || {}) as { package_id?: string };
-    if (!package_id || !(package_id in SHARDS_PACKAGES)) return res.status(400).json({ error: 'Choose a valid SHARDS package.' });
+    if (!package_id || !Object.prototype.hasOwnProperty.call(SHARDS_PACKAGES, package_id)) return res.status(400).json({ error: 'Choose a valid SHARDS package.' });
 
     const pack = SHARDS_PACKAGES[package_id as ShardsPackageId];
     const adminSupabase = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });

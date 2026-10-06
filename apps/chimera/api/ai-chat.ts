@@ -738,8 +738,8 @@ export default async function handler(req: Request) {
       });
 
       if (!orRes.ok) {
-        const errText = await orRes.text();
-        return new Response(JSON.stringify({ error: 'OpenRouter error', details: errText }), { status: 502 });
+        console.error('OpenRouter request failed', { status: orRes.status, body: await orRes.text() });
+        return new Response(JSON.stringify({ error: 'The AI model could not respond right now. Please try again.' }), { status: 502 });
       }
 
       const orData = await orRes.json();
@@ -771,8 +771,8 @@ export default async function handler(req: Request) {
       });
 
       if (!geminiRes.ok) {
-        const errText = await geminiRes.text();
-        return new Response(JSON.stringify({ error: 'Gemini error', details: errText }), { status: 502 });
+        console.error('Gemini request failed', { status: geminiRes.status, body: await geminiRes.text() });
+        return new Response(JSON.stringify({ error: 'The AI model could not respond right now. Please try again.' }), { status: 502 });
       }
 
       const geminiData = await geminiRes.json();
@@ -803,7 +803,8 @@ export default async function handler(req: Request) {
     });
 
     if (rpcError) {
-      return new Response(JSON.stringify({ error: 'Failed to insert AI response', details: rpcError.message }), {
+      console.error('Failed to insert AI response', rpcError);
+      return new Response(JSON.stringify({ error: 'Failed to save the AI response.' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -815,7 +816,8 @@ export default async function handler(req: Request) {
     });
 
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('AI chat failed', error);
+    return new Response(JSON.stringify({ error: 'CHIMERA could not generate a reply right now.' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
