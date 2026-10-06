@@ -57,6 +57,7 @@ export function Avatar({
       <div className="relative group" onClick={editable ? onPhotoClick : onClick}>
         <img
           src={photoUrl}
+          referrerPolicy="no-referrer"
           alt="avatar"
           className={`${baseClasses} ${sizeClass} object-cover shadow-soft`}
         />

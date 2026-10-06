@@ -8,7 +8,6 @@ import {
   Github,
   MessageCircle,
   MonitorDown,
-  ScrollText,
   ShieldCheck,
   Sparkles,
 } from 'lucide-react';
@@ -20,9 +19,10 @@ const GITHUB_ZIP_URL = `${GITHUB_REPO_URL}/archive/refs/heads/${GITHUB_BRANCH}.z
 const realmCards = [
   {
     title: 'Roleplay Rooms',
-    description: 'Enter the public realm to discover characters, begin scenes, and preview CHIMERA’s AI roleplay systems.',
+    description: 'Create your own fictional character, then begin an AI roleplay scene.',
     icon: MessageCircle,
-    href: '/characters',
+    href: '/characters/new',
+    action: 'Create a character',
     accent: 'from-[#f6c56f] to-[#c8793f]',
   },
   {
@@ -30,13 +30,15 @@ const realmCards = [
     description: 'Explore VELLUM, the storytelling side of CHIMERA, where chapters, worlds, and fiction systems take shape.',
     icon: BookOpen,
     href: '/stories',
+    action: 'Explore stories',
     accent: 'from-purple-400 to-cyan-400',
   },
   {
-    title: 'Creator Systems',
-    description: 'Personas, lorebooks, memories, chat styles, and device activity are being opened feature by feature.',
-    icon: ScrollText,
+    title: 'Discover characters',
+    description: 'Browse public fictional characters shared by creators and find your next story.',
+    icon: Sparkles,
     href: '/discover',
+    action: 'Explore characters',
     accent: 'from-rose-400 to-amber-300',
   },
 ];
@@ -52,7 +54,7 @@ const statusItems = [
   },
   {
     label: 'Coming next',
-    items: ['More realms', 'Cleaner creator onboarding', 'Launcher-style downloads', 'Community spaces', 'Safer production migration flow'],
+    items: ['More realms', 'Cleaner creator onboarding', 'Launcher-style downloads', 'Community spaces', 'More guided story starters'],
   },
 ];
 
@@ -75,10 +77,10 @@ export default function RealmPortalPage() {
 
             <div className="flex flex-wrap items-center gap-2">
               <Link
-                to="/discover"
+                to="/try"
                 className="inline-flex items-center gap-2 rounded-2xl bg-[#f5d18c] px-4 py-2.5 text-sm font-black text-[#171006] shadow-lg shadow-[#f5d18c]/20 transition hover:-translate-y-0.5 hover:bg-[#ffe0a3]"
               >
-                Enter the Realm
+                Try a sample story
                 <ArrowRight size={16} />
               </Link>
               <Link
@@ -96,70 +98,40 @@ export default function RealmPortalPage() {
               <div>
                 <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#f5d18c]/25 bg-[#f5d18c]/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#f8d796]">
                   <Sparkles size={14} />
-                  Early Realm Access
+                  AI roleplay & storytelling
                 </div>
                 <h1 className="max-w-4xl font-serif text-5xl font-black leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-7xl">
-                  The realms are not complete yet —
+                  Meet a character.
                   <span className="block bg-gradient-to-r from-[#f8d796] via-[#d5a957] to-[#ff8f70] bg-clip-text text-transparent">
-                    but they are awake.
+                    Make the story yours.
                   </span>
                 </h1>
                 <p className="mt-6 max-w-2xl text-lg leading-8 text-white/68">
-                  CHIMERA is an AI character, roleplay, storytelling, worldbuilding, persona, lorebook, and creator-fiction system. You can enter the public realm now, or download the developer preview to run the gate locally.
+                  CHIMERA lets you roleplay with fictional AI characters, write stories, and build worlds of your own.
                 </p>
               </div>
 
-              <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4">
-                  <p className="text-3xl font-black text-[#f8d796]">01</p>
-                  <p className="mt-1 text-sm font-bold text-white">Public realm</p>
-                  <p className="mt-1 text-xs leading-5 text-white/45">Enter and explore CHIMERA online.</p>
-                </div>
-                <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4">
-                  <p className="text-3xl font-black text-[#f8d796]">Dev</p>
-                  <p className="mt-1 text-sm font-bold text-white">Run locally</p>
-                  <p className="mt-1 text-xs leading-5 text-white/45">Docker + local Supabase path.</p>
-                </div>
-                <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4">
-                  <p className="text-3xl font-black text-[#f8d796]">Web</p>
-                  <p className="mt-1 text-sm font-bold text-white">Downloadable</p>
-                  <p className="mt-1 text-xs leading-5 text-white/45">Get the source archive too.</p>
-                </div>
+              <div className="mt-8">
+                <Link to="/try" className="inline-flex items-center gap-2 rounded-2xl bg-[#f5d18c] px-6 py-3.5 text-base font-black text-[#171006] transition hover:bg-[#ffe0a3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#f5d18c]">
+                  Try a sample story <ArrowRight size={18} />
+                </Link>
+                <p className="mt-3 text-sm text-white/70">Meet a character and choose your next move. No account needed for this scripted preview.</p>
+                <ol className="mt-6 grid gap-3 text-sm text-white/80 sm:grid-cols-3">
+                  <li className="rounded-2xl border border-white/10 p-4">1. Meet a character</li>
+                  <li className="rounded-2xl border border-white/10 p-4">2. Choose your next move</li>
+                  <li className="rounded-2xl border border-white/10 p-4">3. Create your own story</li>
+                </ol>
               </div>
             </div>
 
             <aside className="rounded-[2.5rem] border border-white/10 bg-white/[0.06] p-5 shadow-2xl shadow-black/40 backdrop-blur-xl sm:p-6">
-              <div className="rounded-[2rem] border border-[#f5d18c]/20 bg-[#101018] p-5">
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <div className="absolute inset-0 rounded-full bg-[#f5d18c]/30 blur-xl" />
-                    <img src="/chimera_logo.png" alt="" className="relative h-20 w-20 rounded-full border border-[#f5d18c]/30 bg-black/40 object-contain p-2" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.24em] text-white/40">Early access path</p>
-                    <p className="mt-1 text-2xl font-black text-white">Enter CHIMERA</p>
-                    <p className="text-sm font-semibold text-[#f8d796]">Explore the realm or run it locally</p>
-                  </div>
-                </div>
-
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  <Link to="/discover" className="rounded-2xl border border-[#f5d18c]/20 bg-[#f5d18c]/10 p-4 transition hover:bg-[#f5d18c]/15">
-                    <Sparkles size={18} className="text-[#f8d796]" />
-                    <p className="mt-2 text-sm font-black">Enter Realm</p>
-                  </Link>
-                  <Link to="/characters" className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 transition hover:bg-white/10">
-                    <MessageCircle size={18} className="text-[#f8d796]" />
-                    <p className="mt-2 text-sm font-black">Characters</p>
-                  </Link>
-                  <Link to="/download" className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 transition hover:bg-white/10">
-                    <MonitorDown size={18} className="text-[#f8d796]" />
-                    <p className="mt-2 text-sm font-black">Download</p>
-                  </Link>
-                  <a href={GITHUB_REPO_URL} target="_blank" rel="noreferrer" className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 transition hover:bg-white/10">
-                    <Github size={18} className="text-[#f8d796]" />
-                    <p className="mt-2 text-sm font-black">GitHub</p>
-                  </a>
-                </div>
+              <div className="rounded-[2rem] border border-[#f5d18c]/20 bg-[#101018] p-5 sm:p-7">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f8d796]">Your first character</p>
+                <h2 className="mt-3 font-serif text-3xl font-black text-white">Meet Lyra, the gatekeeper</h2>
+                <p className="mt-3 text-sm leading-6 text-white/75">A keeper of forgotten doorways, a lantern that never goes out, and a question only you can answer.</p>
+                <img src="/images/chimera_castle_hero_bg.jpg" alt="A fantasy castle where Lyra’s sample story begins" className="mt-5 h-44 w-full rounded-2xl object-cover" />
+                <blockquote className="mt-5 border-l-2 border-[#f5d18c]/50 pl-4 font-serif text-lg leading-7 text-[#f8d796]">“You found the gate. Most people walk right past it. Tell me—are you looking for something, or leaving something behind?”</blockquote>
+                <p className="mt-4 text-sm leading-6 text-white/65">Start with this short guided scene, then build your own cast and begin AI roleplay when you’re ready.</p>
               </div>
 
               <div className="mt-5 rounded-[2rem] border border-blue-400/20 bg-blue-950/20 p-5">
@@ -190,7 +162,7 @@ export default function RealmPortalPage() {
                 <h2 className="mt-5 font-serif text-2xl font-black text-white">{card.title}</h2>
                 <p className="mt-3 text-sm leading-6 text-white/58">{card.description}</p>
                 <p className="mt-5 inline-flex items-center gap-2 text-sm font-black text-[#f8d796]">
-                  Open gate
+                  {card.action}
                   <ArrowRight size={15} className="transition group-hover:translate-x-1" />
                 </p>
               </Link>

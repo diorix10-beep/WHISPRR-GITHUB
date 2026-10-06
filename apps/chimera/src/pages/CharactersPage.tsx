@@ -89,7 +89,7 @@ export default function CharactersPage() {
       }
       let query = supabase
         .from('ai_characters')
-        .select('*');
+        .select('*, bot_profile:profiles!ai_characters_user_id_fkey(display_name, username, photo_url)');
 
       query = query.eq('creator_id', profile.user_id);
       if (tab === 'published') {
@@ -142,33 +142,14 @@ export default function CharactersPage() {
       if (!original || !profile) return;
       showToast('Duplicating character...', 'info');
       
-      const { data } = await supabase.from('ai_characters').select('*').eq('id', characterId).single();
-      if (!data) return;
-      const { id, user_id, created_at, updated_at, chats_count, likes_count, followers_count, ...rest } = data;
-      
-      const { data: newProfile, error: profileError } = await supabase.from('profiles').insert({
-        display_name: `${data.bot_profile?.display_name || 'Character'} (Copy)`,
-        username: `copy_${Date.now().toString(36)}`,
-        avatar_emoji: '🎭',
-        role: 'ai_character',
-        onboarding_complete: true,
-      }).select().single();
-      
-      if (profileError || !newProfile) {
-        showToast('Failed to duplicate', 'error');
-        return;
+      const {data,error}=await supabase.from('ai_characters').select('*, bot_profile:profiles!ai_characters_user_id_fkey(display_name)').eq('id',characterId).eq('creator_id',profile.user_id).single();
+      if(error||!data)throw new Error('Character unavailable.');
+      const args:Record<string,unknown>={p_character_id:null,p_name:`${data.bot_profile?.display_name||'Character'} (Copy)`,p_visibility:'private',p_status:'draft'};
+      for(const field of ['chat_name','greeting','short_description','long_description','personality','scenario','example_dialogues','conversation_style','knowledge','tags','category','avatar_url','banner_url','content_rating','creator_notes','example_conversations','rp_definition','system_definition','system_character_definition','alternate_greetings','banned_words','suggested_persona_name','voice_id','architecture_data']){
+        if(data[field]!==undefined&&data[field]!==null)args[`p_${field}`]=data[field];
       }
-      
-      await supabase.from('ai_characters').insert({
-        ...rest,
-        user_id: newProfile.user_id,
-        creator_id: profile.user_id,
-        visibility: 'private',
-        status: 'draft',
-        chats_count: 0,
-        likes_count: 0,
-        followers_count: 0,
-      });
+      const {error:saveError}=await supabase.rpc('save_ai_character_soul',args);
+      if(saveError)throw new Error('The character could not be duplicated.');
       showToast('Character duplicated!', 'success');
       fetchCharacters();
     } catch {

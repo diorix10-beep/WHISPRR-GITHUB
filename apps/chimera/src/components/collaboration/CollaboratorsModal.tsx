@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Users, UserPlus, Trash2, X, Search, Shield, Check, Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Users, UserPlus, Trash2, X, Search, Loader2 } from 'lucide-react';
+import { useDialogFocus } from '../../hooks/useDialogFocus';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -12,13 +13,14 @@ interface Collaborator {
   project_type: string;
   user_id: string;
   role: 'editor' | 'viewer';
+  status: 'pending' | 'accepted' | 'declined' | 'revoked';
   invited_by: string;
   profile?: Profile;
 }
 
 interface CollaboratorsModalProps {
   projectId: string;
-  projectType: 'story' | 'world' | 'character';
+  projectType: 'story' | 'world';
   projectTitle: string;
   isOpen: boolean;
   onClose: () => void;
@@ -36,6 +38,11 @@ export function CollaboratorsModal({
 
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const dialogRef = useDialogFocus(isOpen, onClose);
+  const [inviteRole, setInviteRole] = useState<'editor' | 'viewer'>('editor');
+  const [loadError, setLoadError] = useState(false);
+  const searchSequence = useRef(0);
 
   // Search & Invite State
   const [searchQuery, setSearchQuery] = useState('');
@@ -61,9 +68,11 @@ export function CollaboratorsModal({
       if (error) {
         // If table does not exist yet in Supabase, handle gracefully
         console.warn('Could not fetch collaborators (table may be pending migration):', error);
+        setLoadError(true);
         setCollaborators([]);
       } else {
-        setCollaborators(data || []);
+        setLoadError(false);
+        setCollaborators((data || []).filter(c => ['pending','accepted'].includes(c.status)));
       }
     } catch (err) {
       console.error('Error fetching collaborators:', err);
@@ -73,8 +82,10 @@ export function CollaboratorsModal({
   };
 
   const handleSearchUsers = async (query: string) => {
+    const sequence = ++searchSequence.current;
     setSearchQuery(query);
-    if (!query.trim()) {
+    const safeQuery = query.trim().replace(/[^\p{L}\p{N}_ -]/gu, '').slice(0,60);
+    if (!safeQuery) {
       setSearchResults([]);
       return;
     }
@@ -84,14 +95,15 @@ export function CollaboratorsModal({
         .from('profiles')
         .select('*')
         .neq('user_id', user?.id)
-        .or(`display_name.ilike.%${query}%,username.ilike.%${query}%`)
+        .neq('role', 'ai_character')
+        .or(`display_name.ilike.%${safeQuery}%,username.ilike.%${safeQuery}%`)
         .limit(5);
 
-      setSearchResults(data || []);
+      if (sequence === searchSequence.current) setSearchResults(data || []);
     } catch (err) {
       console.error('Error searching profiles:', err);
     } finally {
-      setSearching(false);
+      if (sequence === searchSequence.current) setSearching(false);
     }
   };
 
@@ -99,15 +111,7 @@ export function CollaboratorsModal({
     if (!user) return;
     setInvitingId(targetUser.user_id);
     try {
-      const { error } = await supabase
-        .from('project_collaborators')
-        .insert({
-          project_id: projectId,
-          project_type: projectType,
-          user_id: targetUser.user_id,
-          role: 'editor',
-          invited_by: user.id
-        });
+      const { error } = await supabase.rpc('invite_chimera_collaborator', { p_type:projectType, p_project_id:projectId, p_user_id:targetUser.user_id, p_role:inviteRole });
 
       if (error) throw error;
       showToast(`Invited ${targetUser.display_name} as a co-creator!`, 'success');
@@ -124,10 +128,7 @@ export function CollaboratorsModal({
 
   const handleRemoveCollaborator = async (collabId: string) => {
     try {
-      const { error } = await supabase
-        .from('project_collaborators')
-        .delete()
-        .eq('id', collabId);
+      const { error } = await supabase.rpc('revoke_chimera_collaborator', { p_id:collabId });
 
       if (error) throw error;
       setCollaborators(collaborators.filter(c => c.id !== collabId));
@@ -142,7 +143,7 @@ export function CollaboratorsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-[#121214] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Project collaborators" tabIndex={-1} className="bg-[#121214] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
         
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
@@ -153,19 +154,24 @@ export function CollaboratorsModal({
               <p className="text-xs text-white/50 truncate max-w-[200px]">{projectTitle}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 text-white/50 hover:text-white rounded-lg transition-colors">
+          <button aria-label="Close collaborators" onClick={onClose} className="p-1 text-white/50 hover:text-white rounded-lg transition-colors">
             <X size={18} />
           </button>
         </div>
 
         <div className="p-4 space-y-4 flex-1 overflow-y-auto">
           
+          <p className="text-xs text-white/70">Accepted collaborators can read private project drafts. Editors can change drafts; only the creator publishes. Invitations grant no access until accepted.</p>
+          {loadError && <p role="alert" className="text-sm text-red-300">Collaboration is unavailable until the reviewed database migration is applied.</p>}
+          <label className="block text-xs text-white/70">Invitation access<select className="block w-full bg-[#1A1A1E] p-2 rounded-lg" value={inviteRole} onChange={e=>setInviteRole(e.target.value as 'editor' | 'viewer')}><option value="editor">Editor — read and edit drafts</option><option value="viewer">Viewer — read drafts</option></select></label>
           {/* Invite User Input */}
           <div>
             <label className="block text-xs font-semibold text-white/70 mb-1">Invite Co-Creator</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
               <input
+                aria-label="Search human creators to invite"
+                aria-busy={searching}
                 type="text"
                 placeholder="Search username or display name..."
                 value={searchQuery}
@@ -229,14 +235,15 @@ export function CollaboratorsModal({
                           {c.profile?.display_name || 'Creator'}
                         </p>
                         <span className="inline-block text-[10px] text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded font-medium mt-0.5">
-                          {c.role}
+                          {c.role} · {c.status}
                         </span>
                       </div>
                     </div>
                     <button
                       onClick={() => handleRemoveCollaborator(c.id)}
                       className="p-1.5 text-white/40 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors"
-                      title="Remove Collaborator"
+                      aria-label={`Revoke access for ${c.profile?.display_name || "collaborator"}`}
+                      title="Revoke Collaborator"
                     >
                       <Trash2 size={14} />
                     </button>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import {
   Compass, Sparkles, MessageSquare, Search, Filter, ShieldCheck, Heart, User, X, Play,
   BookOpen, PenTool, Layers, BookMarked, UserCheck, Globe, Users, ArrowRight, Flame, Plus,
@@ -66,9 +66,9 @@ const AO3_TROPES = [
   'Cyberpunk'
 ];
 
-export default function DiscoverPage() {
+export default function DiscoverPage({mode}:{mode?:'roleplay'|'storytelling'}={}) {
   const outletContext = useOutletContext<{ creativeMode?: 'roleplay' | 'storytelling' }>();
-  const creativeMode = outletContext?.creativeMode || 'roleplay';
+  const creativeMode = mode || outletContext?.creativeMode || 'roleplay';
   const isStoryMode = creativeMode === 'storytelling';
 
   const [characters, setCharacters] = useState<any[]>([]);
@@ -278,6 +278,13 @@ export default function DiscoverPage() {
           </div>
         </section>
 
+
+        {!isStoryMode && <section aria-labelledby="sample-story-heading" className="rp-panel rounded-3xl p-6 sm:p-8">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#e7c272]">New here?</p>
+          <h2 id="sample-story-heading" className="rp-heading mt-2 font-serif text-2xl font-bold">Meet Lyra at the forgotten gate</h2>
+          <p className="rp-copy mt-3 max-w-2xl text-sm leading-6">Try a short, scripted scene with an original character. Choose your next move—no account or Shards needed for the preview.</p>
+          <Link to="/try" className="rp-gold-button mt-5 inline-flex items-center gap-2">Try a sample story <ArrowRight size={16} /></Link>
+        </section>}
 
         {/* ── 2. ROLEPLAY ACTIONS ── */}
         {!isStoryMode && <section className="grid grid-cols-1 gap-4 md:grid-cols-3">

@@ -74,7 +74,7 @@ export function getUITranslation(key: string, langCode: string): string {
   return I18N_DICTIONARY[langCode]?.[key] || key;
 }
 
-export async function translateText(text: string, targetLangCode: string): Promise<string> {
+export async function translateText(text: string, targetLangCode: string, options: { allowExternal?: boolean } = {}): Promise<string> {
   if (!text || targetLangCode === 'en') return text;
 
   // Check dictionary first
@@ -82,6 +82,10 @@ export async function translateText(text: string, targetLangCode: string): Promi
     return I18N_DICTIONARY[targetLangCode][text];
   }
 
+  // Private prose must not leave the browser merely because an interface language changed.
+  // Any future caller must obtain explicit disclosure/consent before opting in.
+  if (!options.allowExternal) return text;
+  if (!SUPPORTED_LANGUAGES.some(language => language.code === targetLangCode)) return text;
   try {
     const res = await fetch(
       `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0, 500))}&langpair=autodetect|${targetLangCode}`

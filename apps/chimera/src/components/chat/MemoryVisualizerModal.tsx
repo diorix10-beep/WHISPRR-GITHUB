@@ -20,6 +20,8 @@ interface CharacterMemoryCabinetModalProps {
   onClose: () => void;
   characterId: string | null;
   characterName: string;
+  personaId?: string|null;
+  conversationId?: string;
   userId: string | null | undefined;
   onMemoryCountChange?: (count: number) => void;
 }
@@ -47,6 +49,8 @@ export function CharacterMemoryCabinetModal({
   onClose,
   characterId,
   characterName,
+  personaId=null,
+  conversationId,
   userId,
   onMemoryCountChange,
 }: CharacterMemoryCabinetModalProps) {
@@ -69,17 +73,19 @@ export function CharacterMemoryCabinetModal({
         .select('*')
         .eq('character_id', characterId)
         .eq('user_id', userId)
+        .is('session_id',null)
+        .or(`conversation_id.is.null,conversation_id.eq.${conversationId || '00000000-0000-0000-0000-000000000000'}`)
         .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
         .order('importance', { ascending: false })
         .order('updated_at', { ascending: false });
 
       if (queryError) throw queryError;
-      const nextMemories = (data || []) as CharacterMemory[];
+      const nextMemories = ((data || []) as CharacterMemory[]).filter(m=>(m.persona_id||null)===personaId);
       setMemories(nextMemories);
       onMemoryCountChange?.(nextMemories.length);
     } catch (loadError) {
       console.error('Could not load character memories:', loadError);
-      setError(loadError instanceof Error ? loadError.message : 'CHIMERA could not open this memory cabinet.');
+      setError('CHIMERA could not open this memory cabinet.');
     } finally {
       setLoading(false);
     }
@@ -87,7 +93,7 @@ export function CharacterMemoryCabinetModal({
 
   useEffect(() => {
     if (isOpen) void loadMemories();
-  }, [isOpen, characterId, userId]);
+  }, [isOpen, characterId, userId, personaId, conversationId]);
 
   const visibleMemories = useMemo(
     () => activeType === 'all' ? memories : memories.filter((memory) => memory.memory_type === activeType),
@@ -116,7 +122,7 @@ export function CharacterMemoryCabinetModal({
     setError(null);
     try {
       if (editingMemory) {
-        const { error: updateError } = await supabase
+        const { data: updatedMemory, error: updateError } = await supabase
           .from('character_memories')
           .update({
             content: draft.content.trim(),
@@ -124,14 +130,17 @@ export function CharacterMemoryCabinetModal({
             importance: draft.importance,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', editingMemory.id);
-        if (updateError) throw updateError;
+          .eq('id', editingMemory.id).eq('updated_at',editingMemory.updated_at).select('id').maybeSingle();
+        if (updateError || !updatedMemory) throw new Error('This memory changed elsewhere. Refresh before saving.');
       } else {
         const { error: insertError } = await supabase
           .from('character_memories')
           .insert({
             character_id: characterId,
             user_id: userId,
+            persona_id: personaId,
+            conversation_id: conversationId || null,
+            approval_status: 'approved',
             content: draft.content.trim(),
             memory_type: draft.memory_type,
             importance: draft.importance,
@@ -144,7 +153,7 @@ export function CharacterMemoryCabinetModal({
       await loadMemories();
     } catch (saveError) {
       console.error('Could not save character memory:', saveError);
-      setError(saveError instanceof Error ? saveError.message : 'CHIMERA could not save this memory. Your text is still here.');
+      setError('CHIMERA could not save this memory. Your text is still here.');
     } finally {
       setSaving(false);
     }
@@ -162,7 +171,7 @@ export function CharacterMemoryCabinetModal({
       await loadMemories();
     } catch (pinError) {
       console.error('Could not update memory priority:', pinError);
-      setError(pinError instanceof Error ? pinError.message : 'CHIMERA could not update this memory priority.');
+      setError('CHIMERA could not update this memory priority.');
     }
   };
 
@@ -185,7 +194,7 @@ export function CharacterMemoryCabinetModal({
       await loadMemories();
     } catch (deleteError) {
       console.error('Could not delete character memory:', deleteError);
-      setError(deleteError instanceof Error ? deleteError.message : 'CHIMERA could not forget this memory.');
+      setError('CHIMERA could not forget this memory.');
     } finally {
       setDeletingId(null);
     }
@@ -268,6 +277,7 @@ export function CharacterMemoryCabinetModal({
                       const isPinned = memory.importance >= 10;
                       return (
                         <article key={memory.id} className={`rounded-2xl border p-4 transition-colors ${isPinned ? 'border-amber-300/35 bg-amber-300/[0.06]' : 'border-white/10 bg-white/[0.025] hover:border-amber-100/20'}`}>
+                          {memory.approval_status==='proposed' && <div className="mb-3"><p className="text-xs">Proposed · not recalled until you approve</p><button className="min-h-11 px-2 text-sm" onClick={async()=>{const {error}=await supabase.rpc('approve_chimera_memory',{p_memory_id:memory.id,p_expected_updated_at:memory.updated_at,p_across_scenes:false});if(error)setError('The source or memory changed. Refresh before approving.');else void loadMemories();}}>Approve for this branch</button><button className="min-h-11 px-2 text-sm" onClick={async()=>{const {error}=await supabase.rpc('approve_chimera_memory',{p_memory_id:memory.id,p_expected_updated_at:memory.updated_at,p_across_scenes:true});if(error)setError('The source or memory changed. Refresh before approving.');else void loadMemories();}}>Approve for this persona across scenes</button></div>}
                           <div className="flex gap-3">
                             <div className={`mt-0.5 shrink-0 rounded-xl p-2 ${isPinned ? 'bg-amber-300/15 text-amber-200' : 'bg-violet-400/10 text-violet-200'}`}>{isPinned ? <Pin size={15} /> : <Brain size={15} />}</div>
                             <div className="min-w-0 flex-1">

@@ -30,7 +30,7 @@ const ROLEPLAY_NAV_LINKS: NavLinkItem[] = [
   { path: '/characters', token: 'navigation.my_cast', icon: Users },
   { path: '/human-roleplay', token: 'navigation.human_roleplay', icon: Users, shortLabel: 'Human RP' },
   { path: '/conversations', token: 'navigation.chats', icon: MessageSquare },
-  { path: '/personas', token: 'navigation.who_you_are_here', icon: UserCheck, shortLabel: 'WYAH' },
+  { path: '/personas', token: 'navigation.who_you_are_here', icon: UserCheck, shortLabel: 'Personas' },
 ];
 
 const STORYTELLING_NAV_LINKS: NavLinkItem[] = [
@@ -82,6 +82,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
   const toggleCreativeMode = (targetMode?: 'roleplay' | 'storytelling') => {
     const nextMode = targetMode || (creativeMode === 'roleplay' ? 'storytelling' : 'roleplay');
+    setIsMenuOpen(false);
     setCreativeMode(nextMode);
     localStorage.setItem('chimera_creative_mode', nextMode);
     updateChimeraPreferences({ last_creative_mode: nextMode }).catch(() => {
@@ -115,6 +116,8 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
       }
       if (e.key === 'Escape') {
         setSearchOpen(false);
+        setShowThemeMenu(false);
+        setShowProfileMenu(false);
       }
     }
     document.addEventListener('keydown', handleKeyDown);
@@ -179,7 +182,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
           end={link.path === '/'}
           onClick={link.comingSoon ? (e) => e.preventDefault() : undefined}
           className={({ isActive }) =>
-              `relative min-w-0 px-2 py-2 text-xs xl:text-sm font-semibold transition-all whitespace-nowrap inline-flex items-center justify-center ${
+              `relative min-h-[44px] min-w-0 px-2 py-2 text-xs xl:text-sm font-semibold transition-all whitespace-nowrap inline-flex items-center justify-center ${
               link.comingSoon
                 ? 'text-warm-400 dark:text-warm-600 cursor-default opacity-60'
                 : isActive
@@ -228,13 +231,16 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
       )}
       {/* Top Navigation Header */}
       <header className={`sticky top-0 z-40 w-full backdrop-blur-2xl border-b shadow-lg transition-colors duration-300 ${creativeMode === 'roleplay' ? 'border-[#c99b50]/25 bg-[#08090e]/90 shadow-black/50' : 'bg-warm-950/70 dark:bg-warm-950/80 border-warm-800/60'}`}>
-        <div className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="w-full max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-2 flex flex-wrap 2xl:flex-nowrap items-center justify-between gap-2 sm:gap-4">
           
           {/* 1. BLOC GAUCHE — Logo */}
           <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="lg:hidden p-2 -ml-1 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
+              className="lg:hidden min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[#e8c378] hover:bg-[#c99b50]/10 transition-colors"
+              aria-label="Open navigation menu"
+              aria-expanded={isMenuOpen}
+              aria-controls="chimera-mobile-navigation"
               title="Open Navigation Menu"
             >
               <Menu size={20} />
@@ -242,7 +248,8 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
 
             <button
               onClick={() => setShowAppLauncher(true)}
-              className="p-2 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
+              className="hidden lg:flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-[#d5c8b5] hover:bg-[#c99b50]/10 transition-colors"
+              aria-label="Open ecosystem apps"
               title="Ecosystem App Switcher"
             >
               <LayoutGrid size={20} />
@@ -252,7 +259,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               <img
                 src="/chimera_logo.png"
                 alt="CHIMERA"
-                className="w-7 h-7 sm:w-9 sm:h-9 object-contain drop-shadow-md group-hover:scale-105 group-hover:drop-shadow-lg transition-all"
+                className="hidden sm:block w-7 h-7 sm:w-9 sm:h-9 object-contain drop-shadow-md group-hover:scale-105 group-hover:drop-shadow-lg transition-all"
               />
               <span className={`font-serif text-base sm:text-xl font-extrabold tracking-wider bg-clip-text text-transparent transition-all duration-300 drop-shadow-sm ${
                 creativeMode === 'storytelling'
@@ -265,21 +272,22 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
           </div>
 
           {/* 2. BLOC MILIEU — Clean Fluid Primary Navigation */}
-          <div className="hidden lg:flex min-w-0 flex-1 basis-[820px] items-center justify-center px-2 xl:px-5">
+          <div className="hidden lg:flex order-last 2xl:order-none min-w-0 flex-1 basis-full 2xl:basis-[820px] items-center justify-center px-2 xl:px-5">
             <nav className={`grid w-full ${currentNavLinks.length === 5 ? 'max-w-[820px] grid-cols-5' : currentNavLinks.length === 4 ? 'max-w-[720px] grid-cols-4' : 'max-w-[420px] grid-cols-3'} items-center gap-1 rounded-2xl border p-1 text-center ${creativeMode === 'roleplay' ? 'border-[#c99b50]/20 bg-black/25' : 'border-warm-800/50 bg-warm-900/20'}`}>
               {renderNavLinks()}
             </nav>
           </div>
 
           {/* 3. BLOC DROITE — Actions */}
-          <div className="flex items-center justify-end gap-1.5 sm:gap-3 shrink-0">
+          <div className="flex w-auto max-w-full items-center justify-end gap-1.5 sm:gap-2 shrink-0">
 
             {/* Sélecteur de Langue Mondial (Global Language Picker) */}
-            <div className="relative">
+            <div className="relative hidden lg:block">
               <select
                 onChange={(e) => setLocale(e.target.value)}
                 value={supportedLocales.some(l => l.code === (locale || 'en')) ? (locale || 'en') : 'en'}
-                className="appearance-none bg-warm-200/70 dark:bg-warm-800/90 text-warm-900 dark:text-white text-xs font-bold px-2.5 py-1.5 rounded-xl border border-warm-200/90 dark:border-warm-750/90 cursor-pointer focus:outline-none hover:bg-warm-300 dark:hover:bg-warm-750 transition-all pr-6"
+                className="appearance-none bg-warm-200/70 dark:bg-warm-800/90 text-warm-900 dark:text-white text-xs font-bold min-h-[44px] px-2.5 py-1.5 rounded-xl border border-warm-200/90 dark:border-warm-750/90 cursor-pointer focus:outline-none hover:bg-warm-300 dark:hover:bg-warm-750 transition-all pr-6"
+                aria-label={t('settings.language')}
                 title={t('settings.language')}
               >
                 {supportedLocales.map((l) => (
@@ -292,14 +300,16 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             </div>
 
             {/* Creative Mode Switch Pill — Responsive on Mobile & Desktop */}
-            <div className={`flex items-center p-0.5 sm:p-1 rounded-xl sm:rounded-2xl border shadow-inner ${creativeMode === 'roleplay' ? 'border-[#c99b50]/55 bg-black/35' : 'bg-warm-200/70 dark:bg-warm-800/90 border-warm-200/90 dark:border-warm-750/90'}`}>
+            <div className={`hidden lg:flex items-center p-0.5 sm:p-1 rounded-xl sm:rounded-2xl border shadow-inner ${creativeMode === 'roleplay' ? 'border-[#c99b50]/55 bg-black/35' : 'bg-warm-200/70 dark:bg-warm-800/90 border-warm-200/90 dark:border-warm-750/90'}`}>
               <button
                 onClick={() => toggleCreativeMode('roleplay')}
-                className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all duration-300 ${
+                className={`min-h-[44px] min-w-[44px] justify-center flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all duration-300 ${
                   creativeMode === 'roleplay'
                     ? 'bg-[#2b2116] text-[#ffe7b5] shadow-md ring-1 ring-[#c99b50]/70'
                     : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
+                aria-label={t('common.roleplay')}
+                aria-pressed={creativeMode === 'roleplay'}
                 title={t('common.roleplay')}
               >
                 <MessageSquare size={12} className="sm:w-3.5 sm:h-3.5" />
@@ -307,11 +317,13 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               </button>
               <button
                 onClick={() => toggleCreativeMode('storytelling')}
-                className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all duration-300 ${
+                className={`min-h-[44px] min-w-[44px] justify-center flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all duration-300 ${
                   creativeMode === 'storytelling' 
                     ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30' 
                     : 'text-warm-600 dark:text-warm-400 hover:text-warm-900 dark:hover:text-white'
                 }`}
+                aria-label={t('common.storytelling')}
+                aria-pressed={creativeMode === 'storytelling'}
                 title={t('common.storytelling')}
               >
                 <PenTool size={12} className="sm:w-3.5 sm:h-3.5" />
@@ -322,17 +334,18 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             {/* Mode-aware creative reserve: real VELLUM in Storytelling, SHARDS in Roleplay. */}
             <button
               onClick={() => navigate(creativeMode === 'storytelling' ? '/vellum' : '/shards')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-md transition-all font-bold text-xs shadow-lg hover:scale-105 active:scale-95 group shrink-0 ${creativeMode === 'storytelling' ? 'bg-[#10213b]/80 hover:bg-[#173050]/90 text-[#f1d9aa] border border-[#c89d57]/50 hover:border-[#f1d9aa]' : 'bg-purple-950/60 hover:bg-purple-900/70 text-amber-200 border border-amber-500/40 hover:border-amber-400 hover:shadow-purple-900/30'}`}
+              aria-label={creativeMode === 'storytelling' ? 'Open VELLUM reserve' : 'Open SHARDS reserve'}
+              className={`hidden lg:flex min-h-[44px] items-center gap-2 px-2 sm:px-3 py-1.5 rounded-full backdrop-blur-md transition-all font-bold text-xs shadow-lg hover:scale-105 active:scale-95 group shrink-0 ${creativeMode === 'storytelling' ? 'bg-[#10213b]/80 hover:bg-[#173050]/90 text-[#f1d9aa] border border-[#c89d57]/50 hover:border-[#f1d9aa]' : 'bg-purple-950/60 hover:bg-purple-900/70 text-amber-200 border border-amber-500/40 hover:border-amber-400 hover:shadow-purple-900/30'}`}
               title={creativeMode === 'storytelling' ? 'VELLUM story reserve' : t('navigation.shards_hub')}
             >
               <img src={creativeMode === 'storytelling' ? '/images/vellum-sigil.svg' : '/images/shards_amethyst_logo.png'} alt={creativeMode === 'storytelling' ? 'VELLUM' : 'SHARDS'} className="w-5 h-5 object-contain rounded-md" />
-              <span className="font-serif font-black text-xs tracking-wide">{creativeMode === 'storytelling' ? (vellumBalance === null ? 'VELLUM · loading…' : `${formatNumber(vellumBalance)} VELLUM`) : (shardsBalance === null ? 'SHARDS · loading…' : `${formatNumber(shardsBalance)} SHARDS`)}</span>
+              <span className="hidden sm:inline font-serif font-black text-xs tracking-wide">{creativeMode === 'storytelling' ? (vellumBalance === null ? (profile ? 'Loading…' : 'VELLUM') : `${formatNumber(vellumBalance)} VELLUM`) : (shardsBalance === null ? (profile ? 'Loading…' : 'SHARDS') : `${formatNumber(shardsBalance)} SHARDS`)}</span>
             </button>
 
             {/* Search — icon only, no text label on smaller screens */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="p-2 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-850 text-warm-500 hover:border-warm-300 dark:hover:border-warm-650 transition-colors shrink-0"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-xl border border-warm-200 dark:border-warm-750 bg-warm-50 dark:bg-warm-850 text-warm-500 hover:border-warm-300 dark:hover:border-warm-650 transition-colors shrink-0"
               aria-label={t('common.search')}
             >
               <Search size={16} />
@@ -341,22 +354,24 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             {/* Mode-Specific Primary CTA — Identical Fixed Layout width */}
             <button
               onClick={() => navigate(creativeMode === 'storytelling' ? '/stories/new' : '/characters/new')}
-              className={`min-w-[125px] justify-center flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs text-white shadow-md active:scale-[0.98] transition-all shrink-0 ${
+              aria-label={creativeMode === 'storytelling' ? 'Create story' : 'Create character'}
+              className={`hidden lg:flex min-h-[44px] min-w-[44px] justify-center items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs text-white shadow-md active:scale-[0.98] transition-all shrink-0 ${
                 creativeMode === 'storytelling'
                   ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-600/30'
                   : 'border border-[#dfb96e] bg-[linear-gradient(135deg,#8d5f2e,#c9964f,#7f532a)] text-[#fff6e3] shadow-[#6b451f]/40 hover:brightness-110'
               }`}
             >
               <Plus size={16} />
-              <span>{t('common.create')}</span>
+              <span className="hidden sm:inline">{t('common.create')}</span>
             </button>
 
             {/* Theme Toggle */}
-            <div className="relative hidden sm:block shrink-0" ref={themeMenuRef}>
+            <div className="relative hidden lg:block shrink-0" ref={themeMenuRef}>
               <button
                 onClick={() => setShowThemeMenu(!showThemeMenu)}
                 className="p-2 rounded-xl text-warm-600 dark:text-warm-300 hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
                 aria-label="Toggle theme menu"
+                aria-expanded={showThemeMenu}
               >
                 {preference === 'light' ? <Sun size={18} /> : preference === 'dark' ? <Moon size={18} /> : <Monitor size={18} />}
               </button>
@@ -396,7 +411,9 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
               <div className="relative shrink-0 mr-1 sm:mr-2" ref={profileMenuRef}>
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex items-center gap-2 p-1 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors focus:outline-none"
+                  aria-label="Open account menu"
+                  aria-expanded={showProfileMenu}
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center gap-2 p-1 rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800 transition-colors"
                 >
                   <Avatar
                     photoUrl={profile.photo_url}
@@ -445,7 +462,7 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
             ) : (
               <Link
                 to="/auth"
-                className="px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white shadow-md hover:shadow-lg transition-all shrink-0 mr-1 sm:mr-2"
+                className="min-h-[44px] inline-flex items-center px-3 py-2 text-xs font-bold rounded-xl border border-[#c99b50]/50 bg-[#2b2116] text-[#ffe7b5] hover:bg-[#392b1b] transition-all shrink-0"
               >
                 Sign In
               </Link>
@@ -455,7 +472,8 @@ export function ChimeraLayout({ children }: ChimeraLayoutProps) {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-7xl mx-auto">
+      <a href="#chimera-main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[1000] focus:bg-white focus:text-black focus:p-3">Skip to main content</a>
+      <main id="chimera-main" tabIndex={-1} className="flex-1 w-full max-w-7xl mx-auto">
         {children || <Outlet context={{ creativeMode }} />}
       </main>
 
