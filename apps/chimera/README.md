@@ -28,6 +28,22 @@ These files were copied as they were (only two unused imports/variables removed 
 Checkout still uses Stripe, exactly as before. Stripe does not accept businesses in Senegal, so a SHARDS purchase
 needs a Stripe account from a supported country, or a different payment provider, before it can go live.
 
+## Deploying to Vercel
+
+The Vercel project `chimera` uses root directory `apps/chimera` (build `npm run build`, output `dist`; see `vercel.json`).
+Before the first production deploy:
+
+1. **Apply the database migration** `supabase/migrations/20261006120000_chimera_age_verification_gate.sql` to the production
+   Supabase project. It resets every self-declared adult setting to off.
+2. **Set the environment variables** in Vercel (Production): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
+   `SUPABASE_SERVICE_ROLE_KEY`, `CHIMERA_APP_URL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `GEMINI_API_KEY_SERVER`.
+   The two `VITE_` values are baked in at build time, so redeploy after changing them.
+3. **Check the production branch** (Vercel > Project > Settings > Git) and merge into it.
+4. **Rollback:** Vercel > Deployments > a previous deployment > "Instant Rollback" restores the old site at once.
+
+`public/sw.js` retires the service worker of the previous CHIMERA (it was a PWA), so returning visitors do not keep
+seeing the old site from their cache. Keep it for a few weeks after the switch.
+
 ## Next
 
 Roleplay scenes (chat with memory), then the storytelling editor, then age verification through a provider.
