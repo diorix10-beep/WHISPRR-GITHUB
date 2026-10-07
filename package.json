@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "npm run dev --workspaces",
     "build": "npm run build --workspaces",
+    "build:chimera": "npm run build --workspace=chimera",
     "dev:whisprr:local": "npm run dev --workspace=whisprr",
     "supabase:local:start": "./scripts/supabase-local.sh start",
     "supabase:local:stop": "./scripts/supabase-local.sh stop",
@@ -17,7 +18,9 @@
     "supabase:local:restore": "./scripts/supabase-local.sh restore-backup",
     "supabase:local:test": "./scripts/supabase-local.sh test",
     "supabase:local:test:chimera": "./scripts/supabase-local.sh test-chimera",
-    "supabase:local:functions": "./scripts/supabase-local.sh functions"
+    "supabase:local:functions": "./scripts/supabase-local.sh functions",
+    "typecheck:chimera": "npm run typecheck --workspace=chimera",
+    "dev:chimera:local": "npm run dev --workspace=chimera -- --host 127.0.0.1 --port 5174"
   },
   "dependencies": {
     "stripe": "^18.5.0"

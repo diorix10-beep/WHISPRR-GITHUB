@@ -1,0 +1,63 @@
+import { lazy, Suspense } from 'react';
+import { Link, Route, Routes } from 'react-router-dom';
+import AppLayout from './components/layout/AppLayout';
+import ProtectedRoute from './components/layout/ProtectedRoute';
+import HomePage from './pages/HomePage';
+import DiscoverPage from './pages/DiscoverPage';
+import CharacterPage from './pages/CharacterPage';
+import AuthPage from './pages/AuthPage';
+import GuardianPage from './pages/GuardianPage';
+import ComingSoonPage from './pages/ComingSoonPage';
+import LegalPlaceholderPage from './pages/LegalPlaceholderPage';
+
+// SHARDS and VELLUM keep the screens they had before.
+const ShardsPage = lazy(() => import('./pages/ShardsPage'));
+const VellumPage = lazy(() => import('./pages/VellumPage'));
+
+function NotFoundPage() {
+  return (
+    <div className="mx-auto max-w-xl px-5 py-24 text-center">
+      <h1 className="font-serif text-5xl font-semibold">This page does not exist</h1>
+      <p className="mt-4 text-lg text-chimera-mute">The link may be old, or the page may have moved.</p>
+      <Link to="/" className="mt-8 inline-flex min-h-[48px] items-center rounded-full border border-chimera-gold/50 px-6 font-bold hover:bg-chimera-gold/10">Go home</Link>
+    </div>
+  );
+}
+
+const Loading = () => (
+  <div className="grid min-h-[40vh] place-items-center" role="status" aria-label="Loading">
+    <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-300/30 border-t-violet-400" />
+  </div>
+);
+
+export default function App() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <Routes>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/discover" element={<DiscoverPage />} />
+          <Route path="/characters/:id" element={<CharacterPage />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/guardian" element={<GuardianPage />} />
+          <Route path="/terms" element={<LegalPlaceholderPage title="Terms of Service" />} />
+          <Route path="/privacy" element={<LegalPlaceholderPage title="Privacy Policy" />} />
+
+          <Route element={<ProtectedRoute />}>
+            <Route path="/shards" element={<ShardsPage />} />
+            <Route path="/vellum" element={<VellumPage />} />
+          </Route>
+
+          {/* Planned, not built yet: say so instead of linking to nothing. */}
+          <Route path="/chats" element={<ComingSoonPage title="Roleplay scenes" description="Chat with a character, with scenes that remember what happened. This is the next part of CHIMERA we are building." />} />
+          <Route path="/library" element={<ComingSoonPage title="Story library" description="Browse stories written on CHIMERA. Storytelling comes after roleplay scenes." />} />
+          <Route path="/workspace" element={<ComingSoonPage title="Writer's Desk" description="Write chapters with an AI co-author that suggests and never takes over. Storytelling comes after roleplay scenes." />} />
+          <Route path="/write" element={<ComingSoonPage title="Writer's Desk" description="Write chapters with an AI co-author that suggests and never takes over. Storytelling comes after roleplay scenes." />} />
+          <Route path="/stories/new" element={<ComingSoonPage title="New story" description="Start a story with chapters and an outline. Storytelling comes after roleplay scenes." />} />
+
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Routes>
+    </Suspense>
+  );
+}

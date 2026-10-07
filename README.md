@@ -1,12 +1,11 @@
 # CHIMERA / WHISPRR
 
-> **Fresh start for CHIMERA.** On this branch the previous CHIMERA app
-> (`apps/chimera`) and its desktop-build workflow have been removed so the
-> product can be rebuilt from scratch, keeping the two modes: **storytelling**
-> and **roleplay**. WHISPRR, `packages/shared` and the Supabase migrations are
-> untouched. The previous CHIMERA code is still available in git history, for
-> example on the branch `codex/chimera-phases1-6-release`. The "Run CHIMERA
-> locally" steps below no longer apply on this branch.
+> **CHIMERA is being rebuilt from scratch on this branch**, keeping its two modes:
+> **storytelling** and **roleplay**. SHARDS and VELLUM are carried over unchanged.
+> See `apps/chimera/README.md` for what exists now and what comes next.
+> WHISPRR, `packages/shared` and the Supabase migrations are untouched. The previous
+> CHIMERA code is still available in git history, for example on the branch
+> `codex/chimera-phases1-6-release`.
 
 This repository contains the active development workspace for CHIMERA and
 WHISPRR.

@@ -1,0 +1,36 @@
+# Robots.txt for CHIMERA
+User-agent: *
+Allow: /
+Disallow: /oracle-verity/
+
+# Explicit permissions for AI search engines and crawling agents
+User-agent: GPTBot
+Allow: /
+Disallow: /oracle-verity/
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /oracle-verity/
+
+User-agent: Claude-Web
+Allow: /
+Disallow: /oracle-verity/
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /oracle-verity/
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /oracle-verity/
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /oracle-verity/
+
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /oracle-verity/
+
+# Reference sitemaps and AI manifests
+Sitemap: https://www.chimera.it.com/sitemap.xml
