@@ -9,10 +9,7 @@
   "scripts": {
     "dev": "npm run dev --workspaces",
     "build": "npm run build --workspaces",
-    "build:chimera": "npm run build --workspace=chimera",
-    "typecheck:chimera": "npm run typecheck --workspace=chimera",
     "dev:whisprr:local": "npm run dev --workspace=whisprr",
-    "dev:chimera:local": "npm run dev --workspace=chimera -- --host 127.0.0.1 --port 5174",
     "supabase:local:start": "./scripts/supabase-local.sh start",
     "supabase:local:stop": "./scripts/supabase-local.sh stop",
     "supabase:local:status": "./scripts/supabase-local.sh status",
