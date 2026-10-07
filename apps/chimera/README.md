@@ -9,7 +9,22 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
 - Ratings on every character. **Mature and NSFW are hidden unless the member is a verified adult who opted in**
   (`supabase/migrations/20261006120000_chimera_age_verification_gate.sql`, `useAdultContentAccess`).
 - Guardian's Library: shows age status and the adult toggle. **Age verification is not connected to a provider yet**, so nobody is verified.
-- Honest "coming next" pages for roleplay scenes, story library and the Writer's Desk. Terms and Privacy are drafts.
+- Honest "coming next" pages for the story library and the Writer's Desk. Terms and Privacy are drafts.
+
+## Roleplay (step 2)
+
+- **Begin a scene** on a character page creates a one-to-one scene (`create_chimera_scene`) and opens `/chats/:id`.
+  The character's own greeting opens it. `/chats` lists your scenes.
+- Write as **Say**, **Act** (wrapped in `*asterisks*`) or **OOC** (wrapped in `(OOC: ...)`). **Regenerate** replaces the latest reply
+  and keeps the old one in `response_versions`. A failed reply shows **Try again** and never sends your line twice.
+- **Memory**: each scene has an editable memory (`save_chimera_scene_canon`) that is sent to the character every turn, in front of
+  the last 32 messages (28,000 characters). Older messages are not summarised yet, so anything that must last belongs in Memory.
+- **Guided Story Path** (turning points, +10 SHARDS once) is carried over from the previous CHIMERA.
+- Server: `api/ai-chat.ts` (Gemini 2.5 Flash) with the prompt in `api/_lib/roleplayPrompt.ts`. It checks membership, applies the
+  adult-content gate before any model call, uses the request-protection reservation (rate limits, no double charge on retry),
+  and returns sanitized errors. `api/roleplay-turning-point.ts` has the same gate.
+- Not in this step: personas picker, group scenes, branches, character memories, images, voice, character creation.
+  Persona text is used if the member already has a default persona from before.
 
 ## SHARDS and VELLUM: unchanged from the previous CHIMERA
 
@@ -46,7 +61,7 @@ seeing the old site from their cache. Keep it for a few weeks after the switch.
 
 ## Next
 
-Roleplay scenes (chat with memory), then the storytelling editor, then age verification through a provider.
+The storytelling editor, then age verification through a provider.
 
 ## Commands
 

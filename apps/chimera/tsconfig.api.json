@@ -1,5 +1,5 @@
 {
   "extends": "./tsconfig.app.json",
   "compilerOptions": { "target": "ES2022", "lib": ["ES2022", "DOM", "DOM.Iterable"], "types": ["node"] },
-  "include": ["api/create-shards-checkout.ts", "api/stripe-webhook.ts", "api/illustration-status.ts", "api/generate-scene-illustration.ts", "api/_lib/**/*.ts", "src/lib/rpcRecord.ts"]
+  "include": ["api/create-shards-checkout.ts", "api/stripe-webhook.ts", "api/illustration-status.ts", "api/generate-scene-illustration.ts", "api/ai-chat.ts", "api/roleplay-turning-point.ts", "api/_lib/**/*.ts", "src/lib/rpcRecord.ts"]
 }

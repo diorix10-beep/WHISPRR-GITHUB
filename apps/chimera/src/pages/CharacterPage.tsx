@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { isAdultRating, useAdultContentAccess } from '../hooks/useAdultContentAccess';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { ratingLabel } from '../lib/ratings';
 
 interface CharacterDetail {
   id: string;
+  user_id: string;
   name: string | null;
   short_description: string | null;
   long_description: string | null;
@@ -20,11 +22,14 @@ interface CharacterDetail {
 }
 
 export default function CharacterPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
+  const { showToast } = useToast();
   const { id } = useParams<{ id: string }>();
   const { allowed: adultAccess, loading: accessLoading } = useAdultContentAccess();
   const [character, setCharacter] = useState<CharacterDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [starting, setStarting] = useState(false);
 
   useEffect(() => {
     if (!id || accessLoading) return;
@@ -33,7 +38,7 @@ export default function CharacterPage() {
     setCharacter(null);
     let request = supabase
       .from('ai_characters')
-      .select('id, name:chat_name, short_description, long_description, scenario, greeting, personality, category, tags, content_rating')
+      .select('id, user_id, name:chat_name, short_description, long_description, scenario, greeting, personality, category, tags, content_rating')
       .eq('id', id);
     // UI defence only: RLS enforces the same rule for direct Data API requests.
     if (!adultAccess) request = request.or('content_rating.is.null,content_rating.eq.SFW');
@@ -47,6 +52,23 @@ export default function CharacterPage() {
       active = false;
     };
   }, [id, user?.id, adultAccess, accessLoading]);
+
+  const beginScene = async () => {
+    if (!character || starting) return;
+    if (!user) {
+      navigate('/auth', { state: { from: `/characters/${character.id}` } });
+      return;
+    }
+    setStarting(true);
+    const { data, error } = await supabase.rpc('create_chimera_scene', { p_bot_ids: [character.user_id] });
+    setStarting(false);
+    const scene = (Array.isArray(data) ? data[0] : data) as { id?: string } | null;
+    if (error || !scene?.id) {
+      showToast('We could not start this scene. Please try again.', 'error');
+      return;
+    }
+    navigate(`/chats/${scene.id}`);
+  };
 
   if (loading || accessLoading) return <p className="px-5 py-24 text-center text-chimera-mute">Opening the story…</p>;
 
@@ -89,8 +111,9 @@ export default function CharacterPage() {
           </section>
 
           <div className="mt-6 flex flex-wrap items-center gap-4">
-            <button type="button" disabled className="inline-flex min-h-[52px] cursor-not-allowed items-center rounded-full bg-chimera-gold/40 px-7 text-base font-bold text-[#1a1208]/70" aria-describedby="scene-note">Begin a scene</button>
-            <p id="scene-note" className="text-sm text-chimera-mute">Scenes are the next thing we are building.</p>
+            <button type="button" onClick={() => void beginScene()} disabled={starting} className="inline-flex min-h-[52px] items-center rounded-full bg-chimera-gold px-7 text-base font-bold text-[#1a1208] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50">
+              {starting ? 'Starting…' : user ? 'Begin a scene' : 'Sign in to begin a scene'}
+            </button>
           </div>
         </div>
       </article>
@@ -103,7 +126,7 @@ export default function CharacterPage() {
           </div>
           <div className="rounded-[22px] border border-chimera-gold/20 bg-chimera-panel p-7">
             <h2 className="mb-2 font-serif text-3xl font-semibold text-chimera-gold">Before you enter</h2>
-            <p className="text-lg leading-relaxed text-violet-100/85">Replies are written by an AI. Scenes will remember what happens, and you will be able to view, edit or delete that memory at any time.</p>
+            <p className="text-lg leading-relaxed text-violet-100/85">Replies are written by an AI. Each scene keeps a memory you can read, edit or clear at any time.</p>
           </div>
         </section>
       )}
