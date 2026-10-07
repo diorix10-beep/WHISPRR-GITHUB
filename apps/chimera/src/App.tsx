@@ -1,335 +1,63 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { ToastProvider } from './contexts/ToastContext';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { I18nProvider } from './contexts/I18nContext';
-import { ProjectProvider } from './contexts/ProjectContext';
-import { ErrorBoundary } from './components/common/ErrorBoundary';
-import { ChimeraLayout } from './components/layout/ChimeraLayout';
-import { ChimeraPlaceholderPage } from './components/common/ChimeraPlaceholderPage';
-import { ProtectedRoute } from './components/common/ProtectedRoute';
-import { PublicOnlyRoute } from './components/common/PublicOnlyRoute';
-import { ReloadPrompt } from './components/common/ReloadPrompt';
-import { PwaInstallBanner } from './components/common/PwaInstallBanner';
-import { OfflineStatusToast } from './components/common/OfflineStatusToast';
-import { EcosystemMaintenancePage } from './pages/EcosystemMaintenancePage';
+import { Link, Route, Routes } from 'react-router-dom';
+import AppLayout from './components/layout/AppLayout';
+import ProtectedRoute from './components/layout/ProtectedRoute';
+import HomePage from './pages/HomePage';
+import DiscoverPage from './pages/DiscoverPage';
+import CharacterPage from './pages/CharacterPage';
+import AuthPage from './pages/AuthPage';
+import GuardianPage from './pages/GuardianPage';
+import ComingSoonPage from './pages/ComingSoonPage';
+import LegalPlaceholderPage from './pages/LegalPlaceholderPage';
 
-// ── Auth & Onboarding ──────────────────────────────────────
-const AuthPage          = lazy(() => import('./pages/AuthPage'));
-const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
-const OnboardingPage    = lazy(() => import('./pages/OnboardingPage'));
-const ChooseCreativeSpacePage = lazy(() => import('./pages/ChooseCreativeSpacePage'));
-
-// ── Legal & Moderation ─────────────────────────────────────
-const LegalAcceptancePage  = lazy(() => import('./pages/LegalAcceptancePage'));
-const ModerationNoticePage = lazy(() => import('./pages/ModerationNoticePage'));
-const SuspendedPage        = lazy(() => import('./pages/SuspendedPage'));
-const TermsPage            = lazy(() => import('./pages/legal/TermsPage'));
-const PrivacyPage          = lazy(() => import('./pages/legal/PrivacyPage'));
-const AiSafetyPolicyPage       = lazy(() => import('./pages/legal/AiSafetyPolicyPage'));
-const ResponsibleAiPolicyPage  = lazy(() => import('./pages/legal/ResponsibleAiPolicyPage'));
-const PersonaPolicyPage        = lazy(() => import('./pages/legal/PersonaPolicyPage'));
-const AiCreatorPolicyPage      = lazy(() => import('./pages/legal/AiCreatorPolicyPage'));
-const ModelUsagePolicyPage     = lazy(() => import('./pages/legal/ModelUsagePolicyPage'));
-const PromptPolicyPage         = lazy(() => import('./pages/legal/PromptPolicyPage'));
-const MemoryPolicyPage         = lazy(() => import('./pages/legal/MemoryPolicyPage'));
-const CookiePolicyPage         = lazy(() => import('./pages/legal/CookiePolicyPage'));
-const TrustPage                = lazy(() => import('./pages/TrustPage'));
-
-// ── Dashboard ──────────────────────────────────────────────
-const CreatorDashboardPage = lazy(() => import('./pages/CreatorDashboardPage'));
-const RealmPortalPage = lazy(() => import('./pages/RealmPortalPage'));
-const DownloadPage = lazy(() => import('./pages/DownloadPage'));
-const DiscoverPage = lazy(() => import('./pages/DiscoverPage'));
+// SHARDS and VELLUM keep the screens they had before.
 const ShardsPage = lazy(() => import('./pages/ShardsPage'));
 const VellumPage = lazy(() => import('./pages/VellumPage'));
 
-// ── Creator Studio ─────────────────────────────────────────
-const CreatorStudioPage = lazy(() => import('./pages/CreatorStudioPage'));
-
-// ── Characters Module ──────────────────────────────────────
-const CharactersPage     = lazy(() => import('./pages/CharactersPage'));
-const AiCharacterCreator = lazy(() => import('./pages/AiCharacterCreator'));
-const CharacterProfilePage = lazy(() => import('./pages/CharacterProfilePage'));
-
-// ── Worlds Module ──────────────────────────────────────────
-const WorldsPage        = lazy(() => import('./pages/WorldsPage'));
-const WorldBuilderPage  = lazy(() => import('./pages/WorldBuilderPage'));
-
-// ── Lorebooks Module ───────────────────────────────────────
-const LorebooksPage       = lazy(() => import('./pages/LorebooksPage'));
-const LorebookEditorPage  = lazy(() => import('./pages/LorebookEditorPage'));
-
-// ── Stories Module ─────────────────────────────────────────
-const WritersDeskPage   = lazy(() => import('./pages/WritersDeskPage'));
-const StoryReaderPage   = lazy(() => import('./pages/StoryReaderPage'));
-const ChapterReaderPage = lazy(() => import('./pages/ChapterReaderPage'));
-const ChapterEditorPage = lazy(() => import('./pages/ChapterEditorPage'));
-const MemoryManagerPage = lazy(() => import('./pages/MemoryManagerPage'));
-
-// ── Conversations Module ───────────────────────────────────
-const ChimeraChatsPage  = lazy(() => import('./pages/ChimeraChatsPage'));
-const ConversationPage  = lazy(() => import('./pages/ConversationPage'));
-const HumanRoleplayHubPage = lazy(() => import('./pages/HumanRoleplayHubPage'));
-const HumanRoleplayCreatePage = lazy(() => import('./pages/HumanRoleplayCreatePage'));
-const HumanRoleplaySessionPage = lazy(() => import('./pages/HumanRoleplaySessionPage'));
-const PublicRoleplayScenePage = lazy(() => import('./pages/PublicRoleplayScenePage'));
-const ModelsPage        = lazy(() => import('./pages/ModelsPage'));
-const VoiceLibraryPage  = lazy(() => import('./pages/VoiceLibraryPage'));
-
-// ── Personas ───────────────────────────────────────────────
-const PersonasPage      = lazy(() => import('./pages/PersonasPage'));
-const PersonaEditorPage = lazy(() => import('./pages/PersonaEditorPage'));
-
-// ── Profile & Settings ─────────────────────────────────────
-const ProfilePage  = lazy(() => import('./pages/ProfilePage'));
-const SettingsPage = lazy(() => import('./pages/SettingsPage'));
-
-// ── Not Found ──────────────────────────────────────────────
-const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
-
-
-function PageLoader() {
+function NotFoundPage() {
   return (
-    <div className="h-screen flex items-center justify-center bg-warm-50 dark:bg-warm-900">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-red-300 border-t-red-500 mx-auto mb-3" />
-        <p className="text-warm-500 text-sm">Loading…</p>
-      </div>
+    <div className="mx-auto max-w-xl px-5 py-24 text-center">
+      <h1 className="font-serif text-5xl font-semibold">This page does not exist</h1>
+      <p className="mt-4 text-lg text-chimera-mute">The link may be old, or the page may have moved.</p>
+      <Link to="/" className="mt-8 inline-flex min-h-[48px] items-center rounded-full border border-chimera-gold/50 px-6 font-bold hover:bg-chimera-gold/10">Go home</Link>
     </div>
   );
 }
 
-/**
- * The root URL is an intentional arrival point, not a generic feed. It honors
- * the creative space the member chose during CHIMERA onboarding on every
- * device, including immediately after sign-in.
- */
-function ChimeraHomeRedirect() {
-  const { chimeraPreferences } = useAuth();
+const Loading = () => (
+  <div className="grid min-h-[40vh] place-items-center" role="status" aria-label="Loading">
+    <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-300/30 border-t-violet-400" />
+  </div>
+);
 
-  if (!chimeraPreferences) {
-    return <Navigate to="/discover" replace />;
-  }
-
-  if (!chimeraPreferences.chimera_onboarding_complete) {
-    return <Navigate to="/onboarding" replace />;
-  }
-
-  if (chimeraPreferences.creative_preference === 'both' && !chimeraPreferences.both_mode_welcome_seen) {
-    return <Navigate to="/choose-your-space" replace />;
-  }
-
-  return <Navigate to={chimeraPreferences.last_creative_mode === 'storytelling' ? '/workspace' : '/discover'} replace />;
-}
-
-function AppLoader() {
-  const { profile, loading, systemSettings } = useAuth();
-
-  const isMaintenanceActive = systemSettings?.enabled === true;
-
-  if (loading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-warm-50 dark:bg-warm-900">
-        <div className="text-center flex flex-col items-center gap-4">
-          <img
-            src="/chimera_logo.png"
-            alt="CHIMERA"
-            className="w-16 h-16 object-contain animate-pulse"
-          />
-          <p className="text-warm-600 dark:text-warm-400 font-serif text-lg tracking-widest uppercase">CHIMERA</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Maintenance mode
-  if (isMaintenanceActive) {
-    const role = profile?.role || 'user';
-    const isFounderBypass = role === 'founder' && systemSettings?.bypass_founder !== false;
-    const isAdminBypass = role === 'admin' && systemSettings?.bypass_admin !== false;
-    const isBetaBypass = role === 'moderator' && systemSettings?.bypass_beta === true;
-    const isUserBypass = profile?.username === 'nyny59';
-    const isBypass = isFounderBypass || isAdminBypass || isBetaBypass || isUserBypass;
-
-    if (!isBypass) {
-      const path = window.location.pathname;
-      const isAuthRoute = path === '/auth' || path === '/reset-password';
-
-      if (isAuthRoute && systemSettings?.allow_auth !== false) {
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/privacy" element={<PrivacyPage />} />
-              <Route path="/terms" element={<TermsPage />} />
-              <Route path="/trust" element={<TrustPage />} />
-              <Route path="*" element={<Navigate to="/auth" replace />} />
-            </Routes>
-          </Suspense>
-        );
-      }
-
-      return (
-        <EcosystemMaintenancePage
-          message={systemSettings?.message || 'We are improving WHISPRR & CHIMERA, thank you for your patience.'}
-          target={systemSettings?.target || 'all'}
-          estimatedDuration={systemSettings?.estimated_duration || 'Underway'}
-        />
-      );
-    }
-  }
-
+export default function App() {
   return (
-    <Suspense fallback={<PageLoader />}>
+    <Suspense fallback={<Loading />}>
       <Routes>
-        {/* ── Public Routes ─────────────────────────────────── */}
-        <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/trust" element={<TrustPage />} />
-        <Route path="/ai-safety-policy" element={<AiSafetyPolicyPage />} />
-        <Route path="/responsible-ai-policy" element={<ResponsibleAiPolicyPage />} />
-        <Route path="/persona-policy" element={<PersonaPolicyPage />} />
-        <Route path="/ai-creator-policy" element={<AiCreatorPolicyPage />} />
-        <Route path="/model-usage-policy" element={<ModelUsagePolicyPage />} />
-        <Route path="/prompt-policy" element={<PromptPolicyPage />} />
-        <Route path="/memory-policy" element={<MemoryPolicyPage />} />
-        <Route path="/cookie-policy" element={<CookiePolicyPage />} />
-
-        {/* ── Public Platform Routes (with Layout) ───────────── */}
-        <Route element={<ChimeraLayout />}>
-          <Route path="/" element={<RealmPortalPage />} />
-          <Route path="/download" element={<DownloadPage />} />
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<HomePage />} />
           <Route path="/discover" element={<DiscoverPage />} />
-          <Route path="/characters" element={<CharactersPage />} />
-          <Route path="/stories" element={<StoryReaderPage />} />
-          <Route path="/stories/:id" element={<StoryReaderPage />} />
-          <Route path="/worlds" element={<WorldsPage />} />
-        </Route>
-
-        {/* ── Auth (Public Only) ────────────────────────────── */}
-        <Route element={<PublicOnlyRoute />}>
+          <Route path="/characters/:id" element={<CharacterPage />} />
           <Route path="/auth" element={<AuthPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-        </Route>
+          <Route path="/guardian" element={<GuardianPage />} />
+          <Route path="/terms" element={<LegalPlaceholderPage title="Terms of Service" />} />
+          <Route path="/privacy" element={<LegalPlaceholderPage title="Privacy Policy" />} />
 
-        {/* ── Protected Platform ────────────────────────────── */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/onboarding" element={<OnboardingPage />} />
-          <Route path="/choose-your-space" element={<ChooseCreativeSpacePage />} />
-          <Route path="/legal-acceptance" element={<LegalAcceptancePage />} />
-          <Route path="/moderation-notice" element={<ModerationNoticePage />} />
-          <Route path="/suspended" element={<SuspendedPage />} />
-
-          {/* ── CHIMERA Platform (with Layout) ────────────── */}
-          <Route element={<ChimeraLayout />}>
-
-            {/* Dashboard redirect */}
-            <Route path="/dashboard" element={<ChimeraHomeRedirect />} />
+          <Route element={<ProtectedRoute />}>
             <Route path="/shards" element={<ShardsPage />} />
             <Route path="/vellum" element={<VellumPage />} />
-
-            {/* Characters Module */}
-            <Route path="/characters" element={<CharactersPage />} />
-            <Route path="/characters/new" element={<AiCharacterCreator />} />
-            <Route path="/characters/:id" element={<CharacterProfilePage />} />
-            <Route path="/characters/:id/edit" element={<AiCharacterCreator />} />
-
-            {/* Worlds Module */}
-            <Route path="/worlds" element={<WorldsPage />} />
-            <Route path="/worlds/new" element={<WorldsPage />} />
-            <Route path="/worlds/:id" element={<WorldBuilderPage />} />
-
-            {/* Lorebooks Module */}
-            <Route path="/lorebooks" element={<LorebooksPage />} />
-            <Route path="/lorebooks/:id" element={<LorebookEditorPage />} />
-
-            {/* Stories Module */}
-            <Route path="/stories" element={<WritersDeskPage />} />
-            <Route path="/write/desk" element={<Navigate to="/stories" replace />} />
-            <Route path="/stories/new" element={<WritersDeskPage />} />
-            <Route path="/stories/:id" element={<StoryReaderPage />} />
-            <Route path="/stories/:storyId/chapter/:chapterNumber" element={<ChapterReaderPage />} />
-            <Route path="/stories/:storyId/chapters/:chapterNumber" element={<ChapterReaderPage />} />
-            <Route path="/stories/:storyId/edit/chapter/:chapterId" element={<ChapterEditorPage />} />
-            <Route path="/stories/:storyId/chapters/:chapterId/edit" element={<ChapterEditorPage />} />
-            <Route path="/write/story/:storyId/chapter/:chapterId" element={<ChapterEditorPage />} />
-
-            {/* AI Models Module */}
-            <Route path="/models" element={<ModelsPage />} />
-
-            {/* Conversations Module */}
-            <Route path="/conversations" element={<ChimeraChatsPage />} />
-            <Route path="/conversations/scenes/:sceneId" element={<PublicRoleplayScenePage />} />
-            <Route path="/conversations/:id" element={<ConversationPage />} />
-            <Route path="/human-roleplay" element={<HumanRoleplayHubPage />} />
-            <Route path="/human-roleplay/create" element={<HumanRoleplayCreatePage />} />
-            <Route path="/human-roleplay/:sessionId" element={<HumanRoleplaySessionPage />} />
-            {/* Legacy routes redirect */}
-            <Route path="/chats" element={<Navigate to="/conversations" replace />} />
-            <Route path="/chat/:id" element={<Navigate to="/conversations/:id" replace />} />
-
-            {/* Memory Module */}
-            <Route path="/memory" element={<MemoryManagerPage />} />
-
-            {/* Voices Module */}
-            <Route path="/voices" element={<VoiceLibraryPage />} />
-
-            {/* Media / Image Studio */}
-            <Route path="/media" element={<ChimeraPlaceholderPage title="Image Studio" description="Generate avatars, expressions, outfits, scenes, and location art for your characters and worlds." />} />
-
-            {/* Creator Workspace (unified workspace) */}
-            <Route path="/workspace" element={<CreatorStudioPage />} />
-            <Route path="/studio" element={<CreatorStudioPage />} />
-
-            {/* Personas */}
-            <Route path="/personas" element={<PersonasPage />} />
-            <Route path="/personas/new" element={<PersonaEditorPage />} />
-            <Route path="/personas/:id/edit" element={<PersonaEditorPage />} />
-            <Route path="/personas/:id" element={<PersonaEditorPage />} />
-
-            {/* Profile & Settings */}
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-
-            {/* Legacy routes redirect */}
-            <Route path="/roleplay" element={<Navigate to="/characters" replace />} />
-            <Route path="/create" element={<Navigate to="/characters/new" replace />} />
-            <Route path="/write" element={<Navigate to="/stories" replace />} />
-            <Route path="/library" element={<Navigate to="/stories" replace />} />
           </Route>
-        </Route>
 
-        {/* ── Catch-all 404 ────────────────────────────────── */}
-        <Route path="*" element={<NotFoundPage />} />
+          {/* Planned, not built yet: say so instead of linking to nothing. */}
+          <Route path="/chats" element={<ComingSoonPage title="Roleplay scenes" description="Chat with a character, with scenes that remember what happened. This is the next part of CHIMERA we are building." />} />
+          <Route path="/library" element={<ComingSoonPage title="Story library" description="Browse stories written on CHIMERA. Storytelling comes after roleplay scenes." />} />
+          <Route path="/workspace" element={<ComingSoonPage title="Writer's Desk" description="Write chapters with an AI co-author that suggests and never takes over. Storytelling comes after roleplay scenes." />} />
+          <Route path="/write" element={<ComingSoonPage title="Writer's Desk" description="Write chapters with an AI co-author that suggests and never takes over. Storytelling comes after roleplay scenes." />} />
+          <Route path="/stories/new" element={<ComingSoonPage title="New story" description="Start a story with chapters and an outline. Storytelling comes after roleplay scenes." />} />
+
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
       </Routes>
     </Suspense>
   );
 }
-
-function App() {
-  return (
-    <ErrorBoundary>
-      <BrowserRouter>
-        <I18nProvider>
-          <ThemeProvider>
-            <ToastProvider>
-              <AuthProvider>
-                <ProjectProvider>
-                  <ReloadPrompt />
-                  <OfflineStatusToast />
-                  <PwaInstallBanner />
-                  <AppLoader />
-                </ProjectProvider>
-              </AuthProvider>
-            </ToastProvider>
-          </ThemeProvider>
-        </I18nProvider>
-      </BrowserRouter>
-    </ErrorBoundary>
-  );
-}
-
-export default App;

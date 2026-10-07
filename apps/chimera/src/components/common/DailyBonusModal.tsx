@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Gem, Gift, Sparkles, CheckCircle2, Flame } from 'lucide-react';
+import { X, Gem, Sparkles, CheckCircle2, Flame } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 
@@ -13,7 +13,7 @@ export function DailyBonusModal({ isOpen, onClose }: DailyBonusModalProps) {
   const { showToast } = useToast();
 
   const [claimedDays, setClaimedDays] = useState<number[]>([1, 2]);
-  const [currentDay, setCurrentDay] = useState<number>(3);
+  const [currentDay] = useState<number>(3);
   const [isClaiming, setIsClaiming] = useState(false);
 
   if (!isOpen) return null;

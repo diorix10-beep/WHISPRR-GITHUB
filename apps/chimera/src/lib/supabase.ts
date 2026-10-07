@@ -11,9 +11,10 @@ const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
 const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
 const isVercel = hostname.endsWith('.vercel.app');
 
+// Used for e-mail confirmation redirects. The apex domain redirects to www.
 export const CHIMERA_ORIGIN = isLocalhost || isVercel
   ? window.location.origin
-  : 'https://chimera.it.com';
+  : 'https://www.chimera.it.com';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {

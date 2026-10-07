@@ -21,6 +21,12 @@ export default {
           border: 'var(--border-default)',
           input: 'var(--input-bg)',
         },
+        // CHIMERA 2 (concept) brand tokens
+        chimera: {
+          bg: '#07060d', panel: '#12101c', panel2: '#1b1828',
+          gold: '#e8c27a', gold2: '#b98e4d', ink: '#f6ecd8', mute: '#b7a9c9',
+          rose: '#e58a8a', blue: '#8fb0ff', mint: '#9fe0b4',
+        },
         // V3 Primary: Muted Coral / Dusty Rose — softer, better contrast, premium
         primary: {
           50:  '#FDF4F3',

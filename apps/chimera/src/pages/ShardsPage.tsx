@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, ArrowLeft, CheckCircle2, Clock3, Compass, Gem, MessageSquareHeart, ShieldCheck, Sparkles, WalletCards } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -51,7 +51,11 @@ export default function ShardsPage() {
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkingOut, setCheckingOut] = useState<string | null>(null);
 
+  const checkoutLock=useRef(false);
+  const checkoutAttempt=useRef<{packageId:string;userId:string;id:string}|null>(null);
   const startCheckout = async (packageId: typeof SHARDS_PACKS[number]['id']) => {
+    if(checkoutLock.current)return;
+    checkoutLock.current=true;
     setCheckoutError(null);
     setCheckingOut(packageId);
     try {
@@ -60,18 +64,26 @@ export default function ShardsPage() {
         navigate('/auth');
         return;
       }
+      const storageKey=`chimera:checkout:${session.user.id}:${packageId}`;
+      if(checkoutAttempt.current?.packageId!==packageId || checkoutAttempt.current.userId!==session.user.id){
+        let saved:string|null=null;try{saved=sessionStorage.getItem(storageKey)}catch{/* Browser storage can be unavailable; the in-memory retry remains stable. */}
+        const id=saved && /^[0-9a-f-]{36}$/i.test(saved)?saved:crypto.randomUUID();
+        checkoutAttempt.current={packageId,userId:session.user.id,id};try{sessionStorage.setItem(storageKey,id)}catch{/* Browser storage can be unavailable; the in-memory retry remains stable. */}
+      }
       const response = await fetch('/api/create-shards-checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key':checkoutAttempt.current.id, Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({ package_id: packageId }),
       });
-      const payload = await response.json() as { checkout_url?: string; error?: string };
+      const payload = await response.json() as { checkout_url?: string; error?: string; resolved?:boolean };
+      if(payload.resolved){try{sessionStorage.removeItem(storageKey)}catch{/* Browser storage can be unavailable; the in-memory retry remains stable. */}checkoutAttempt.current=null}
       if (!response.ok || !payload.checkout_url) throw new Error(payload.error || 'CHIMERA could not start checkout.');
       window.location.assign(payload.checkout_url);
     } catch (checkoutFailure) {
       console.error('Could not start SHARDS checkout', checkoutFailure);
       setCheckoutError(checkoutFailure instanceof Error ? checkoutFailure.message : 'CHIMERA could not start checkout.');
     } finally {
+      checkoutLock.current=false;
       setCheckingOut(null);
     }
   };
@@ -152,7 +164,7 @@ export default function ShardsPage() {
 
           <section className="mt-6 rounded-3xl border border-purple-200/20 bg-gradient-to-br from-[#17122c] via-[#10182a] to-[#191126] p-6 shadow-xl sm:p-7">
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-200">SHARDS store</p><h2 className="mt-2 font-serif text-2xl text-white">Keep a little magic in reserve.</h2><p className="mt-2 max-w-2xl text-sm leading-relaxed text-warm-300">One-time packs for optional Roleplay moments. Stripe handles the payment; CHIMERA credits the wallet only after Stripe confirms it.</p></div><span className="inline-flex w-fit items-center gap-2 rounded-full border border-purple-200/20 bg-purple-300/10 px-3 py-1.5 text-xs font-bold text-purple-100"><ShieldCheck size={14} /> Verified checkout</span></div>
-            {checkoutError && <div className="mt-5 rounded-2xl border border-rose-300/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">{checkoutError}</div>}
+            {checkoutError && <div role="alert" className="mt-5 rounded-2xl border border-rose-300/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">{checkoutError}</div>}
             <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{SHARDS_PACKS.map((pack) => <article key={pack.id} className={`relative rounded-2xl border p-5 ${pack.featured ? 'border-amber-300/55 bg-amber-200/[0.08] shadow-[0_0_30px_rgba(217,182,108,0.12)]' : 'border-white/10 bg-white/[0.03]'}`}>{pack.featured && <span className="absolute -top-2.5 left-4 rounded-full bg-amber-300 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-wider text-[#2a1c12]">Most loved</span>}<p className="font-serif text-xl text-white">{pack.name}</p><p className="mt-4 text-3xl font-bold text-amber-100">{pack.shards.toLocaleString()}</p><p className="text-xs font-bold uppercase tracking-wider text-warm-300">SHARDS</p><p className="mt-2 min-h-5 text-xs font-semibold text-purple-200">{pack.bonus ? `+${pack.bonus.toLocaleString()} bonus SHARDS` : 'A simple starting reserve'}</p><div className="mt-5 flex items-center justify-between gap-3"><span className="font-serif text-2xl font-bold text-white">{pack.price}</span><button onClick={() => void startCheckout(pack.id)} disabled={checkingOut !== null} className="rounded-xl bg-[#d9b66c] px-3 py-2 text-xs font-extrabold text-[#2a1c12] transition hover:bg-[#ecd189] disabled:cursor-wait disabled:opacity-60">{checkingOut === pack.id ? 'Opening…' : 'Choose'}</button></div></article>)}</div>
             <p className="mt-5 text-xs leading-relaxed text-warm-400">SHARDS are non-transferable, non-withdrawable Roleplay credits. A completed payment is credited once to your secure wallet; failed fulfilment is retried safely rather than silently losing your purchase.</p>
           </section>
