@@ -107,6 +107,7 @@ export default function TrustPage() {
   const [activeSection, setActiveSection] = useState<LibrarySection>('adult');
   const [matureEnabled, setMatureEnabled] = useState(false);
   const [adultConfirmed, setAdultConfirmed] = useState(false);
+  const [ageVerified, setAgeVerified] = useState(false);
   const [loadingPreferences, setLoadingPreferences] = useState(Boolean(user));
   const [savingPreferences, setSavingPreferences] = useState(false);
 
@@ -122,7 +123,7 @@ export default function TrustPage() {
       setLoadingPreferences(true);
       const { data, error } = await supabase
         .from('chimera_user_preferences')
-        .select('adult_content_enabled, adult_eligibility_confirmed_at')
+        .select('adult_content_enabled, adult_eligibility_confirmed_at, age_verification_status')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -132,6 +133,7 @@ export default function TrustPage() {
       } else if (data) {
         setMatureEnabled(Boolean(data.adult_content_enabled));
         setAdultConfirmed(Boolean(data.adult_eligibility_confirmed_at));
+        setAgeVerified(data.age_verification_status === 'verified_adult');
       }
       setLoadingPreferences(false);
     };
@@ -152,6 +154,11 @@ export default function TrustPage() {
   const savePreferences = async () => {
     if (!user) {
       navigate('/auth');
+      return;
+    }
+
+    if (matureEnabled && !ageVerified) {
+      showToast('Mature content needs age verification, which is not available yet.', 'error');
       return;
     }
 
@@ -323,8 +330,14 @@ export default function TrustPage() {
             <p className="mt-7 text-[#c7afd3]">Opening your preferences…</p>
           ) : (
             <div className="mt-7 space-y-5">
-              <label className="flex cursor-pointer items-start gap-4 rounded-2xl border border-[#725a3c] bg-[#181421] p-5 transition hover:border-[#b98e4d]">
-                <input type="checkbox" checked={matureEnabled} onChange={(event) => setMatureEnabled(event.target.checked)} className="mt-1 h-5 w-5 accent-[#d5aa5c]" />
+              {!ageVerified && (
+                <div className="rounded-2xl border border-[#9a7440] bg-[#23182d] p-5" role="note">
+                  <p className="font-semibold text-[#f3e4c5]">Age verification is required for mature content.</p>
+                  <p className="mt-1 text-sm leading-relaxed text-[#c5b1cf]">Mature and NSFW characters are available only to members whose age has been verified. Verification is not available yet, so until it is, CHIMERA shows SFW content only. Your account is not affected in any other way.</p>
+                </div>
+              )}
+              <label className={`flex items-start gap-4 rounded-2xl border border-[#725a3c] bg-[#181421] p-5 transition ${ageVerified ? 'cursor-pointer hover:border-[#b98e4d]' : 'cursor-not-allowed opacity-60'}`}>
+                <input type="checkbox" checked={matureEnabled} disabled={!ageVerified} onChange={(event) => setMatureEnabled(event.target.checked)} className="mt-1 h-5 w-5 accent-[#d5aa5c]" />
                 <span>
                   <span className="block font-serif text-2xl text-[#f3e4c5]">Show mature stories in my Discover</span>
                   <span className="mt-1 block leading-relaxed text-[#c5b1cf]">This is off by default. Enabling it can surface clearly labelled mature fictional content.</span>
@@ -341,7 +354,7 @@ export default function TrustPage() {
                 </label>
               )}
 
-              <button type="button" disabled={savingPreferences} onClick={savePreferences} className="w-full rounded-xl border border-[#f0cf8e] bg-[linear-gradient(105deg,#aa7532,#efcf8c,#b88642)] px-6 py-4 font-serif text-2xl text-[#1c1107] shadow-[0_0_24px_rgba(229,185,99,0.2)] transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[#f5d898]">
+              <button type="button" disabled={savingPreferences || !ageVerified} onClick={savePreferences} className="w-full rounded-xl border border-[#f0cf8e] bg-[linear-gradient(105deg,#aa7532,#efcf8c,#b88642)] px-6 py-4 font-serif text-2xl text-[#1c1107] shadow-[0_0_24px_rgba(229,185,99,0.2)] transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[#f5d898]">
                 {savingPreferences ? 'Saving your preferences…' : 'Save my preferences'}
               </button>
             </div>

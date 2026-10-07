@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useTranslation } from '../hooks/useTranslation';
+import { useAdultContentAccess } from '../hooks/useAdultContentAccess';
 import { Avatar } from '../components/common/Avatar';
 import { UserBadges } from '../components/common/UserBadges';
 
@@ -82,8 +83,10 @@ export default function DiscoverPage({mode}:{mode?:'roleplay'|'storytelling'}={}
   const { showToast } = useToast();
   const { t, formatNumber } = useTranslation();
   const navigate = useNavigate();
+  const { allowed: adultAccess, loading: adultAccessLoading } = useAdultContentAccess();
 
   useEffect(() => {
+    if (adultAccessLoading) return;
     setSearchQuery('');
     setSelectedCategory('All');
     if (isStoryMode) {
@@ -91,17 +94,19 @@ export default function DiscoverPage({mode}:{mode?:'roleplay'|'storytelling'}={}
     } else {
       fetchCharacters();
     }
-  }, [creativeMode]);
+  }, [creativeMode, adultAccess, adultAccessLoading]);
 
   const fetchCharacters = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('ai_characters')
         .select('*, bot_profile:profiles!ai_characters_user_id_fkey(display_name, username, avatar_emoji, photo_url)')
         .eq('visibility', 'public')
-        .eq('status', 'published')
-        .order('created_at', { ascending: false });
+        .eq('status', 'published');
+      // Mature / NSFW characters are listed only for verified adults who opted in.
+      if (!adultAccess) query = query.or('content_rating.is.null,content_rating.eq.SFW');
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
       
