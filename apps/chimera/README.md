@@ -46,6 +46,8 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
   keystroke and also when leaving the page. It writes only if the chapter has not changed elsewhere (`updated_at` check): on a conflict
   it stops, tells the writer and overwrites nothing. A save failure keeps the text and retries on the next change. Text left on the
   device by a crashed tab is offered back (Restore / Discard). Publish and unpublish save first.
+- **Reading needs a sign-in for now**: the database only lets signed-in members read `stories` and `story_chapters`, so the reader pages are behind the sign-in.
+  Opening them to visitors needs narrow `anon` SELECT policies (a security decision for the owner and Codex).
 - **Reading:** `/library` (public stories that have a published chapter, search and genre), `/stories/:id` (published chapters; the
   author also sees drafts) and `/stories/:id/chapters/:chapterId`. Chapter text is rendered as plain text.
 - **Public publishing is founder-only during the beta**, enforced by
