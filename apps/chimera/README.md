@@ -26,6 +26,18 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
 - Not in this step: personas picker, group scenes, branches, character memories, images, voice, character creation.
   Persona text is used if the member already has a default persona from before.
 
+## Creating characters (step 2b)
+
+- **Create** in the roleplay menu opens `/create`; `/my-characters` lists your characters; `/create/:id` edits one (owner only).
+- Saved through `save_ai_character_soul`. On edit, every field the form does not show is sent back unchanged, so characters made
+  with the old creator lose nothing.
+- New characters are **SFW only** until age verification exists. Visibility: **private** (default), **unlisted** (link only) or **public**.
+- **Public publishing is founder-only during the beta** (`profiles.role = 'founder'`). It is enforced in the database by
+  `supabase/migrations/20261009000000_chimera_character_publication_guard.sql`, so a member cannot bypass the form with a direct
+  update. **Apply that migration before relying on it.** Until then only the form (not the database) blocks members from choosing Public.
+- Known gap for review: `create_ai_character` / `save_ai_character_soul` do not check that a Mature or NSFW rating comes from a verified adult.
+  The form never offers it, but a direct call could set it.
+
 ## SHARDS and VELLUM: unchanged from the previous CHIMERA
 
 These files were copied as they were (only two unused imports/variables removed from `DailyBonusModal` for lint):

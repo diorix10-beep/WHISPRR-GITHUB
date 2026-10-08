@@ -11,6 +11,7 @@ const NAV: Record<CreativeMode, { to: string; label: string }[]> = {
   roleplay: [
     { to: '/discover', label: 'Discover' },
     { to: '/chats', label: 'Chats' },
+    { to: '/create', label: 'Create' },
     { to: '/guardian', label: "Guardian's Library" },
   ],
   storytelling: [
@@ -21,7 +22,7 @@ const NAV: Record<CreativeMode, { to: string; label: string }[]> = {
 };
 
 // Routes that belong to one mode switch the toggle automatically, as before.
-const ROLEPLAY_ROUTES = /^(\/discover|\/shards|\/characters|\/chats)/;
+const ROLEPLAY_ROUTES = /^(\/discover|\/shards|\/characters|\/chats|\/create|\/my-characters)/;
 const STORYTELLING_ROUTES = /^(\/workspace|\/vellum|\/worlds|\/stories|\/write|\/library)/;
 
 export default function AppLayout() {

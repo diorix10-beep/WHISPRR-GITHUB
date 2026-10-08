@@ -10,6 +10,8 @@ import { ratingLabel } from '../lib/ratings';
 interface CharacterDetail {
   id: string;
   user_id: string;
+  creator_id: string | null;
+  visibility: string | null;
   name: string | null;
   short_description: string | null;
   long_description: string | null;
@@ -38,7 +40,7 @@ export default function CharacterPage() {
     setCharacter(null);
     let request = supabase
       .from('ai_characters')
-      .select('id, user_id, name:chat_name, short_description, long_description, scenario, greeting, personality, category, tags, content_rating')
+      .select('id, user_id, creator_id, visibility, name:chat_name, short_description, long_description, scenario, greeting, personality, category, tags, content_rating')
       .eq('id', id);
     // UI defence only: RLS enforces the same rule for direct Data API requests.
     if (!adultAccess) request = request.or('content_rating.is.null,content_rating.eq.SFW');
@@ -83,6 +85,7 @@ export default function CharacterPage() {
   }
 
   const name = character.name ?? 'Unnamed character';
+  const isOwner = !!user && character.creator_id === user.id;
 
   return (
     <div className="mx-auto max-w-6xl px-5 pb-10 pt-6 sm:px-8">
@@ -102,6 +105,7 @@ export default function CharacterPage() {
             {character.category && <span className="rounded-full border border-white/15 px-3 py-1.5 text-sm text-violet-100/80">{character.category}</span>}
             {(character.tags ?? []).map((tag) => <span key={tag} className="rounded-full border border-white/15 px-3 py-1.5 text-sm text-violet-100/80">{tag}</span>)}
             <span className="rounded-full border border-chimera-mint/50 px-3 py-1.5 text-xs font-bold tracking-[0.1em] text-chimera-mint">{ratingLabel(character.content_rating)}</span>
+            {isOwner && character.visibility && character.visibility !== 'public' && <span className="rounded-full border border-white/20 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.1em] text-violet-100/80">{character.visibility === 'private' ? 'Private' : 'Unlisted'}</span>}
           </div>
 
           <section className="mt-7 rounded-2xl border border-chimera-gold/20 bg-chimera-panel2 p-6">
@@ -114,6 +118,7 @@ export default function CharacterPage() {
             <button type="button" onClick={() => void beginScene()} disabled={starting} className="inline-flex min-h-[52px] items-center rounded-full bg-chimera-gold px-7 text-base font-bold text-[#1a1208] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50">
               {starting ? 'Starting…' : user ? 'Begin a scene' : 'Sign in to begin a scene'}
             </button>
+            {isOwner && <Link to={`/create/${character.id}`} className="inline-flex min-h-[52px] items-center rounded-full border border-chimera-gold/50 px-6 text-base font-bold hover:bg-chimera-gold/10">Edit character</Link>}
           </div>
         </div>
       </article>
