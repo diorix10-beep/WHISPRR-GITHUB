@@ -36,3 +36,33 @@ GRANT ALL ON public.chimera_scene_settings TO service_role;
 CREATE TRIGGER set_chimera_scene_settings_updated_at
   BEFORE UPDATE ON public.chimera_scene_settings
   FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+
+-- Deleting a scene goes through this function instead of a plain DELETE: CHIMERA's chat list also
+-- shows ordinary two-person conversations from the rest of WHISPRR, and the existing participant
+-- DELETE policy would let either person remove them. Here only the player who created a scene that
+-- contains an AI character can delete it. All child rows cascade.
+CREATE OR REPLACE FUNCTION public.delete_chimera_scene(p_conversation_id uuid)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Sign in required' USING ERRCODE = '42501';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.conversations c
+    WHERE c.id = p_conversation_id
+      AND c.created_by = auth.uid()
+      AND EXISTS (SELECT 1 FROM public.conversation_participants me WHERE me.conversation_id = c.id AND me.user_id = auth.uid())
+      AND EXISTS (
+        SELECT 1 FROM public.conversation_participants bot
+        JOIN public.profiles p ON p.user_id = bot.user_id AND p.role = 'ai_character'
+        JOIN public.ai_characters a ON a.user_id = bot.user_id
+        WHERE bot.conversation_id = c.id
+      )
+  ) THEN
+    RAISE EXCEPTION 'Only a scene you started with a character can be deleted' USING ERRCODE = '42501';
+  END IF;
+  DELETE FROM public.conversations WHERE id = p_conversation_id;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.delete_chimera_scene(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.delete_chimera_scene(uuid) TO authenticated;

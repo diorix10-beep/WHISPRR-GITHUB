@@ -37,29 +37,31 @@ function fromRow(row: SettingsRow): SceneSettings {
   };
 }
 
-/** Settings are optional: when they cannot be read the scene simply uses the defaults. */
-export async function loadSceneSettings(conversationId: string, userId: string): Promise<SceneSettings> {
+/**
+ * `ready` is false when the saved settings could not be read. The scene still works with the defaults,
+ * but the screen must not write anything then: it would replace the player's saved choices with defaults.
+ */
+export async function loadSceneSettings(conversationId: string, userId: string): Promise<{ settings: SceneSettings; ready: boolean }> {
   const { data, error } = await supabase
     .from('chimera_scene_settings')
     .select('response_length, banned_words, pinned_message_ids')
     .eq('conversation_id', conversationId)
     .eq('user_id', userId)
     .maybeSingle();
-  if (error || !data) return DEFAULT_SCENE_SETTINGS;
-  return fromRow(data as SettingsRow);
+  if (error) return { settings: DEFAULT_SCENE_SETTINGS, ready: false };
+  return { settings: data ? fromRow(data as SettingsRow) : DEFAULT_SCENE_SETTINGS, ready: true };
 }
 
-export async function saveSceneSettings(conversationId: string, userId: string, settings: SceneSettings): Promise<void> {
-  const { error } = await supabase.from('chimera_scene_settings').upsert(
-    {
-      conversation_id: conversationId,
-      user_id: userId,
-      response_length: settings.responseLength,
-      banned_words: settings.bannedWords.trim().slice(0, SCENE_LIMITS.bannedWords),
-      pinned_message_ids: settings.pinnedMessageIds.slice(0, SCENE_LIMITS.pins),
-    },
-    { onConflict: 'conversation_id,user_id' },
-  );
+/**
+ * Writes only the fields that changed, so two different choices can never overwrite each other.
+ * Callers keep the writes in order (see the screen), because pins are one column.
+ */
+export async function saveSceneSettings(conversationId: string, userId: string, patch: Partial<SceneSettings>): Promise<void> {
+  const row: Record<string, unknown> = { conversation_id: conversationId, user_id: userId };
+  if (patch.responseLength !== undefined) row.response_length = patch.responseLength;
+  if (patch.bannedWords !== undefined) row.banned_words = patch.bannedWords.trim().slice(0, SCENE_LIMITS.bannedWords);
+  if (patch.pinnedMessageIds !== undefined) row.pinned_message_ids = patch.pinnedMessageIds.slice(0, SCENE_LIMITS.pins);
+  const { error } = await supabase.from('chimera_scene_settings').upsert(row, { onConflict: 'conversation_id,user_id' });
   if (error) throw error;
 }
 
@@ -77,9 +79,10 @@ export async function renameScene(conversationId: string, title: string): Promis
   return next;
 }
 
+/** Goes through the database function, which only deletes a scene the player created with an AI character in it. */
 export async function deleteScene(conversationId: string): Promise<void> {
-  const { data, error } = await supabase.from('conversations').delete().eq('id', conversationId).select('id');
-  if (error || !data || data.length === 0) throw error ?? new Error('Not allowed');
+  const { error } = await supabase.rpc('delete_chimera_scene', { p_conversation_id: conversationId });
+  if (error) throw error;
 }
 
 export interface StartOverInput {
@@ -90,7 +93,8 @@ export interface StartOverInput {
   canon: string;
   /** Carries the persona over only when the player had explicitly chosen one (or chosen none). */
   persona: { selected: boolean; id: string | null };
-  settings: SceneSettings;
+  /** Null when the old settings could not be read: nothing is copied then. */
+  settings: SceneSettings | null;
 }
 
 /**
@@ -115,9 +119,9 @@ export async function startOverScene(input: StartOverInput): Promise<{ id: strin
     });
     if (personaError) warnings.push('persona');
   }
-  if (input.settings.responseLength !== 'medium' || input.settings.bannedWords.trim()) {
+  if (input.settings && (input.settings.responseLength !== 'medium' || input.settings.bannedWords.trim())) {
     try {
-      await saveSceneSettings(scene.id, input.userId, { ...input.settings, pinnedMessageIds: [] });
+      await saveSceneSettings(scene.id, input.userId, { responseLength: input.settings.responseLength, bannedWords: input.settings.bannedWords });
     } catch {
       warnings.push('settings');
     }

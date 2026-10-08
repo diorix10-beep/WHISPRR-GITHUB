@@ -74,6 +74,12 @@ export default function ConversationPage() {
   const [personaSelected, setPersonaSelected] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [settings, setSettings] = useState<SceneSettings>(DEFAULT_SCENE_SETTINGS);
+  // False when the saved settings could not be read: the controls lock so they cannot overwrite them with defaults.
+  const [settingsReady, setSettingsReady] = useState(true);
+  const settingsRef = useRef<SceneSettings>(DEFAULT_SCENE_SETTINGS);
+  const saveChainRef = useRef<Promise<unknown>>(Promise.resolve());
+  const pendingSavesRef = useRef(0);
+  const failedSaveRef = useRef(false);
   const [titleDraft, setTitleDraft] = useState('');
   const [bannedDraft, setBannedDraft] = useState('');
   const [toolsBusy, setToolsBusy] = useState(false);
@@ -142,22 +148,29 @@ export default function ConversationPage() {
           supabase.from('profiles').select('display_name').eq('user_id', botUserId).maybeSingle(),
         ]);
         if (!active) return;
+        // CHIMERA's list can also hold ordinary WHISPRR conversations. Only a scene with a character opens here.
+        if (!character) {
+          setLoadError('This scene is unavailable.');
+          return;
+        }
         const info: SceneInfo = {
           botUserId,
-          botName: character?.name || profile?.display_name || 'Character',
+          botName: character.name || profile?.display_name || 'Character',
           title: conversation.name?.trim() || null,
-          greeting: character?.greeting?.trim() || null,
-          rating: character?.content_rating ?? null,
+          greeting: character.greeting?.trim() || null,
+          rating: character.content_rating ?? null,
           canon: conversation.memory_summary ?? '',
           canonRevision: Number(conversation.canon_revision ?? 0),
         };
         setScene(info);
         setCanonDraft(info.canon);
         setTitleDraft(info.title ?? '');
-        const mySettings = await loadSceneSettings(conversationId, user.id);
+        const saved = await loadSceneSettings(conversationId, user.id);
         if (!active) return;
-        setSettings(mySettings);
-        setBannedDraft(mySettings.bannedWords);
+        settingsRef.current = saved.settings;
+        setSettings(saved.settings);
+        setSettingsReady(saved.ready);
+        setBannedDraft(saved.settings.bannedWords);
         try {
           const mine = await loadMyPersonas(user.id);
           const row = participants.find((p) => p.user_id === user.id);
@@ -246,28 +259,52 @@ export default function ConversationPage() {
     setPersonaSelected(true);
   };
 
-  const updateSettings = async (next: SceneSettings, failure: string): Promise<boolean> => {
-    const previous = settings;
+  // Changes are saved one at a time, in the order they were made, and each writes only what it changed.
+  // Two quick clicks can therefore never overwrite each other. If any save fails, the screen
+  // reloads what is really saved once the queue is empty, so it never shows a choice that was not kept.
+  const updateSettings = (patch: Partial<SceneSettings>, failure: string): Promise<boolean> => {
+    if (!settingsReady) return Promise.resolve(false);
+    const next = { ...settingsRef.current, ...patch };
+    settingsRef.current = next;
     setSettings(next);
-    try {
-      await saveSceneSettings(conversationId!, user.id, next);
-      return true;
-    } catch {
-      setSettings(previous);
-      showToast(failure, 'error');
-      return false;
-    }
+    pendingSavesRef.current += 1;
+    const run = saveChainRef.current.then(async () => {
+      let saved = true;
+      try {
+        await saveSceneSettings(conversationId!, user.id, patch);
+      } catch {
+        saved = false;
+        failedSaveRef.current = true;
+        showToast(failure, 'error');
+      }
+      pendingSavesRef.current -= 1;
+      if (pendingSavesRef.current === 0 && failedSaveRef.current) {
+        failedSaveRef.current = false;
+        const fresh = await loadSceneSettings(conversationId!, user.id);
+        if (fresh.ready) {
+          settingsRef.current = fresh.settings;
+          setSettings(fresh.settings);
+          setBannedDraft(fresh.settings.bannedWords);
+        } else {
+          setSettingsReady(false);
+        }
+      }
+      return saved;
+    });
+    saveChainRef.current = run;
+    return run;
   };
 
   const pinnedIds = settings.pinnedMessageIds.filter((id) => messages.some((m) => m.id === id));
 
   const togglePinned = async (messageId: string) => {
-    const next = togglePin(pinnedIds, messageId);
+    const current = settingsRef.current.pinnedMessageIds.filter((id) => messages.some((m) => m.id === id));
+    const next = togglePin(current, messageId);
     if (!next) {
       showToast(`You can pin up to ${SCENE_LIMITS.pins} messages. Unpin one first.`, 'info');
       return;
     }
-    await updateSettings({ ...settings, pinnedMessageIds: next }, 'We could not save that pin. Please try again.');
+    await updateSettings({ pinnedMessageIds: next }, 'We could not save that pin. Please try again.');
   };
 
   const saveTitle = async () => {
@@ -288,7 +325,7 @@ export default function ConversationPage() {
   const saveBannedWords = async () => {
     if (toolsBusy) return;
     setToolsBusy(true);
-    const saved = await updateSettings({ ...settings, bannedWords: bannedDraft.trim() }, 'We could not save your word list. Please try again.');
+    const saved = await updateSettings({ bannedWords: bannedDraft.trim() }, 'We could not save your word list. Please try again.');
     if (saved) {
       setBannedDraft(bannedDraft.trim());
       showToast('Saved. It applies from the next reply.', 'success');
@@ -306,7 +343,7 @@ export default function ConversationPage() {
         title: scene.title,
         canon: keepMemory ? scene.canon : '',
         persona: { selected: personaSelected, id: personaId },
-        settings,
+        settings: settingsReady ? settings : null,
       });
       if (result.warnings.length > 0) {
         showToast('The new scene is ready, but some of your choices were not carried over. You can set them again.', 'info');
@@ -496,6 +533,11 @@ export default function ConversationPage() {
       {toolsOpen && (
         <section id="scene-tools" className="mb-3 space-y-5 rounded-2xl border border-chimera-gold/25 bg-chimera-panel p-4">
           <h2 className="font-serif text-xl font-semibold text-chimera-gold">Scene tools</h2>
+          {!settingsReady && (
+            <p role="note" className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+              Your saved choices for this scene could not be loaded, so length, words and pins are locked to keep them safe. Reload the page to try again. You can still rename, start over or delete.
+            </p>
+          )}
 
           <div>
             <label htmlFor="scene-title" className="block text-sm font-bold">Name this scene</label>
@@ -522,7 +564,8 @@ export default function ConversationPage() {
                   type="button"
                   aria-pressed={settings.responseLength === option.id}
                   title={option.hint}
-                  onClick={() => void updateSettings({ ...settings, responseLength: option.id }, 'We could not save that choice. Please try again.')}
+                  disabled={!settingsReady}
+                  onClick={() => void updateSettings({ responseLength: option.id }, 'We could not save that choice. Please try again.')}
                   className={`min-h-[40px] rounded-full border px-5 text-sm font-bold ${settings.responseLength === option.id ? 'border-chimera-gold bg-chimera-gold text-[#1a1208]' : 'border-chimera-gold/35 hover:border-chimera-gold'}`}
                 >
                   {option.label}
@@ -545,7 +588,7 @@ export default function ConversationPage() {
             />
             <div className="mt-2 flex items-center justify-between gap-3">
               <span className="text-xs text-chimera-mute">Separate with commas. {bannedDraft.length} / {SCENE_LIMITS.bannedWords}</span>
-              <button type="button" onClick={() => void saveBannedWords()} disabled={toolsBusy || bannedDraft.trim() === settings.bannedWords.trim()} className="min-h-[44px] rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">Save words</button>
+              <button type="button" onClick={() => void saveBannedWords()} disabled={toolsBusy || !settingsReady || bannedDraft.trim() === settings.bannedWords.trim()} className="min-h-[44px] rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">Save words</button>
             </div>
           </div>
 
@@ -629,6 +672,7 @@ export default function ConversationPage() {
                 type="button"
                 onClick={() => void togglePinned(message.id)}
                 aria-pressed={pinned}
+                disabled={!settingsReady}
                 aria-label={pinned ? 'Unpin this message' : 'Pin this message'}
                 title={pinned ? 'Unpin' : `Pin so ${scene.botName} never forgets it`}
                 className={`grid h-11 w-11 shrink-0 place-items-center rounded-full ${pinned ? 'text-chimera-gold' : 'text-chimera-mute/60 hover:text-chimera-gold'}`}

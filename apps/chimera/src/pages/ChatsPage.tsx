@@ -53,12 +53,15 @@ export default function ChatsPage() {
       const botIds = Array.from(new Set(rows.flatMap((r) => r.conversation_participants.map((p) => p.user_id)).filter((id) => id !== user.id)));
       const names = new Map<string, string>();
       if (botIds.length > 0) {
-        const { data: profiles } = await supabase.from('profiles').select('user_id, display_name').in('user_id', botIds);
-        (profiles ?? []).forEach((p: { user_id: string; display_name: string | null }) => names.set(p.user_id, p.display_name ?? 'Character'));
+        const { data: profiles } = await supabase.from('profiles').select('user_id, display_name, role').in('user_id', botIds);
+        // This list can also contain ordinary WHISPRR conversations between people. Only scenes with a character belong here.
+        (profiles ?? [])
+          .filter((p: { role: string | null }) => p.role === 'ai_character')
+          .forEach((p: { user_id: string; display_name: string | null }) => names.set(p.user_id, p.display_name ?? 'Character'));
       }
       if (!active) return;
       setScenes(
-        rows.map((r) => {
+        rows.filter((r) => r.conversation_participants.some((p) => p.user_id !== user.id && names.has(p.user_id))).map((r) => {
           const other = r.conversation_participants.find((p) => p.user_id !== user.id)?.user_id;
           return {
             id: r.id,
