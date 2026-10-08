@@ -21,7 +21,8 @@
   ],
   "git": {
     "deploymentEnabled": {
-      "codex/pr9-review-fixes": false
+      "codex/pr9-review-fixes": false,
+      "codex/roleplay-revocation-retry-fixes": false
     }
   }
 }

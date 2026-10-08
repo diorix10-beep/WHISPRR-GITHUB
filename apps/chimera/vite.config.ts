@@ -6,7 +6,7 @@ import type { IncomingMessage, ServerResponse } from 'http';
 
 // Edge-style API routes (Web Request -> Response) are served locally in dev so
 // the app works with `npm run dev`. On Vercel they run as serverless functions.
-const EDGE_ENDPOINTS = ['generate-scene-illustration', 'illustration-status'];
+const EDGE_ENDPOINTS = ['generate-scene-illustration', 'illustration-status', 'ai-chat', 'roleplay-turning-point'];
 
 async function readRequestBody(req: IncomingMessage): Promise<Buffer> {
   const chunks: Buffer[] = [];

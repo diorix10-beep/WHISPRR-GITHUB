@@ -7,6 +7,8 @@ import DiscoverPage from './pages/DiscoverPage';
 import CharacterPage from './pages/CharacterPage';
 import AuthPage from './pages/AuthPage';
 import GuardianPage from './pages/GuardianPage';
+import ChatsPage from './pages/ChatsPage';
+import ConversationPage from './pages/ConversationPage';
 import ComingSoonPage from './pages/ComingSoonPage';
 import LegalPlaceholderPage from './pages/LegalPlaceholderPage';
 
@@ -46,10 +48,11 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/shards" element={<ShardsPage />} />
             <Route path="/vellum" element={<VellumPage />} />
+            <Route path="/chats" element={<ChatsPage />} />
+            <Route path="/chats/:id" element={<ConversationPage />} />
           </Route>
 
           {/* Planned, not built yet: say so instead of linking to nothing. */}
-          <Route path="/chats" element={<ComingSoonPage title="Roleplay scenes" description="Chat with a character, with scenes that remember what happened. This is the next part of CHIMERA we are building." />} />
           <Route path="/library" element={<ComingSoonPage title="Story library" description="Browse stories written on CHIMERA. Storytelling comes after roleplay scenes." />} />
           <Route path="/workspace" element={<ComingSoonPage title="Writer's Desk" description="Write chapters with an AI co-author that suggests and never takes over. Storytelling comes after roleplay scenes." />} />
           <Route path="/write" element={<ComingSoonPage title="Writer's Desk" description="Write chapters with an AI co-author that suggests and never takes over. Storytelling comes after roleplay scenes." />} />
