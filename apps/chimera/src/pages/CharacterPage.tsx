@@ -6,6 +6,7 @@ import { isAdultRating, useAdultContentAccess } from '../hooks/useAdultContentAc
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { ratingLabel } from '../lib/ratings';
+import { loadMyPersonas, type PersonaSummary } from '../lib/personas';
 
 interface CharacterDetail {
   id: string;
@@ -32,6 +33,8 @@ export default function CharacterPage() {
   const [character, setCharacter] = useState<CharacterDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
+  const [personas, setPersonas] = useState<PersonaSummary[]>([]);
+  const [personaChoice, setPersonaChoice] = useState<string>('none');
 
   useEffect(() => {
     if (!id || accessLoading) return;
@@ -55,6 +58,21 @@ export default function CharacterPage() {
     };
   }, [id, user?.id, adultAccess, accessLoading]);
 
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    loadMyPersonas(user.id)
+      .then((list) => {
+        if (!active) return;
+        setPersonas(list);
+        setPersonaChoice(list.find((p) => p.is_default)?.id ?? 'none');
+      })
+      .catch(() => undefined); // The picker is optional: starting a scene still works without it.
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
   const beginScene = async () => {
     if (!character || starting) return;
     if (!user) {
@@ -68,6 +86,13 @@ export default function CharacterPage() {
     if (error || !scene?.id) {
       showToast('We could not start this scene. Please try again.', 'error');
       return;
+    }
+    if (personas.length > 0) {
+      const { error: personaError } = await supabase.rpc('set_chimera_scene_persona', {
+        p_conversation_id: scene.id,
+        p_persona_id: personaChoice === 'none' ? null : personaChoice,
+      });
+      if (personaError) showToast('The scene started, but we could not set your persona. You can change it before your first message.', 'info');
     }
     navigate(`/chats/${scene.id}`);
   };
@@ -114,6 +139,15 @@ export default function CharacterPage() {
             {character.greeting && <p className="mt-3 font-serif text-xl italic leading-relaxed text-[#e6d9c0]">{character.greeting}</p>}
           </section>
 
+          {user && personas.length > 0 && (
+            <div className="mt-6 max-w-sm">
+              <label htmlFor="scene-persona" className="text-sm font-bold tracking-[0.12em] text-chimera-gold">PLAY AS</label>
+              <select id="scene-persona" value={personaChoice} onChange={(e) => setPersonaChoice(e.target.value)} className="mt-2 w-full rounded-xl border border-chimera-gold/25 bg-chimera-bg p-3 text-base text-chimera-ink outline-none focus:border-chimera-gold">
+                {personas.map((p) => <option key={p.id} value={p.id}>{p.name}{p.is_default ? ' (default)' : ''}</option>)}
+                <option value="none">Myself, no persona</option>
+              </select>
+            </div>
+          )}
           <div className="mt-6 flex flex-wrap items-center gap-4">
             <button type="button" onClick={() => void beginScene()} disabled={starting} className="inline-flex min-h-[52px] items-center rounded-full bg-chimera-gold px-7 text-base font-bold text-[#1a1208] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50">
               {starting ? 'Starting…' : user ? 'Begin a scene' : 'Sign in to begin a scene'}

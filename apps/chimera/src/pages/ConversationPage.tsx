@@ -15,6 +15,7 @@ import {
 } from '../lib/chat';
 import { GuidedTurningPointCard, type GuidedTurningPoint } from '../components/GuidedTurningPointCard';
 import { createPendingPlayerSends, PendingPlayerSendError } from '../lib/pendingPlayerSend';
+import { loadMyPersonas, type PersonaSummary } from '../lib/personas';
 
 interface SceneInfo {
   botUserId: string;
@@ -53,6 +54,8 @@ export default function ConversationPage() {
   const [savingCanon, setSavingCanon] = useState(false);
   const [turningPoint, setTurningPoint] = useState<GuidedTurningPoint | null>(null);
   const [turningPointLoading, setTurningPointLoading] = useState(false);
+  const [personas, setPersonas] = useState<PersonaSummary[]>([]);
+  const [personaId, setPersonaId] = useState<string | null>(null);
   const busyRef = useRef(false);
   const pendingSendsRef = useRef<ReturnType<typeof createPendingPlayerSends> | null>(null);
   if (!pendingSendsRef.current) pendingSendsRef.current = createPendingPlayerSends();
@@ -101,11 +104,11 @@ export default function ConversationPage() {
       try {
         const { data: conversation, error: conversationError } = await supabase
           .from('conversations')
-          .select('id, type, memory_summary, canon_revision, conversation_participants(user_id)')
+          .select('id, type, memory_summary, canon_revision, conversation_participants(user_id, persona_id, persona_selected)')
           .eq('id', conversationId)
           .maybeSingle();
         if (conversationError) throw conversationError;
-        const participants = ((conversation?.conversation_participants ?? []) as Array<{ user_id: string }>);
+        const participants = ((conversation?.conversation_participants ?? []) as Array<{ user_id: string; persona_id: string | null; persona_selected: boolean | null }>);
         const botUserId = participants.find((p) => p.user_id !== user.id)?.user_id;
         if (!conversation || conversation.type !== 'dm' || !botUserId) {
           if (active) setLoadError('This scene is unavailable.');
@@ -126,6 +129,18 @@ export default function ConversationPage() {
         };
         setScene(info);
         setCanonDraft(info.canon);
+        try {
+          const mine = await loadMyPersonas(user.id);
+          const row = participants.find((p) => p.user_id === user.id);
+          // Same rule as the database: a chosen persona (or none) wins, otherwise the default persona.
+          const effective = row?.persona_selected ? row.persona_id ?? null : row?.persona_id ?? mine.find((p) => p.is_default)?.id ?? null;
+          if (active) {
+            setPersonas(mine);
+            setPersonaId(effective);
+          }
+        } catch {
+          // Personas are optional; the scene works without the picker.
+        }
 
         const rows = await loadMessages();
         const { data: active_point } = await supabase
@@ -185,6 +200,19 @@ export default function ConversationPage() {
   const last = messages[messages.length - 1];
   const awaitingReply = !!last && last.sender_id === user.id;
   const canRegenerate = !!last && last.sender_id === scene.botUserId && messages.length > 1 && !busy;
+  const hasPlayerMessages = messages.some((m) => m.sender_id === user.id);
+  const personaName = personas.find((p) => p.id === personaId)?.name ?? null;
+
+  const changePersona = async (value: string) => {
+    const next = value === 'none' ? null : value;
+    const previous = personaId;
+    setPersonaId(next);
+    const { error } = await supabase.rpc('set_chimera_scene_persona', { p_conversation_id: conversationId, p_persona_id: next });
+    if (error) {
+      setPersonaId(previous);
+      showToast('We could not change your persona. Please try again.', 'error');
+    }
+  };
 
   const send = async () => {
     const text = draft.trim();
@@ -307,6 +335,31 @@ export default function ConversationPage() {
           <Brain size={18} aria-hidden="true" /> Memory
         </button>
       </header>
+
+      {(personas.length > 0 || personaName) && (
+        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+          <span className="text-chimera-mute">Playing as</span>
+          {hasPlayerMessages ? (
+            <>
+              <span className="font-bold text-chimera-ink">{personaName ?? 'yourself'}</span>
+              <span className="text-chimera-mute">(fixed once the story has begun, so {scene.botName} always knows who you are)</span>
+            </>
+          ) : (
+            <>
+              <label htmlFor="scene-persona-switch" className="sr-only">Playing as</label>
+              <select
+                id="scene-persona-switch"
+                value={personaId ?? 'none'}
+                onChange={(e) => void changePersona(e.target.value)}
+                className="rounded-full border border-chimera-gold/35 bg-chimera-bg px-4 py-2 text-sm font-bold text-chimera-ink outline-none focus:border-chimera-gold"
+              >
+                {personas.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                <option value="none">Myself, no persona</option>
+              </select>
+            </>
+          )}
+        </div>
+      )}
 
       {memoryOpen && (
         <section id="scene-memory" className="mb-3 rounded-2xl border border-chimera-gold/25 bg-chimera-panel p-4">
