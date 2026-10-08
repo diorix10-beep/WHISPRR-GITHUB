@@ -11,6 +11,7 @@ import {
   serverClient,
   uuid,
 } from './_lib/requestProtection.js';
+import { MAX_RECALLED_MEMORIES } from './_lib/memory.js';
 import { isAdultRating, requireAdultContentAccess } from './_lib/adultContentGate.js';
 import {
   buildSystemPrompt,
@@ -90,6 +91,38 @@ async function loadSceneSettings(input: {
     return settings;
   } catch {
     return {};
+  }
+}
+
+/**
+ * Facts the player approved as long-term memory for this character and persona: the ones tied to this
+ * scene and the ones kept for every scene. Optional: if they cannot be read the character still answers.
+ */
+async function loadApprovedMemories(input: {
+  supabase: Awaited<ReturnType<typeof authenticate>>['supabase'];
+  userId: string;
+  conversationId: string;
+  characterId: string;
+  personaId: string | null;
+}): Promise<string[]> {
+  try {
+    let query = input.supabase
+      .from('character_memories')
+      .select('content')
+      .eq('user_id', input.userId)
+      .eq('character_id', input.characterId)
+      .eq('approval_status', 'approved')
+      .is('session_id', null)
+      .or(`conversation_id.eq.${input.conversationId},conversation_id.is.null`)
+      .order('importance', { ascending: false })
+      .order('updated_at', { ascending: false })
+      .limit(MAX_RECALLED_MEMORIES);
+    query = input.personaId ? query.eq('persona_id', input.personaId) : query.is('persona_id', null);
+    const { data, error } = await query;
+    if (error || !Array.isArray(data)) return [];
+    return data.map((row: { content: string }) => row.content).filter((text) => typeof text === 'string');
+  } catch {
+    return [];
   }
 }
 
@@ -204,6 +237,13 @@ export default async function handler(req: Request) {
       botName: character.chat_name?.trim() || botProfile.display_name,
       playerName: persona?.name || 'Player',
       inWindow: new Set(history.map((m) => (m as MessageRow).id)),
+    });
+    sceneSettings.memories = await loadApprovedMemories({
+      supabase,
+      userId: user.id,
+      conversationId,
+      characterId: character.id,
+      personaId,
     });
     const playerLabel = persona?.name || 'Player';
     const contents: GeminiTurn[] = history.map((m) => ({

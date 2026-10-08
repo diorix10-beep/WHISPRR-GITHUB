@@ -87,6 +87,29 @@ Settings live in `chimera_scene_settings` (migration `20261009020000_chimera_sce
 readable and writable by that player while they are a member. `api/ai-chat.ts` reads it with the player's own session and, if it cannot
 be read (for example before the migration is applied), answers with the defaults. Apply the migration before or after the deploy; both work.
 
+## Automatic memory (suggested by the story, approved by you)
+
+Beyond the notes you write yourself in **Memory**, the story can suggest long-term memories.
+
+- Every few messages (once the player has written 8 new ones since the last look, and only on the 8th, 12th, 16th… message) the chat
+  page calls `api/chimera-memory.ts`. The database decides whether there is anything to look at (`claim_chimera_memory_window`):
+  suggestions switched off, fewer than 8 new messages, or 10 suggestions already waiting all end the call at once, with no model call.
+- When there is a window, Gemini reads up to the last 40 messages (the newest reply is left out because it can still be regenerated) and
+  proposes at most 5 short facts, each citing the lines it comes from. The server keeps only facts of a sane length, with real sources,
+  that the player does not already have. They are stored with the existing `propose_chimera_memory` as **proposed**.
+- **Nothing is used by the character until the player keeps it** (`approve_chimera_memory`): for this scene, or for every scene with that
+  character. Each suggestion can be reworded or dismissed. Approved memories are private, scoped to the player's persona, and are sent to the
+  character in a capped block (24 facts, about 3000 characters) after the scene canon. The canon wins if they disagree.
+- The window is claimed once even if two requests arrive together, and handed back if the provider call fails. If the model answers
+  with nothing usable, the window stays read, so there is no endless retry.
+- Mature / NSFW scenes follow the same adult-access rule as the chat. The extraction prompt keeps sexual content out of the facts and
+  never records anything sexual involving a minor.
+- The switch **Suggest things to remember** is in Scene tools (on by default, per scene).
+
+Migration `20261009030000_chimera_auto_memory.sql` adds two columns to `chimera_scene_settings` (`auto_memory`, `memory_cursor_at`) and the two
+functions above. Apply it **before** the deploy: the screen reads the settings with `select *`, so it still works without the columns,
+but suggestions do nothing until they exist.
+
 ## SHARDS and VELLUM: unchanged from the previous CHIMERA
 
 These files were copied as they were (only two unused imports/variables removed from `DailyBonusModal` for lint):
@@ -122,7 +145,7 @@ seeing the old site from their cache. Keep it for a few weeks after the switch.
 
 ## Next
 
-Automatic long-term memory for roleplay, then age verification through a provider.
+Age verification through a provider, then more chat features.
 
 ## Commands
 

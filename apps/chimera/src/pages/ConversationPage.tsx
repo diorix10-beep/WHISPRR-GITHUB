@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Brain, Loader2, Pin, RefreshCw, Send, SlidersHorizontal } from 'lucide-react';
+import { ArrowLeft, Brain, Check, Loader2, Pencil, Pin, RefreshCw, Send, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -17,6 +17,15 @@ import { GuidedTurningPointCard, type GuidedTurningPoint } from '../components/G
 import { createPendingPlayerSends, PendingPlayerSendError } from '../lib/pendingPlayerSend';
 import { loadMyPersonas, type PersonaSummary } from '../lib/personas';
 import {
+  MEMORY_LIMITS,
+  approveMemory,
+  deleteMemory,
+  editMemory,
+  loadMemories,
+  requestMemorySuggestions,
+  type SceneMemory,
+} from '../lib/memories';
+import {
   DEFAULT_SCENE_SETTINGS,
   RESPONSE_LENGTHS,
   SCENE_LIMITS,
@@ -31,6 +40,8 @@ import {
 
 interface SceneInfo {
   botUserId: string;
+  /** The character's own id (not the user id), used to find its memories. */
+  characterId: string;
   botName: string;
   /** The player's own title for this scene, if they set one. */
   title: string | null;
@@ -52,6 +63,7 @@ const TURNING_POINT_MIN_MESSAGES = 8;
 export default function ConversationPage() {
   const { id: conversationId } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const userId = user?.id;
   const { showToast } = useToast();
   const navigate = useNavigate();
   const { allowed: adultAccess, loading: accessLoading } = useAdultContentAccess();
@@ -85,6 +97,11 @@ export default function ConversationPage() {
   const [toolsBusy, setToolsBusy] = useState(false);
   const [confirming, setConfirming] = useState<'restart' | 'delete' | null>(null);
   const [keepMemory, setKeepMemory] = useState(true);
+  const [memories, setMemories] = useState<SceneMemory[]>([]);
+  const [memoriesFailed, setMemoriesFailed] = useState(false);
+  const [editingMemory, setEditingMemory] = useState<{ id: string; text: string } | null>(null);
+  const [memoryBusy, setMemoryBusy] = useState<string | null>(null);
+  const suggestingRef = useRef(false);
   const busyRef = useRef(false);
   const pendingSendsRef = useRef<ReturnType<typeof createPendingPlayerSends> | null>(null);
   if (!pendingSendsRef.current) pendingSendsRef.current = createPendingPlayerSends();
@@ -104,6 +121,38 @@ export default function ConversationPage() {
     return rows;
   }, [conversationId]);
 
+  const memoryContextRef = useRef<{ characterId: string; personaId: string | null } | null>(null);
+
+  const refreshMemories = useCallback(async () => {
+    const context = memoryContextRef.current;
+    if (!context || !conversationId) return;
+    try {
+      setMemories(await loadMemories(conversationId, context.characterId, context.personaId));
+      setMemoriesFailed(false);
+    } catch {
+      setMemoriesFailed(true);
+    }
+  }, [conversationId]);
+
+  // Every few messages the story may suggest things to remember. The server decides whether there is
+  // anything to look at, so this call is cheap; suggestions only count once the player approves them.
+  const maybeSuggestMemories = useCallback(
+    async (rows: ChatMessageRow[], botUserId: string) => {
+      const mine = rows.filter((m) => m.sender_id === userId).length;
+      if (!conversationId || suggestingRef.current || mine < 8 || mine % 4 !== 0 || !settingsRef.current.autoMemory) return;
+      suggestingRef.current = true;
+      try {
+        if ((await requestMemorySuggestions(conversationId, botUserId)) > 0) {
+          await refreshMemories();
+          showToast('New things to remember are waiting in Memory.', 'info');
+        }
+      } finally {
+        suggestingRef.current = false;
+      }
+    },
+    [conversationId, userId, refreshMemories, showToast],
+  );
+
   // Ask for the character's reply. Used for the first answer, retries and the opening.
   const askForReply = useCallback(
     async (botUserId: string, opening = false) => {
@@ -113,7 +162,8 @@ export default function ConversationPage() {
       setReplyError(null);
       try {
         await requestCharacterReply({ conversationId, botUserId, isInitiation: opening });
-        await loadMessages();
+        const rows = await loadMessages();
+        void maybeSuggestMemories(rows, botUserId);
       } catch (error) {
         setReplyError(error instanceof Error ? error.message : 'The character could not answer right now.');
       } finally {
@@ -121,7 +171,7 @@ export default function ConversationPage() {
         setBusy(false);
       }
     },
-    [conversationId, loadMessages],
+    [conversationId, loadMessages, maybeSuggestMemories],
   );
 
   useEffect(() => {
@@ -144,7 +194,7 @@ export default function ConversationPage() {
           return;
         }
         const [{ data: character }, { data: profile }] = await Promise.all([
-          supabase.from('ai_characters').select('name:chat_name, greeting, content_rating').eq('user_id', botUserId).maybeSingle(),
+          supabase.from('ai_characters').select('id, name:chat_name, greeting, content_rating').eq('user_id', botUserId).maybeSingle(),
           supabase.from('profiles').select('display_name').eq('user_id', botUserId).maybeSingle(),
         ]);
         if (!active) return;
@@ -155,6 +205,7 @@ export default function ConversationPage() {
         }
         const info: SceneInfo = {
           botUserId,
+          characterId: character.id,
           botName: character.name || profile?.display_name || 'Character',
           title: conversation.name?.trim() || null,
           greeting: character.greeting?.trim() || null,
@@ -163,6 +214,8 @@ export default function ConversationPage() {
           canonRevision: Number(conversation.canon_revision ?? 0),
         };
         setScene(info);
+        const ownRow = participants.find((p) => p.user_id === user.id);
+        memoryContextRef.current = { characterId: info.characterId, personaId: ownRow?.persona_id ?? null };
         setCanonDraft(info.canon);
         setTitleDraft(info.title ?? '');
         const saved = await loadSceneSettings(conversationId, user.id);
@@ -180,12 +233,14 @@ export default function ConversationPage() {
             setPersonas(mine);
             setPersonaId(effective);
             setPersonaSelected(!!row?.persona_selected);
+            memoryContextRef.current = { characterId: info.characterId, personaId: effective };
           }
         } catch {
           // Personas are optional; the scene works without the picker.
         }
 
         const rows = await loadMessages();
+        void refreshMemories();
         const { data: active_point } = await supabase
           .from('roleplay_turning_points')
           .select('id, title, scene_prompt, choices, reward_shards, status, selected_choice_id')
@@ -221,7 +276,7 @@ export default function ConversationPage() {
     };
     // adultAccess only decides whether to auto-open an empty scene on first load.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, conversationId, loadMessages, askForReply]);
+  }, [user, conversationId, loadMessages, askForReply, refreshMemories]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView?.({ block: 'end' });
@@ -257,6 +312,9 @@ export default function ConversationPage() {
       return;
     }
     setPersonaSelected(true);
+    // Memories are kept per persona, so the list follows the persona.
+    if (memoryContextRef.current) memoryContextRef.current = { ...memoryContextRef.current, personaId: next };
+    void refreshMemories();
   };
 
   // Changes are saved one at a time, in the order they were made, and each writes only what it changed.
@@ -437,6 +495,61 @@ export default function ConversationPage() {
     showToast('This scene will remember that.', 'success');
   };
 
+  const approveSuggestion = async (memory: SceneMemory, acrossScenes: boolean) => {
+    if (memoryBusy) return;
+    setMemoryBusy(memory.id);
+    try {
+      await approveMemory(memory, acrossScenes);
+      await refreshMemories();
+      showToast(acrossScenes ? `${scene.botName} will remember this in every scene you play together.` : 'This scene will remember that.', 'success');
+    } catch (error) {
+      const text = error instanceof Error ? error.message : (error as { message?: string } | null)?.message ?? '';
+      if (/Source changed/i.test(text)) {
+        showToast('The messages behind this suggestion have changed, so it cannot be kept. You can dismiss it.', 'error');
+      } else {
+        showToast('We could not keep that memory. Please try again.', 'error');
+        await refreshMemories();
+      }
+    } finally {
+      setMemoryBusy(null);
+    }
+  };
+
+  const saveMemoryEdit = async () => {
+    if (!editingMemory || memoryBusy) return;
+    const text = editingMemory.text.trim();
+    if (text.length < 8) {
+      showToast('A memory needs at least a short sentence.', 'info');
+      return;
+    }
+    setMemoryBusy(editingMemory.id);
+    try {
+      const updatedAt = await editMemory(editingMemory.id, text);
+      setMemories((list) => list.map((m) => (m.id === editingMemory.id ? { ...m, content: text.slice(0, MEMORY_LIMITS.content), updatedAt } : m)));
+      setEditingMemory(null);
+    } catch {
+      showToast('We could not save that change. Please try again.', 'error');
+    } finally {
+      setMemoryBusy(null);
+    }
+  };
+
+  const forgetMemory = async (memory: SceneMemory) => {
+    if (memoryBusy) return;
+    setMemoryBusy(memory.id);
+    try {
+      await deleteMemory(memory.id);
+      setMemories((list) => list.filter((m) => m.id !== memory.id));
+    } catch {
+      showToast('We could not remove that memory. Please try again.', 'error');
+    } finally {
+      setMemoryBusy(null);
+    }
+  };
+
+  const proposedMemories = memories.filter((m) => m.status === 'proposed');
+  const approvedMemories = memories.filter((m) => m.status === 'approved');
+
   const openTurningPoint = async () => {
     if (turningPointLoading) return;
     setTurningPointLoading(true);
@@ -502,6 +615,9 @@ export default function ConversationPage() {
           className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-chimera-gold/40 px-4 text-sm font-bold hover:bg-chimera-gold/10"
         >
           <Brain size={18} aria-hidden="true" /> Memory
+          {proposedMemories.length > 0 && (
+            <span className="grid h-6 min-w-[24px] place-items-center rounded-full bg-chimera-gold px-1.5 text-xs font-bold text-[#1a1208]" aria-label={`${proposedMemories.length} suggestions to review`}>{proposedMemories.length}</span>
+          )}
         </button>
       </header>
 
@@ -593,6 +709,22 @@ export default function ConversationPage() {
           </div>
 
           <div>
+            <label className="flex min-h-[44px] items-start gap-3 text-sm">
+              <input
+                type="checkbox"
+                checked={settings.autoMemory}
+                disabled={!settingsReady}
+                onChange={(e) => void updateSettings({ autoMemory: e.target.checked }, 'We could not save that choice. Please try again.')}
+                className="mt-0.5 h-5 w-5 shrink-0 accent-[#e8c27a]"
+              />
+              <span>
+                <span className="font-bold">Suggest things to remember</span>
+                <span className="block text-xs text-chimera-mute">Every few messages the story may suggest memories for you to keep or dismiss. Nothing is used until you keep it.</span>
+              </span>
+            </label>
+          </div>
+
+          <div>
             <p className="text-sm font-bold">Pinned messages: {pinnedIds.length} of {SCENE_LIMITS.pins}</p>
             <p className="mt-1 text-xs text-chimera-mute">Tap the pin under a message to keep it in {scene.botName}&apos;s mind, even when the conversation grows long.</p>
           </div>
@@ -648,6 +780,73 @@ export default function ConversationPage() {
             <button type="button" onClick={() => void saveCanon()} disabled={savingCanon || canonDraft.trim() === scene.canon.trim()} className="min-h-[44px] rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">
               {savingCanon ? 'Saving…' : 'Save memory'}
             </button>
+          </div>
+
+          <div className="mt-6 border-t border-chimera-gold/15 pt-4">
+            <h3 className="font-serif text-lg font-semibold text-chimera-gold">Remembered from the story</h3>
+            <p className="mt-1 text-sm text-chimera-mute">
+              Every few messages the story can suggest things worth remembering. {scene.botName} only uses a suggestion after you keep it. You can reword or remove any of them.
+            </p>
+            {memoriesFailed && <p role="note" className="mt-3 text-sm text-amber-200">We could not load your memories right now.</p>}
+
+            {proposedMemories.length > 0 && (
+              <ul className="mt-3 space-y-3" aria-label="Suggested memories">
+                {proposedMemories.map((memory) => (
+                  <li key={memory.id} className="rounded-xl border border-chimera-gold/35 bg-chimera-bg p-3">
+                    {editingMemory?.id === memory.id ? (
+                      <div>
+                        <label htmlFor={`edit-${memory.id}`} className="sr-only">Memory text</label>
+                        <textarea id={`edit-${memory.id}`} value={editingMemory.text} onChange={(e) => setEditingMemory({ id: memory.id, text: e.target.value })} maxLength={MEMORY_LIMITS.content} rows={3} className="w-full rounded-lg border border-chimera-gold/25 bg-chimera-panel p-2 text-base text-chimera-ink outline-none focus:border-chimera-gold" />
+                        <div className="mt-2 flex gap-2">
+                          <button type="button" onClick={() => void saveMemoryEdit()} disabled={memoryBusy === memory.id} className="min-h-[44px] rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">Save wording</button>
+                          <button type="button" onClick={() => setEditingMemory(null)} className="min-h-[44px] rounded-full border border-chimera-gold/40 px-5 text-sm font-bold">Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-base text-chimera-ink">{memory.content}</p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button type="button" onClick={() => void approveSuggestion(memory, false)} disabled={memoryBusy !== null} className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-chimera-gold px-4 text-sm font-bold text-[#1a1208] disabled:opacity-50"><Check size={16} aria-hidden="true" /> Keep for this scene</button>
+                          <button type="button" onClick={() => void approveSuggestion(memory, true)} disabled={memoryBusy !== null} className="min-h-[44px] rounded-full border border-chimera-gold/50 px-4 text-sm font-bold hover:bg-chimera-gold/10 disabled:opacity-50">Keep for every scene with {scene.botName}</button>
+                          <button type="button" onClick={() => setEditingMemory({ id: memory.id, text: memory.content })} className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-chimera-gold/30 px-4 text-sm font-bold hover:bg-chimera-gold/10"><Pencil size={15} aria-hidden="true" /> Reword</button>
+                          <button type="button" onClick={() => void forgetMemory(memory)} disabled={memoryBusy !== null} className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-chimera-rose/40 px-4 text-sm font-bold text-chimera-rose hover:bg-chimera-rose/10 disabled:opacity-50"><Trash2 size={15} aria-hidden="true" /> Not worth keeping</button>
+                        </div>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {approvedMemories.length > 0 ? (
+              <ul className="mt-4 space-y-2" aria-label="Kept memories">
+                {approvedMemories.map((memory) => (
+                  <li key={memory.id} className="rounded-xl border border-chimera-gold/15 p-3">
+                    {editingMemory?.id === memory.id ? (
+                      <div>
+                        <label htmlFor={`edit-${memory.id}`} className="sr-only">Memory text</label>
+                        <textarea id={`edit-${memory.id}`} value={editingMemory.text} onChange={(e) => setEditingMemory({ id: memory.id, text: e.target.value })} maxLength={MEMORY_LIMITS.content} rows={3} className="w-full rounded-lg border border-chimera-gold/25 bg-chimera-bg p-2 text-base text-chimera-ink outline-none focus:border-chimera-gold" />
+                        <div className="mt-2 flex gap-2">
+                          <button type="button" onClick={() => void saveMemoryEdit()} disabled={memoryBusy === memory.id} className="min-h-[44px] rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">Save wording</button>
+                          <button type="button" onClick={() => setEditingMemory(null)} className="min-h-[44px] rounded-full border border-chimera-gold/40 px-5 text-sm font-bold">Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-base text-chimera-ink">{memory.content}</p>
+                          <p className="mt-1 text-xs text-chimera-mute">{memory.conversationId ? 'This scene only' : `Every scene with ${scene.botName}`}</p>
+                        </div>
+                        <button type="button" onClick={() => setEditingMemory({ id: memory.id, text: memory.content })} aria-label="Reword this memory" className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-chimera-mute hover:text-chimera-gold"><Pencil size={16} aria-hidden="true" /></button>
+                        <button type="button" onClick={() => void forgetMemory(memory)} disabled={memoryBusy !== null} aria-label="Forget this memory" className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-chimera-mute hover:text-chimera-rose disabled:opacity-50"><Trash2 size={16} aria-hidden="true" /></button>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              proposedMemories.length === 0 && !memoriesFailed && <p className="mt-3 text-sm text-chimera-mute">Nothing yet. After a few more messages the story may suggest something.</p>
+            )}
           </div>
         </section>
       )}

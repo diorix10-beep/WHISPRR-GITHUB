@@ -19,14 +19,17 @@ export interface SceneSettings {
   responseLength: ResponseLength;
   bannedWords: string;
   pinnedMessageIds: string[];
+  /** The story may suggest things to remember. They only count once the player approves them. */
+  autoMemory: boolean;
 }
 
-export const DEFAULT_SCENE_SETTINGS: SceneSettings = { responseLength: 'medium', bannedWords: '', pinnedMessageIds: [] };
+export const DEFAULT_SCENE_SETTINGS: SceneSettings = { responseLength: 'medium', bannedWords: '', pinnedMessageIds: [], autoMemory: true };
 
 interface SettingsRow {
   response_length: string;
   banned_words: string;
   pinned_message_ids: string[] | null;
+  auto_memory?: boolean | null;
 }
 
 function fromRow(row: SettingsRow): SceneSettings {
@@ -34,6 +37,7 @@ function fromRow(row: SettingsRow): SceneSettings {
     responseLength: row.response_length === 'short' || row.response_length === 'long' ? row.response_length : 'medium',
     bannedWords: row.banned_words ?? '',
     pinnedMessageIds: Array.isArray(row.pinned_message_ids) ? row.pinned_message_ids : [],
+    autoMemory: row.auto_memory !== false,
   };
 }
 
@@ -44,7 +48,8 @@ function fromRow(row: SettingsRow): SceneSettings {
 export async function loadSceneSettings(conversationId: string, userId: string): Promise<{ settings: SceneSettings; ready: boolean }> {
   const { data, error } = await supabase
     .from('chimera_scene_settings')
-    .select('response_length, banned_words, pinned_message_ids')
+    // `*` rather than a column list: a column added later must never make reading the whole row fail.
+    .select('*')
     .eq('conversation_id', conversationId)
     .eq('user_id', userId)
     .maybeSingle();
@@ -60,6 +65,7 @@ export async function saveSceneSettings(conversationId: string, userId: string, 
   const row: Record<string, unknown> = { conversation_id: conversationId, user_id: userId };
   if (patch.responseLength !== undefined) row.response_length = patch.responseLength;
   if (patch.bannedWords !== undefined) row.banned_words = patch.bannedWords.trim().slice(0, SCENE_LIMITS.bannedWords);
+  if (patch.autoMemory !== undefined) row.auto_memory = patch.autoMemory;
   if (patch.pinnedMessageIds !== undefined) row.pinned_message_ids = patch.pinnedMessageIds.slice(0, SCENE_LIMITS.pins);
   const { error } = await supabase.from('chimera_scene_settings').upsert(row, { onConflict: 'conversation_id,user_id' });
   if (error) throw error;
@@ -119,9 +125,9 @@ export async function startOverScene(input: StartOverInput): Promise<{ id: strin
     });
     if (personaError) warnings.push('persona');
   }
-  if (input.settings && (input.settings.responseLength !== 'medium' || input.settings.bannedWords.trim())) {
+  if (input.settings && (input.settings.responseLength !== 'medium' || input.settings.bannedWords.trim() || !input.settings.autoMemory)) {
     try {
-      await saveSceneSettings(scene.id, input.userId, { responseLength: input.settings.responseLength, bannedWords: input.settings.bannedWords });
+      await saveSceneSettings(scene.id, input.userId, { responseLength: input.settings.responseLength, bannedWords: input.settings.bannedWords, autoMemory: input.settings.autoMemory });
     } catch {
       warnings.push('settings');
     }
