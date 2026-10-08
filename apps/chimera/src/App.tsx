@@ -9,6 +9,8 @@ import AuthPage from './pages/AuthPage';
 import GuardianPage from './pages/GuardianPage';
 import ChatsPage from './pages/ChatsPage';
 import ConversationPage from './pages/ConversationPage';
+import CreateCharacterPage from './pages/CreateCharacterPage';
+import MyCharactersPage from './pages/MyCharactersPage';
 import ComingSoonPage from './pages/ComingSoonPage';
 import LegalPlaceholderPage from './pages/LegalPlaceholderPage';
 
@@ -50,6 +52,9 @@ export default function App() {
             <Route path="/vellum" element={<VellumPage />} />
             <Route path="/chats" element={<ChatsPage />} />
             <Route path="/chats/:id" element={<ConversationPage />} />
+            <Route path="/create" element={<CreateCharacterPage />} />
+            <Route path="/create/:id" element={<CreateCharacterPage />} />
+            <Route path="/my-characters" element={<MyCharactersPage />} />
           </Route>
 
           {/* Planned, not built yet: say so instead of linking to nothing. */}
