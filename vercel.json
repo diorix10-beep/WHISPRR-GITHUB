@@ -11,7 +11,8 @@
   "git": {
     "deploymentEnabled": {
       "codex/chimera-phase1-security-preservation": false,
-      "codex/chimera-phases1-6-release": false
+      "codex/chimera-phases1-6-release": false,
+      "codex/pr9-review-fixes": false
     }
   }
 }

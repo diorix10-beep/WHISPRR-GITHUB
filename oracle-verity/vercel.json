@@ -4,5 +4,10 @@
       "source": "/api-groq/:path*",
       "destination": "https://api.groq.com/:path*"
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "codex/pr9-review-fixes": false
+    }
+  }
 }

@@ -1,4 +1,6 @@
 import { defineConfig, type Plugin } from 'vite';
+import { fileURLToPath } from 'node:url';
+import { loadLocalApiEnv } from './scripts/localApiEnv.mjs';
 import react from '@vitejs/plugin-react';
 import type { IncomingMessage, ServerResponse } from 'http';
 
@@ -51,7 +53,11 @@ function localApiPlugin(): Plugin {
   };
 }
 
-export default defineConfig({
-  plugins: [react(), localApiPlugin()],
-  server: { host: '127.0.0.1', port: 5174 },
+export default defineConfig(({ command, mode }) => {
+  const appRoot = fileURLToPath(new URL('.', import.meta.url));
+  if (command === 'serve') loadLocalApiEnv(mode, appRoot);
+  return {
+    plugins: [react(), localApiPlugin()],
+    server: { host: '127.0.0.1', port: 5174 },
+  };
 });
