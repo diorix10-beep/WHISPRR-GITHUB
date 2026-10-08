@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 interface SceneRow {
   id: string;
+  name: string | null;
   last_message: string | null;
   last_message_at: string | null;
   created_at: string;
@@ -15,6 +16,8 @@ interface SceneRow {
 interface Scene {
   id: string;
   characterName: string;
+  /** The player's own title, when they set one. */
+  title: string | null;
   preview: string | null;
   when: string;
 }
@@ -36,7 +39,7 @@ export default function ChatsPage() {
     (async () => {
       const { data, error } = await supabase
         .from('conversations')
-        .select('id, last_message, last_message_at, created_at, conversation_participants(user_id)')
+        .select('id, name, last_message, last_message_at, created_at, conversation_participants(user_id)')
         .eq('type', 'dm')
         .order('last_message_at', { ascending: false, nullsFirst: false })
         .limit(100);
@@ -50,16 +53,20 @@ export default function ChatsPage() {
       const botIds = Array.from(new Set(rows.flatMap((r) => r.conversation_participants.map((p) => p.user_id)).filter((id) => id !== user.id)));
       const names = new Map<string, string>();
       if (botIds.length > 0) {
-        const { data: profiles } = await supabase.from('profiles').select('user_id, display_name').in('user_id', botIds);
-        (profiles ?? []).forEach((p: { user_id: string; display_name: string | null }) => names.set(p.user_id, p.display_name ?? 'Character'));
+        const { data: profiles } = await supabase.from('profiles').select('user_id, display_name, role').in('user_id', botIds);
+        // This list can also contain ordinary WHISPRR conversations between people. Only scenes with a character belong here.
+        (profiles ?? [])
+          .filter((p: { role: string | null }) => p.role === 'ai_character')
+          .forEach((p: { user_id: string; display_name: string | null }) => names.set(p.user_id, p.display_name ?? 'Character'));
       }
       if (!active) return;
       setScenes(
-        rows.map((r) => {
+        rows.filter((r) => r.conversation_participants.some((p) => p.user_id !== user.id && names.has(p.user_id))).map((r) => {
           const other = r.conversation_participants.find((p) => p.user_id !== user.id)?.user_id;
           return {
             id: r.id,
             characterName: (other && names.get(other)) || 'Character',
+            title: r.name?.trim() || null,
             preview: r.last_message,
             when: formatWhen(r.last_message_at ?? r.created_at),
           };
@@ -95,7 +102,8 @@ export default function ChatsPage() {
                 <Link to={`/chats/${scene.id}`} className="flex items-center gap-4 rounded-2xl border border-chimera-gold/20 bg-chimera-panel p-4 transition hover:border-chimera-gold/60">
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-700 to-chimera-rose font-serif text-xl text-white" aria-hidden="true">{scene.characterName.slice(0, 1).toUpperCase()}</span>
                   <span className="min-w-0 flex-1">
-                    <span className="block font-serif text-xl font-semibold">{scene.characterName}</span>
+                    <span className="block truncate font-serif text-xl font-semibold">{scene.title ?? scene.characterName}</span>
+                    {scene.title && <span className="block truncate text-xs text-chimera-gold/80">with {scene.characterName}</span>}
                     <span className="block truncate text-sm text-chimera-mute">{scene.preview || 'No messages yet'}</span>
                   </span>
                   <span className="shrink-0 text-xs text-chimera-mute">{scene.when}</span>

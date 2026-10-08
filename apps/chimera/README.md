@@ -69,6 +69,24 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
 - Not in this version: the AI co-author (will use VELLUM and only suggest), scene illustrations, comments and votes, worlds,
   choose-your-own-adventure branches, collaborators, a story word count.
 
+## Scene tools (chat)
+
+The **Scene** button in a chat opens the tools. Everything here is private to the player.
+
+- **Name this scene:** a custom title (`conversations.name`, up to 80 characters) shown in the chat and in Your scenes, with the
+  character's name beneath. Empty means the character's name.
+- **Reply length:** Short, Medium (default) or Long. It is an instruction in the prompt; Long also raises the output budget.
+- **Words to avoid:** up to 500 characters, sent to the model as a "do not use" line. It adds to the creator's own banned words.
+- **Pinned messages:** up to 8, using the pin under each message. Pins outside the recent window are sent in front of the model
+  (600 characters each, 3000 in total), with the same persona scope as the history. Pins inside the window are not repeated.
+- **Start over:** creates a new scene with the same character (same title and persona, optionally the same memory notes, same length
+  and words). The old scene is kept as it was. Pins are not carried over.
+- **Delete scene:** after a confirmation, removes the scene, its messages and its memory for good.
+
+Settings live in `chimera_scene_settings` (migration `20261009020000_chimera_scene_settings.sql`): one row per scene and player, only
+readable and writable by that player while they are a member. `api/ai-chat.ts` reads it with the player's own session and, if it cannot
+be read (for example before the migration is applied), answers with the defaults. Apply the migration before or after the deploy; both work.
+
 ## SHARDS and VELLUM: unchanged from the previous CHIMERA
 
 These files were copied as they were (only two unused imports/variables removed from `DailyBonusModal` for lint):
@@ -104,7 +122,7 @@ seeing the old site from their cache. Keep it for a few weeks after the switch.
 
 ## Next
 
-The storytelling editor, then age verification through a provider.
+Automatic long-term memory for roleplay, then age verification through a provider.
 
 ## Commands
 

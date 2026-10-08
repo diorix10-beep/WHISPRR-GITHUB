@@ -15,8 +15,12 @@ import { isAdultRating, requireAdultContentAccess } from './_lib/adultContentGat
 import {
   buildSystemPrompt,
   cleanReply,
+  maxOutputTokensFor,
+  normalizeResponseLength,
   personaAgeIsUnder18,
   selectRecentHistory,
+  type PinnedLine,
+  type SceneSettings,
   type BotProfile,
   type CharacterData,
   type ChatMessage,
@@ -36,6 +40,57 @@ interface MessageRow extends ChatMessage {
 interface GeminiTurn {
   role: 'user' | 'model';
   parts: Array<{ text: string }>;
+}
+
+/**
+ * The player's own choices for this scene (reply length, words to avoid, pinned messages).
+ * Optional by design: if they cannot be read the character still answers with the defaults.
+ */
+async function loadSceneSettings(input: {
+  supabase: Awaited<ReturnType<typeof authenticate>>['supabase'];
+  userId: string;
+  conversationId: string;
+  personaId: string | null;
+  botId: string;
+  botName: string;
+  playerName: string;
+  inWindow: Set<string>;
+}): Promise<SceneSettings> {
+  try {
+    const { data, error } = await input.supabase
+      .from('chimera_scene_settings')
+      .select('response_length, banned_words, pinned_message_ids')
+      .eq('conversation_id', input.conversationId)
+      .eq('user_id', input.userId)
+      .maybeSingle();
+    if (error || !data) return {};
+    const settings: SceneSettings = {
+      responseLength: normalizeResponseLength(data.response_length),
+      bannedWords: typeof data.banned_words === 'string' ? data.banned_words : '',
+    };
+    const ids = (Array.isArray(data.pinned_message_ids) ? data.pinned_message_ids : [])
+      .filter((id: unknown): id is string => uuid(id))
+      .filter((id: string) => !input.inWindow.has(id));
+    if (ids.length > 0) {
+      // Same persona scope as the history, so a pin never carries another persona's story into this one.
+      let pinQuery = input.supabase
+        .from('messages')
+        .select('id, sender_id, content')
+        .eq('conversation_id', input.conversationId)
+        .is('deleted_at', null)
+        .in('id', ids)
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true });
+      pinQuery = input.personaId ? pinQuery.eq('persona_id', input.personaId) : pinQuery.is('persona_id', null);
+      const { data: rows } = await pinQuery;
+      settings.pinned = ((rows ?? []) as Array<{ sender_id: string; content: string }>).map(
+        (row): PinnedLine => ({ speaker: row.sender_id === input.botId ? input.botName : input.playerName, content: row.content }),
+      );
+    }
+    return settings;
+  } catch {
+    return {};
+  }
 }
 
 export default async function handler(req: Request) {
@@ -140,6 +195,16 @@ export default async function handler(req: Request) {
     if (isInitiation && chronological.length > 0) throw new RequestError(409, 'This scene has already begun.');
 
     const history = selectRecentHistory(chronological);
+    const sceneSettings = await loadSceneSettings({
+      supabase,
+      userId: user.id,
+      conversationId,
+      personaId,
+      botId,
+      botName: character.chat_name?.trim() || botProfile.display_name,
+      playerName: persona?.name || 'Player',
+      inWindow: new Set(history.map((m) => (m as MessageRow).id)),
+    });
     const playerLabel = persona?.name || 'Player';
     const contents: GeminiTurn[] = history.map((m) => ({
       role: m.sender_id === botId ? 'model' : 'user',
@@ -160,7 +225,7 @@ export default async function handler(req: Request) {
     }
     if (contents.length === 0) throw new RequestError(409, 'There is nothing to answer yet.');
 
-    const systemPrompt = buildSystemPrompt(character, botProfile, persona, conversation.memory_summary);
+    const systemPrompt = buildSystemPrompt(character, botProfile, persona, conversation.memory_summary, sceneSettings);
     const promptSize = systemPrompt.length + contents.reduce((size, turn) => size + turn.parts[0].text.length, 0);
     if (promptSize > MAX_PROMPT_CHARACTERS) throw new RequestError(413, 'This character context is too large to generate safely.');
 
@@ -214,7 +279,7 @@ export default async function handler(req: Request) {
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: systemPrompt }] },
           contents,
-          generationConfig: { temperature: 0.9, topP: 0.95, topK: 40, maxOutputTokens: 2048 },
+          generationConfig: { temperature: 0.9, topP: 0.95, topK: 40, maxOutputTokens: maxOutputTokensFor(sceneSettings.responseLength ?? 'medium') },
         }),
       },
     );
