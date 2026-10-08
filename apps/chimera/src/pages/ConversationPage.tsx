@@ -14,6 +14,7 @@ import {
   type ComposerMode,
 } from '../lib/chat';
 import { GuidedTurningPointCard, type GuidedTurningPoint } from '../components/GuidedTurningPointCard';
+import { createPendingPlayerSends, PendingPlayerSendError } from '../lib/pendingPlayerSend';
 
 interface SceneInfo {
   botUserId: string;
@@ -53,6 +54,8 @@ export default function ConversationPage() {
   const [turningPoint, setTurningPoint] = useState<GuidedTurningPoint | null>(null);
   const [turningPointLoading, setTurningPointLoading] = useState(false);
   const busyRef = useRef(false);
+  const pendingSendsRef = useRef<ReturnType<typeof createPendingPlayerSends> | null>(null);
+  if (!pendingSendsRef.current) pendingSendsRef.current = createPendingPlayerSends();
   const endRef = useRef<HTMLDivElement>(null);
 
   const loadMessages = useCallback(async (): Promise<ChatMessageRow[]> => {
@@ -191,15 +194,16 @@ export default function ConversationPage() {
     setBusy(true);
     setReplyError(null);
     try {
-      await persistPlayerMessage(supabase, {
-        id: crypto.randomUUID(),
+      const message = pendingSendsRef.current!.prepare({
         conversation_id: conversationId!,
         sender_id: user.id,
         content: line,
       });
+      await persistPlayerMessage(supabase, message);
+      pendingSendsRef.current!.confirm(message);
       setDraft('');
-    } catch {
-      showToast('Your message could not be sent. Your draft is still here.', 'error');
+    } catch (error) {
+      showToast(error instanceof PendingPlayerSendError ? error.message : 'Your message could not be sent. Your draft is still here.', 'error');
       busyRef.current = false;
       setBusy(false);
       return;
