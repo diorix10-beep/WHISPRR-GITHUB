@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { isAdultRating, useAdultContentAccess } from '../hooks/useAdultContentAccess';
+import { useAuth } from '../contexts/AuthContext';
 import { ratingLabel } from '../lib/ratings';
 
 interface CharacterDetail {
@@ -19,20 +20,24 @@ interface CharacterDetail {
 }
 
 export default function CharacterPage() {
+  const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
   const { allowed: adultAccess, loading: accessLoading } = useAdultContentAccess();
   const [character, setCharacter] = useState<CharacterDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || accessLoading) return;
     let active = true;
     setLoading(true);
-    supabase
+    setCharacter(null);
+    let request = supabase
       .from('ai_characters')
       .select('id, name, short_description, long_description, scenario, greeting, personality, category, tags, content_rating')
-      .eq('id', id)
-      .maybeSingle()
+      .eq('id', id);
+    // UI defence only: RLS enforces the same rule for direct Data API requests.
+    if (!adultAccess) request = request.or('content_rating.is.null,content_rating.eq.SFW');
+    request.maybeSingle()
       .then(({ data }) => {
         if (!active) return;
         setCharacter((data as CharacterDetail | null) ?? null);
@@ -41,11 +46,11 @@ export default function CharacterPage() {
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, user?.id, adultAccess, accessLoading]);
 
   if (loading || accessLoading) return <p className="px-5 py-24 text-center text-chimera-mute">Opening the story…</p>;
 
-  if (!character) {
+  if (!character || (isAdultRating(character.content_rating) && !adultAccess)) {
     return (
       <div className="mx-auto max-w-xl px-5 py-24 text-center">
         <h1 className="font-serif text-4xl font-semibold">Character not found</h1>
@@ -55,7 +60,6 @@ export default function CharacterPage() {
     );
   }
 
-  const adultLocked = isAdultRating(character.content_rating) && !adultAccess;
   const name = character.name ?? 'Unnamed character';
 
   return (
@@ -83,12 +87,6 @@ export default function CharacterPage() {
             <p className="font-serif text-2xl leading-snug">{character.scenario || 'The scene is waiting for you.'}</p>
             {character.greeting && <p className="mt-3 font-serif text-xl italic leading-relaxed text-[#e6d9c0]">{character.greeting}</p>}
           </section>
-
-          {adultLocked && (
-            <p role="note" className="mt-5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-              This character is rated Mature or NSFW. It is available only to members whose age is verified and who have turned on adult content in the <Link to="/guardian" className="font-bold underline">Guardian&apos;s Library</Link>.
-            </p>
-          )}
 
           <div className="mt-6 flex flex-wrap items-center gap-4">
             <button type="button" disabled className="inline-flex min-h-[52px] cursor-not-allowed items-center rounded-full bg-chimera-gold/40 px-7 text-base font-bold text-[#1a1208]/70" aria-describedby="scene-note">Begin a scene</button>
