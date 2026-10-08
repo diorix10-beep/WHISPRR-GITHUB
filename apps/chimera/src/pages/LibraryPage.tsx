@@ -10,7 +10,7 @@ interface StoryCard {
   genre: string | null;
   tags: string[] | null;
   author: { display_name: string | null } | null;
-  chapters: Array<{ id: string; status: string }>;
+  story_chapters: Array<{ id: string; status: string }>;
 }
 
 export default function LibraryPage() {
@@ -24,8 +24,11 @@ export default function LibraryPage() {
     let active = true;
     supabase
       .from('stories')
-      .select('id, title, summary, genre, tags, author:profiles!stories_user_id_fkey(display_name), chapters:story_chapters(id, status)')
+      // The inner join and the filter run in the database, before the limit: a story with no
+      // published chapter never uses up one of the 60 places.
+      .select('id, title, summary, genre, tags, author:profiles!stories_user_id_fkey(display_name), story_chapters!inner(id, status)')
       .eq('visibility', 'public')
+      .eq('story_chapters.status', 'published')
       .order('updated_at', { ascending: false })
       .limit(60)
       .then(({ data, error }) => {
@@ -33,9 +36,7 @@ export default function LibraryPage() {
         if (error) {
           setFailed(true);
         } else {
-          // A story with no published chapter has nothing to read yet.
-          const rows = ((data ?? []) as unknown as StoryCard[]).filter((s) => (s.chapters ?? []).some((c) => c.status === 'published'));
-          setStories(rows);
+          setStories((data ?? []) as unknown as StoryCard[]);
         }
         setLoading(false);
       });

@@ -48,9 +48,6 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/discover" element={<DiscoverPage />} />
           <Route path="/characters/:id" element={<CharacterPage />} />
-          <Route path="/library" element={<LibraryPage />} />
-          <Route path="/stories/:id" element={<StoryPage />} />
-          <Route path="/stories/:id/chapters/:chapterId" element={<ChapterReaderPage />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/guardian" element={<GuardianPage />} />
           <Route path="/terms" element={<LegalPlaceholderPage title="Terms of Service" />} />
@@ -64,6 +61,10 @@ export default function App() {
             <Route path="/create" element={<CreateCharacterPage />} />
             <Route path="/create/:id" element={<CreateCharacterPage />} />
             <Route path="/my-characters" element={<MyCharactersPage />} />
+            {/* Reading stories needs a sign-in for now: the database only lets signed-in members read them. */}
+            <Route path="/library" element={<LibraryPage />} />
+            <Route path="/stories/:id" element={<StoryPage />} />
+            <Route path="/stories/:id/chapters/:chapterId" element={<ChapterReaderPage />} />
             <Route path="/workspace" element={<WorkspacePage />} />
             <Route path="/stories/new" element={<NewStoryPage />} />
             <Route path="/stories/:id/edit" element={<StoryEditPage />} />
