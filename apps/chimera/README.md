@@ -9,7 +9,7 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
 - Ratings on every character. **Mature and NSFW are hidden unless the member is a verified adult who opted in**
   (`supabase/migrations/20261006120000_chimera_age_verification_gate.sql`, `useAdultContentAccess`).
 - Guardian's Library: shows age status and the adult toggle. **Age verification is not connected to a provider yet**, so nobody is verified.
-- Honest "coming next" pages for the story library and the Writer's Desk. Terms and Privacy are drafts.
+- Terms and Privacy are drafts.
 
 ## Roleplay (step 2)
 
@@ -37,6 +37,23 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
   update. **Apply that migration before relying on it.** Until then only the form (not the database) blocks members from choosing Public.
 - Known gap for review: `create_ai_character` / `save_ai_character_soul` do not check that a Mature or NSFW rating comes from a verified adult.
   The form never offers it, but a direct call could set it.
+
+## Storytelling (step 3, first version)
+
+- **Writer's Desk** (`/workspace`): your stories. **New story** (`/stories/new`), **story manager** (`/stories/:id/edit`: details,
+  add / delete chapters, delete story) and the **chapter editor** (`/stories/:id/chapters/:chapterId/edit`).
+- **The editor never loses text.** Every keystroke is kept on the device (`draftJournal`); the server save runs 1.5 s after the last
+  keystroke and also when leaving the page. It writes only if the chapter has not changed elsewhere (`updated_at` check): on a conflict
+  it stops, tells the writer and overwrites nothing. A save failure keeps the text and retries on the next change. Text left on the
+  device by a crashed tab is offered back (Restore / Discard). Publish and unpublish save first.
+- **Reading:** `/library` (public stories that have a published chapter, search and genre), `/stories/:id` (published chapters; the
+  author also sees drafts) and `/stories/:id/chapters/:chapterId`. Chapter text is rendered as plain text.
+- **Public publishing is founder-only during the beta**, enforced by
+  `supabase/migrations/20261009010000_chimera_story_publication_guard.sql`. Stories have **no content rating** yet, so a public story
+  cannot be filtered for minors. The `stories.visibility` column **defaults to public**: the new pages always send an explicit value,
+  and the trigger also blocks inserts that forget it. **Apply that migration before relying on it.**
+- Not in this version: the AI co-author (will use VELLUM and only suggest), scene illustrations, comments and votes, worlds,
+  choose-your-own-adventure branches, collaborators, a story word count.
 
 ## SHARDS and VELLUM: unchanged from the previous CHIMERA
 
