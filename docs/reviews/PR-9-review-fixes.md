@@ -119,3 +119,46 @@ real browser E2E or database advisors were run here. No live schema was changed.
 - Future privileged character APIs must use this gate explicitly; service-role queries bypass table policies.
 - `git.deploymentEnabled` disables only `codex/pr9-review-fixes` in each checked-in Vercel configuration, preserving
   existing branch settings. This allows code review without automatic Git deployments. No merge/deploy is authorized.
+
+## Deployment follow-up (2026-10-08)
+
+The user authorized deployment. The next Codex review identified the service-completion revocation gap.
+`20261008110354_chimera_service_adult_recheck.sql` now checks the reservation's user before chat/regeneration/room
+completion and completed-result replay, and also checks reservation/cache reads. It locks the caller's preference
+row while saving/returning a reply, so consent/verification revocation cannot race that transaction. Hybrid rooms
+also require eligible accepted participants. Legacy published scene snapshots receive restrictive read policies.
+
+Five regression tests pass, including service-role calls with no member JWT, consent/verification revocation during
+an in-flight request, denial of cached completed replies and successful eligible-adult completions.
+Typecheck, lint and build pass. Live CHIMERA's published browser bundle references project `gcknzlnumcryvqjvjnyg`
+(named WHISPRR), not the separate project named WHISPRR-GITHUB-CHIMERA. All prerequisite tables exist in that confirmed
+live database; the age-verification columns/migration were missing at inspection. Security advisors also report
+pre-existing warnings outside this patch (mutable function search paths, callable legacy definer functions and
+leaked-password protection). Those are not a claim that the database has a clean global security audit.
+
+Deployment will use the reviewed branch without merging it. Branch-specific automatic Git deployment remains blocked;
+manual deployment is authorized. Apply the age gate, character authorization, then service recheck migrations in that
+order before certifying the deployed app's authorization.
+
+Hosted verification is now complete for the core identity matrix and service chat completion/cache revocation:
+all assertions passed against the actual live database in a single rolled-back transaction (no test accounts,
+characters, messages or request rows persisted). Reproducible SQL is in `scripts/test-chimera-adult-access.sql`.
+The three migrations applied successfully through the connected Supabase migration API, and policy/function ACL
+inspection confirmed the restrictive rules and service-only completion permissions.
+
+A live schema check also found that `ai_characters` has `chat_name`, not `name`. Discover/Character queries now alias
+`name:chat_name` so the rebuilt app can load characters against the actual production schema. The full local five-test,
+typecheck, lint and production-build checks pass with this correction. Hosted browser sign-in E2E and actual paid
+provider/image generation remain outside these checks.
+
+
+Production deployment completed: `dpl_5NfKoJdsb4qbrbiThQU7S4Ts5RyF`, commit `26d59bddf339c878e04a2124ea408129a41d1bc2`, target production, state READY, with both custom domains assigned. The public homepage and production JS were fetched successfully; the JS contains the corrected name alias and the confirmed Supabase project URL. Exact anonymous PostgREST Discover/detail projections return 200 with zero rows. The deployment-scoped error/fatal runtime log query returned no entries in the immediate post-deploy window.
+
+Recorded hosted migration versions: `20261008110920` (age gate), `20261008111210` (character authorization), `20261008111219` (service recheck). They correspond to the checked-in migration contents; the connected migration API assigned execution-time versions. No temporary test accounts remain. Full signed-in browser and paid-provider E2E are still not asserted.
+
+The user merged PR #11 at 11:06:02 UTC, before the later service-recheck and name-column commits. A follow-up PR is required to bring those already-deployed fixes into main. Branch-specific automatic deployment remains blocked on the review branch only; main's automatic production deployment remains enabled.
+
+
+PR #12 follow-up: the user explicitly authorized merging and deployment. The new Codex P1 finding is addressed by `20261008113846_chimera_lock_room_adult_preferences.sql`: room completion locks the session and every accepted member's preference row in stable user-ID order before checking adult eligibility. Chat completion retains its caller lock. This closes the other-member revocation race. The migration was applied successfully to the confirmed live database.
+
+Six regression tests, typecheck, lint and production build pass. A hosted transaction verified that the helper alone holds row share locks on both accepted members' committed preference rows; its extension installation and locks were rolled back. An attempted independent concurrent-call test was inconclusive because connector scheduling did not overlap the calls; no concurrent stress-test claim is made. Temporary committed fixtures were explicitly deleted and the remaining test-user count was verified as zero. Signed-in browser and paid-provider E2E remain untested.

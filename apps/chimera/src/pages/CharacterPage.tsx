@@ -33,7 +33,7 @@ export default function CharacterPage() {
     setCharacter(null);
     let request = supabase
       .from('ai_characters')
-      .select('id, name, short_description, long_description, scenario, greeting, personality, category, tags, content_rating')
+      .select('id, name:chat_name, short_description, long_description, scenario, greeting, personality, category, tags, content_rating')
       .eq('id', id);
     // UI defence only: RLS enforces the same rule for direct Data API requests.
     if (!adultAccess) request = request.or('content_rating.is.null,content_rating.eq.SFW');
