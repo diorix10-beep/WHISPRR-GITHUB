@@ -11,6 +11,8 @@ import ChatsPage from './pages/ChatsPage';
 import ConversationPage from './pages/ConversationPage';
 import CreateCharacterPage from './pages/CreateCharacterPage';
 import MyCharactersPage from './pages/MyCharactersPage';
+import PersonasPage from './pages/PersonasPage';
+import PersonaEditorPage from './pages/PersonaEditorPage';
 import LibraryPage from './pages/LibraryPage';
 import StoryPage from './pages/StoryPage';
 import ChapterReaderPage from './pages/ChapterReaderPage';
@@ -61,6 +63,9 @@ export default function App() {
             <Route path="/create" element={<CreateCharacterPage />} />
             <Route path="/create/:id" element={<CreateCharacterPage />} />
             <Route path="/my-characters" element={<MyCharactersPage />} />
+            <Route path="/personas" element={<PersonasPage />} />
+            <Route path="/personas/new" element={<PersonaEditorPage />} />
+            <Route path="/personas/:id" element={<PersonaEditorPage />} />
             {/* Reading stories needs a sign-in for now: the database only lets signed-in members read them. */}
             <Route path="/library" element={<LibraryPage />} />
             <Route path="/stories/:id" element={<StoryPage />} />

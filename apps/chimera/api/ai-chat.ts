@@ -11,10 +11,11 @@ import {
   serverClient,
   uuid,
 } from './_lib/requestProtection.js';
-import { requireAdultContentAccess } from './_lib/adultContentGate.js';
+import { isAdultRating, requireAdultContentAccess } from './_lib/adultContentGate.js';
 import {
   buildSystemPrompt,
   cleanReply,
+  personaAgeIsUnder18,
   selectRecentHistory,
   type BotProfile,
   type CharacterData,
@@ -110,6 +111,10 @@ export default async function handler(req: Request) {
       persona = (personaRow as (PersonaData & { id: string }) | null) ?? null;
     }
     const personaId = persona?.id ?? null;
+    // Zero tolerance: no adult scene with a persona that says it is under 18.
+    if (isAdultRating(character.content_rating) && personaAgeIsUnder18((persona as { age?: string | null } | null)?.age)) {
+      throw new RequestError(400, 'Your persona is listed as under 18, so adult scenes are not available with it. Choose another persona or change its age.');
+    }
 
     let historyQuery = supabase
       .from('messages')

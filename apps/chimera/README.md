@@ -38,6 +38,18 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
 - Known gap for review: `create_ai_character` / `save_ai_character_soul` do not check that a Mature or NSFW rating comes from a verified adult.
   The form never offers it, but a direct call could set it.
 
+## Personas (who you are in a scene)
+
+- **Personas** (`/personas`, `/personas/new`, `/personas/:id`): name, pronouns, age, gender, occupation, about, personality, appearance,
+  backstory and a default persona. They are private: the `is_public` flag is never set from the app.
+- **Begin a scene** shows a **Play as** picker (the default persona is preselected, or "Myself, no persona") and sets it on the new scene
+  with `set_chimera_scene_persona`. In the scene, a **Playing as** switch is available only **before the first message**: the server and
+  the database scope the history and memory by persona, so switching later would make the character forget who you were.
+- The server sends the persona's details to the character (this already existed in `api/ai-chat.ts`).
+- **Safety:** `api/ai-chat.ts` refuses a Mature or NSFW scene when the persona's age clearly says under 18 (digits, number words,
+  "minor", "teen"). An empty or unclear age is not refused; the prompt's safety boundaries still apply. The persona form warns about it.
+- Not in this version: public / shared personas, persona avatars, a persona-specific greeting.
+
 ## Storytelling (step 3, first version)
 
 - **Writer's Desk** (`/workspace`): your stories. **New story** (`/stories/new`), **story manager** (`/stories/:id/edit`: details,

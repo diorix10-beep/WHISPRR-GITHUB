@@ -45,6 +45,28 @@ export interface ChatMessage {
   content: string;
 }
 
+const NUMBER_WORDS: Record<string, number> = {
+  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11,
+  twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17,
+};
+
+/**
+ * True when a persona's age text clearly says under 18 ("16", "sixteen years old", "minor").
+ * Adult scenes are refused for such a persona. An empty or unclear age is not treated as under 18:
+ * the safety boundaries in the prompt still apply.
+ */
+export function personaAgeIsUnder18(age: string | null | undefined): boolean {
+  const text = (age ?? '').toLowerCase();
+  if (!text.trim()) return false;
+  if (/\b(minor|underage|under-age|child|kid|teen|teenager|juvenile)\b/.test(text)) return true;
+  const digits = text.match(/\d{1,3}/);
+  if (digits) return Number(digits[0]) < 18;
+  // "twenty-seven" and "thirty one" contain a small number word but are adults.
+  if (/\b(twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred)\b/.test(text)) return false;
+  const word = text.match(/\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen)\b/);
+  return word ? NUMBER_WORDS[word[1]] < 18 : false;
+}
+
 export const MAX_HISTORY_MESSAGES = 32;
 export const MAX_HISTORY_CHARACTERS = 28_000;
 export const MAX_CANON_CHARACTERS = 6_000;
