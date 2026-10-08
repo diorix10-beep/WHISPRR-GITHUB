@@ -82,6 +82,7 @@ async function database() {
   await db.exec(await readFile(new URL('supabase/migrations/20261006120000_chimera_age_verification_gate.sql', root), 'utf8'));
   await db.exec(await readFile(new URL('supabase/migrations/20261008104038_chimera_character_adult_authorization.sql', root), 'utf8'));
   await db.exec(await readFile(new URL('supabase/migrations/20261008110354_chimera_service_adult_recheck.sql', root), 'utf8'));
+  await db.exec(await readFile(new URL('supabase/migrations/20261008113846_chimera_lock_room_adult_preferences.sql', root), 'utf8'));
   await db.exec(`
     INSERT INTO profiles VALUES ('${bot}','Bot','ai_character');
     INSERT INTO ai_characters VALUES
@@ -246,4 +247,21 @@ test('service-role completions and cached replies recheck the reserved user afte
     await identity(db,'authenticated',user);
     await assert.rejects(db.query('SELECT public.get_chimera_ai_request($1,$2)',[requestId,lease]),/permission denied/);
   } finally {await db.close();}
+});
+
+test('hybrid access includes every accepted member and blocks another member revocation', async () => {
+ const db=await database();
+ try {
+   const characterId=(await db.query('SELECT id FROM human_roleplay_characters WHERE session_id=$1',[room])).rows[0].id;
+   const resource=`room:${room}:${characterId}`;
+   await verify(db,true);
+   await db.query('INSERT INTO human_roleplay_participants VALUES($1,$2,$3,true)',[room,owner,'accepted']);
+   await db.query("SELECT public.set_age_verification($1,'verified_adult')",[owner]);
+   await db.query('UPDATE chimera_user_preferences SET adult_content_enabled=true WHERE user_id=$1',[owner]);
+   await db.query('SELECT chimera_private.require_character_request_access($1,$2)',[user,resource]);
+   await db.query('UPDATE chimera_user_preferences SET adult_content_enabled=false WHERE user_id=$1',[owner]);
+   await assert.rejects(db.query('SELECT chimera_private.require_character_request_access($1,$2)',[user,resource]),/Room permission changed/);
+   await db.query("UPDATE human_roleplay_participants SET status='left' WHERE user_id=$1",[owner]);
+   await db.query('SELECT chimera_private.require_character_request_access($1,$2)',[user,resource]);
+ } finally {await db.close();}
 });
