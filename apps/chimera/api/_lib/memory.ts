@@ -22,6 +22,7 @@ export interface WindowMessage {
   id: string;
   sender_id: string;
   content: string;
+  created_at?: string;
 }
 
 export interface MemoryCandidate {
@@ -35,11 +36,12 @@ export interface MemoryCandidate {
  * The newest reply can still be regenerated, which would change a source and make the memory
  * impossible to approve ("source changed"). Leave it out; the next window will include it.
  */
-export function selectWindowMessages<T extends WindowMessage>(chronological: T[], botId: string): T[] {
+export function selectWindowMessages<T extends WindowMessage>(chronological: T[], botId: string): { messages: T[]; omittedReply: T | null } {
   const usable = chronological.filter((m) => m.content?.trim());
   const last = usable[usable.length - 1];
-  const trimmed = last && last.sender_id === botId ? usable.slice(0, -1) : usable;
-  return trimmed.slice(-MAX_WINDOW_MESSAGES);
+  const omittedReply = last && last.sender_id === botId ? last : null;
+  const trimmed = omittedReply ? usable.slice(0, -1) : usable;
+  return { messages: trimmed.slice(-MAX_WINDOW_MESSAGES), omittedReply };
 }
 
 /** Numbered excerpt the model reads. Returns the text and the number → message id map. */

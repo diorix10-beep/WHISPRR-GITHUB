@@ -93,7 +93,7 @@ export default async function handler(req: Request) {
 
     let messageQuery = supabase
       .from('messages')
-      .select('id, sender_id, content')
+      .select('id, sender_id, content, created_at')
       .eq('conversation_id', conversationId)
       .is('deleted_at', null)
       .lte('created_at', window.to)
@@ -104,7 +104,7 @@ export default async function handler(req: Request) {
     messageQuery = window.persona_id ? messageQuery.eq('persona_id', window.persona_id) : messageQuery.is('persona_id', null);
     const { data: rawMessages, error: messagesError } = await messageQuery;
     if (messagesError) throw new RequestError(500, 'The conversation could not be loaded.');
-    const messages = selectWindowMessages(((rawMessages ?? []) as WindowMessage[]).reverse(), botId);
+    const { messages, omittedReply } = selectWindowMessages(((rawMessages ?? []) as WindowMessage[]).reverse(), botId);
     if (messages.length === 0) return jsonResponse({ proposed: 0 });
 
     let knownQuery = supabase
@@ -144,8 +144,6 @@ export default async function handler(req: Request) {
     const parts: Array<{ text?: string }> = geminiData.candidates?.[0]?.content?.parts ?? [];
     const candidates = parseExtraction(parts.map((part) => part.text ?? '').join(''), excerpt.ids, known);
 
-    // From here on the window counts as read, even if the model had nothing to suggest.
-    release = undefined;
     let proposed = 0;
     for (const candidate of candidates) {
       const { error } = await supabase.rpc('propose_chimera_memory', {
@@ -156,6 +154,22 @@ export default async function handler(req: Request) {
         p_memory_type: candidate.type,
       });
       if (!error) proposed += 1;
+    }
+    // Every suggestion failed to save (a database hiccup): give the window back so it is looked at again.
+    // Some saved and some did not: keep it read, the next look skips what is already there.
+    if (candidates.length > 0 && proposed === 0) {
+      throw new RequestError(503, 'Memory suggestions could not be saved. They will be tried again.');
+    }
+
+    // The window counts as read, even if the model had nothing to suggest. The newest reply was left
+    // out of the excerpt (it can still be regenerated), so move the cursor back to just before it: the
+    // next look then starts with that reply instead of skipping it for good.
+    release = undefined;
+    const resume = omittedReply ? messages[messages.length - 1]?.created_at : undefined;
+    if (omittedReply && resume) {
+      await supabase
+        .rpc('release_chimera_memory_window', { p_conversation_id: conversationId, p_claimed: window.to, p_previous: resume })
+        .then(() => undefined, () => undefined);
     }
     return jsonResponse({ proposed });
   } catch (error) {

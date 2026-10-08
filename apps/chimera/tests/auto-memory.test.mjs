@@ -127,3 +127,21 @@ test('claim/release: only members, and release only undoes this request\'s own c
     await db.close();
   }
 });
+
+test('giving back the newest reply: moving the cursor to just before it makes the next window start with that reply', async () => {
+  const { db, as, say } = await memoryDatabase();
+  try {
+    for (let i = 0; i < 8; i += 1) { await say(ME, i * 2); await say(BOT, i * 2 + 1); }
+    const window = await claim(as);
+    assert.equal(new Date(window.to).toISOString(), '2026-01-01T10:15:00.000Z', 'the window ends on the newest reply');
+    // The server leaves that reply out of what it reads (it can still be regenerated) and moves the cursor back.
+    await as('authenticated', ME, `SELECT public.release_chimera_memory_window('${SCENE}', '${window.to}', '2026-01-01T10:14:00Z')`);
+    for (let i = 0; i < 8; i += 1) await say(ME, 20 + i);
+    const next = await claim(as);
+    assert.equal(new Date(next.from).toISOString(), '2026-01-01T10:14:00.000Z');
+    const inNext = (await db.query(`SELECT content FROM public.messages WHERE created_at > $1 AND created_at <= $2 ORDER BY created_at LIMIT 1`, [next.from, next.to])).rows[0].content;
+    assert.equal(inNext, 'line 15', 'the reply that was left out is the first message of the next window');
+  } finally {
+    await db.close();
+  }
+});
