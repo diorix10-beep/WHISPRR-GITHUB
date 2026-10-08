@@ -3,6 +3,8 @@
  * network, no database. `api/ai-chat.ts` wires them to the request.
  */
 
+import { memoryBlock } from './memory.js';
+
 export interface CharacterData {
   category?: string | null;
   tags?: string[] | null;
@@ -57,6 +59,8 @@ export interface SceneSettings {
   responseLength?: ResponseLength;
   bannedWords?: string;
   pinned?: PinnedLine[];
+  /** Facts the player approved as long-term memory. */
+  memories?: string[];
 }
 
 export const MAX_BANNED_WORDS_CHARACTERS = 500;
@@ -285,6 +289,9 @@ export function buildSystemPrompt(
   if (preferences.length) {
     sections.push(['## Player Preferences For This Scene', ...preferences].join('\n'));
   }
+
+  const remembered = memoryBlock(settings.memories ?? []);
+  if (remembered) sections.push(remembered);
 
   const pinned = pinnedBlock(settings.pinned ?? []);
   if (pinned) sections.push(pinned);
