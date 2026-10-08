@@ -49,7 +49,22 @@ async function database() {
       owner_id uuid,name text,description text,persona_id uuid,ai_character_id uuid);
     CREATE TABLE human_roleplay_messages(id uuid DEFAULT gen_random_uuid(),session_id uuid,
       sender_id uuid,content text,created_at timestamptz,sequence_number integer,deleted_at timestamptz);
-    CREATE TABLE personas(id uuid,name text,description text,user_id uuid);
+    CREATE TABLE personas(id uuid,name text,description text,user_id uuid,is_default boolean);
+    ALTER TABLE conversation_participants ADD COLUMN persona_id uuid, ADD COLUMN persona_selected boolean DEFAULT false;
+    ALTER TABLE messages ADD COLUMN persona_id uuid, ADD COLUMN response_versions jsonb DEFAULT '[]';
+    ALTER TABLE human_roleplay_sessions ADD COLUMN ai_enabled boolean DEFAULT true,
+      ADD COLUMN status text DEFAULT 'active', ADD COLUMN ai_policy text DEFAULT 'participants',ADD COLUMN turn_user_id uuid;
+    ALTER TABLE human_roleplay_messages ADD COLUMN character_id uuid,ADD COLUMN author_kind text,
+      ADD COLUMN reply_to_id uuid,ADD COLUMN message_type text;
+    CREATE TABLE human_roleplay_participants(session_id uuid,user_id uuid,status text,ai_opt_in boolean);
+    CREATE TABLE roleplay_public_scenes(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),conversation_id uuid,content_rating text);
+    CREATE TABLE roleplay_public_scene_messages(scene_id uuid,content text);
+    CREATE TABLE chimera_private.ai_requests(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid,
+      operation text,resource text,request_key text,fingerprint text,state text,lease uuid DEFAULT gen_random_uuid(),
+      expires_at timestamptz,result jsonb,context jsonb, UNIQUE(user_id,operation,resource,request_key));
+    CREATE TABLE chimera_private.ai_attempts(user_id uuid,operation text,started_at timestamptz DEFAULT now());
+    CREATE FUNCTION chimera_private.scene_persona(uuid,uuid) RETURNS uuid LANGUAGE sql AS $$ SELECT null::uuid $$;
+
     CREATE FUNCTION public.human_roleplay_member(uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;
     CREATE FUNCTION chimera_private.is_conversation_member(uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;
     CREATE FUNCTION chimera_private.is_conversation_owner(uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;
@@ -60,12 +75,13 @@ async function database() {
   for (const table of ['profiles', 'ai_characters', 'conversations', 'messages', 'conversation_participants',
     'character_memories', 'character_relationships', 'world_characters', 'lorebook_characters',
     'ai_character_likes', 'ai_character_followers', 'human_roleplay_sessions',
-    'human_roleplay_characters', 'human_roleplay_messages']) {
+    'human_roleplay_characters', 'human_roleplay_messages','roleplay_public_scenes','roleplay_public_scene_messages']) {
     await db.exec(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY;
       CREATE POLICY existing_permissive ON ${table} FOR SELECT TO anon,authenticated USING (true);`);
   }
   await db.exec(await readFile(new URL('supabase/migrations/20261006120000_chimera_age_verification_gate.sql', root), 'utf8'));
   await db.exec(await readFile(new URL('supabase/migrations/20261008104038_chimera_character_adult_authorization.sql', root), 'utf8'));
+  await db.exec(await readFile(new URL('supabase/migrations/20261008110354_chimera_service_adult_recheck.sql', root), 'utf8'));
   await db.exec(`
     INSERT INTO profiles VALUES ('${bot}','Bot','ai_character');
     INSERT INTO ai_characters VALUES
@@ -82,7 +98,10 @@ async function database() {
     INSERT INTO lorebook_characters VALUES('${mature}');
     INSERT INTO ai_character_likes VALUES('${mature}');
     INSERT INTO ai_character_followers VALUES('${mature}');
-    INSERT INTO human_roleplay_sessions VALUES('${room}','${user}');
+    INSERT INTO human_roleplay_sessions(id,creator_id) VALUES('${room}','${user}');
+    INSERT INTO human_roleplay_participants VALUES('${room}','${user}','accepted',true);
+    INSERT INTO roleplay_public_scenes(conversation_id,content_rating) VALUES('${scene}','mature');
+    INSERT INTO roleplay_public_scene_messages SELECT id,'restricted' FROM roleplay_public_scenes;
     INSERT INTO human_roleplay_characters(session_id,owner_id,name,description,ai_character_id)
       VALUES('${room}','${user}','restricted','restricted','${mature}');
     INSERT INTO human_roleplay_messages(session_id,content) VALUES('${room}','restricted');
@@ -111,7 +130,7 @@ test('database denies direct IDs and related data to anonymous/unverified; verif
       assert.deepEqual((await db.query('SELECT greeting,personality FROM ai_characters WHERE id=$1',[mature])).rows, []);
       for (const table of ['character_memories','character_relationships','world_characters','lorebook_characters',
         'ai_character_likes','ai_character_followers','conversations','messages','conversation_participants',
-        'human_roleplay_sessions','human_roleplay_characters','human_roleplay_messages']) {
+        'human_roleplay_sessions','human_roleplay_characters','human_roleplay_messages','roleplay_public_scenes','roleplay_public_scene_messages']) {
         assert.deepEqual((await db.query(`SELECT * FROM ${table}`)).rows, [], `${role}: ${table} leaked`);
       }
     }
@@ -176,4 +195,55 @@ test('unknown ratings fail closed, safe scenes remain usable, and verification r
     await db.exec('RESET ROLE');
     await db.exec(await readFile(new URL('supabase/migrations/20261008104038_chimera_character_adult_authorization.sql',root),'utf8'));
   } finally { await db.close(); }
+});
+
+test('service-role completions and cached replies recheck the reserved user after consent/verification revocation', async () => {
+  const db=await database();
+  const requestId='00000000-0000-4000-8000-000000000050';
+  const lease='00000000-0000-4000-8000-000000000051';
+  const source='00000000-0000-4000-8000-000000000052';
+  try {
+    const messageId=(await db.query('SELECT id FROM messages WHERE conversation_id=$1',[scene])).rows[0].id;
+    const characterId=(await db.query('SELECT id FROM human_roleplay_characters WHERE session_id=$1',[room])).rows[0].id;
+    for (const operation of ['chat','regeneration','room']) {
+      const resource=operation==='room'?`room:${room}:${characterId}`:`${scene}:${bot}`;
+      const complete=()=> operation==='chat'
+        ? db.query('SELECT public.complete_chimera_chat_request($1,$2,$3,$4,$5)',[requestId,lease,scene,bot,'new restricted reply'])
+        : operation==='regeneration'
+        ? db.query('SELECT public.complete_chimera_regeneration($1,$2,$3,$4,$5,$6,$7)',[requestId,lease,scene,bot,messageId,'restricted greeting','new restricted reply'])
+        : db.query('SELECT public.complete_chimera_room_ai($1,$2,$3,$4,$5,$6)',[requestId,lease,room,characterId,source,'new restricted reply']);
+      for(const revoke of ['consent','verification']) {
+        await verify(db,true);
+        await db.query(`INSERT INTO chimera_private.ai_requests(id,user_id,operation,resource,request_key,fingerprint,state,lease,expires_at)
+          VALUES($1,$2,'chat',$3,$4,$5,'running',$6,now()+interval '2 minutes')
+          ON CONFLICT(id) DO UPDATE SET state='running',resource=EXCLUDED.resource,request_key=EXCLUDED.request_key,result=null`,
+          [requestId,user,resource,operation==='room'?`turn:${source}`:'test','a'.repeat(64),lease]);
+        if(revoke==='consent') await db.query('UPDATE chimera_user_preferences SET adult_content_enabled=false WHERE user_id=$1',[user]);
+        else await db.query("SELECT public.set_age_verification($1,'unverified')",[user]);
+        await identity(db,'service_role'); // no member auth.uid(): authorization must use the reservation user
+        await assert.rejects(complete(),/permission changed/);
+        await assert.rejects(db.query('SELECT public.get_chimera_ai_request($1,$2)',[requestId,lease]),/permission changed/);
+        await assert.rejects(db.query('SELECT public.reserve_chimera_ai_request($1,$2,$3,$4,$5)',
+          [user,'chat',resource,'test','a'.repeat(64)]),/permission changed/);
+        await db.exec('RESET ROLE');
+        assert.equal((await db.query('SELECT state FROM chimera_private.ai_requests WHERE id=$1',[requestId])).rows[0].state,'running');
+        assert.equal((await db.query('SELECT content FROM messages WHERE id=$1',[messageId])).rows[0].content,'restricted greeting');
+        await db.query("UPDATE chimera_private.ai_requests SET state='completed',result='{"+ '"reply":"cached restricted reply"' + "}'::jsonb WHERE id=$1",[requestId]);
+        await identity(db,'service_role');
+        await assert.rejects(complete(),/permission changed/); // completed replay must also be denied
+        await assert.rejects(db.query('SELECT public.get_chimera_ai_request($1,$2)',[requestId,lease]),/permission changed/);
+        await db.exec('RESET ROLE');
+      }
+      await verify(db,true);
+      await db.query("UPDATE chimera_private.ai_requests SET state='running',result=null WHERE id=$1",[requestId]);
+      await identity(db,'service_role');
+      await complete(); // same service endpoint still works for an eligible adult
+      await db.exec('RESET ROLE');
+      assert.equal((await db.query('SELECT state FROM chimera_private.ai_requests WHERE id=$1',[requestId])).rows[0].state,'completed');
+      if(operation==='chat') await db.query('DELETE FROM messages WHERE id<>$1',[messageId]);
+      if(operation==='regeneration') await db.query("UPDATE messages SET content='restricted greeting' WHERE id=$1",[messageId]);
+    }
+    await identity(db,'authenticated',user);
+    await assert.rejects(db.query('SELECT public.get_chimera_ai_request($1,$2)',[requestId,lease]),/permission denied/);
+  } finally {await db.close();}
 });

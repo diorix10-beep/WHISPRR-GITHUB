@@ -40,7 +40,7 @@ export default function DiscoverPage() {
     setFailed(false);
     let request = supabase
       .from('ai_characters')
-      .select('id, name, short_description, long_description, category, tags, content_rating, avatar_url')
+      .select('id, name:chat_name, short_description, long_description, category, tags, content_rating, avatar_url')
       .eq('visibility', 'public')
       .eq('status', 'published');
     // Mature / NSFW characters are listed only for verified adults who opted in.
