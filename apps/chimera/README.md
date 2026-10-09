@@ -31,6 +31,24 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
 - **Create** in the roleplay menu opens `/create`; `/my-characters` lists your characters; `/create/:id` edits one (owner only).
 - Saved through `save_ai_character_soul`. On edit, every field the form does not show is sent back unchanged, so characters made
   with the old creator lose nothing.
+- **Form layout** (inspired by the usual character-creator pattern, written in our own words): picture, character name, optional chat
+  name, tagline, bio, then three foldable sections: *Character settings* (category, tag chips, content rating, visibility), *Character
+  definition* (personality, scenario, opening message, example dialogue, and a folded *More guidance*: speech style, lore, phrases to
+  avoid, notes for the AI) and *Character preview*. Create stays disabled until a name, a personality and an opening message exist, and
+  the page says which is missing. Only fields that really reach the chat prompt are offered (the unused `suggested_persona_name` is not).
+- **Name and chat name.** The card name is the profile's display name; `chat_name` is the nickname used in chats and by the AI (it
+  defaults to the name). Cards (Discover, character page, My characters) read the display name in a second query and fall back to
+  `chat_name` if it cannot be read. A V3 card's `nickname` imports as the chat name.
+- **No visible limits.** Nothing shows "n / max" and long writing is accepted: the database has no length checks, and the form only
+  shows a rough token size (about four characters per token, an estimate). There is **one real ceiling**: everything written for the AI
+  is sent with every reply, and the chat refuses a request once the whole prompt passes 100,000 characters, so a definition above
+  `MAX_DEFINITION_CHARACTERS` (60,000, the bio excluded) could never answer. Saving above it explains how many tokens to cut, without
+  printing the number, and the preview warns well before. Short fields stay short because cards show them (names 100, tagline 200, bio 5,000
+  characters; tags up to ten). Not enforced in the database: a direct call can still store a longer text, which the chat would then refuse.
+- **Picture.** JPG, PNG or WebP up to 5 MB, uploaded to the existing public `profile-photos` bucket under the member's own folder
+  (`<user id>/character-avatars/…`), so no migration is needed. It is optional. **There is no image moderation yet**, and the bucket is
+  public to anyone with the address: acceptable while public publishing is founder-only, to be revisited before it opens.
+- Content rating shows General only; Mature is greyed out as "coming soon" while age verification is not open.
 - New characters are **SFW only** until age verification exists. Visibility: **private** (default), **unlisted** (link only) or **public**.
 - **Public publishing is founder-only during the beta** (`profiles.role = 'founder'`). It is enforced in the database by
   `supabase/migrations/20261009000000_chimera_character_publication_guard.sql`, so a member cannot bypass the form with a direct

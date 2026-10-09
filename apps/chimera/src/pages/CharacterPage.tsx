@@ -7,6 +7,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { ratingLabel } from '../lib/ratings';
 import { loadMyPersonas, type PersonaSummary } from '../lib/personas';
+import { loadCardNames } from '../lib/characterNames';
+import { CharacterAvatar } from '../components/characters/CharacterAvatar';
 
 interface CharacterDetail {
   id: string;
@@ -22,6 +24,7 @@ interface CharacterDetail {
   category: string | null;
   tags: string[] | null;
   content_rating: string | null;
+  avatar_url: string | null;
 }
 
 export default function CharacterPage() {
@@ -43,14 +46,18 @@ export default function CharacterPage() {
     setCharacter(null);
     let request = supabase
       .from('ai_characters')
-      .select('id, user_id, creator_id, visibility, name:chat_name, short_description, long_description, scenario, greeting, personality, category, tags, content_rating')
+      .select('id, user_id, creator_id, visibility, name:chat_name, short_description, long_description, scenario, greeting, personality, category, tags, content_rating, avatar_url')
       .eq('id', id);
     // UI defence only: RLS enforces the same rule for direct Data API requests.
     if (!adultAccess) request = request.or('content_rating.is.null,content_rating.eq.SFW');
     request.maybeSingle()
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         if (!active) return;
-        setCharacter((data as CharacterDetail | null) ?? null);
+        const row = (data as CharacterDetail | null) ?? null;
+        // The page shows the character's name; the chat name (a nickname) is only the fallback.
+        const names = row ? await loadCardNames([row.user_id]) : new Map<string, string>();
+        if (!active) return;
+        setCharacter(row ? { ...row, name: names.get(row.user_id) ?? row.name } : null);
         setLoading(false);
       });
     return () => {
@@ -119,9 +126,15 @@ export default function CharacterPage() {
       </Link>
 
       <article className="flex flex-wrap overflow-hidden rounded-[22px] border border-chimera-gold/20 bg-chimera-panel">
-        <div className="grid min-h-[320px] flex-[0_1_360px] place-items-center bg-gradient-to-br from-[#2a1d4a] via-violet-700 to-chimera-rose" aria-hidden="true">
-          <span className="font-serif text-[140px] leading-none text-white/90">{name.slice(0, 1).toUpperCase()}</span>
-        </div>
+        {character.avatar_url ? (
+          <div className="flex-[0_1_360px] bg-chimera-bg">
+            <CharacterAvatar url={character.avatar_url} name={name} size="h-full min-h-[320px] w-full" initialSize="text-[140px]" rounded="rounded-none" />
+          </div>
+        ) : (
+          <div className="grid min-h-[320px] flex-[0_1_360px] place-items-center bg-gradient-to-br from-[#2a1d4a] via-violet-700 to-chimera-rose" aria-hidden="true">
+            <span className="font-serif text-[140px] leading-none text-white/90">{name.slice(0, 1).toUpperCase()}</span>
+          </div>
+        )}
         <div className="min-w-0 flex-[1_1_480px] p-8 sm:p-11">
           <p className="mb-3 text-xs font-bold tracking-[0.24em] text-chimera-gold">CHARACTER PROFILE</p>
           <h1 className="font-serif text-5xl font-semibold leading-[1.05] sm:text-6xl">{name}</h1>
