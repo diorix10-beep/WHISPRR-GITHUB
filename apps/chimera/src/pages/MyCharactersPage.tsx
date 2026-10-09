@@ -4,9 +4,13 @@ import { Plus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { VISIBILITY_LABEL, type Visibility } from '../lib/characters';
+import { loadCardNames } from '../lib/characterNames';
+import { CharacterAvatar } from '../components/characters/CharacterAvatar';
 
 interface Row {
   id: string;
+  user_id: string;
+  avatar_url: string | null;
   name: string | null;
   short_description: string | null;
   visibility: Visibility;
@@ -24,13 +28,20 @@ export default function MyCharactersPage() {
     let active = true;
     supabase
       .from('ai_characters')
-      .select('id, name:chat_name, short_description, visibility, status')
+      .select('id, user_id, avatar_url, name:chat_name, short_description, visibility, status')
       .eq('creator_id', user.id)
       .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (!active) return;
-        if (error) setFailed(true);
-        else setRows((data ?? []) as Row[]);
+        if (error) {
+          setFailed(true);
+          setLoading(false);
+          return;
+        }
+        const found = (data ?? []) as Row[];
+        const names = await loadCardNames(found.map((row) => row.user_id));
+        if (!active) return;
+        setRows(found.map((row) => ({ ...row, name: names.get(row.user_id) ?? row.name })));
         setLoading(false);
       });
     return () => {
@@ -64,7 +75,7 @@ export default function MyCharactersPage() {
           <ul className="flex flex-col gap-3">
             {rows.map((row) => (
               <li key={row.id} className="flex flex-wrap items-center gap-4 rounded-2xl border border-chimera-gold/20 bg-chimera-panel p-4">
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-700 to-chimera-rose font-serif text-xl text-white" aria-hidden="true">{(row.name ?? '?').slice(0, 1).toUpperCase()}</span>
+                <CharacterAvatar url={row.avatar_url} name={row.name ?? '?'} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-serif text-xl font-semibold">{row.name || 'Unnamed character'}</span>
                   <span className="block truncate text-sm text-chimera-mute">{row.short_description || 'No tagline yet'}</span>

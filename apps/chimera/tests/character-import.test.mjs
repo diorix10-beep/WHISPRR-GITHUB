@@ -89,12 +89,12 @@ test('long fields are shortened at a sentence end and reported; unknown placehol
   const { readCardBytes, cardToForm, LIMITS, close } = await load();
   try {
     const sentence = 'She keeps the lamp burning all night. ';
-    const card = { name: 'N'.repeat(90), first_mes: 'Hi {{getvar::mood}} there.{{// hidden note}}', personality: sentence.repeat(200), description: '' };
+    const card = { name: 'N'.repeat(150), first_mes: 'Hi {{getvar::mood}} there.{{// hidden note}}', personality: sentence.repeat(2000), description: '' };
     const { form, notes } = cardToForm(readCardBytes(encode(card)));
     assert.equal(form.name.length, LIMITS.name);
     assert.ok(form.personality.length <= LIMITS.personality && form.personality.endsWith('night.'), 'cut at a sentence end: ' + form.personality.slice(-20));
     assert.deepEqual(notes.trimmed.map((t) => t.field).sort(), ['Name', 'Personality']);
-    assert.equal(notes.trimmed.find((t) => t.field === 'Personality').from, (sentence.repeat(200)).trim().length);
+    assert.equal(notes.trimmed.find((t) => t.field === 'Personality').from, (sentence.repeat(2000)).trim().length);
     assert.equal(form.greeting, 'Hi {{getvar::mood}} there.'); assert.deepEqual(notes.placeholders, ['{{getvar::mood}}']);
   } finally { await close(); }
 });
@@ -154,7 +154,11 @@ test('{{char}} is the V3 nickname when there is one, otherwise the name that is 
   try {
     const nick = cardToForm(readCardBytes(encode({ spec: 'chara_card_v3', data: { name: 'Mara Quill the Keeper of the Light', nickname: 'Mara', first_mes: '{{char}} waves.', description: '{{char}} keeps the light.' } }))).form;
     assert.equal(nick.name, 'Mara Quill the Keeper of the Light'); assert.equal(nick.greeting, 'Mara waves.'); assert.equal(nick.personality, 'Mara keeps the light.');
-    const long = cardToForm(readCardBytes(encode({ name: 'L'.repeat(90), first_mes: '{{char}} waves.' }))).form;
-    assert.equal(long.name.length, 60); assert.equal(long.greeting, `${long.name} waves.`, 'prose uses the saved name');
+    assert.equal(nick.chatName, 'Mara', 'the V3 nickname becomes the chat name');
+    const plain = cardToForm(readCardBytes(encode({ name: 'Mara', first_mes: 'Hi.' }))).form;
+    assert.equal(plain.chatName, '', 'no nickname, no chat name');
+    const long = cardToForm(readCardBytes(encode({ name: 'L'.repeat(150), first_mes: '{{char}} waves.' }))).form;
+    assert.equal(long.name.length, 100); assert.equal(long.greeting, `${long.name} waves.`, 'prose uses the saved name');
+    assert.equal(long.chatName, '', 'a shortened name is not a nickname');
   } finally { await close(); }
 });

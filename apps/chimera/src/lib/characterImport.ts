@@ -212,6 +212,8 @@ export function cardToForm(raw: unknown): ImportResult {
   const form: CharacterForm = {
     ...EMPTY_FORM,
     name,
+    // A V3 card's nickname is what the character is called in chats: the same thing as the chat name here.
+    chatName: macroName !== name ? macroName : '',
     greeting: fit('Opening message', text('first_mes', true), LIMITS.greeting),
     scenario: fit('Scenario', text('scenario'), LIMITS.scenario),
     personality: fit('Personality', personality, LIMITS.personality),

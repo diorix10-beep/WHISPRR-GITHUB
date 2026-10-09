@@ -5,9 +5,12 @@ import { supabase } from '../lib/supabase';
 import { useAdultContentAccess } from '../hooks/useAdultContentAccess';
 import { ratingLabel } from '../lib/ratings';
 import { AGE_VERIFICATION_LIVE } from '../lib/ageVerification';
+import { loadCardNames } from '../lib/characterNames';
+import { CharacterAvatar } from '../components/characters/CharacterAvatar';
 
 interface CharacterRow {
   id: string;
+  user_id: string;
   name: string | null;
   short_description: string | null;
   long_description: string | null;
@@ -16,15 +19,6 @@ interface CharacterRow {
   content_rating: string | null;
   avatar_url: string | null;
 }
-
-const GRADIENTS = [
-  'from-violet-700 to-chimera-rose',
-  'from-sky-700 to-violet-700',
-  'from-amber-700 to-chimera-gold',
-  'from-orange-700 to-chimera-gold',
-  'from-indigo-900 to-chimera-blue',
-  'from-teal-700 to-chimera-rose',
-];
 
 export default function DiscoverPage() {
   const { allowed: adultAccess, loading: accessLoading } = useAdultContentAccess();
@@ -41,21 +35,26 @@ export default function DiscoverPage() {
     setFailed(false);
     let request = supabase
       .from('ai_characters')
-      .select('id, name:chat_name, short_description, long_description, category, tags, content_rating, avatar_url')
+      .select('id, user_id, name:chat_name, short_description, long_description, category, tags, content_rating, avatar_url')
       .eq('visibility', 'public')
       .eq('status', 'published');
     // Mature / NSFW characters are listed only for verified adults who opted in.
     if (!adultAccess) request = request.or('content_rating.is.null,content_rating.eq.SFW');
     request
       .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (!active) return;
         if (error) {
           setFailed(true);
           setCharacters([]);
-        } else {
-          setCharacters((data as CharacterRow[]) ?? []);
+          setLoading(false);
+          return;
         }
+        const rows = (data as CharacterRow[]) ?? [];
+        // Cards show the character's name, not its chat nickname. If the names cannot be read the chat name stays.
+        const names = await loadCardNames(rows.map((row) => row.user_id));
+        if (!active) return;
+        setCharacters(rows.map((row) => ({ ...row, name: names.get(row.user_id) ?? row.name })));
         setLoading(false);
       });
     return () => {
@@ -130,15 +129,13 @@ export default function DiscoverPage() {
             {visible.map((c, index) => (
               <li key={c.id} className="flex flex-col gap-4 rounded-[22px] border border-chimera-gold/20 bg-chimera-panel p-6 transition hover:border-chimera-gold/60">
                 <div className="flex items-center gap-4">
-                  <span className={`grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full bg-gradient-to-br ${GRADIENTS[index % GRADIENTS.length]} font-serif text-2xl text-white`} aria-hidden="true">
-                    {(c.name ?? '?').slice(0, 1).toUpperCase()}
-                  </span>
+                  <CharacterAvatar url={c.avatar_url} name={c.name ?? '?'} size="h-[52px] w-[52px]" initialSize="text-2xl" gradient={index} />
                   <div className="min-w-0">
                     <h2 className="font-serif text-2xl font-semibold leading-tight">{c.name ?? 'Untitled character'}</h2>
                     {c.category && <span className="text-sm text-chimera-mute">{c.category}</span>}
                   </div>
                 </div>
-                <p className="leading-relaxed text-violet-100/85">{c.short_description || c.long_description || 'A character waiting for a story to begin.'}</p>
+                <p className="line-clamp-3 leading-relaxed text-violet-100/85">{c.short_description || c.long_description || 'A character waiting for a story to begin.'}</p>
                 <div className="flex flex-wrap gap-2">
                   {(c.tags ?? []).slice(0, 2).map((tag) => (
                     <span key={tag} className="rounded-full border border-white/15 px-3 py-1 text-[13px] text-violet-100/80">{tag}</span>
