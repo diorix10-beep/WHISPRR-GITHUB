@@ -9,7 +9,7 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
 - Ratings on every character. **Mature and NSFW are hidden unless the member is a verified adult who opted in**
   (`supabase/migrations/20261006120000_chimera_age_verification_gate.sql`, `useAdultContentAccess`).
 - Guardian's Library: shows age status and the adult toggle. **Age verification is not connected to a provider yet**, so nobody is verified.
-- Honest "coming next" pages for the story library and the Writer's Desk. Terms and Privacy are drafts.
+- Terms and Privacy are drafts.
 
 ## Roleplay (step 2)
 
@@ -37,6 +37,156 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
   update. **Apply that migration before relying on it.** Until then only the form (not the database) blocks members from choosing Public.
 - Known gap for review: `create_ai_character` / `save_ai_character_soul` do not check that a Mature or NSFW rating comes from a verified adult.
   The form never offers it, but a direct call could set it.
+
+## Personas (who you are in a scene)
+
+- **Personas** (`/personas`, `/personas/new`, `/personas/:id`): name, pronouns, age, gender, occupation, about, personality, appearance,
+  backstory and a default persona. They are private: the `is_public` flag is never set from the app.
+- **Begin a scene** shows a **Play as** picker (the default persona is preselected, or "Myself, no persona") and sets it on the new scene
+  with `set_chimera_scene_persona`. In the scene, a **Playing as** switch is available only **before the first message**: the server and
+  the database scope the history and memory by persona, so switching later would make the character forget who you were.
+- The server sends the persona's details to the character (this already existed in `api/ai-chat.ts`).
+- **Safety:** `api/ai-chat.ts` refuses a Mature or NSFW scene when the persona's age clearly says under 18 (digits, number words,
+  "minor", "teen"). An empty or unclear age is not refused; the prompt's safety boundaries still apply. The persona form warns about it.
+- Not in this version: public / shared personas, persona avatars, a persona-specific greeting.
+
+## Storytelling (step 3, first version)
+
+- **Writer's Desk** (`/workspace`): your stories. **New story** (`/stories/new`), **story manager** (`/stories/:id/edit`: details,
+  add / delete chapters, delete story) and the **chapter editor** (`/stories/:id/chapters/:chapterId/edit`).
+- **The editor never loses text.** Every keystroke is kept on the device (`draftJournal`); the server save runs 1.5 s after the last
+  keystroke and also when leaving the page. It writes only if the chapter has not changed elsewhere (`updated_at` check): on a conflict
+  it stops, tells the writer and overwrites nothing. A save failure keeps the text and retries on the next change. Text left on the
+  device by a crashed tab is offered back (Restore / Discard). Publish and unpublish save first.
+- **Reading needs a sign-in for now**: the database only lets signed-in members read `stories` and `story_chapters`, so the reader pages are behind the sign-in.
+  Opening them to visitors needs narrow `anon` SELECT policies (a security decision for the owner and Codex).
+- **Reading:** `/library` (public stories that have a published chapter, search and genre), `/stories/:id` (published chapters; the
+  author also sees drafts) and `/stories/:id/chapters/:chapterId`. Chapter text is rendered as plain text.
+- **Public publishing is founder-only during the beta**, enforced by
+  `supabase/migrations/20261009010000_chimera_story_publication_guard.sql`. Stories have **no content rating** yet, so a public story
+  cannot be filtered for minors. The `stories.visibility` column **defaults to public**: the new pages always send an explicit value,
+  and the trigger also blocks inserts that forget it. **Apply that migration before relying on it.**
+- Not in this version: the AI co-author (will use VELLUM and only suggest), scene illustrations, comments and votes, worlds,
+  choose-your-own-adventure branches, collaborators, a story word count.
+
+## Scene tools (chat)
+
+The **Scene** button in a chat opens the tools. Everything here is private to the player.
+
+- **Name this scene:** a custom title (`conversations.name`, up to 80 characters) shown in the chat and in Your scenes, with the
+  character's name beneath. Empty means the character's name.
+- **Reply length:** Short, Medium (default) or Long. It is an instruction in the prompt; Long also raises the output budget.
+- **Words to avoid:** up to 500 characters, sent to the model as a "do not use" line. It adds to the creator's own banned words.
+- **Pinned messages:** up to 8, using the pin under each message. Pins outside the recent window are sent in front of the model
+  (600 characters each, 3000 in total), with the same persona scope as the history. Pins inside the window are not repeated.
+- **Start over:** creates a new scene with the same character (same title and persona, optionally the same memory notes, same length
+  and words). The old scene is kept as it was. Pins are not carried over.
+- **Delete scene:** after a confirmation, removes the scene, its messages and its memory for good.
+
+Settings live in `chimera_scene_settings` (migration `20261009020000_chimera_scene_settings.sql`): one row per scene and player, only
+readable and writable by that player while they are a member. `api/ai-chat.ts` reads it with the player's own session and, if it cannot
+be read (for example before the migration is applied), answers with the defaults. Apply the migration before or after the deploy; both work.
+
+## Automatic memory (suggested by the story, approved by you)
+
+Beyond the notes you write yourself in **Memory**, the story can suggest long-term memories.
+
+- Every few messages (once the player has written 8 new ones since the last look, and only on the 8th, 12th, 16th… message) the chat
+  page calls `api/chimera-memory.ts`. The database decides whether there is anything to look at (`claim_chimera_memory_window`):
+  suggestions switched off, fewer than 8 new messages, or 10 suggestions already waiting all end the call at once, with no model call.
+- When there is a window, Gemini reads up to the last 40 messages (the newest reply is left out because it can still be regenerated) and
+  proposes at most 5 short facts, each citing the lines it comes from. The server keeps only facts of a sane length, with real sources,
+  that the player does not already have. They are stored with the existing `propose_chimera_memory` as **proposed**.
+- **Nothing is used by the character until the player keeps it** (`approve_chimera_memory`): for this scene, or for every scene with that
+  character. Each suggestion can be reworded or dismissed. Approved memories are private, scoped to the player's persona, and are sent to the
+  character in a capped block (24 facts, about 3000 characters) after the scene canon. The canon wins if they disagree.
+- The window is claimed once even if two requests arrive together, and handed back if the provider call fails. If the model answers
+  with nothing usable, the window stays read, so there is no endless retry.
+- Mature / NSFW scenes follow the same adult-access rule as the chat. The extraction prompt keeps sexual content out of the facts and
+  never records anything sexual involving a minor.
+- The switch **Suggest things to remember** is in Scene tools (on by default, per scene).
+
+Migration `20261009030000_chimera_auto_memory.sql` adds two columns to `chimera_scene_settings` (`auto_memory`, `memory_cursor_at`) and the two
+functions above. Apply it **before** the deploy: the screen reads the settings with `select *`, so it still works without the columns,
+but suggestions do nothing until they exist.
+
+## Guardian's Library: "coming soon"
+
+Age verification has no provider yet, so the Guardian's Library is shown as **Coming soon** (a "Soon" tag in the menu and footer, and a
+friendly page instead of controls that cannot work). This relaxes nothing: Mature and Adult content stay locked by the database and the
+server, which only open for a verified account. When verification goes live, set `AGE_VERIFICATION_LIVE` to `true` in
+`src/lib/ageVerification.ts`: the real settings come back and every "coming soon" label (menu tag, footer, Discover, locked scenes)
+reverts with it.
+
+## Model House (which AI writes the replies)
+
+`/models` lists the models CHIMERA offers and lets a member pick their own. The list lives in one file, `src/lib/chatModels.ts`
+(shared by the page and the chat route); `api/_lib/modelProviders.ts` talks to the providers (Gemini with `GEMINI_API_KEY_SERVER`,
+everything else through OpenRouter with `OPENROUTER_API_KEY`).
+
+- The chat route picks the model like this: the **member's choice** (`chimera_user_preferences.default_ai_model`), then the character's
+  `ai_model`, then SUPERNOVA (`gemini-3.1-flash-lite`). A stored value is never trusted: it must be in the catalog, `available`, and `free`.
+- **Gemini 2.5 Flash is retired on 2026-10-20** (the OpenRouter catalog lists that expiry for the whole 2.5 family). SUPERNOVA moved to
+  Gemini 3.1 Flash Lite; members who saved the old id keep SUPERNOVA through `aliases`. `fallbackApiModels` lists older models to try if
+  Google answers "model not found" (404, or a 400/403 saying the model is retired or unsupported); any other failure stops at once and
+  never falls back. Memory suggestions and turning points use the same default engine and fallback (`geminiGenerate`), and no longer send a
+  `thinkingConfig`, which is not valid for every model. `thinkingHeadroom` adds output tokens for models that think before answering.
+- **Today only SUPERNOVA is usable.** AURELIA and NIVALIS are shown as "Coming soon" (they come from the old site).
+- **Paid models in testing (testers only).** PULSAR (DeepSeek V4.1 Flash, 3 SHARDS), QUANTUM (Mistral Large 4, 5), HELIOS (Gemini 3.8 Flash, 7)
+  and ECLIPSE (Claude Sonnet 5.5, 18) are in the catalog with `testersOnly: true`: they are listed and usable **only** by members in
+  `chimera_model_testers` (migration `20261009050000_chimera_model_testers.sql`; rows are added by hand in the SQL editor, members cannot
+  add themselves). Everyone else sees only SUPERNOVA, and a saved or recommended paid model is ignored for them. The route reads the
+  member's own row with their session; a missing table or failed read means "not a tester". To open a model to everyone, remove
+  `testersOnly` from its entry. Prices are about twice the provider's cost for a typical reply (10k tokens in, about 1.5k out including a
+  little reasoning) at the best pack price (about 0.42 cent per SHARD); **none of this has been run against OpenRouter yet**, which is what
+  the test phase is for. Reasoning is kept minimal (`reasoningEffort`): Gemini 3.8 Flash and Claude Sonnet 5.5 cannot turn it off, and hidden
+  reasoning tokens are billed by the provider, so check the real cost per reply on OpenRouter's activity page before opening them up.
+- **Paying with SHARDS.** A `tier: 'shards'` model is usable only when it is `available` **and** has a
+  `shardsCost` (a whole number, 1 to 10 000, per reply); without a valid price it stays unusable, so a model can never be free by
+  mistake. Only the player's own choice can select a paid model: a creator's recommended `ai_model` is honoured only if free.
+  - The route calls `charge_chimera_reply` **after** the request is reserved and checked, and **before** the model is called. It takes
+    the price from `shards_wallets` in one transaction, writes a `creative_spend` ledger line, and stores one row in
+    `chimera_private.shards_charges` keyed by the request id. Repeating the same request finds the open charge and takes nothing more.
+  - Not enough SHARDS: the route answers **402** before calling the model, and nothing is taken.
+  - No reply delivered (model error, timeout, bad output): the route calls `refund_chimera_reply` (a `refund` ledger line, once). It
+    refunds nothing for a reply that was saved, and nothing to a request another attempt has taken over (lease check).
+  - If the server stops between charging and refunding, the next charge for that member first returns every charge whose request
+    ended without a reply (`failed`, expired, or gone). A member who never chats again is not swept: reconcile from
+    `chimera_private.shards_charges where state = 'charged'` joined to `ai_requests`.
+  - A regeneration is a new model call and costs the price again. Free models never touch the wallet.
+  - The three functions are for the service role only. Members still cannot write to the wallet or ledger (row-level security gives
+    them read access to their own rows only).
+  - Code: `supabase/migrations/20261009040000_chimera_reply_billing.sql`, `api/_lib/replyBilling.ts`, tests in
+    `tests/reply-billing.test.mjs` and `tests/chat-models.test.mjs`.
+  - To switch a paid model on: set its `shardsCost`, make sure the provider key is set in Vercel, set `status: 'available'`.
+    Checkout (buying SHARDS) is a separate matter: see the Stripe note below.
+- An `uncensored` model would only ever be used in a scene the member is verified and opted in for. None exist; the decision is to add
+  none before age verification and a content check at character creation.
+- If a chosen model's provider key is missing the route answers 503 naming the model and pointing to the Model House, **before** any
+  capacity is reserved. It never silently swaps to another model. The reservation fingerprint includes the model id.
+- To add a model: add an entry to `CHAT_MODELS` with the provider's own id, set `OPENROUTER_API_KEY` in Vercel (production **and** preview),
+  and set `status: 'available'`. The page offers a choice as soon as two models are usable.
+- No database change: this reuses `chimera_user_preferences.default_ai_model` and `ai_characters.ai_model`.
+
+## Importing a character card
+
+On **Create** (not when editing), **Choose a card file** reads a character card made elsewhere: the Tavern / SillyTavern V1, V2 and V3
+formats, as a `.json` file or as a `.png` with the card embedded (`chara` or `ccv3`). It happens in the browser (`src/lib/characterImport.ts`);
+the file is never uploaded, and importing only **fills the form**. Nothing is saved until the person reads it through and presses Create,
+and it starts private like any new character.
+
+- Mapping: name, first message, scenario, example dialogue and tags come across; the card's `description` and `personality` become
+  Personality; the creator's notes become About. `{{char}}` becomes the name, `{{user}}` becomes "you" in spoken text or "the player" in
+  descriptions, `{{// comments}}` are removed. Fields over CHIMERA's limits are cut at a sentence end and reported.
+- **Not imported, and said so on screen:** custom system / post-history instructions (they often try to switch off safety rules; CHIMERA
+  uses its own), lorebooks, alternate openings, and the picture (characters have no avatar upload yet).
+- Everything imports as **SFW**: Mature / NSFW still wait for age verification. A card that says it is adult content (an `NSFW` / `18+` /
+  `explicit`-style tag, or `NSFW` / `18+` in the creator's notes unless they say "SFW") is **refused**, because relabelling it SFW would
+  hand its explicit text to anyone the character is shared with. This only reads what the card says about itself: nothing here scans the
+  text itself, the same as typing a character by hand, so a checked adult rating at creation is still a gap for a later step.
+- `{{char}}` is the V3 `nickname` when the card has one, otherwise the name that is actually saved.
+- Cards cannot be larger than 10 MB. A bad file gives a readable message and leaves the form alone; if the form already has text, the
+  person is asked before it is replaced.
 
 ## SHARDS and VELLUM: unchanged from the previous CHIMERA
 
@@ -73,7 +223,7 @@ seeing the old site from their cache. Keep it for a few weeks after the switch.
 
 ## Next
 
-The storytelling editor, then age verification through a provider.
+Age verification through a provider, then more chat features.
 
 ## Commands
 

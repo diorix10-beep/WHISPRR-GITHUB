@@ -3,7 +3,6 @@ import {
   fingerprint,
   finishRequest,
   jsonResponse,
-  providerFetch,
   readPayload,
   requestFailure,
   RequestError,
@@ -11,11 +10,20 @@ import {
   serverClient,
   uuid,
 } from './_lib/requestProtection.js';
-import { requireAdultContentAccess } from './_lib/adultContentGate.js';
+import { MAX_RECALLED_MEMORIES } from './_lib/memory.js';
+import { generateReply, providerKeys } from './_lib/modelProviders.js';
+import { resolveModel } from '../src/lib/chatModels.js';
+import { chargeForReply, refundUndeliveredReply } from './_lib/replyBilling.js';
+import { isAdultRating, requireAdultContentAccess } from './_lib/adultContentGate.js';
 import {
   buildSystemPrompt,
   cleanReply,
+  maxOutputTokensFor,
+  normalizeResponseLength,
+  personaAgeIsUnder18,
   selectRecentHistory,
+  type PinnedLine,
+  type SceneSettings,
   type BotProfile,
   type CharacterData,
   type ChatMessage,
@@ -24,7 +32,6 @@ import {
 
 export const config = { runtime: 'edge' };
 
-const CHAT_MODEL = 'gemini-2.5-flash';
 const MAX_PROMPT_CHARACTERS = 100_000;
 
 interface MessageRow extends ChatMessage {
@@ -37,12 +44,96 @@ interface GeminiTurn {
   parts: Array<{ text: string }>;
 }
 
+/**
+ * The player's own choices for this scene (reply length, words to avoid, pinned messages).
+ * Optional by design: if they cannot be read the character still answers with the defaults.
+ */
+async function loadSceneSettings(input: {
+  supabase: Awaited<ReturnType<typeof authenticate>>['supabase'];
+  userId: string;
+  conversationId: string;
+  personaId: string | null;
+  botId: string;
+  botName: string;
+  playerName: string;
+  inWindow: Set<string>;
+}): Promise<SceneSettings> {
+  try {
+    const { data, error } = await input.supabase
+      .from('chimera_scene_settings')
+      .select('response_length, banned_words, pinned_message_ids')
+      .eq('conversation_id', input.conversationId)
+      .eq('user_id', input.userId)
+      .maybeSingle();
+    if (error || !data) return {};
+    const settings: SceneSettings = {
+      responseLength: normalizeResponseLength(data.response_length),
+      bannedWords: typeof data.banned_words === 'string' ? data.banned_words : '',
+    };
+    const ids = (Array.isArray(data.pinned_message_ids) ? data.pinned_message_ids : [])
+      .filter((id: unknown): id is string => uuid(id))
+      .filter((id: string) => !input.inWindow.has(id));
+    if (ids.length > 0) {
+      // Same persona scope as the history, so a pin never carries another persona's story into this one.
+      let pinQuery = input.supabase
+        .from('messages')
+        .select('id, sender_id, content')
+        .eq('conversation_id', input.conversationId)
+        .is('deleted_at', null)
+        .in('id', ids)
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true });
+      pinQuery = input.personaId ? pinQuery.eq('persona_id', input.personaId) : pinQuery.is('persona_id', null);
+      const { data: rows } = await pinQuery;
+      settings.pinned = ((rows ?? []) as Array<{ sender_id: string; content: string }>).map(
+        (row): PinnedLine => ({ speaker: row.sender_id === input.botId ? input.botName : input.playerName, content: row.content }),
+      );
+    }
+    return settings;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Facts the player approved as long-term memory for this character and persona: the ones tied to this
+ * scene and the ones kept for every scene. Optional: if they cannot be read the character still answers.
+ */
+async function loadApprovedMemories(input: {
+  supabase: Awaited<ReturnType<typeof authenticate>>['supabase'];
+  userId: string;
+  conversationId: string;
+  characterId: string;
+  personaId: string | null;
+}): Promise<string[]> {
+  try {
+    let query = input.supabase
+      .from('character_memories')
+      .select('content')
+      .eq('user_id', input.userId)
+      .eq('character_id', input.characterId)
+      .eq('approval_status', 'approved')
+      .is('session_id', null)
+      .or(`conversation_id.eq.${input.conversationId},conversation_id.is.null`)
+      .order('importance', { ascending: false })
+      .order('updated_at', { ascending: false })
+      .limit(MAX_RECALLED_MEMORIES);
+    query = input.personaId ? query.eq('persona_id', input.personaId) : query.is('persona_id', null);
+    const { data, error } = await query;
+    if (error || !Array.isArray(data)) return [];
+    return data.map((row: { content: string }) => row.content).filter((text) => typeof text === 'string');
+  } catch {
+    return [];
+  }
+}
+
 export default async function handler(req: Request) {
   if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
 
   let admin: ReturnType<typeof serverClient> | undefined;
   let reservation: Awaited<ReturnType<typeof reserveRequest>> | undefined;
   let completed = false;
+  let chargeAttempted = false;
   try {
     const { supabase, user } = await authenticate(req);
     const payload = await readPayload(req);
@@ -63,9 +154,6 @@ export default async function handler(req: Request) {
     }
     const retryId = req.headers.get('Idempotency-Key');
     if (isSwipe && !retryId) throw new RequestError(400, 'A retry identifier is required for regeneration.');
-
-    const geminiKey = process.env.GEMINI_API_KEY_SERVER || process.env.GEMINI_API_KEY;
-    if (!geminiKey) throw new RequestError(503, 'The CHIMERA story engine is not configured yet.');
 
     // Check membership before any model call: RLS protects the reads below too,
     // but this stops a direct API call from spending capacity on someone else's scene.
@@ -98,6 +186,34 @@ export default async function handler(req: Request) {
     // Mature / NSFW characters need a verified adult who opted in. Fails closed.
     await requireAdultContentAccess(supabase, character.content_rating);
 
+    // The member's Model House choice, then the character's recommendation, then the default.
+    // Only catalog models that are available and free can ever be picked, whatever is stored.
+    const { data: modelPreference } = await supabase
+      .from('chimera_user_preferences')
+      .select('default_ai_model')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then((result) => result, () => ({ data: null }));
+    // Models still being tried are only for members in chimera_model_testers (read with the member's own session).
+    // A missing table or a failed read means "not a tester", never an error.
+    const { data: testerRow } = await supabase
+      .from('chimera_model_testers')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then((result) => result, () => ({ data: null }));
+    const chatModel = resolveModel(
+      { member: modelPreference?.default_ai_model, character: (character as { ai_model?: string | null }).ai_model },
+      { adultVerified: isAdultRating(character.content_rating), tester: !!testerRow },
+    );
+    const keys = providerKeys();
+    // Fail before any capacity is reserved when the chosen model's provider is not set up.
+    if (!keys[chatModel.provider]) {
+      throw new RequestError(503, chatModel.provider === 'gemini'
+        ? 'The CHIMERA story engine is not configured yet.'
+        : `${chatModel.name} is not available right now. Choose another model in the Model House.`);
+    }
+
     // Same rule the database uses to pick the scene persona.
     let persona: (PersonaData & { id: string }) | null = null;
     if (!(membership.persona_selected && !membership.persona_id)) {
@@ -110,6 +226,10 @@ export default async function handler(req: Request) {
       persona = (personaRow as (PersonaData & { id: string }) | null) ?? null;
     }
     const personaId = persona?.id ?? null;
+    // Zero tolerance: no adult scene with a persona that says it is under 18.
+    if (isAdultRating(character.content_rating) && personaAgeIsUnder18((persona as { age?: string | null } | null)?.age)) {
+      throw new RequestError(400, 'Your persona is listed as under 18, so adult scenes are not available with it. Choose another persona or change its age.');
+    }
 
     let historyQuery = supabase
       .from('messages')
@@ -135,6 +255,23 @@ export default async function handler(req: Request) {
     if (isInitiation && chronological.length > 0) throw new RequestError(409, 'This scene has already begun.');
 
     const history = selectRecentHistory(chronological);
+    const sceneSettings = await loadSceneSettings({
+      supabase,
+      userId: user.id,
+      conversationId,
+      personaId,
+      botId,
+      botName: character.chat_name?.trim() || botProfile.display_name,
+      playerName: persona?.name || 'Player',
+      inWindow: new Set(history.map((m) => (m as MessageRow).id)),
+    });
+    sceneSettings.memories = await loadApprovedMemories({
+      supabase,
+      userId: user.id,
+      conversationId,
+      characterId: character.id,
+      personaId,
+    });
     const playerLabel = persona?.name || 'Player';
     const contents: GeminiTurn[] = history.map((m) => ({
       role: m.sender_id === botId ? 'model' : 'user',
@@ -155,7 +292,7 @@ export default async function handler(req: Request) {
     }
     if (contents.length === 0) throw new RequestError(409, 'There is nothing to answer yet.');
 
-    const systemPrompt = buildSystemPrompt(character, botProfile, persona, conversation.memory_summary);
+    const systemPrompt = buildSystemPrompt(character, botProfile, persona, conversation.memory_summary, sceneSettings);
     const promptSize = systemPrompt.length + contents.reduce((size, turn) => size + turn.parts[0].text.length, 0);
     if (promptSize > MAX_PROMPT_CHARACTERS) throw new RequestError(413, 'This character context is too large to generate safely.');
 
@@ -177,7 +314,7 @@ export default async function handler(req: Request) {
         conversation_id: conversationId,
         bot_user_id: botId,
         turn,
-        model: CHAT_MODEL,
+        model: chatModel.id,
         persona_id: personaId,
         expected: isSwipe ? expectedContent : undefined,
       }),
@@ -201,22 +338,17 @@ export default async function handler(req: Request) {
     });
     if (scopeError) throw new RequestError(409, 'Your persona changed. Please retry in the current scene.');
 
-    const geminiResponse = await providerFetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${CHAT_MODEL}:generateContent?key=${geminiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: systemPrompt }] },
-          contents,
-          generationConfig: { temperature: 0.9, topP: 0.95, topK: 40, maxOutputTokens: 2048 },
-        }),
-      },
-    );
-    if (!geminiResponse.ok) throw new RequestError(502, 'The character provider is temporarily unavailable.');
-    const geminiData = await geminiResponse.json();
-    const parts: Array<{ text?: string }> = geminiData.candidates?.[0]?.content?.parts ?? [];
-    const reply = cleanReply(parts.map((part) => part.text ?? '').join(''));
+    // A paid model is charged before it is called, and refunded below if no reply is delivered.
+    const charged = await chargeForReply(admin, reservation, chatModel, () => { chargeAttempted = true; });
+
+    const replyText = await generateReply({
+      model: chatModel,
+      systemPrompt,
+      turns: contents.map((turn) => ({ role: turn.role, text: turn.parts[0].text })),
+      maxOutputTokens: Math.min(maxOutputTokensFor(sceneSettings.responseLength ?? 'medium') + (chatModel.thinkingHeadroom ?? 0), chatModel.maxOutputTokens ?? Infinity),
+      keys,
+    });
+    const reply = cleanReply(replyText);
     if (!reply) throw new RequestError(502, 'The character could not answer this time. Please try again.');
 
     const { error: completeError } = isSwipe
@@ -241,11 +373,16 @@ export default async function handler(req: Request) {
     }
 
     completed = true;
-    return jsonResponse({ reply });
+    return jsonResponse({ reply, model: chatModel.name, charged });
   } catch (error) {
     return requestFailure(error);
   } finally {
     if (admin && reservation?.state === 'reserved' && !completed) {
+      // No reply was delivered: give back anything taken for it. A refund that cannot run now is
+      // picked up by the stale-charge sweep the next time the member is charged.
+      if (chargeAttempted) {
+        await refundUndeliveredReply(admin, reservation);
+      }
       await finishRequest(admin, reservation.id, reservation.lease, null, true).catch(() => undefined);
     }
   }

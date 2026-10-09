@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { requireAdultContentAccess } from './_lib/adultContentGate.js';
-import { fingerprint, finishRequest, providerFetch, readPayload, requestFailure, RequestError, reserveRequest, serverClient, uuid } from './_lib/requestProtection.js';
+import { geminiGenerate, geminiText } from './_lib/modelProviders.js';
+import { defaultGeminiModels } from '../src/lib/chatModels.js';
+import { fingerprint, finishRequest, readPayload, requestFailure, RequestError, reserveRequest, serverClient, uuid } from './_lib/requestProtection.js';
 
 export const config = { runtime: 'edge' };
 
@@ -72,15 +74,16 @@ export default async function handler(req: Request) {
     const transcript = [...messages].reverse().map((message) => `${message.sender_id === bot_user_id ? (botProfile?.display_name || 'Character') : 'Player'}: ${message.content}`).join('\n');
     const prompt = `You are CHIMERA's Guided Story Paths engine. Create one meaningful turning point for the fictional roleplay below. It must reflect the existing scene, give the player genuine agency, and never mention AI, policies, rewards, or game mechanics. Do not use generic fantasy choices unless the scene itself is fantasy. Return ONLY valid JSON in exactly this shape:\n{"title":"short 2-6 word title","scene_prompt":"one atmospheric sentence that introduces the decision","choices":[{"label":"choice one"},{"label":"choice two"},{"label":"choice three"}]}\nUse two or three choices. Each choice must be distinct, plausible, and under 180 characters.\n\nCharacter: ${botProfile?.display_name || 'Unknown'}\nCharacter premise: ${character?.scenario || character?.short_description || ''}\nCharacter personality: ${character?.personality || ''}\nScene canon: ${conversation.memory_summary || 'None yet'}\n\nRecent roleplay:\n${transcript}`;
     if (prompt.length > 100_000) throw new RequestError(413, 'This scene context is too large.');
-    const geminiResponse = await providerFetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { temperature: 0.85, responseMimeType: 'application/json', maxOutputTokens: 2048 } }),
-    });
-    if (!geminiResponse.ok) return jsonResponse({ error: 'CHIMERA could not shape a turning point right now.' }, 502);
-
-    const geminiData = await geminiResponse.json();
-    const generated = parseTurningPoint(geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '');
+    let geminiData: unknown;
+    try {
+      ({ data: geminiData } = await geminiGenerate(geminiKey, defaultGeminiModels(), {
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.85, responseMimeType: 'application/json', maxOutputTokens: 4096 },
+      }));
+    } catch {
+      return jsonResponse({ error: 'CHIMERA could not shape a turning point right now.' }, 502);
+    }
+    const generated = parseTurningPoint(geminiText(geminiData));
     if (!generated || !generated.title || !generated.scene_prompt) return jsonResponse({ error: 'CHIMERA could not shape a clear enough turning point. Please try again.' }, 502);
 
     const { data: point, error: createError } = await admin.rpc('complete_guarded_chimera_turning_point', {

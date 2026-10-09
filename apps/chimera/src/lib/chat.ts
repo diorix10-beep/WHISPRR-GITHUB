@@ -81,6 +81,8 @@ export async function requestCharacterReply(options: ReplyOptions): Promise<stri
   if (!response.ok || typeof payload?.reply !== 'string') {
     throw new Error(typeof payload?.error === 'string' ? payload.error : 'The character could not answer right now. Please try again.');
   }
+  // A paid model took SHARDS for this reply: refresh the balance shown in the header.
+  if (typeof payload.charged === 'number' && payload.charged > 0) window.dispatchEvent(new Event('chimera-shards-changed'));
   return payload.reply;
 }
 

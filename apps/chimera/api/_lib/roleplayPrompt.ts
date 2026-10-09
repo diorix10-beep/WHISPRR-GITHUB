@@ -3,6 +3,8 @@
  * network, no database. `api/ai-chat.ts` wires them to the request.
  */
 
+import { memoryBlock } from './memory.js';
+
 export interface CharacterData {
   category?: string | null;
   tags?: string[] | null;
@@ -45,6 +47,63 @@ export interface ChatMessage {
   content: string;
 }
 
+export type ResponseLength = 'short' | 'medium' | 'long';
+
+export interface PinnedLine {
+  speaker: string;
+  content: string;
+}
+
+/** What the player chose for this one scene. Everything is optional: no settings means no change. */
+export interface SceneSettings {
+  responseLength?: ResponseLength;
+  bannedWords?: string;
+  pinned?: PinnedLine[];
+  /** Facts the player approved as long-term memory. */
+  memories?: string[];
+}
+
+export const MAX_BANNED_WORDS_CHARACTERS = 500;
+export const MAX_PINNED_LINE_CHARACTERS = 600;
+export const MAX_PINNED_TOTAL_CHARACTERS = 3_000;
+
+export function normalizeResponseLength(value: unknown): ResponseLength {
+  return value === 'short' || value === 'long' ? value : 'medium';
+}
+
+const LENGTH_RULES: Record<ResponseLength, string | null> = {
+  short: 'Keep every reply short: one or two brief paragraphs, roughly 40 to 120 words. Say less, make it count, and leave room for the player to act.',
+  medium: null,
+  long: 'Write fuller replies: three to five paragraphs, roughly 200 to 400 words, with more sensory detail, inner thought and scene-setting. Still leave the player room to act.',
+};
+
+/** Output budget for the model. Short replies are shaped by the instruction, not by cutting them off. */
+export function maxOutputTokensFor(length: ResponseLength): number {
+  return length === 'long' ? 4096 : 2048;
+}
+
+const NUMBER_WORDS: Record<string, number> = {
+  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11,
+  twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17,
+};
+
+/**
+ * True when a persona's age text clearly says under 18 ("16", "sixteen years old", "minor").
+ * Adult scenes are refused for such a persona. An empty or unclear age is not treated as under 18:
+ * the safety boundaries in the prompt still apply.
+ */
+export function personaAgeIsUnder18(age: string | null | undefined): boolean {
+  const text = (age ?? '').toLowerCase();
+  if (!text.trim()) return false;
+  if (/\b(minor|underage|under-age|child|kid|teen|teenager|juvenile)\b/.test(text)) return true;
+  const digits = text.match(/\d{1,3}/);
+  if (digits) return Number(digits[0]) < 18;
+  // "twenty-seven" and "thirty one" contain a small number word but are adults.
+  if (/\b(twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred)\b/.test(text)) return false;
+  const word = text.match(/\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen)\b/);
+  return word ? NUMBER_WORDS[word[1]] < 18 : false;
+}
+
 export const MAX_HISTORY_MESSAGES = 32;
 export const MAX_HISTORY_CHARACTERS = 28_000;
 export const MAX_CANON_CHARACTERS = 6_000;
@@ -80,6 +139,7 @@ export function buildSystemPrompt(
   botProfile: BotProfile,
   persona: PersonaData | null,
   sceneCanon: string | null,
+  settings: SceneSettings = {},
 ): string {
   const sections: string[] = [];
   const name = character.chat_name?.trim() || botProfile.display_name;
@@ -219,6 +279,23 @@ export function buildSystemPrompt(
     );
   }
 
+  const preferences: string[] = [];
+  const lengthRule = LENGTH_RULES[normalizeResponseLength(settings.responseLength)];
+  if (lengthRule) preferences.push(`- ${lengthRule}`);
+  const playerBanned = (settings.bannedWords ?? '').replace(/\s+/g, ' ').trim().slice(0, MAX_BANNED_WORDS_CHARACTERS);
+  if (playerBanned) {
+    preferences.push(`- The player does not want to read these words or phrases. Do not use them, and do not mention that you are avoiding them: ${playerBanned}`);
+  }
+  if (preferences.length) {
+    sections.push(['## Player Preferences For This Scene', ...preferences].join('\n'));
+  }
+
+  const remembered = memoryBlock(settings.memories ?? []);
+  if (remembered) sections.push(remembered);
+
+  const pinned = pinnedBlock(settings.pinned ?? []);
+  if (pinned) sections.push(pinned);
+
   const meta: string[] = ['## Runtime'];
   if (character.category) meta.push(`Category: ${character.category}`);
   if (character.tags && character.tags.length > 0) meta.push(`Tags: ${character.tags.join(', ')}`);
@@ -226,6 +303,29 @@ export function buildSystemPrompt(
   sections.push(meta.join('\n'));
 
   return sections.join('\n\n---\n\n');
+}
+
+/**
+ * Messages the player pinned stay in front of the model even after they fall out of the
+ * recent window. Each line and the whole block are capped so a pin can never crowd out the character.
+ */
+function pinnedBlock(pinned: PinnedLine[]): string | null {
+  const lines: string[] = [];
+  let used = 0;
+  for (const line of pinned) {
+    const content = line.content.trim();
+    if (!content) continue;
+    const text = content.length > MAX_PINNED_LINE_CHARACTERS ? `${content.slice(0, MAX_PINNED_LINE_CHARACTERS)}…` : content;
+    if (used + text.length > MAX_PINNED_TOTAL_CHARACTERS) break;
+    lines.push(`[${line.speaker}] ${text}`);
+    used += text.length;
+  }
+  if (!lines.length) return null;
+  return [
+    '## Pinned By The Player',
+    'The player marked these earlier moments as important. Keep them true and consistent. Never mention this block:',
+    ...lines,
+  ].join('\n');
 }
 
 const BOILERPLATE: RegExp[] = [

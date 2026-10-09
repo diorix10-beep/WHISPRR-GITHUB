@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Link, Route, Routes } from 'react-router-dom';
+import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import AppLayout from './components/layout/AppLayout';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import HomePage from './pages/HomePage';
@@ -11,7 +11,16 @@ import ChatsPage from './pages/ChatsPage';
 import ConversationPage from './pages/ConversationPage';
 import CreateCharacterPage from './pages/CreateCharacterPage';
 import MyCharactersPage from './pages/MyCharactersPage';
-import ComingSoonPage from './pages/ComingSoonPage';
+import ModelHousePage from './pages/ModelHousePage';
+import PersonasPage from './pages/PersonasPage';
+import PersonaEditorPage from './pages/PersonaEditorPage';
+import LibraryPage from './pages/LibraryPage';
+import StoryPage from './pages/StoryPage';
+import ChapterReaderPage from './pages/ChapterReaderPage';
+import WorkspacePage from './pages/WorkspacePage';
+import NewStoryPage from './pages/NewStoryPage';
+import StoryEditPage from './pages/StoryEditPage';
+import ChapterEditorPage from './pages/ChapterEditorPage';
 import LegalPlaceholderPage from './pages/LegalPlaceholderPage';
 
 // SHARDS and VELLUM keep the screens they had before.
@@ -55,14 +64,21 @@ export default function App() {
             <Route path="/create" element={<CreateCharacterPage />} />
             <Route path="/create/:id" element={<CreateCharacterPage />} />
             <Route path="/my-characters" element={<MyCharactersPage />} />
+            <Route path="/models" element={<ModelHousePage />} />
+            <Route path="/personas" element={<PersonasPage />} />
+            <Route path="/personas/new" element={<PersonaEditorPage />} />
+            <Route path="/personas/:id" element={<PersonaEditorPage />} />
+            {/* Reading stories needs a sign-in for now: the database only lets signed-in members read them. */}
+            <Route path="/library" element={<LibraryPage />} />
+            <Route path="/stories/:id" element={<StoryPage />} />
+            <Route path="/stories/:id/chapters/:chapterId" element={<ChapterReaderPage />} />
+            <Route path="/workspace" element={<WorkspacePage />} />
+            <Route path="/stories/new" element={<NewStoryPage />} />
+            <Route path="/stories/:id/edit" element={<StoryEditPage />} />
+            <Route path="/stories/:id/chapters/:chapterId/edit" element={<ChapterEditorPage />} />
           </Route>
 
-          {/* Planned, not built yet: say so instead of linking to nothing. */}
-          <Route path="/library" element={<ComingSoonPage title="Story library" description="Browse stories written on CHIMERA. Storytelling comes after roleplay scenes." />} />
-          <Route path="/workspace" element={<ComingSoonPage title="Writer's Desk" description="Write chapters with an AI co-author that suggests and never takes over. Storytelling comes after roleplay scenes." />} />
-          <Route path="/write" element={<ComingSoonPage title="Writer's Desk" description="Write chapters with an AI co-author that suggests and never takes over. Storytelling comes after roleplay scenes." />} />
-          <Route path="/stories/new" element={<ComingSoonPage title="New story" description="Start a story with chapters and an outline. Storytelling comes after roleplay scenes." />} />
-
+          <Route path="/write" element={<Navigate to="/workspace" replace />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

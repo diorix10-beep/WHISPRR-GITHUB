@@ -4,6 +4,7 @@ import { Lock, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAdultContentAccess } from '../hooks/useAdultContentAccess';
 import { ratingLabel } from '../lib/ratings';
+import { AGE_VERIFICATION_LIVE } from '../lib/ageVerification';
 
 interface CharacterRow {
   id: string;
@@ -112,7 +113,7 @@ export default function DiscoverPage() {
       {!adultAccess && !accessLoading && (
         <div className="mt-6 flex flex-wrap items-center gap-4 rounded-2xl border border-chimera-blue/35 bg-chimera-blue/10 px-5 py-4">
           <Lock size={22} className="text-chimera-blue" aria-hidden="true" />
-          <p className="min-w-[260px] flex-1 text-base text-blue-50">Mature and Adult stories stay hidden until you verify your age.</p>
+          <p className="min-w-[260px] flex-1 text-base text-blue-50">{AGE_VERIFICATION_LIVE ? 'Mature and Adult stories stay hidden until you verify your age.' : 'Mature and Adult stories stay hidden until age verification opens. It is coming soon.'}</p>
           <Link to="/guardian" className="inline-flex min-h-[44px] items-center rounded-full border border-chimera-blue px-5 text-sm font-bold text-blue-50 hover:bg-chimera-blue/15">Learn more</Link>
         </div>
       )}
