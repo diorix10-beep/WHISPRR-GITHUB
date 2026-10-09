@@ -1,13 +1,14 @@
 import {
   authenticate,
   jsonResponse,
-  providerFetch,
   readPayload,
   requestFailure,
   RequestError,
   uuid,
 } from './_lib/requestProtection.js';
 import { requireAdultContentAccess } from './_lib/adultContentGate.js';
+import { geminiGenerate, geminiText } from './_lib/modelProviders.js';
+import { defaultGeminiModels } from '../src/lib/chatModels.js';
 import {
   EXTRACTION_SCHEMA,
   buildExcerpt,
@@ -19,8 +20,6 @@ import {
 } from './_lib/memory.js';
 
 export const config = { runtime: 'edge' };
-
-const MEMORY_MODEL = 'gemini-2.5-flash';
 
 interface Window {
   from: string | null;
@@ -121,28 +120,13 @@ export default async function handler(req: Request) {
     const known = ((knownRows ?? []) as Array<{ content: string }>).map((row) => row.content).filter((text) => typeof text === 'string');
 
     const excerpt = buildExcerpt(messages, { botId, botName, playerName });
-    const geminiResponse = await providerFetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MEMORY_MODEL}:generateContent?key=${geminiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: buildExtractionPrompt(known, { botName, playerName }) }] },
-          contents: [{ role: 'user', parts: [{ text: `Excerpt:\n${excerpt.text}` }] }],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 1024,
-            responseMimeType: 'application/json',
-            responseSchema: EXTRACTION_SCHEMA,
-            thinkingConfig: { thinkingBudget: 0 },
-          },
-        }),
-      },
-    );
-    if (!geminiResponse.ok) throw new RequestError(502, 'Memory suggestions are temporarily unavailable.');
-    const geminiData = await geminiResponse.json();
-    const parts: Array<{ text?: string }> = geminiData.candidates?.[0]?.content?.parts ?? [];
-    const candidates = parseExtraction(parts.map((part) => part.text ?? '').join(''), excerpt.ids, known);
+    const { data: geminiData } = await geminiGenerate(geminiKey, defaultGeminiModels(), {
+      systemInstruction: { parts: [{ text: buildExtractionPrompt(known, { botName, playerName }) }] },
+      contents: [{ role: 'user', parts: [{ text: `Excerpt:\n${excerpt.text}` }] }],
+      // Room for the model's own thinking on top of the few short facts it returns.
+      generationConfig: { temperature: 0.2, maxOutputTokens: 2048, responseMimeType: 'application/json', responseSchema: EXTRACTION_SCHEMA },
+    });
+    const candidates = parseExtraction(geminiText(geminiData), excerpt.ids, known);
 
     let proposed = 0;
     for (const candidate of candidates) {

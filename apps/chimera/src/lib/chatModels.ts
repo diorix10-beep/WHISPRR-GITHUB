@@ -15,6 +15,17 @@ export type ModelProvider = 'gemini' | 'openrouter';
 export interface ChatModel {
   /** Stored in the member's preferences. For OpenRouter this is the provider's own model id. */
   id: string;
+  /** Older ids members may still have saved. They resolve to this model; new saves use `id`. */
+  aliases?: string[];
+  /**
+   * Gemini only: models to try, in order, if Google no longer serves `id` (a retired or renamed model
+   * answers "not found"). Keeps replies flowing while a catalog entry is being updated.
+   */
+  fallbackApiModels?: string[];
+  /** Extra output tokens on top of the reply length, for models that think before they answer. */
+  thinkingHeadroom?: number;
+  /** The model does not accept temperature / top_p (some Claude and GPT models). They are left out of the request. */
+  noSampling?: boolean;
   /** The brand name members see. */
   name: string;
   provider: ModelProvider;
@@ -34,15 +45,19 @@ export interface ChatModel {
   uncensored?: boolean;
 }
 
-export const DEFAULT_MODEL_ID = 'gemini-2.5-flash';
+export const DEFAULT_MODEL_ID = 'gemini-3.1-flash-lite';
 
 export const CHAT_MODELS: ChatModel[] = [
   {
-    id: 'gemini-2.5-flash',
+    // Gemini 2.5 Flash is retired by Google on 2026-10-20. Members who saved it keep SUPERNOVA (alias).
+    id: 'gemini-3.1-flash-lite',
+    aliases: ['gemini-2.5-flash'],
+    fallbackApiModels: ['gemini-2.5-flash'],
+    thinkingHeadroom: 2048,
     name: 'SUPERNOVA',
     provider: 'gemini',
     company: 'Google',
-    engineName: 'Gemini 2.5 Flash',
+    engineName: 'Gemini 3.1 Flash Lite',
     description: 'Fast, lively and consistent. The everyday engine for roleplay and quick back-and-forth.',
     strengths: ['Speed', 'Lively dialogue', 'Long memory'],
     bestFor: 'Swift roleplay, spontaneous turns and dynamic conversation',
@@ -79,7 +94,14 @@ export const CHAT_MODELS: ChatModel[] = [
 ];
 
 export function findModel(id: string | null | undefined, catalog: ChatModel[] = CHAT_MODELS): ChatModel | null {
-  return catalog.find((model) => model.id === id) ?? null;
+  if (!id) return null;
+  return catalog.find((model) => model.id === id || model.aliases?.includes(id)) ?? null;
+}
+
+/** The Gemini models to try for the default engine's background jobs (memory, turning points), best first. */
+export function defaultGeminiModels(catalog: ChatModel[] = CHAT_MODELS): string[] {
+  const model = findModel(DEFAULT_MODEL_ID, catalog);
+  return model ? [model.id, ...(model.fallbackApiModels ?? [])] : [DEFAULT_MODEL_ID];
 }
 
 /**

@@ -5,8 +5,9 @@ import { DEFAULT_MODEL_ID, findModel, isUsable } from './chatModels';
 export async function loadModelChoice(userId: string): Promise<string> {
   const { data, error } = await supabase.from('chimera_user_preferences').select('default_ai_model').eq('user_id', userId).maybeSingle();
   if (error) throw error;
-  const stored = (data as { default_ai_model?: string | null } | null)?.default_ai_model;
-  return isUsable(findModel(stored)) ? (stored as string) : DEFAULT_MODEL_ID;
+  const model = findModel((data as { default_ai_model?: string | null } | null)?.default_ai_model);
+  // An old saved id (an alias) answers with the model's current id.
+  return isUsable(model) ? model.id : DEFAULT_MODEL_ID;
 }
 
 /** Only writes the model: the member's other preferences (adult content, theme…) are left as they are. */
