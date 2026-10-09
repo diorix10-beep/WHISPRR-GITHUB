@@ -110,6 +110,22 @@ Migration `20261009030000_chimera_auto_memory.sql` adds two columns to `chimera_
 functions above. Apply it **before** the deploy: the screen reads the settings with `select *`, so it still works without the columns,
 but suggestions do nothing until they exist.
 
+## Importing a character card
+
+On **Create** (not when editing), **Choose a card file** reads a character card made elsewhere: the Tavern / SillyTavern V1, V2 and V3
+formats, as a `.json` file or as a `.png` with the card embedded (`chara` or `ccv3`). It happens in the browser (`src/lib/characterImport.ts`);
+the file is never uploaded, and importing only **fills the form**. Nothing is saved until the person reads it through and presses Create,
+and it starts private like any new character.
+
+- Mapping: name, first message, scenario, example dialogue and tags come across; the card's `description` and `personality` become
+  Personality; the creator's notes become About. `{{char}}` becomes the name, `{{user}}` becomes "you" in spoken text or "the player" in
+  descriptions, `{{// comments}}` are removed. Fields over CHIMERA's limits are cut at a sentence end and reported.
+- **Not imported, and said so on screen:** custom system / post-history instructions (they often try to switch off safety rules; CHIMERA
+  uses its own), lorebooks, alternate openings, and the picture (characters have no avatar upload yet).
+- Everything imports as **SFW**: Mature / NSFW still wait for age verification. A card tagged NSFW gets a note, and the tag is dropped.
+- Cards cannot be larger than 10 MB. A bad file gives a readable message and leaves the form alone; if the form already has text, the
+  person is asked before it is replaced.
+
 ## SHARDS and VELLUM: unchanged from the previous CHIMERA
 
 These files were copied as they were (only two unused imports/variables removed from `DailyBonusModal` for lint):
