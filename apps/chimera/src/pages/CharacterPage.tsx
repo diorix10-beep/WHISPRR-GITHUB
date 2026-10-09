@@ -27,6 +27,9 @@ interface CharacterDetail {
   avatar_url: string | null;
 }
 
+/** A Bio up to this long can stand in for a missing tagline; a longer one is folded away. */
+const BIO_INLINE_MAX = 400;
+
 export default function CharacterPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -117,6 +120,7 @@ export default function CharacterPage() {
   }
 
   const name = character.name ?? 'Unnamed character';
+  const bio = (character.long_description ?? '').trim();
   const isOwner = !!user && character.creator_id === user.id;
 
   return (
@@ -138,13 +142,23 @@ export default function CharacterPage() {
         <div className="min-w-0 flex-[1_1_480px] p-8 sm:p-11">
           <p className="mb-3 text-xs font-bold tracking-[0.24em] text-chimera-gold">CHARACTER PROFILE</p>
           <h1 className="font-serif text-5xl font-semibold leading-[1.05] sm:text-6xl">{name}</h1>
-          <p className="mt-4 text-lg text-violet-100/85">{character.short_description || character.long_description}</p>
+          {/* The Bio has no length limit, so a long one goes in a folded section instead of pushing the page down. */}
+          {(character.short_description || (bio && bio.length <= BIO_INLINE_MAX)) && (
+            <p className="mt-4 whitespace-pre-line text-lg text-violet-100/85">{character.short_description || bio}</p>
+          )}
           <div className="mt-5 flex flex-wrap gap-2">
             {character.category && <span className="rounded-full border border-white/15 px-3 py-1.5 text-sm text-violet-100/80">{character.category}</span>}
             {(character.tags ?? []).map((tag) => <span key={tag} className="rounded-full border border-white/15 px-3 py-1.5 text-sm text-violet-100/80">{tag}</span>)}
             <span className="rounded-full border border-chimera-mint/50 px-3 py-1.5 text-xs font-bold tracking-[0.1em] text-chimera-mint">{ratingLabel(character.content_rating)}</span>
             {isOwner && character.visibility && character.visibility !== 'public' && <span className="rounded-full border border-white/20 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.1em] text-violet-100/80">{character.visibility === 'private' ? 'Private' : 'Unlisted'}</span>}
           </div>
+
+          {bio && (character.short_description || bio.length > BIO_INLINE_MAX) && (
+            <details className="mt-6 rounded-2xl border border-chimera-gold/20 bg-chimera-panel2 p-5">
+              <summary className="cursor-pointer text-xs font-bold tracking-[0.22em] text-chimera-gold">ABOUT THIS CHARACTER</summary>
+              <p className="mt-3 max-h-[60vh] overflow-y-auto whitespace-pre-line break-words leading-relaxed text-violet-100/85">{bio}</p>
+            </details>
+          )}
 
           <section className="mt-7 rounded-2xl border border-chimera-gold/20 bg-chimera-panel2 p-6">
             <p className="mb-2 text-xs font-bold tracking-[0.22em] text-chimera-rose">THE OPENING SCENE</p>

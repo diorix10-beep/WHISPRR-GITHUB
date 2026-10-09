@@ -22,7 +22,6 @@ export const LIMITS = {
   greeting: 60_000,
   scenario: 60_000,
   personality: 60_000,
-  about: 5_000,
   examples: 60_000,
   style: 60_000,
   lore: 60_000,
@@ -145,7 +144,6 @@ export function validateForm(form: CharacterForm, existing: CharacterRecord | nu
     ['Name', form.name, LIMITS.name],
     ['Chat name', form.chatName, LIMITS.chatName],
     ['Tagline', form.tagline, LIMITS.tagline],
-    ['Bio', form.about, LIMITS.about],
     ['Phrases to avoid', form.avoid, LIMITS.avoid],
   ];
   for (const [label, value, max] of checks) {

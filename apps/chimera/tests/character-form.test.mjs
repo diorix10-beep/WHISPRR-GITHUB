@@ -46,8 +46,8 @@ test('required fields, and the short fields that cards show', async () => {
     assert.deepEqual(missingForCreate(filled(EMPTY_FORM)), []);
     assert.deepEqual(missingForCreate(filled(EMPTY_FORM, { name: '  ' })), ['a name']);
     assert.match(validateForm(EMPTY_FORM) ?? '', /name/);
-    assert.match(validateForm(filled(EMPTY_FORM, { about: 'b'.repeat(5001) })) ?? '', /Bio is too long to be shown/);
-    assert.equal(validateForm(filled(EMPTY_FORM, { about: 'b'.repeat(5000) })), null);
+    // The Bio has no limit: it is only shown, never read by the AI, so even a huge one saves.
+    for (const length of [5_001, 100_000, 1_000_000]) assert.equal(validateForm(filled(EMPTY_FORM, { about: 'b'.repeat(length) })), null, `a ${length}-character Bio is accepted`);
     assert.match(validateForm(filled(EMPTY_FORM, { chatName: 'c'.repeat(101) })) ?? '', /Chat name/);
     assert.match(validateForm(filled(EMPTY_FORM, { avoid: 'a'.repeat(5001) })) ?? '', /Phrases to avoid/);
   } finally { await close(); }
