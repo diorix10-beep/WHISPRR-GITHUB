@@ -69,7 +69,7 @@ export default function AuthPage() {
         {tab === 'signup' && (
           <div className="mt-5 space-y-3 text-sm leading-relaxed text-violet-100/85">
             <label className="flex cursor-pointer items-start gap-3"><input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} className="mt-1 h-5 w-5 accent-[#e8c27a]" />I am 18 years old or older.</label>
-            <label className="flex cursor-pointer items-start gap-3"><input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} className="mt-1 h-5 w-5 accent-[#e8c27a]" /><span>I accept the <Link to="/terms" className="underline">Terms</Link> and the <Link to="/privacy" className="underline">Privacy Policy</Link>.</span></label>
+            <label className="flex cursor-pointer items-start gap-3"><input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} className="mt-1 h-5 w-5 accent-[#e8c27a]" /><span>I accept the <Link to="/terms" target="_blank" rel="noopener" className="underline">Terms<span className="sr-only"> (opens in a new tab)</span></Link> and the <Link to="/privacy" target="_blank" rel="noopener" className="underline">Privacy Policy<span className="sr-only"> (opens in a new tab)</span></Link>.</span></label>
           </div>
         )}
 
