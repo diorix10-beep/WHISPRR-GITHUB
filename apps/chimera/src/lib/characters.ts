@@ -67,6 +67,8 @@ export interface CharacterForm {
   category: string;
   tags: string;
   visibility: Visibility;
+  /** Rated Mature instead of General. Only members who confirmed they are 18 or older can choose it. */
+  mature: boolean;
 }
 
 export const EMPTY_FORM: CharacterForm = {
@@ -86,6 +88,7 @@ export const EMPTY_FORM: CharacterForm = {
   category: 'General',
   tags: '',
   visibility: 'private',
+  mature: false,
 };
 
 export function parseTags(raw: string): string[] {
@@ -156,6 +159,12 @@ export function validateForm(form: CharacterForm, existing: CharacterRecord | nu
   return null;
 }
 
+/** General unless the form says Mature. A stored NSFW rating stays NSFW while the character stays adult. */
+function ratingToSave(form: CharacterForm, existing: CharacterRecord | null): 'SFW' | 'Mature' | 'NSFW' {
+  if (!form.mature) return 'SFW';
+  return (text(existing, 'content_rating', 'SFW') || 'SFW').toUpperCase() === 'NSFW' ? 'NSFW' : 'Mature';
+}
+
 /**
  * Arguments for save_ai_character_soul. That function rewrites every field it is given, so on
  * edit the fields this form does not show are sent back exactly as they were stored.
@@ -180,8 +189,7 @@ export function buildSaveArgs(form: CharacterForm, existing: CharacterRecord | n
     p_visibility: form.visibility,
     p_avatar_url: form.avatarUrl.trim(),
     p_banner_url: text(existing, 'banner_url'),
-    // New characters are SFW only until age verification exists. Existing ratings are kept.
-    p_content_rating: text(existing, 'content_rating', 'SFW') || 'SFW',
+    p_content_rating: ratingToSave(form, existing),
     p_creator_notes: form.notes.trim(),
     p_example_conversations: text(existing, 'example_conversations'),
     p_rp_definition: text(existing, 'rp_definition'),
@@ -224,5 +232,6 @@ export function formFromRecord(row: CharacterRecord, displayName = ''): Characte
     category: text(row, 'category', 'General') || 'General',
     tags: Array.isArray(row.tags) ? (row.tags as string[]).join(', ') : '',
     visibility: (['private', 'unlisted', 'public'] as const).includes(visibility as Visibility) ? (visibility as Visibility) : 'private',
+    mature: (text(row, 'content_rating', 'SFW') || 'SFW').toUpperCase() !== 'SFW',
   };
 }

@@ -64,7 +64,7 @@ test('what is saved: the chat name defaults to the name, every written field rea
       [created.p_conversation_style, created.p_knowledge, created.p_banned_words, created.p_creator_notes, created.p_avatar_url, created.p_short_description, created.p_long_description, created.p_example_dialogues, created.p_scenario],
       ['dry', 'the map', 'sigh', 'be bold', 'https://x.test/a.png', 't', 'b', 'e', 's'],
     );
-    assert.equal(created.p_content_rating, 'SFW', 'new characters are General only');
+    assert.equal(created.p_content_rating, 'SFW', 'a character is General unless Mature is chosen');
     assert.equal(buildSaveArgs(filled(EMPTY_FORM, { chatName: '  ' }), null).p_chat_name, 'Isolde', 'no nickname means the name');
     const edited = buildSaveArgs(form, { id: 'c1', alternate_greetings: ['Hello'], rp_definition: 'RP', content_rating: 'SFW', voice_id: 'v', suggested_persona_name: 'Sam' });
     assert.deepEqual([edited.p_alternate_greetings, edited.p_rp_definition, edited.p_voice_id, edited.p_suggested_persona_name, edited.p_character_id], [['Hello'], 'RP', 'v', 'Sam', 'c1'], 'fields the form does not show are carried through');
@@ -121,5 +121,24 @@ test('the size matches what the chat really sends: the opening message twice, an
     const nearly = filled(EMPTY_FORM, { personality: 'p'.repeat(MAX_DEFINITION_CHARACTERS - 10 - 500) });
     assert.equal(validateForm(nearly, null), null);
     assert.match(validateForm(nearly, kept) ?? '', /too long for chats/, 'the same text no longer fits once the kept fields are counted');
+  } finally { await close(); }
+});
+
+test('rating: General unless Mature is chosen; a stored NSFW stays NSFW; General always wins; opening a saved card shows its rating', async () => {
+  const { buildSaveArgs, formFromRecord, EMPTY_FORM, close } = await load();
+  try {
+    const base = filled(EMPTY_FORM, { name: 'Isolde' });
+    assert.equal(buildSaveArgs(base, null).p_content_rating, 'SFW');
+    assert.equal(buildSaveArgs({ ...base, mature: true }, null).p_content_rating, 'Mature');
+    assert.equal(buildSaveArgs({ ...base, mature: true }, { id: 'c1', content_rating: 'Mature' }).p_content_rating, 'Mature');
+    assert.equal(buildSaveArgs({ ...base, mature: true }, { id: 'c1', content_rating: 'NSFW' }).p_content_rating, 'NSFW', 'a stored NSFW is not lowered to Mature');
+    assert.equal(buildSaveArgs({ ...base, mature: false }, { id: 'c1', content_rating: 'NSFW' }).p_content_rating, 'SFW', 'moving a character to General is always possible');
+    assert.equal(buildSaveArgs({ ...base, mature: true }, { id: 'c1', content_rating: 'SFW' }).p_content_rating, 'Mature');
+
+    assert.equal(formFromRecord({ id: 'a', content_rating: 'Mature' }).mature, true);
+    assert.equal(formFromRecord({ id: 'a', content_rating: 'NSFW' }).mature, true);
+    assert.equal(formFromRecord({ id: 'a', content_rating: 'SFW' }).mature, false);
+    assert.equal(formFromRecord({ id: 'a' }).mature, false, 'no rating means General');
+    assert.equal(EMPTY_FORM.mature, false, 'a new or imported card starts General');
   } finally { await close(); }
 });

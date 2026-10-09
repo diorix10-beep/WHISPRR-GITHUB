@@ -149,6 +149,22 @@ test('cards marked as adult are refused, never relabelled SFW; "SFW only" notes 
   } finally { await close(); }
 });
 
+test('a member who may use Mature gets an adult card as Mature; everyone else still has it refused', async () => {
+  const { readCardBytes, cardToForm, CardImportError, close } = await load();
+  try {
+    const card = (data) => readCardBytes(encode({ spec: 'chara_card_v2', data: { name: 'X', first_mes: 'Hi', personality: 'p', ...data } }));
+    for (const data of [{ tags: ['NSFW'] }, { tags: ['18+'] }, { creator_notes: 'This bot is NSFW.' }]) {
+      assert.equal(cardToForm(card(data), { allowAdult: true }).form.mature, true, JSON.stringify(data));
+      assert.throws(() => cardToForm(card(data)), CardImportError);
+      assert.throws(() => cardToForm(card(data), { allowAdult: false }), (error) => /Guardian/.test(error.message));
+    }
+    for (const data of [{ tags: ['romance'] }, { creator_notes: 'SFW only, no NSFW content.' }, {}]) {
+      assert.equal(cardToForm(card(data), { allowAdult: true }).form.mature, false, 'an ordinary card is not made Mature');
+      assert.equal(cardToForm(card(data)).form.mature, false);
+    }
+  } finally { await close(); }
+});
+
 test('{{char}} is the V3 nickname when there is one, otherwise the name that is actually saved (even when it had to be shortened)', async () => {
   const { readCardBytes, cardToForm, close } = await load();
   try {

@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { CardImportError, importCardFile, type ImportNotes, type ImportResult } from '../lib/characterImport';
 import { checkAvatarFile, uploadCharacterAvatar } from '../lib/characterAvatar';
-import { AGE_VERIFICATION_LIVE } from '../lib/ageVerification';
+import { useAdultContentAccess } from '../hooks/useAdultContentAccess';
 import { ratingLabel } from '../lib/ratings';
 import { CharacterAvatar } from '../components/characters/CharacterAvatar';
 import { FormSection } from '../components/characters/FormSection';
@@ -42,6 +42,7 @@ export default function CreateCharacterPage() {
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [form, setForm] = useState<CharacterForm>(EMPTY_FORM);
+  const { allowed: adultAccess, loading: adultLoading } = useAdultContentAccess();
   const [existing, setExisting] = useState<CharacterRecord | null>(null);
   const [isFounder, setIsFounder] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -108,7 +109,7 @@ export default function CreateCharacterPage() {
     setImporting(true);
     setImportError(null);
     try {
-      const result = await importCardFile(file);
+      const result = await importCardFile(file, { allowAdult: adultAccess });
       // Do not silently replace what the person has already typed.
       const typedSomething = JSON.stringify(form) !== JSON.stringify(EMPTY_FORM);
       if (typedSomething) setPendingImport(result);
@@ -155,7 +156,9 @@ export default function CreateCharacterPage() {
       const text = error instanceof Error ? error.message : (error as { message?: string } | null)?.message;
       setProblem(/founder|public publishing/i.test(text ?? '')
         ? 'Public publishing is limited to the CHIMERA founder during the beta. Choose private or unlisted.'
-        : 'We could not save this character. Your text is still here, please try again.');
+        : /Mature characters need/i.test(text ?? '')
+          ? 'Mature characters need a confirmed 18+ account with adult content turned on. Check the Guardian\'s Library, or choose General.'
+          : 'We could not save this character. Your text is still here, please try again.');
     } finally {
       setSaving(false);
     }
@@ -177,9 +180,11 @@ export default function CreateCharacterPage() {
   const tokens = (value: string) => <span className="text-xs text-chimera-mute">≈ {estimateTokens(value).toLocaleString()} tokens</span>;
   const missing = missingForCreate(form);
   const size = definitionSize(form, existing);
-  // An adult rating a character already has stays as it is; the form cannot give one or change it.
-  const storedRating = typeof existing?.content_rating === 'string' && existing.content_rating ? existing.content_rating : 'SFW';
-  const keepsAdultRating = storedRating.toUpperCase() !== 'SFW';
+  // The rating shown is the one chosen in the form (General or Mature).
+  const ratingShown = form.mature ? (String(existing?.content_rating ?? '').toUpperCase() === 'NSFW' ? 'NSFW' : 'Mature') : 'SFW';
+  // Mature can be picked by a member who confirmed they are 18+ and turned adult content on. A character that is
+  // already Mature can always be moved back to General, and keeps its rating if it is saved as it is.
+  const canPickMature = adultAccess || Boolean(existing && String(existing.content_rating ?? 'SFW').toUpperCase() !== 'SFW');
   const required = <span className="text-chimera-rose" aria-hidden="true"> *</span>;
 
   return (
@@ -190,7 +195,7 @@ export default function CreateCharacterPage() {
       <p className="mb-3 text-sm font-bold tracking-[0.26em] text-chimera-gold">{editId ? 'EDIT CHARACTER' : 'NEW CHARACTER'}</p>
       <h1 className="font-serif text-4xl font-semibold sm:text-5xl">{editId ? 'Refine your character.' : 'Bring someone to life.'}</h1>
       <p className="mt-3 text-chimera-mute">
-        Characters here are rated SFW for now. Keep them fictional, never based on a real person, and never sexual in any way involving minors.
+        Characters are General by default. Keep them fictional, never based on a real person, and never sexual in any way involving minors.
       </p>
 
       {!editId && (
@@ -280,23 +285,25 @@ export default function CreateCharacterPage() {
 
           <fieldset>
             <legend className="font-bold">Content rating</legend>
-            {keepsAdultRating ? (
-              <div className="mt-2 rounded-xl border border-chimera-gold bg-chimera-gold/10 p-3">
-                <p className="font-bold">{ratingLabel(storedRating)}</p>
-                <p className="text-sm text-chimera-mute">This character already has an adult rating, and it stays as it is. Only verified adults can see it. The rating cannot be changed here.</p>
-              </div>
-            ) : (
-              <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                <label className="flex items-start gap-3 rounded-xl border border-chimera-gold bg-chimera-gold/10 p-3">
-                  <input type="radio" name="rating" checked readOnly className="mt-1" />
-                  <span><span className="font-bold">General</span><span className="block text-sm text-chimera-mute">Suitable for everyone on CHIMERA. Nothing sexual or explicit.</span></span>
-                </label>
-                <label className="flex items-start gap-3 rounded-xl border border-chimera-gold/25 p-3 opacity-60">
-                  <input type="radio" name="rating" disabled className="mt-1" />
-                  <span><span className="font-bold">Mature</span><span className="block text-sm text-chimera-mute">{AGE_VERIFICATION_LIVE ? 'For verified adults only.' : 'Available once age verification opens. Coming soon.'}</span></span>
-                </label>
-              </div>
-            )}
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 ${!form.mature ? 'border-chimera-gold bg-chimera-gold/10' : 'border-chimera-gold/25'}`}>
+                <input type="radio" name="rating" checked={!form.mature} onChange={() => set('mature', false)} className="mt-1" />
+                <span><span className="font-bold">General</span><span className="block text-sm text-chimera-mute">Suitable for everyone on CHIMERA. Nothing sexual or explicit.</span></span>
+              </label>
+              <label className={`flex items-start gap-3 rounded-xl border p-3 ${form.mature ? 'border-chimera-gold bg-chimera-gold/10' : 'border-chimera-gold/25'} ${canPickMature ? 'cursor-pointer' : 'opacity-60'}`}>
+                <input type="radio" name="rating" checked={form.mature} disabled={!canPickMature} onChange={() => set('mature', true)} className="mt-1" />
+                <span>
+                  <span className="font-bold">Mature</span>
+                  <span className="block text-sm text-chimera-mute">
+                    {canPickMature
+                      ? 'For adults: intense themes and explicit content. Only shown to members who confirmed they are 18 or older.'
+                      : adultLoading
+                        ? 'Checking your account…'
+                        : <>Needs a confirmed 18+ account with adult content turned on. <Link to="/guardian" className="font-bold text-chimera-gold underline">Open the Guardian&apos;s Library</Link>.</>}
+                  </span>
+                </span>
+              </label>
+            </div>
             <p className="mt-2 text-sm text-chimera-mute">A character who is, or looks like, a minor can never be part of sexual content, whatever the rating.</p>
           </fieldset>
 
@@ -386,7 +393,7 @@ export default function CreateCharacterPage() {
               {form.tags.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 3).map((tag) => (
                 <span key={tag} className="rounded-full border border-white/15 px-3 py-1 text-[13px] text-violet-100/80">{tag}</span>
               ))}
-              <span className="rounded-full border border-chimera-mint/50 px-3 py-1 text-xs font-bold tracking-[0.1em] text-chimera-mint">{ratingLabel(storedRating)}</span>
+              <span className="rounded-full border border-chimera-mint/50 px-3 py-1 text-xs font-bold tracking-[0.1em] text-chimera-mint">{ratingLabel(ratingShown)}</span>
             </div>
           </article>
           <p className="text-center text-sm text-chimera-mute">
