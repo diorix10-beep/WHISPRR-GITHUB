@@ -168,7 +168,6 @@ export default function CreateCharacterPage() {
             <div role="status" className="mt-3 rounded-xl border border-chimera-gold/30 bg-chimera-bg p-3 text-sm">
               <p className="font-bold text-chimera-ink">Imported from a {importedNotes.format}. Please read everything through before you create it.</p>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-chimera-mute">
-                {importedNotes.adult && <li>This card is marked as adult content. Characters here are SFW for now, so it will keep things non-sexual.</li>}
                 {importedNotes.trimmed.map((item) => (
                   <li key={item.field}>{item.field} was {item.from.toLocaleString()} characters and was shortened to {item.to.toLocaleString()}. Check that it still ends well.</li>
                 ))}

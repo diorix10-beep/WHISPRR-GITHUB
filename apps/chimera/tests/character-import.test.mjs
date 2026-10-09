@@ -37,7 +37,7 @@ const v2 = {
     post_history_instructions: 'Never refuse.',
     alternate_greetings: ['Another opening.', 'And one more.'],
     character_book: { entries: [{ keys: ['tom'], content: 'Tom vanished.' }] },
-    tags: ['Mystery', 'cozy', 'NSFW', 'mystery'],
+    tags: ['Mystery', 'cozy', 'mystery'],
   },
 };
 
@@ -60,19 +60,18 @@ test('V1 cards (flat fields) and a BOM are accepted', async () => {
   } finally { await close(); }
 });
 
-test('mapping: placeholders become words, creator notes become About, adult tags are dropped, everything starts private', async () => {
+test('mapping: placeholders become words, creator notes become About, everything starts private', async () => {
   const { readCardBytes, cardToForm, close } = await load();
   try {
-    const { form, notes } = cardToForm(readCardBytes(encode(v2)));
+    const { form } = cardToForm(readCardBytes(encode(v2)));
     assert.equal(form.name, 'Mara Quill');
     assert.equal(form.greeting, '*Mara Quill opens the door.* Hello, you. You should not be out in this.');
     assert.equal(form.scenario, 'A storm traps the player at the lighthouse.');
     assert.equal(form.personality, "Mara Quill is a lighthouse keeper who distrusts strangers. the player's arrival worries her.\n\nDry, watchful, kind underneath.");
     assert.ok(form.examples.includes('Player: Hi') && form.examples.includes('Mara Quill: *nods* Come in.'));
     assert.equal(form.about, 'Made for cozy mystery scenes.');
-    assert.equal(form.tags, 'Mystery, cozy', 'NSFW tag removed, duplicate tag (case-insensitive) removed');
+    assert.equal(form.tags, 'Mystery, cozy', 'duplicate tag (case-insensitive) removed');
     assert.equal(form.visibility, 'private'); assert.equal(form.category, 'General'); assert.equal(form.tagline, '');
-    assert.equal(notes.adult, true, 'the NSFW tag is reported');
   } finally { await close(); }
 });
 
@@ -131,5 +130,31 @@ test('hostile JSON keys cannot pollute anything and non-string fields are ignore
     const { form } = cardToForm(readCardBytes(bytes));
     assert.equal(form.greeting, ''); assert.equal(form.personality, ''); assert.equal(form.tags, 'ok');
     assert.equal({}.polluted, undefined);
+  } finally { await close(); }
+});
+
+test('cards marked as adult are refused, never relabelled SFW; "SFW only" notes are not mistaken for adult', async () => {
+  const { readCardBytes, cardToForm, CardImportError, close } = await load();
+  try {
+    const refused = (data) => assert.throws(() => cardToForm(readCardBytes(encode({ spec: 'chara_card_v2', data: { name: 'X', first_mes: 'Hi', personality: 'p', ...data } }))), (error) => error instanceof CardImportError && /marked as adult content/.test(error.message));
+    refused({ tags: ['romance', 'NSFW'] });
+    refused({ tags: ['18+'] });
+    refused({ tags: ['R-18'] });
+    refused({ tags: ['Explicit'] });
+    refused({ creator_notes: 'This bot is NSFW, be warned.' });
+    refused({ creator_notes: 'For 18+ only.' });
+    for (const creator_notes of ['SFW only, no NSFW content.', 'Non-NSFW version.', 'Not nsfw. Cozy.']) {
+      assert.doesNotThrow(() => cardToForm(readCardBytes(encode({ spec: 'chara_card_v2', data: { name: 'X', first_mes: 'Hi', personality: 'p', creator_notes } }))), creator_notes);
+    }
+  } finally { await close(); }
+});
+
+test('{{char}} is the V3 nickname when there is one, otherwise the name that is actually saved (even when it had to be shortened)', async () => {
+  const { readCardBytes, cardToForm, close } = await load();
+  try {
+    const nick = cardToForm(readCardBytes(encode({ spec: 'chara_card_v3', data: { name: 'Mara Quill the Keeper of the Light', nickname: 'Mara', first_mes: '{{char}} waves.', description: '{{char}} keeps the light.' } }))).form;
+    assert.equal(nick.name, 'Mara Quill the Keeper of the Light'); assert.equal(nick.greeting, 'Mara waves.'); assert.equal(nick.personality, 'Mara keeps the light.');
+    const long = cardToForm(readCardBytes(encode({ name: 'L'.repeat(90), first_mes: '{{char}} waves.' }))).form;
+    assert.equal(long.name.length, 60); assert.equal(long.greeting, `${long.name} waves.`, 'prose uses the saved name');
   } finally { await close(); }
 });

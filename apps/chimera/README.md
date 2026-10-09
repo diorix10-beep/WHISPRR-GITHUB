@@ -122,7 +122,11 @@ and it starts private like any new character.
   descriptions, `{{// comments}}` are removed. Fields over CHIMERA's limits are cut at a sentence end and reported.
 - **Not imported, and said so on screen:** custom system / post-history instructions (they often try to switch off safety rules; CHIMERA
   uses its own), lorebooks, alternate openings, and the picture (characters have no avatar upload yet).
-- Everything imports as **SFW**: Mature / NSFW still wait for age verification. A card tagged NSFW gets a note, and the tag is dropped.
+- Everything imports as **SFW**: Mature / NSFW still wait for age verification. A card that says it is adult content (an `NSFW` / `18+` /
+  `explicit`-style tag, or `NSFW` / `18+` in the creator's notes unless they say "SFW") is **refused**, because relabelling it SFW would
+  hand its explicit text to anyone the character is shared with. This only reads what the card says about itself: nothing here scans the
+  text itself, the same as typing a character by hand, so a checked adult rating at creation is still a gap for a later step.
+- `{{char}}` is the V3 `nickname` when the card has one, otherwise the name that is actually saved.
 - Cards cannot be larger than 10 MB. A bad file gives a readable message and leaves the form alone; if the form already has text, the
   person is asked before it is replaced.
 

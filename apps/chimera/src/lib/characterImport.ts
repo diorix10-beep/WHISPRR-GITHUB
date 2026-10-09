@@ -20,8 +20,6 @@ export interface ImportNotes {
   leftOut: string[];
   /** Placeholders the importer did not know how to translate and left as written. */
   placeholders: string[];
-  /** The card is marked as adult content; it is imported as SFW. */
-  adult: boolean;
   /** The file was a picture. Its image is not used yet (characters have no avatar upload). */
   picture: boolean;
 }
@@ -164,7 +162,14 @@ export function clip(text: string, max: number): string {
 }
 
 const ADULT_TAG = /^(nsfw|18\+|r-?18|explicit|porn|smut|erotic|lewd)$/i;
-const ADULT_WORDS = /\b(nsfw|18\+|explicit|smut|erotic)\b/i;
+const ADULT_NOTE = /\bnsfw\b|\b18\+|\br-?18\b/i;
+// "SFW only", "non-NSFW", "no NSFW" in the creator's notes say the opposite.
+const NOT_ADULT_NOTE = /\bsfw\b|\bnon-?nsfw\b|\b(?:no|not|without)\s+nsfw\b/i;
+
+/** True when the card says it is adult content (a tag, or the creator's notes). */
+export function isMarkedAdult(tags: string[], notes: string): boolean {
+  return tags.some((tag) => ADULT_TAG.test(tag.trim())) || (ADULT_NOTE.test(notes) && !NOT_ADULT_NOTE.test(notes));
+}
 
 export function cardToForm(raw: unknown): ImportResult {
   const card = cardData(raw);
@@ -180,14 +185,20 @@ export function cardToForm(raw: unknown): ImportResult {
     return shortened;
   };
 
-  const name = (str(data, 'name') || str(data, 'char_name')).replace(/\s+/g, ' ');
-  const text = (key: string, spoken = false) => applyPlaceholders(str(data, key) || (key === 'first_mes' ? str(data, 'greeting') : ''), name, spoken, unknown);
+  const name = fit('Name', (str(data, 'name') || str(data, 'char_name')).replace(/\s+/g, ' '), LIMITS.name);
+  // {{char}} means the V3 nickname when there is one, otherwise the name that is actually saved.
+  const macroName = str(data, 'nickname').replace(/\s+/g, ' ').slice(0, LIMITS.name) || name;
+  const text = (key: string, spoken = false) => applyPlaceholders(str(data, key) || (key === 'first_mes' ? str(data, 'greeting') : ''), macroName, spoken, unknown);
 
   // In a card, "description" is the main definition and "personality" a short summary of it.
   const personality = [text('description'), text('personality')].filter(Boolean).join('\n\n');
   const tags = Array.isArray(data.tags) ? data.tags.filter((tag): tag is string => typeof tag === 'string') : [];
-  const adultTags = tags.filter((tag) => ADULT_TAG.test(tag.trim()));
   const notes = str(data, 'creator_notes') || str(data, 'creatorcomment');
+  // Characters here are SFW only until ages can be verified. Relabelling an adult card as SFW would
+  // hand its explicit text to anyone the character is shared with, so such a card is refused.
+  if (isMarkedAdult(tags, notes)) {
+    throw new CardImportError('This card is marked as adult content (NSFW). Adult characters cannot be imported until CHIMERA can verify ages.');
+  }
 
   const leftOut: string[] = [];
   if (str(data, 'system_prompt') || str(data, 'post_history_instructions')) {
@@ -200,13 +211,13 @@ export function cardToForm(raw: unknown): ImportResult {
 
   const form: CharacterForm = {
     ...EMPTY_FORM,
-    name: fit('Name', name, LIMITS.name),
+    name,
     greeting: fit('Opening message', text('first_mes', true), LIMITS.greeting),
     scenario: fit('Scenario', text('scenario'), LIMITS.scenario),
     personality: fit('Personality', personality, LIMITS.personality),
     examples: fit('Example dialogue', text('mes_example', true), LIMITS.examples),
-    about: fit('About', applyPlaceholders(notes, name, false, unknown), LIMITS.about),
-    tags: parseTags(tags.filter((tag) => !ADULT_TAG.test(tag.trim())).join(', ')).join(', '),
+    about: fit('About', applyPlaceholders(notes, macroName, false, unknown), LIMITS.about),
+    tags: parseTags(tags.join(', ')).join(', '),
     visibility: 'private',
   };
 
@@ -217,7 +228,6 @@ export function cardToForm(raw: unknown): ImportResult {
       trimmed,
       leftOut,
       placeholders: Array.from(unknown).slice(0, 6),
-      adult: adultTags.length > 0 || ADULT_WORDS.test(`${notes} ${tags.join(' ')}`),
       picture: false,
     },
   };
