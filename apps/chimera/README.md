@@ -132,7 +132,16 @@ everything else through OpenRouter with `OPENROUTER_API_KEY`).
   never falls back. Memory suggestions and turning points use the same default engine and fallback (`geminiGenerate`), and no longer send a
   `thinkingConfig`, which is not valid for every model. `thinkingHeadroom` adds output tokens for models that think before answering.
 - **Today only SUPERNOVA is usable.** AURELIA and NIVALIS are shown as "Coming soon" (they come from the old site).
-- **Paying with SHARDS (built, not switched on).** A `tier: 'shards'` model is usable only when it is `available` **and** has a
+- **Paid models in testing (testers only).** PULSAR (DeepSeek V4.1 Flash, 3 SHARDS), QUANTUM (Mistral Large 4, 5), HELIOS (Gemini 3.8 Flash, 7)
+  and ECLIPSE (Claude Sonnet 5.5, 18) are in the catalog with `testersOnly: true`: they are listed and usable **only** by members in
+  `chimera_model_testers` (migration `20261009050000_chimera_model_testers.sql`; rows are added by hand in the SQL editor, members cannot
+  add themselves). Everyone else sees only SUPERNOVA, and a saved or recommended paid model is ignored for them. The route reads the
+  member's own row with their session; a missing table or failed read means "not a tester". To open a model to everyone, remove
+  `testersOnly` from its entry. Prices are about twice the provider's cost for a typical reply (10k tokens in, about 1.5k out including a
+  little reasoning) at the best pack price (about 0.42 cent per SHARD); **none of this has been run against OpenRouter yet**, which is what
+  the test phase is for. Reasoning is kept minimal (`reasoningEffort`): Gemini 3.8 Flash and Claude Sonnet 5.5 cannot turn it off, and hidden
+  reasoning tokens are billed by the provider, so check the real cost per reply on OpenRouter's activity page before opening them up.
+- **Paying with SHARDS.** A `tier: 'shards'` model is usable only when it is `available` **and** has a
   `shardsCost` (a whole number, 1 to 10 000, per reply); without a valid price it stays unusable, so a model can never be free by
   mistake. Only the player's own choice can select a paid model: a creator's recommended `ai_model` is honoured only if free.
   - The route calls `charge_chimera_reply` **after** the request is reserved and checked, and **before** the model is called. It takes

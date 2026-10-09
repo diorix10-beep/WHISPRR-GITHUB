@@ -194,9 +194,17 @@ export default async function handler(req: Request) {
       .eq('user_id', user.id)
       .maybeSingle()
       .then((result) => result, () => ({ data: null }));
+    // Models still being tried are only for members in chimera_model_testers (read with the member's own session).
+    // A missing table or a failed read means "not a tester", never an error.
+    const { data: testerRow } = await supabase
+      .from('chimera_model_testers')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then((result) => result, () => ({ data: null }));
     const chatModel = resolveModel(
       { member: modelPreference?.default_ai_model, character: (character as { ai_model?: string | null }).ai_model },
-      { adultVerified: isAdultRating(character.content_rating) },
+      { adultVerified: isAdultRating(character.content_rating), tester: !!testerRow },
     );
     const keys = providerKeys();
     // Fail before any capacity is reserved when the chosen model's provider is not set up.
