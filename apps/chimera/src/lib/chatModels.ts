@@ -1,0 +1,117 @@
+/**
+ * The Model House: the AI models a member can choose for their roleplay.
+ *
+ * Shared by the chat route (`api/ai-chat.ts`, which only ever uses a model from this list) and the
+ * Model House page. Pure data and pure functions, no network.
+ *
+ * To offer a new model: add an entry here, make sure the provider key is set (OPENROUTER_API_KEY for
+ * `openrouter`), and set its `status` to `available`. Rules that are enforced on the server, not here:
+ *   - only `available` models with `tier: 'free'` can be used until per-reply SHARDS charging exists;
+ *   - an `uncensored` model is only ever used in a scene the member is verified and opted in for.
+ */
+
+export type ModelProvider = 'gemini' | 'openrouter';
+
+export interface ChatModel {
+  /** Stored in the member's preferences. For OpenRouter this is the provider's own model id. */
+  id: string;
+  /** The brand name members see. */
+  name: string;
+  provider: ModelProvider;
+  /** Who makes the engine, for transparency. */
+  company: string;
+  engineName: string;
+  description: string;
+  strengths: string[];
+  bestFor: string;
+  consideration: string;
+  tier: 'free' | 'shards';
+  /** `soon` models are shown but cannot be chosen or used. */
+  status: 'available' | 'soon';
+  /** Largest reply the model is asked for. */
+  maxOutputTokens?: number;
+  /** A model without its own safety training. Only usable in a verified adult scene. None exist yet. */
+  uncensored?: boolean;
+}
+
+export const DEFAULT_MODEL_ID = 'gemini-2.5-flash';
+
+export const CHAT_MODELS: ChatModel[] = [
+  {
+    id: 'gemini-2.5-flash',
+    name: 'SUPERNOVA',
+    provider: 'gemini',
+    company: 'Google',
+    engineName: 'Gemini 2.5 Flash',
+    description: 'Fast, lively and consistent. The everyday engine for roleplay and quick back-and-forth.',
+    strengths: ['Speed', 'Lively dialogue', 'Long memory'],
+    bestFor: 'Swift roleplay, spontaneous turns and dynamic conversation',
+    consideration: 'Favors momentum over the most intricate prose on every reply.',
+    tier: 'free',
+    status: 'available',
+  },
+  {
+    id: 'chimera-aurelia-summer-2026',
+    name: 'AURELIA',
+    provider: 'openrouter',
+    company: 'CHIMERA Seasonal Edition',
+    engineName: 'Engine announcement soon',
+    description: 'A sun-warm storyteller made for vivid chemistry, playful initiative and scenes that refuse to stand still.',
+    strengths: ['Vivid chemistry', 'Playful initiative', 'Bright scenes'],
+    bestFor: 'Fast-moving adventures and luminous banter',
+    consideration: 'This edition is still being prepared and cannot guide chats yet.',
+    tier: 'shards',
+    status: 'soon',
+  },
+  {
+    id: 'chimera-nivalis-winter-2026',
+    name: 'NIVALIS',
+    provider: 'openrouter',
+    company: 'CHIMERA Seasonal Edition',
+    engineName: 'Returning in winter',
+    description: 'A moonlit storyteller for slow-burn tension, intimate mystery and worlds that remember every snowfall.',
+    strengths: ['Slow burn', 'Atmosphere', 'Emotional continuity'],
+    bestFor: 'Patient mysteries and intimate long-form scenes',
+    consideration: 'This edition returns with the winter collection and cannot guide chats yet.',
+    tier: 'shards',
+    status: 'soon',
+  },
+];
+
+export function findModel(id: string | null | undefined, catalog: ChatModel[] = CHAT_MODELS): ChatModel | null {
+  return catalog.find((model) => model.id === id) ?? null;
+}
+
+/**
+ * What a member can use today. Paid models stay out until charging exists, so a model can never be
+ * used for free just because it is listed.
+ */
+export function isUsable(model: ChatModel | null): model is ChatModel {
+  return !!model && model.status === 'available' && model.tier === 'free';
+}
+
+export function usableModels(catalog: ChatModel[] = CHAT_MODELS): ChatModel[] {
+  return catalog.filter(isUsable);
+}
+
+export interface ModelChoice {
+  /** The member's own default (their Model House choice). */
+  member?: string | null;
+  /** The character creator's recommended model. */
+  character?: string | null;
+}
+
+/**
+ * Picks the model for a reply: the member's choice, then the character's, then the default. A model
+ * that is unknown, not usable, or uncensored outside an adult scene is skipped, never used.
+ */
+export function resolveModel(choice: ModelChoice, scene: { adultVerified: boolean }, catalog: ChatModel[] = CHAT_MODELS): ChatModel {
+  const allowed = (model: ChatModel | null): model is ChatModel => isUsable(model) && (!model.uncensored || scene.adultVerified);
+  for (const id of [choice.member, choice.character]) {
+    const model = findModel(id, catalog);
+    if (allowed(model)) return model;
+  }
+  const fallback = findModel(DEFAULT_MODEL_ID, catalog);
+  if (!fallback) throw new Error('The default model is missing from the catalog.');
+  return fallback;
+}

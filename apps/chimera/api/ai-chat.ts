@@ -3,7 +3,6 @@ import {
   fingerprint,
   finishRequest,
   jsonResponse,
-  providerFetch,
   readPayload,
   requestFailure,
   RequestError,
@@ -12,6 +11,8 @@ import {
   uuid,
 } from './_lib/requestProtection.js';
 import { MAX_RECALLED_MEMORIES } from './_lib/memory.js';
+import { generateReply, providerKeys } from './_lib/modelProviders.js';
+import { resolveModel } from '../src/lib/chatModels.js';
 import { isAdultRating, requireAdultContentAccess } from './_lib/adultContentGate.js';
 import {
   buildSystemPrompt,
@@ -30,7 +31,6 @@ import {
 
 export const config = { runtime: 'edge' };
 
-const CHAT_MODEL = 'gemini-2.5-flash';
 const MAX_PROMPT_CHARACTERS = 100_000;
 
 interface MessageRow extends ChatMessage {
@@ -153,9 +153,6 @@ export default async function handler(req: Request) {
     const retryId = req.headers.get('Idempotency-Key');
     if (isSwipe && !retryId) throw new RequestError(400, 'A retry identifier is required for regeneration.');
 
-    const geminiKey = process.env.GEMINI_API_KEY_SERVER || process.env.GEMINI_API_KEY;
-    if (!geminiKey) throw new RequestError(503, 'The CHIMERA story engine is not configured yet.');
-
     // Check membership before any model call: RLS protects the reads below too,
     // but this stops a direct API call from spending capacity on someone else's scene.
     const { data: membership, error: membershipError } = await supabase
@@ -186,6 +183,26 @@ export default async function handler(req: Request) {
 
     // Mature / NSFW characters need a verified adult who opted in. Fails closed.
     await requireAdultContentAccess(supabase, character.content_rating);
+
+    // The member's Model House choice, then the character's recommendation, then the default.
+    // Only catalog models that are available and free can ever be picked, whatever is stored.
+    const { data: modelPreference } = await supabase
+      .from('chimera_user_preferences')
+      .select('default_ai_model')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then((result) => result, () => ({ data: null }));
+    const chatModel = resolveModel(
+      { member: modelPreference?.default_ai_model, character: (character as { ai_model?: string | null }).ai_model },
+      { adultVerified: isAdultRating(character.content_rating) },
+    );
+    const keys = providerKeys();
+    // Fail before any capacity is reserved when the chosen model's provider is not set up.
+    if (!keys[chatModel.provider]) {
+      throw new RequestError(503, chatModel.provider === 'gemini'
+        ? 'The CHIMERA story engine is not configured yet.'
+        : `${chatModel.name} is not available right now. Choose another model in the Model House.`);
+    }
 
     // Same rule the database uses to pick the scene persona.
     let persona: (PersonaData & { id: string }) | null = null;
@@ -287,7 +304,7 @@ export default async function handler(req: Request) {
         conversation_id: conversationId,
         bot_user_id: botId,
         turn,
-        model: CHAT_MODEL,
+        model: chatModel.id,
         persona_id: personaId,
         expected: isSwipe ? expectedContent : undefined,
       }),
@@ -311,22 +328,14 @@ export default async function handler(req: Request) {
     });
     if (scopeError) throw new RequestError(409, 'Your persona changed. Please retry in the current scene.');
 
-    const geminiResponse = await providerFetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${CHAT_MODEL}:generateContent?key=${geminiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: systemPrompt }] },
-          contents,
-          generationConfig: { temperature: 0.9, topP: 0.95, topK: 40, maxOutputTokens: maxOutputTokensFor(sceneSettings.responseLength ?? 'medium') },
-        }),
-      },
-    );
-    if (!geminiResponse.ok) throw new RequestError(502, 'The character provider is temporarily unavailable.');
-    const geminiData = await geminiResponse.json();
-    const parts: Array<{ text?: string }> = geminiData.candidates?.[0]?.content?.parts ?? [];
-    const reply = cleanReply(parts.map((part) => part.text ?? '').join(''));
+    const replyText = await generateReply({
+      model: chatModel,
+      systemPrompt,
+      turns: contents.map((turn) => ({ role: turn.role, text: turn.parts[0].text })),
+      maxOutputTokens: Math.min(maxOutputTokensFor(sceneSettings.responseLength ?? 'medium'), chatModel.maxOutputTokens ?? Infinity),
+      keys,
+    });
+    const reply = cleanReply(replyText);
     if (!reply) throw new RequestError(502, 'The character could not answer this time. Please try again.');
 
     const { error: completeError } = isSwipe
@@ -351,7 +360,7 @@ export default async function handler(req: Request) {
     }
 
     completed = true;
-    return jsonResponse({ reply });
+    return jsonResponse({ reply, model: chatModel.name });
   } catch (error) {
     return requestFailure(error);
   } finally {

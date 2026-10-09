@@ -110,6 +110,24 @@ Migration `20261009030000_chimera_auto_memory.sql` adds two columns to `chimera_
 functions above. Apply it **before** the deploy: the screen reads the settings with `select *`, so it still works without the columns,
 but suggestions do nothing until they exist.
 
+## Model House (which AI writes the replies)
+
+`/models` lists the models CHIMERA offers and lets a member pick their own. The list lives in one file, `src/lib/chatModels.ts`
+(shared by the page and the chat route); `api/_lib/modelProviders.ts` talks to the providers (Gemini with `GEMINI_API_KEY_SERVER`,
+everything else through OpenRouter with `OPENROUTER_API_KEY`).
+
+- The chat route picks the model like this: the **member's choice** (`chimera_user_preferences.default_ai_model`), then the character's
+  `ai_model`, then SUPERNOVA (`gemini-2.5-flash`). A stored value is never trusted: it must be in the catalog, `available`, and `free`.
+- **Today only SUPERNOVA is usable.** AURELIA and NIVALIS are shown as "Coming soon" (they come from the old site). A model with
+  `tier: 'shards'` can never be used, because nothing charges SHARDS per reply yet: that is a separate piece of money logic.
+- An `uncensored` model would only ever be used in a scene the member is verified and opted in for. None exist; the decision is to add
+  none before age verification and a content check at character creation.
+- If a chosen model's provider key is missing the route answers 503 naming the model and pointing to the Model House, **before** any
+  capacity is reserved. It never silently swaps to another model. The reservation fingerprint includes the model id.
+- To add a model: add an entry to `CHAT_MODELS` with the provider's own id, set `OPENROUTER_API_KEY` in Vercel (production **and** preview),
+  and set `status: 'available'`. The page offers a choice as soon as two models are usable.
+- No database change: this reuses `chimera_user_preferences.default_ai_model` and `ai_characters.ai_model`.
+
 ## Importing a character card
 
 On **Create** (not when editing), **Choose a card file** reads a character card made elsewhere: the Tavern / SillyTavern V1, V2 and V3
