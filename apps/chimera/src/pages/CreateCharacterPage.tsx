@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Camera, FileUp } from 'lucide-react';
+import { ArrowLeft, Camera, FileUp, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -13,6 +13,7 @@ import { FormSection } from '../components/characters/FormSection';
 import { TagPicker } from '../components/characters/TagPicker';
 import { LorebookConverter, type ConvertedLorebook } from '../components/characters/LorebookConverter';
 import { linkLorebookToCharacter } from '../lib/lorebooks';
+import { MAX_ALTERNATE_OPENINGS } from '../lib/openings';
 import {
   CATEGORIES,
   EMPTY_FORM,
@@ -101,6 +102,10 @@ export default function CreateCharacterPage() {
     setForm((current) => ({ ...current, [key]: value }));
     setProblem(null);
   };
+
+  const setOpening = (index: number, value: string) => set('alternateGreetings', form.alternateGreetings.map((opening, i) => (i === index ? value : opening)));
+  const removeOpening = (index: number) => set('alternateGreetings', form.alternateGreetings.filter((_, i) => i !== index));
+  const addOpening = () => set('alternateGreetings', [...form.alternateGreetings, '']);
 
   const applyImport = (result: ImportResult) => {
     setForm(result.form);
@@ -396,6 +401,30 @@ export default function CreateCharacterPage() {
             <div className="flex items-baseline justify-between"><label htmlFor="c-greeting" className="font-bold">Opening message{required}</label>{tokens(form.greeting)}</div>
             <p className="text-sm text-chimera-mute">The first thing your character says when a scene begins. A longer, vivid opening makes longer answers.</p>
             <textarea id="c-greeting" value={form.greeting} onChange={(e) => set('greeting', e.target.value)} rows={6} required aria-required="true" className={FIELD} placeholder={'*She looks up from the chart table.* You are either very brave or very lost.'} />
+          </div>
+
+          <div>
+            <p className="font-bold">Other opening messages <span className="font-normal text-chimera-mute">(optional)</span></p>
+            <p className="text-sm text-chimera-mute">Other ways a scene can begin. When there is more than one opening, the player picks one before the scene starts (up to {MAX_ALTERNATE_OPENINGS} others). Only the one picked is used.</p>
+            <ul className="mt-2 flex flex-col gap-3">
+              {form.alternateGreetings.map((opening, index) => (
+                <li key={index}>
+                  <div className="flex items-baseline justify-between">
+                    <label htmlFor={`c-opening-${index}`} className="font-bold">Opening message {index + 2}</label>
+                    {tokens(opening)}
+                  </div>
+                  <textarea id={`c-opening-${index}`} value={opening} onChange={(e) => setOpening(index, e.target.value)} rows={5} className={FIELD} />
+                  <button type="button" onClick={() => removeOpening(index)} className="mt-1 inline-flex min-h-[40px] items-center gap-2 rounded-full px-3 text-sm text-chimera-mute hover:text-chimera-rose">
+                    <Trash2 size={16} aria-hidden="true" /> Remove opening {index + 2}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {form.alternateGreetings.length < MAX_ALTERNATE_OPENINGS && (
+              <button type="button" onClick={addOpening} className="mt-2 inline-flex min-h-[44px] items-center gap-2 rounded-full border border-chimera-gold/50 px-5 font-bold hover:bg-chimera-gold/10">
+                <Plus size={18} aria-hidden="true" /> Add another opening
+              </button>
+            )}
           </div>
 
           <div>

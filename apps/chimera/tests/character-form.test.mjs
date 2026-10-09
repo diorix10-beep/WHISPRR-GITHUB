@@ -67,7 +67,8 @@ test('what is saved: the chat name defaults to the name, every written field rea
     assert.equal(created.p_content_rating, 'SFW', 'a character is General unless Mature is chosen');
     assert.equal(buildSaveArgs(filled(EMPTY_FORM, { chatName: '  ' }), null).p_chat_name, 'Isolde', 'no nickname means the name');
     const edited = buildSaveArgs(form, { id: 'c1', alternate_greetings: ['Hello'], rp_definition: 'RP', content_rating: 'SFW', voice_id: 'v', suggested_persona_name: 'Sam' });
-    assert.deepEqual([edited.p_alternate_greetings, edited.p_rp_definition, edited.p_voice_id, edited.p_suggested_persona_name, edited.p_character_id], [['Hello'], 'RP', 'v', 'Sam', 'c1'], 'fields the form does not show are carried through');
+    assert.deepEqual([edited.p_rp_definition, edited.p_voice_id, edited.p_suggested_persona_name, edited.p_character_id], ['RP', 'v', 'Sam', 'c1'], 'fields the form does not show are carried through');
+    assert.deepEqual(edited.p_alternate_greetings, [], 'the openings are the form\'s: removing them in the form removes them');
   } finally { await close(); }
 });
 
@@ -161,5 +162,27 @@ test('full definition: written in the form, saved as the detailed character defi
     // It is part of what the AI reads, so it counts toward the ceiling.
     assert.match(validateForm(filled(EMPTY_FORM, { definition: 'd'.repeat(MAX_DEFINITION_CHARACTERS + 1) })) ?? '', /too long for chats/);
     assert.equal(validateForm(filled(EMPTY_FORM, { definition: 'd'.repeat(30_000) })), null);
+  } finally { await close(); }
+});
+
+test('other opening messages: saved from the form, loaded back, never repeating the main one, bounded; the longest counts for the size', async () => {
+  const { buildSaveArgs, formFromRecord, validateForm, definitionSize, EMPTY_FORM, LIMITS, close } = await load();
+  try {
+    const form = filled(EMPTY_FORM, { greeting: '  *Hi.*  ', alternateGreetings: ['  *The rain stops.*', '', '*hi.*', '*Another one.*'] });
+    assert.deepEqual(buildSaveArgs(form, null).p_alternate_greetings, ['*The rain stops.*', '*Another one.*'], 'trimmed, no empty, no repeat of the main one');
+    assert.equal(buildSaveArgs(filled(EMPTY_FORM), null).p_alternate_greetings.length, 0);
+    const many = filled(EMPTY_FORM, { alternateGreetings: Array.from({ length: 14 }, (_, i) => `Opening ${i}`) });
+    assert.match(validateForm(many) ?? '', /at most 10 other opening messages/);
+    assert.equal(buildSaveArgs(filled(EMPTY_FORM, { alternateGreetings: Array.from({ length: 10 }, (_, i) => `Opening ${i}`) }), null).p_alternate_greetings.length, 10);
+    assert.match(validateForm(filled(EMPTY_FORM, { alternateGreetings: ['x'.repeat(LIMITS.greeting + 1)] })) ?? '', /opening message is too long/);
+
+    const back = formFromRecord({ id: 'c1', chat_name: 'Isolde', greeting: '*Hi.*', alternate_greetings: ['A', 3, '  ', 'B'], personality: 'Bold.' });
+    assert.deepEqual(back.alternateGreetings, ['A', 'B']);
+    assert.deepEqual(formFromRecord({ id: 'c1', chat_name: 'Isolde', greeting: 'x', alternate_greetings: null }).alternateGreetings, []);
+
+    // A scene uses one opening, so only the longest counts (twice), not the sum.
+    const one = definitionSize(filled(EMPTY_FORM, { greeting: 'a'.repeat(100) }));
+    assert.equal(definitionSize(filled(EMPTY_FORM, { greeting: 'a'.repeat(100), alternateGreetings: ['b'.repeat(50), 'c'.repeat(60)] })), one);
+    assert.equal(definitionSize(filled(EMPTY_FORM, { greeting: 'a'.repeat(100), alternateGreetings: ['b'.repeat(300)] })), one + 2 * 200);
   } finally { await close(); }
 });

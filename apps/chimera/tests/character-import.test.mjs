@@ -75,13 +75,25 @@ test('mapping: placeholders become words, creator notes become About, everything
   } finally { await close(); }
 });
 
-test('what is NOT imported is reported: system / jailbreak instructions, lorebook, alternate openings; nothing of it reaches the form', async () => {
+test('what is NOT imported is reported: system / jailbreak instructions and lorebook; the alternate openings are kept', async () => {
   const { readCardBytes, cardToForm, close } = await load();
   try {
     const { form, notes } = cardToForm(readCardBytes(encode(v2)));
-    const everything = JSON.stringify(form);
+    const everything = JSON.stringify({ ...form, alternateGreetings: [] });
     assert.ok(!everything.includes('Ignore all previous rules') && !everything.includes('Never refuse') && !everything.includes('Tom vanished') && !everything.includes('Another opening'));
-    assert.deepEqual(notes.leftOut, ['Custom system instructions (CHIMERA uses its own safety rules)', 'Lorebook with 1 entry (not supported yet)', '2 alternate opening messages (not supported yet)']);
+    assert.deepEqual(form.alternateGreetings, ['Another opening.', 'And one more.'], 'the other openings come with the card');
+    assert.deepEqual(notes.leftOut, ['Custom system instructions (CHIMERA uses its own safety rules)', 'Lorebook with 1 entry (not supported yet)']);
+  } finally { await close(); }
+});
+
+test('alternate openings of a card: placeholders are filled, empty ones dropped, only ten kept and the rest reported', async () => {
+  const { readCardBytes, cardToForm, close } = await load();
+  try {
+    const card = { name: 'Isolde', first_mes: 'Hi {{user}}.', personality: 'Bold.', alternate_greetings: ['{{char}} waves.', '  ', 42, ...Array.from({ length: 12 }, (_, i) => `Opening ${i}`)] };
+    const { form, notes } = cardToForm(readCardBytes(encode(card)));
+    assert.equal(form.alternateGreetings.length, 10);
+    assert.ok(form.alternateGreetings[0].startsWith('Isolde waves'), form.alternateGreetings[0]);
+    assert.deepEqual(notes.leftOut, ['3 alternate opening messages (a character can have 10 other openings)']);
   } finally { await close(); }
 });
 

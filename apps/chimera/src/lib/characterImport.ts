@@ -1,4 +1,5 @@
 import { EMPTY_FORM, LIMITS, parseTags, type CharacterForm } from './characters';
+import { MAX_ALTERNATE_OPENINGS } from './openings';
 
 /**
  * Reads a "character card" made elsewhere (the Tavern / SillyTavern V1, V2 and V3 formats, as a
@@ -212,8 +213,15 @@ export function cardToForm(raw: unknown, { allowAdult = false }: ImportOptions =
   }
   const book = isObject(data.character_book) ? data.character_book : null;
   if (book && Array.isArray(book.entries) && book.entries.length > 0) leftOut.push(`Lorebook with ${book.entries.length} ${book.entries.length === 1 ? 'entry' : 'entries'} (not supported yet)`);
-  const alternates = Array.isArray(data.alternate_greetings) ? data.alternate_greetings.filter((g) => typeof g === 'string' && g.trim()) : [];
-  if (alternates.length > 0) leftOut.push(`${alternates.length} alternate opening ${alternates.length === 1 ? 'message' : 'messages'} (not supported yet)`);
+
+  // Other opening messages are kept (the player picks one when a scene begins), up to the number a character can have.
+  const allAlternates = Array.isArray(data.alternate_greetings) ? data.alternate_greetings.filter((g): g is string => typeof g === 'string' && g.trim() !== '') : [];
+  const alternates = allAlternates
+    .slice(0, MAX_ALTERNATE_OPENINGS)
+    .map((g, i) => fit(`Opening message ${i + 2}`, applyPlaceholders(g, macroName, true, unknown), LIMITS.greeting));
+  if (allAlternates.length > alternates.length) {
+    leftOut.push(`${allAlternates.length - alternates.length} alternate opening ${allAlternates.length - alternates.length === 1 ? 'message' : 'messages'} (a character can have ${MAX_ALTERNATE_OPENINGS} other openings)`);
+  }
 
   const form: CharacterForm = {
     ...EMPTY_FORM,
@@ -221,6 +229,7 @@ export function cardToForm(raw: unknown, { allowAdult = false }: ImportOptions =
     // A V3 card's nickname is what the character is called in chats: the same thing as the chat name here.
     chatName: macroName !== name ? macroName : '',
     greeting: fit('Opening message', text('first_mes', true), LIMITS.greeting),
+    alternateGreetings: alternates,
     scenario: fit('Scenario', text('scenario'), LIMITS.scenario),
     personality: fit('Personality', personality, LIMITS.personality),
     examples: fit('Example dialogue', text('mes_example', true), LIMITS.examples),

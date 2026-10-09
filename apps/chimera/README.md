@@ -74,6 +74,15 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
   update. **Apply that migration before relying on it.** Until then only the form (not the database) blocks members from choosing Public.
 - A trigger on `ai_characters` now refuses a new Mature or NSFW rating from a member who is not eligible. Still a known gap: explicit text under a General rating is not detected at creation.
 
+- **Other opening messages** (`src/lib/openings.ts`, `api/_lib/openings.ts`). A character has its main opening message and up to 10 others
+  (`ai_characters.alternate_greetings`, a column that already existed: no migration). Under the main opening, *Add another opening* adds more; saving
+  rewrites the list from the form, never repeating the main one. With one opening a new scene still starts by itself. With several, the scene stays empty
+  and shows *How should this scene begin?*: each opening in full with *Begin with this one*, and *Surprise me* for a random one; the writing box is locked
+  until one is picked, and the pick is written as the scene's first message (a double click writes it once). Only the opening used goes to the AI: the server
+  reads the scene's first character message and, when it is one of the character's openings, uses it for the prompt's tone baseline (otherwise the main
+  opening); a character with one opening costs no extra read. The size check counts the longest opening, not the sum. *Start over* makes a new empty scene,
+  so the picker comes back.
+
 ## Personas (who you are in a scene)
 
 - **Personas** (`/personas`, `/personas/new`, `/personas/:id`): name, pronouns, age, gender, occupation, about, personality, appearance,
@@ -273,7 +282,8 @@ and it starts private like any new character.
   Personality; the creator's notes become About. `{{char}}` becomes the name, `{{user}}` becomes "you" in spoken text or "the player" in
   descriptions, `{{// comments}}` are removed. Fields over CHIMERA's limits are cut at a sentence end and reported.
 - **Not imported, and said so on screen:** custom system / post-history instructions (they often try to switch off safety rules; CHIMERA
-  uses its own), lorebooks, alternate openings, and the picture (characters have no avatar upload yet).
+  uses its own), lorebooks, and the picture (characters have no avatar upload yet). The card's `alternate_greetings` **do** come across as other
+  opening messages (up to 10; the rest are reported).
 - Everything imports as **SFW**: Mature / NSFW still wait for age verification. A card that says it is adult content (an `NSFW` / `18+` /
   `explicit`-style tag, or `NSFW` / `18+` in the creator's notes unless they say "SFW") is **refused**, because relabelling it SFW would
   hand its explicit text to anyone the character is shared with. This only reads what the card says about itself: nothing here scans the
