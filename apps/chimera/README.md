@@ -178,7 +178,7 @@ older"** in the Guardian's Library. That is a **declaration, not a verification*
   character **and owned by the character's creator** (so it also works for people chatting with the character, who cannot read the private lorebook).
   An entry is sent when one of its keywords appears in the last 6 messages, or when it is *Always send*. Chosen by priority (higher first), then the
   creator's order. At most 8,000 characters of lorebook go with one reply and one entry is cut at 2,500 (the full text stays saved), so a big lorebook
-  cannot crowd out the character or the story. It is added to the prompt as `## Lorebook`, after the world and before the player. A failed read means
+  cannot crowd out the character or the story. Entries are read in pages, highest priority first, up to 2,000 per character (beyond that, the lowest priority ones are not used). It is added to the prompt as `## Lorebook`, after the world and before the player. A failed read means
   no lorebook, never a failed reply. It runs after the adult-content check, so a locked character never gets that far.
 - **Known limits.** Matching is plain keyword search (no regular expressions, no recursion between entries). Importing a card's `character_book` is not
   built yet (the importer still lists it as left out). Like the rest of a character's definition, a lorebook can be coaxed out of the AI by someone who chats

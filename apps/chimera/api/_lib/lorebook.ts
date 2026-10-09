@@ -13,8 +13,13 @@ export const LOREBOOK_BUDGET_CHARACTERS = 8_000;
 export const LOREBOOK_ENTRY_MAX_CHARACTERS = 2_500;
 /** How many of the latest messages are searched for keywords. */
 export const LOREBOOK_SCAN_MESSAGES = 6;
-/** The most entries ever read for one character, a safety bound for the database read. */
-export const LOREBOOK_MAX_ENTRIES_READ = 600;
+/**
+ * The most entries ever read for one character, a safety bound for the database read. They are read highest priority
+ * first, so if a character somehow has more than this, it is the lowest-priority ones that are left out.
+ */
+export const LOREBOOK_MAX_ENTRIES_READ = 2_000;
+/** Entries read per request to the database. */
+export const LOREBOOK_READ_PAGE = 500;
 
 export interface LorebookEntry {
   id: string;

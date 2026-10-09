@@ -141,7 +141,13 @@ test('the chat reads only lorebooks owned by the character\'s creator and linked
   assert.match(body, /from\('lorebook_characters'\)[\s\S]*\.eq\('character_id', characterId\)/, 'only lorebooks linked to this character');
   assert.match(body, /from\('lorebooks'\)[\s\S]*\.eq\('user_id', creatorId\)/, 'only the creator\'s own lorebooks');
   assert.match(body, /\.eq\('enabled', true\)/);
+  // Read page by page in a stable order (highest priority first), so a cap can never drop entries at random.
+  assert.match(body, /\.order\('priority', \{ ascending: false \}\)[\s\S]*\.order\('id', \{ ascending: true \}\)[\s\S]*\.range\(/);
   assert.match(body, /catch \{\s*return \[\];\s*\}/, 'a failed read means no lorebook, not a failed reply');
+  // A page that fails discards everything read so far: a partial lorebook would give inconsistent replies.
+  assert.match(body, /if \(error \|\| !Array\.isArray\(data\)\) return \[\];\s*\n\s*entries\.push/);
+  assert.deepEqual(body.match(/break;/g), ['break;'], 'the only early exit is the last page');
+  assert.match(body, /data\.length < LOREBOOK_READ_PAGE\) break;/);
   assert.match(body, /if \(!creatorId\) return \[\]/);
   // It is applied after the adult-content check, so a locked character never gets this far.
   assert.ok(chat.indexOf('requireAdultContentAccess(supabase, character.content_rating)') < chat.indexOf('loadLorebookEntries(character.id'));
