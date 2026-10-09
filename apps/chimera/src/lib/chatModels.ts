@@ -6,7 +6,8 @@
  *
  * To offer a new model: add an entry here, make sure the provider key is set (OPENROUTER_API_KEY for
  * `openrouter`), and set its `status` to `available`. Rules that are enforced on the server, not here:
- *   - only `available` models with `tier: 'free'` can be used until per-reply SHARDS charging exists;
+ *   - a `shards` model is only usable with a `shardsCost` (a whole number of SHARDS per reply, charged by the
+ *     server before the model is called and refunded if no reply is delivered); without one it stays unusable;
  *   - an `uncensored` model is only ever used in a scene the member is verified and opted in for.
  */
 
@@ -37,6 +38,8 @@ export interface ChatModel {
   bestFor: string;
   consideration: string;
   tier: 'free' | 'shards';
+  /** SHARDS taken for each reply (including a regeneration) from a `shards` model. Required for it to be usable. */
+  shardsCost?: number;
   /** `soon` models are shown but cannot be chosen or used. */
   status: 'available' | 'soon';
   /** Largest reply the model is asked for. */
@@ -104,12 +107,19 @@ export function defaultGeminiModels(catalog: ChatModel[] = CHAT_MODELS): string[
   return model ? [model.id, ...(model.fallbackApiModels ?? [])] : [DEFAULT_MODEL_ID];
 }
 
+/** The SHARDS a reply from this model costs: 0 for a free model, a positive whole number for a paid one. */
+export function replyCost(model: ChatModel): number {
+  return model.tier === 'shards' ? (model.shardsCost ?? 0) : 0;
+}
+
 /**
- * What a member can use today. Paid models stay out until charging exists, so a model can never be
- * used for free just because it is listed.
+ * What a member can use. A paid model needs a valid price, so a model can never be used for free just
+ * because it is listed or because its price was forgotten.
  */
 export function isUsable(model: ChatModel | null): model is ChatModel {
-  return !!model && model.status === 'available' && model.tier === 'free';
+  if (!model || model.status !== 'available') return false;
+  if (model.tier === 'free') return true;
+  return Number.isInteger(model.shardsCost) && (model.shardsCost ?? 0) > 0 && (model.shardsCost ?? 0) <= 10_000;
 }
 
 export function usableModels(catalog: ChatModel[] = CHAT_MODELS): ChatModel[] {
@@ -124,15 +134,16 @@ export interface ModelChoice {
 }
 
 /**
- * Picks the model for a reply: the member's choice, then the character's, then the default. A model
+ * Picks the model for a reply: the member's choice, then the character's (free models only), then the default. A model
  * that is unknown, not usable, or uncensored outside an adult scene is skipped, never used.
  */
 export function resolveModel(choice: ModelChoice, scene: { adultVerified: boolean }, catalog: ChatModel[] = CHAT_MODELS): ChatModel {
   const allowed = (model: ChatModel | null): model is ChatModel => isUsable(model) && (!model.uncensored || scene.adultVerified);
-  for (const id of [choice.member, choice.character]) {
-    const model = findModel(id, catalog);
-    if (allowed(model)) return model;
-  }
+  const own = findModel(choice.member, catalog);
+  if (allowed(own)) return own;
+  // A creator's recommendation can never spend the player's SHARDS: only the player's own choice can.
+  const recommended = findModel(choice.character, catalog);
+  if (allowed(recommended) && recommended.tier === 'free') return recommended;
   const fallback = findModel(DEFAULT_MODEL_ID, catalog);
   if (!fallback) throw new Error('The default model is missing from the catalog.');
   return fallback;

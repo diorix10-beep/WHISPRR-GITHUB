@@ -13,6 +13,7 @@ import {
 import { MAX_RECALLED_MEMORIES } from './_lib/memory.js';
 import { generateReply, providerKeys } from './_lib/modelProviders.js';
 import { resolveModel } from '../src/lib/chatModels.js';
+import { chargeForReply, refundUndeliveredReply } from './_lib/replyBilling.js';
 import { isAdultRating, requireAdultContentAccess } from './_lib/adultContentGate.js';
 import {
   buildSystemPrompt,
@@ -132,6 +133,7 @@ export default async function handler(req: Request) {
   let admin: ReturnType<typeof serverClient> | undefined;
   let reservation: Awaited<ReturnType<typeof reserveRequest>> | undefined;
   let completed = false;
+  let chargeAttempted = false;
   try {
     const { supabase, user } = await authenticate(req);
     const payload = await readPayload(req);
@@ -328,6 +330,9 @@ export default async function handler(req: Request) {
     });
     if (scopeError) throw new RequestError(409, 'Your persona changed. Please retry in the current scene.');
 
+    // A paid model is charged before it is called, and refunded below if no reply is delivered.
+    const charged = await chargeForReply(admin, reservation, chatModel, () => { chargeAttempted = true; });
+
     const replyText = await generateReply({
       model: chatModel,
       systemPrompt,
@@ -360,11 +365,16 @@ export default async function handler(req: Request) {
     }
 
     completed = true;
-    return jsonResponse({ reply, model: chatModel.name });
+    return jsonResponse({ reply, model: chatModel.name, charged });
   } catch (error) {
     return requestFailure(error);
   } finally {
     if (admin && reservation?.state === 'reserved' && !completed) {
+      // No reply was delivered: give back anything taken for it. A refund that cannot run now is
+      // picked up by the stale-charge sweep the next time the member is charged.
+      if (chargeAttempted) {
+        await refundUndeliveredReply(admin, reservation);
+      }
       await finishRequest(admin, reservation.id, reservation.lease, null, true).catch(() => undefined);
     }
   }

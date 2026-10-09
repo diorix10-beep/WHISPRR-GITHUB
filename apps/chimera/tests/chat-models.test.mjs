@@ -9,7 +9,8 @@ async function load() {
   const models = await server.ssrLoadModule('/src/lib/chatModels.ts');
   const providers = await server.ssrLoadModule('/api/_lib/modelProviders.ts');
   const protection = await server.ssrLoadModule('/api/_lib/requestProtection.ts');
-  return { ...models, ...providers, RequestError: protection.RequestError, close: () => server.close() };
+  const billing = await server.ssrLoadModule('/api/_lib/replyBilling.ts');
+  return { ...models, ...providers, ...billing, RequestError: protection.RequestError, close: () => server.close() };
 }
 
 const model = (over) => ({ id: 'x', name: 'X', provider: 'openrouter', company: 'c', engineName: 'e', description: '', strengths: [], bestFor: '', consideration: '', tier: 'free', status: 'available', ...over });
@@ -126,4 +127,63 @@ test('geminiGenerate: moves to the next model only when Google says the model is
     globalThis.fetch = realFetch;
     await close();
   }
+});
+
+test('a paid model is usable only with a valid price, and costs are whole positive SHARDS', async () => {
+  const { isUsable, replyCost, close } = await load();
+  try {
+    const paid = (over) => model({ tier: 'shards', ...over });
+    assert.equal(isUsable(paid({ shardsCost: 5 })), true);
+    assert.equal(replyCost(paid({ shardsCost: 5 })), 5);
+    for (const bad of [undefined, 0, -3, 1.5, NaN, 10_001, '5']) assert.equal(isUsable(paid({ shardsCost: bad })), false, `price ${String(bad)}`);
+    assert.equal(isUsable(paid({ shardsCost: 5, status: 'soon' })), false, 'not available yet');
+    assert.equal(replyCost(model({ tier: 'free', shardsCost: 9 })), 0, 'a free model never costs anything');
+  } finally { await close(); }
+});
+
+test('resolveModel: only the player can pick a paid model; a creator recommendation never spends their SHARDS', async () => {
+  const { resolveModel, close } = await load();
+  try {
+    const catalog = [
+      model({ id: 'gemini-3.1-flash-lite', name: 'DEFAULT', provider: 'gemini' }),
+      model({ id: 'a/paid', name: 'PAID', tier: 'shards', shardsCost: 4 }),
+      model({ id: 'a/free', name: 'FREE' }),
+    ];
+    const pick = (choice) => resolveModel(choice, { adultVerified: false }, catalog).name;
+    assert.equal(pick({ member: 'a/paid' }), 'PAID', 'the player chose it');
+    assert.equal(pick({ character: 'a/paid' }), 'DEFAULT', 'the creator recommended it: not charged');
+    assert.equal(pick({ character: 'a/paid', member: 'a/free' }), 'FREE');
+    assert.equal(pick({ character: 'a/free' }), 'FREE', 'a free recommendation still works');
+  } finally { await close(); }
+});
+
+test('chargeForReply: free models take nothing; paid ones charge the catalog price; errors are translated', async () => {
+  const { chargeForReply, refundUndeliveredReply, RequestError, close } = await load();
+  try {
+    const calls = [];
+    let outcome = { error: null };
+    const admin = { rpc: async (name, args) => { calls.push({ name, args }); return outcome; } };
+    const reservation = { id: 'req', lease: 'lease' };
+    let attempts = 0;
+    const attempt = () => { attempts += 1; };
+
+    assert.equal(await chargeForReply(admin, reservation, model({ tier: 'free' }), attempt), 0);
+    assert.deepEqual([calls.length, attempts], [0, 0], 'a free model does not even call the database');
+
+    const paid = model({ id: 'a/paid', name: 'AURELIA', tier: 'shards', shardsCost: 7 });
+    assert.equal(await chargeForReply(admin, reservation, paid, attempt), 7);
+    assert.deepEqual(calls[0], { name: 'charge_chimera_reply', args: { p_request_id: 'req', p_lease: 'lease', p_amount: 7, p_model: 'AURELIA' } });
+    assert.equal(attempts, 1);
+
+    outcome = { error: { code: 'CH402', message: 'insufficient_shards' } };
+    await assert.rejects(chargeForReply(admin, reservation, paid, attempt), (error) => error instanceof RequestError && error.status === 402 && /7 SHARDS/.test(error.message) && /SUPERNOVA/.test(error.message));
+    outcome = { error: { code: 'XX000', message: 'connection reset by SECRET host' } };
+    await assert.rejects(chargeForReply(admin, reservation, paid, attempt), (error) => error instanceof RequestError && error.status === 503 && !/SECRET/.test(error.message));
+    assert.equal(attempts, 3, 'every charge that was sent is flagged for a refund');
+
+    await refundUndeliveredReply(admin, reservation);
+    assert.deepEqual(calls.at(-1), { name: 'refund_chimera_reply', args: { p_request_id: 'req', p_lease: 'lease' } });
+    const broken = { rpc: async () => { throw new Error('network down'); } };
+    await assert.doesNotReject(refundUndeliveredReply(broken, reservation), 'a refund that cannot run never breaks the response');
+  } finally { await close(); }
 });
