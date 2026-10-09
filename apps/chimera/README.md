@@ -168,30 +168,45 @@ older"** in the Guardian's Library. That is a **declaration, not a verification*
 
 ## Lorebooks (roleplay only)
 
-`/lorebooks` lists a member's lorebooks and `/lorebooks/:id` edits one. A lorebook holds entries (name, keywords, text, *Always send*, *On*,
-*Match capitals exactly*, priority) and is linked to the member's own characters. No migration: the tables `lorebooks`, `lorebook_entries` and
-`lorebook_characters` already existed with their row-level security (the owner manages them, links need a character the member created).
+A lorebook holds what characters should know about their world. It is modelled on the "scripts" of Janitor AI (lorebook type only): a list, a creation
+form with a colour and a **message depth**, an editor with entries, import and export of JSON, and the characters it is assigned to.
 
-- **Private by default.** The page creates lorebooks with `visibility = 'private'` (the table's own default is `public`, so the page always sets it).
+**Pages** (all private to the member): `/lorebooks` (cards with colour, entry and character counts and depth; search; sort; New lorebook; Import JSON),
+`/lorebooks/new` (name, colour among 11, description, message depth 1 to 10, default 3) and `/lorebooks/:id` (the same settings, then entries: name,
+keywords, text, *Always send* with a lock, *Active*, *Match capitals exactly*, priority, an optional per-entry message depth; search and sort (priority, name,
+as written); Add entry, Import JSON (adds to this lorebook), Export JSON; and the member's characters to tick, with their pictures). Entries are shown
+30 at a time, so a lorebook of hundreds stays light.
+
+**Database.** The tables `lorebooks`, `lorebook_entries` and `lorebook_characters` already existed with their row-level security (the owner manages them,
+links need a character the member created). `supabase/migrations/20261009070000_chimera_lorebook_depth_theme.sql` only adds three columns with defaults:
+`lorebooks.scan_depth` (1 to 10, default 3), `lorebooks.theme` (the 11 colour ids, default purple) and `lorebook_entries.scan_depth` (optional override).
+**Apply it before the pages that write them go live.** The reads use all columns, so a lorebook without them still opens and works with the defaults.
+
+- **Private by default.** The pages create lorebooks with `visibility = 'private'` (the table's own default is `public`, so it is always set).
   Existing lorebooks keep whatever visibility they have. There is no sharing or discovery of lorebooks yet.
 - **At reply time** (`api/ai-chat.ts`, `api/_lib/lorebook.ts`): the server reads, with the server key, the entries of lorebooks that are linked to the
   character **and owned by the character's creator** (so it also works for people chatting with the character, who cannot read the private lorebook).
-  An entry is sent when one of its keywords appears in the last 6 messages, or when it is *Always send*. Chosen by priority (higher first), then the
-  creator's order. At most 8,000 characters of lorebook go with one reply and one entry is cut at 2,500 (the full text stays saved), so a big lorebook
-  cannot crowd out the character or the story. Entries are read in pages, highest priority first, up to 2,000 per character (beyond that, the lowest priority ones are not used). It is added to the prompt as `## Lorebook`, after the world and before the player. A failed read means
-  no lorebook, never a failed reply. It runs after the adult-content check, so a locked character never gets that far.
+  An entry is sent when one of its keywords appears in the last *depth* messages (the entry's own number, else its lorebook's, else 3), or when it is
+  *Always send*. Chosen by priority (higher first), then the creator's order. At most 8,000 characters of lorebook go with one reply and one entry is cut at
+  2,500 (the full text stays saved), so a big lorebook cannot crowd out the character or the story. Entries are read in pages, highest priority first, up to
+  2,000 per character. It is added to the prompt as `## Lorebook`, after the world and before the player. A failed read, or a failed page, means no lorebook,
+  never a failed reply and never half a lorebook. It runs after the adult-content check, so a locked character never gets that far.
+- **JSON** (`src/lib/lorebookJson.ts`). Import reads a character card's `character_book` (V2), a SillyTavern world (entries keyed by number) or a bare list of
+  entries, under the different names sites use (`keys`/`key`/`keywords`, `name`/`comment`/`title`, `constant`, `enabled`/`disable`, `priority`/`order`,
+  `scan_depth`/`depth`/`message_depth`, also inside `extensions`). Entries without text are left out and an entry with no keyword uses its name; the preview says
+  so before anything is saved. Export writes a `character_book` object that this page reads back. Limits: 10 MB, 2,000 entries, no prototype keys read.
+  I could not check Janitor AI's own export, so the reader is deliberately tolerant; a file it cannot read gets a plain message and changes nothing.
 - **From a long text.** Under the creator's *Full definition* a button "Turn it into a lorebook" cuts the text into entries (`src/lib/lorebookSplit.ts`,
   `src/components/characters/LorebookConverter.tsx`). The writer picks how the text is organised (detected: `#` lines, Episode/Chapter/Part lines, CAPITALS lines,
   numbered lines, or cut by size only, each with its entry count), then reviews every entry: name, keywords (taken from the heading, or from the most repeated
   names in the text), *Always send* (the short introduction starts on), remove. Entries are at most 2,400 characters (long sections become "Title (1)", "(2)"…),
   and no text is lost (a test checks it on a 650,000-character codex). Nothing is saved before Create; the lorebook is made private in one go (a failure
   deletes what was made and keeps the text); the field is then emptied and the lorebook is linked to the character (at once when editing, when saving when new).
-  Lorebooks can still be written by hand at `/lorebooks`. Limits: the cut is approximate and keywords from headings need a quick look; the "always send" entries
-  together should stay under about 8,000 characters (the review screen warns).
-- **Known limits.** Matching is plain keyword search (no regular expressions, no recursion between entries). Importing a card's `character_book` is not
-  built yet (the importer still lists it as left out). Like the rest of a character's definition, a lorebook can be coaxed out of the AI by someone who chats
-  with the character. A lorebook has no content rating: explicit entries linked to a General character are not detected (same gap as explicit text in a
-  General character).
+- **Left out on purpose.** Janitor's "Advanced" scripts (custom JavaScript, which would run member code), test chat, history, publishing, tags and the
+  lorebook picture. Matching is plain keyword search (no regular expressions, no recursion between entries). Importing a card's `character_book` while importing
+  the character is not built yet (the character importer still lists it as left out; the JSON import above takes the same data). Like the rest of a character's
+  definition, a lorebook can be coaxed out of the AI by someone who chats with the character. A lorebook has no content rating: explicit entries linked to a
+  General character are not detected (same gap as explicit text in a General character).
 
 ## Model House (which AI writes the replies)
 

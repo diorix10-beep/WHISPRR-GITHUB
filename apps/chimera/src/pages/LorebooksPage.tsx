@@ -1,12 +1,15 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Plus } from 'lucide-react';
+import { BookOpen, Plus, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { createLorebook, loadMyLorebooks, LOREBOOK_LIMITS, type LorebookSummary } from '../lib/lorebooks';
+import { LorebookJsonImport } from '../components/lorebooks/LorebookJsonImport';
+import { createLorebookWithEntries, formsFromImport, loadMyLorebooks, themeOf, type LorebookSummary } from '../lib/lorebooks';
 
 const FIELD = 'w-full rounded-xl border border-chimera-gold/25 bg-chimera-bg p-3 text-base text-chimera-ink outline-none placeholder:text-chimera-mute/60 focus:border-chimera-gold';
+
+type SortKey = 'latest' | 'name' | 'entries';
 
 export default function LorebooksPage() {
   const { user } = useAuth();
@@ -15,8 +18,8 @@ export default function LorebooksPage() {
   const [books, setBooks] = useState<LorebookSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
-  const [title, setTitle] = useState('');
-  const [creating, setCreating] = useState(false);
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<SortKey>('latest');
 
   const refresh = async (userId: string) => {
     try {
@@ -32,18 +35,13 @@ export default function LorebooksPage() {
     if (user) void refresh(user.id);
   }, [user]);
 
-  const create = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!user || creating) return;
-    setCreating(true);
-    try {
-      const id = await createLorebook(user.id, title);
-      navigate(`/lorebooks/${id}`);
-    } catch {
-      showToast('We could not create the lorebook. Please try again.', 'error');
-      setCreating(false);
-    }
-  };
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = q ? books.filter((book) => `${book.title} ${book.description}`.toLowerCase().includes(q)) : [...books];
+    if (sort === 'name') list.sort((a, b) => a.title.localeCompare(b.title));
+    else if (sort === 'entries') list.sort((a, b) => b.entry_count - a.entry_count || a.title.localeCompare(b.title));
+    return list;
+  }, [books, query, sort]);
 
   const remove = async (book: LorebookSummary) => {
     if (!window.confirm(`Delete "${book.title}" and its ${book.entry_count} ${book.entry_count === 1 ? 'entry' : 'entries'}? Your characters will no longer use it.`)) return;
@@ -60,20 +58,49 @@ export default function LorebooksPage() {
       <p className="mb-3 text-sm font-bold tracking-[0.26em] text-chimera-gold">YOUR LOREBOOKS</p>
       <h1 className="font-serif text-4xl font-semibold sm:text-5xl">The world, remembered.</h1>
       <p className="mt-3 max-w-xl text-chimera-mute">
-        A lorebook holds what your characters should know about their world: places, people, rules, history. An entry is only sent to the AI when one of its keywords comes up in the scene, so a big world never weighs down every reply.
+        A lorebook holds what your characters should know about their world: places, people, rules, history. An entry is only sent to the AI when one of its keywords comes up in the last few messages, so a big world never weighs down every reply.
       </p>
 
-      <form onSubmit={(e) => void create(e)} className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-chimera-gold/20 bg-chimera-panel p-4">
-        <div className="min-w-[220px] flex-1">
-          <label htmlFor="lb-new" className="font-bold">New lorebook</label>
-          <input id="lb-new" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={LOREBOOK_LIMITS.title} className={`${FIELD} mt-2`} placeholder="The Sunken Archipelago" />
-        </div>
-        <button type="submit" disabled={creating} className="inline-flex min-h-[48px] items-center gap-2 rounded-full bg-chimera-gold px-6 font-bold text-[#1a1208] hover:brightness-110 disabled:opacity-50">
-          <Plus size={18} aria-hidden="true" /> {creating ? 'Creating…' : 'Create'}
-        </button>
-      </form>
+      <div className="mt-6 flex flex-wrap items-start gap-3">
+        <Link to="/lorebooks/new" className="inline-flex min-h-[48px] items-center gap-2 rounded-full bg-chimera-gold px-6 font-bold text-[#1a1208] hover:brightness-110">
+          <Plus size={18} aria-hidden="true" /> New lorebook
+        </Link>
+        {user && (
+          <LorebookJsonImport
+            showName
+            label="Import JSON"
+            confirmLabel={(read) => `Create a lorebook with ${read.entries.length.toLocaleString()} ${read.entries.length === 1 ? 'entry' : 'entries'}`}
+            onConfirm={async (read) => {
+              const id = await createLorebookWithEntries(
+                user.id,
+                { title: read.name || 'Imported lorebook', description: read.description, scanDepth: read.scanDepth ?? undefined },
+                formsFromImport(read.entries),
+              );
+              navigate(`/lorebooks/${id}`);
+            }}
+          />
+        )}
+      </div>
 
-      <section className="mt-8" aria-live="polite">
+      {books.length > 0 && (
+        <div className="mt-6 flex flex-wrap items-end gap-3">
+          <div className="relative min-w-[200px] flex-1">
+            <label htmlFor="lb-search" className="sr-only">Search your lorebooks</label>
+            <Search size={18} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-chimera-mute" />
+            <input id="lb-search" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search" className={`${FIELD} pl-10`} />
+          </div>
+          <div>
+            <label htmlFor="lb-sort" className="sr-only">Sort</label>
+            <select id="lb-sort" value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={FIELD}>
+              <option value="latest">Latest</option>
+              <option value="name">Name</option>
+              <option value="entries">Most entries</option>
+            </select>
+          </div>
+        </div>
+      )}
+
+      <section className="mt-6" aria-live="polite">
         {loading ? (
           <p className="py-12 text-center text-chimera-mute">Loading your lorebooks…</p>
         ) : failed ? (
@@ -81,28 +108,36 @@ export default function LorebooksPage() {
         ) : books.length === 0 ? (
           <div className="rounded-[22px] border border-chimera-gold/20 bg-chimera-panel p-8 text-center">
             <BookOpen className="mx-auto text-chimera-gold" size={30} aria-hidden="true" />
-            <p className="mt-3 text-lg text-violet-100/85">You have no lorebook yet. Name one above to start.</p>
+            <p className="mt-3 text-lg text-violet-100/85">You have no lorebook yet. Create one, or import one from a JSON file.</p>
           </div>
+        ) : shown.length === 0 ? (
+          <p className="py-12 text-center text-chimera-mute">No lorebook matches your search.</p>
         ) : (
           <ul className="flex flex-col gap-3">
-            {books.map((book) => (
-              <li key={book.id} className="rounded-2xl border border-chimera-gold/20 bg-chimera-panel p-4">
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-serif text-2xl font-semibold">{book.title}</span>
-                    <span className="block text-sm text-chimera-mute">
-                      {book.entry_count} {book.entry_count === 1 ? 'entry' : 'entries'}
-                      {book.visibility !== 'private' && ` · ${book.visibility}`}
+            {shown.map((book) => {
+              const theme = themeOf(book.theme);
+              return (
+                <li key={book.id} className="rounded-2xl border border-chimera-gold/20 bg-chimera-panel p-4">
+                  <div className="flex items-start gap-4">
+                    <span aria-hidden="true" className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl text-white" style={{ background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}>
+                      <BookOpen size={26} />
                     </span>
-                    {book.description && <span className="block truncate text-sm text-chimera-mute">{book.description}</span>}
-                  </span>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Link to={`/lorebooks/${book.id}`} className="inline-flex min-h-[40px] items-center rounded-full border border-chimera-gold/40 px-4 text-sm font-bold hover:bg-chimera-gold/10">Open</Link>
-                  <button type="button" onClick={() => void remove(book)} className="min-h-[40px] rounded-full px-4 text-sm text-chimera-mute hover:text-chimera-rose" aria-label={`Delete ${book.title}`}>Delete</button>
-                </div>
-              </li>
-            ))}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-serif text-2xl font-semibold">{book.title}</span>
+                      {book.description && <span className="block truncate text-sm text-chimera-mute">{book.description}</span>}
+                      <span className="mt-1 block text-sm text-chimera-mute">
+                        {book.entry_count} {book.entry_count === 1 ? 'entry' : 'entries'} · {book.characters} {book.characters === 1 ? 'character' : 'characters'} · checks the last {book.scan_depth} {book.scan_depth === 1 ? 'message' : 'messages'}
+                        {book.visibility !== 'private' && ` · ${book.visibility}`}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Link to={`/lorebooks/${book.id}`} className="inline-flex min-h-[40px] items-center rounded-full border border-chimera-gold/40 px-4 text-sm font-bold hover:bg-chimera-gold/10">Open</Link>
+                    <button type="button" onClick={() => void remove(book)} className="min-h-[40px] rounded-full px-4 text-sm text-chimera-mute hover:text-chimera-rose" aria-label={`Delete ${book.title}`}>Delete</button>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

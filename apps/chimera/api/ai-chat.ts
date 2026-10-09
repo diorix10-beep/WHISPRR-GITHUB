@@ -11,7 +11,7 @@ import {
   uuid,
 } from './_lib/requestProtection.js';
 import { MAX_RECALLED_MEMORIES } from './_lib/memory.js';
-import { LOREBOOK_MAX_ENTRIES_READ, LOREBOOK_READ_PAGE, lorebookBlock, selectLorebookEntries, type LorebookEntry } from './_lib/lorebook.js';
+import { LOREBOOK_MAX_ENTRIES_READ, LOREBOOK_READ_PAGE, lorebookBlock, selectLorebookEntries, validDepth, type LorebookEntry } from './_lib/lorebook.js';
 import { generateReply, providerKeys } from './_lib/modelProviders.js';
 import { resolveModel } from '../src/lib/chatModels.js';
 import { chargeForReply, refundUndeliveredReply } from './_lib/replyBilling.js';
@@ -129,29 +129,39 @@ async function loadApprovedMemories(input: {
 }
 
 /**
- * The creator's lorebook entries for this character. Only lorebooks owned by the character's creator and linked to
- * it are read (with the server key, so a private lorebook still works for the people who chat with the character).
- * Optional: if anything fails the character still answers, just without a lorebook.
+ * The creator's lorebook entries for this character, with how many messages each lorebook searches. Only lorebooks owned
+ * by the character's creator and linked to it are read (with the server key, so a private lorebook still works for the
+ * people who chat with the character). Optional: if anything fails the character still answers, without a lorebook.
  */
-async function loadLorebookEntries(characterId: string, creatorId: string | null): Promise<LorebookEntry[]> {
-  if (!creatorId) return [];
+async function loadLorebookEntries(
+  characterId: string,
+  creatorId: string | null,
+): Promise<{ entries: LorebookEntry[]; bookDepths: Map<string, number> }> {
+  const none = { entries: [] as LorebookEntry[], bookDepths: new Map<string, number>() };
+  if (!creatorId) return none;
   try {
     const reader = serverClient();
     const { data: links, error: linkError } = await reader.from('lorebook_characters').select('lorebook_id').eq('character_id', characterId);
-    if (linkError || !Array.isArray(links) || links.length === 0) return [];
+    if (linkError || !Array.isArray(links) || links.length === 0) return none;
+    // All columns, so a lorebook without a depth of its own (before it existed) simply uses the default.
     const { data: books, error: bookError } = await reader
       .from('lorebooks')
-      .select('id')
+      .select('*')
       .in('id', links.map((link: { lorebook_id: string }) => link.lorebook_id))
       .eq('user_id', creatorId);
-    if (bookError || !Array.isArray(books) || books.length === 0) return [];
+    if (bookError || !Array.isArray(books) || books.length === 0) return none;
     const bookIds = books.map((book: { id: string }) => book.id);
+    const bookDepths = new Map<string, number>();
+    for (const book of books as Array<{ id: string; scan_depth?: unknown }>) {
+      const depth = validDepth(book.scan_depth);
+      if (depth) bookDepths.set(book.id, depth);
+    }
     // Read page by page, highest priority first, so a very large lorebook is cut from the bottom, never at random.
     const entries: LorebookEntry[] = [];
     for (let from = 0; from < LOREBOOK_MAX_ENTRIES_READ; from += LOREBOOK_READ_PAGE) {
       const { data, error } = await reader
         .from('lorebook_entries')
-        .select('id, title, content, keywords, is_constant, case_sensitive, enabled, priority, insertion_order')
+        .select('*')
         .in('lorebook_id', bookIds)
         .eq('enabled', true)
         .order('priority', { ascending: false })
@@ -159,13 +169,13 @@ async function loadLorebookEntries(characterId: string, creatorId: string | null
         .order('id', { ascending: true })
         .range(from, Math.min(from + LOREBOOK_READ_PAGE, LOREBOOK_MAX_ENTRIES_READ) - 1);
       // A page that fails means no lorebook at all: half of the lore would give inconsistent replies.
-      if (error || !Array.isArray(data)) return [];
+      if (error || !Array.isArray(data)) return none;
       entries.push(...(data as LorebookEntry[]));
       if (data.length < LOREBOOK_READ_PAGE) break;
     }
-    return entries;
+    return { entries, bookDepths };
   } catch {
-    return [];
+    return none;
   }
 }
 
@@ -314,10 +324,8 @@ export default async function handler(req: Request) {
       characterId: character.id,
       personaId,
     });
-    sceneSettings.lorebook = lorebookBlock(selectLorebookEntries(
-      await loadLorebookEntries(character.id, (character as { creator_id?: string | null }).creator_id ?? null),
-      chronological.map((m) => m.content),
-    ));
+    const lore = await loadLorebookEntries(character.id, (character as { creator_id?: string | null }).creator_id ?? null);
+    sceneSettings.lorebook = lorebookBlock(selectLorebookEntries(lore.entries, chronological.map((m) => m.content), { bookDepths: lore.bookDepths }));
     const playerLabel = persona?.name || 'Player';
     const contents: GeminiTurn[] = history.map((m) => ({
       role: m.sender_id === botId ? 'model' : 'user',

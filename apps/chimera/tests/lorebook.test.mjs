@@ -50,13 +50,34 @@ test('disabled entries, empty entries and entries with no keywords are never sen
   } finally { await close(); }
 });
 
-test('only the latest messages are searched', async () => {
+test('only the latest messages are searched: 3 by default, the lorebook\'s own number, or the entry\'s own number', async () => {
   const { book, close } = await load();
   try {
-    const entries = [entry({ keywords: ['dragon'] })];
-    const old = ['the dragon', 'a', 'b', 'c', 'd', 'e', 'f'];
-    assert.equal(book.selectLorebookEntries(entries, old).length, 0, 'mentioned seven messages ago');
-    assert.equal(book.selectLorebookEntries(entries, ['the dragon', 'a', 'b', 'c', 'd', 'e']).length, 1, 'within the last six');
+    const m = (n) => ['the dragon', ...Array.from({ length: n }, (_, i) => `filler ${i}`)]; // the dragon is n messages ago
+    const dragon = (over = {}) => entry({ keywords: ['dragon'], lorebook_id: 'b1', ...over });
+    // Default: the last 3 messages.
+    assert.equal(book.selectLorebookEntries([dragon()], m(3)).length, 0, 'mentioned four messages ago');
+    assert.equal(book.selectLorebookEntries([dragon()], m(2)).length, 1, 'within the last three');
+    // The lorebook asks for more (or fewer).
+    const deep = new Map([['b1', 10]]);
+    assert.equal(book.selectLorebookEntries([dragon()], m(9), { bookDepths: deep }).length, 1, 'the lorebook looks 10 messages back');
+    assert.equal(book.selectLorebookEntries([dragon()], m(10), { bookDepths: deep }).length, 0);
+    assert.equal(book.selectLorebookEntries([dragon()], m(1), { bookDepths: new Map([['b1', 1]]) }).length, 0, 'the lorebook looks only at the last message');
+    // An entry\'s own depth wins over its lorebook\'s, either way.
+    assert.equal(book.selectLorebookEntries([dragon({ scan_depth: 10 })], m(9)).length, 1);
+    assert.equal(book.selectLorebookEntries([dragon({ scan_depth: 1 })], m(2), { bookDepths: deep }).length, 0);
+    // Nonsense depths are ignored: the default applies (never a crash, never "look at everything").
+    for (const bad of [0, 11, -2, 2.5, '3', NaN, null]) {
+      assert.equal(book.selectLorebookEntries([dragon({ scan_depth: bad })], m(5)).length, 0, `depth ${String(bad)} falls back to 3`);
+    }
+    assert.equal(book.selectLorebookEntries([dragon({ lorebook_id: 'unknown' })], m(2), { bookDepths: deep }).length, 1, 'a lorebook that is not listed uses the default');
+    assert.equal(book.validDepth(10), 10);
+    assert.equal(book.validDepth(11), null);
+    assert.equal(book.LOREBOOK_SCAN_MESSAGES, 3);
+    // Entries of two lorebooks with different depths in one pass.
+    const mixed = [dragon({ title: 'deep', lorebook_id: 'deep' }), dragon({ title: 'shallow', lorebook_id: 'shallow' })];
+    const picked = book.selectLorebookEntries(mixed, m(6), { bookDepths: new Map([['deep', 10], ['shallow', 2]]) });
+    assert.deepEqual(picked.map((e) => e.title), ['deep']);
   } finally { await close(); }
 });
 
@@ -127,9 +148,14 @@ test('entry form: keywords are cleaned, an entry needs text and a keyword (or al
     assert.equal(form.validateEntry({ ...base, content: 'c'.repeat(1_000_000) }), null);
 
     const row = form.entryRow({ ...base, title: '  ', keywords: 'Dragon, dragon, wyrm', priority: 3.7 }, 'book-1', 4);
-    assert.deepEqual(row, { lorebook_id: 'book-1', title: 'Dragon', content: 'Lore.', keywords: ['Dragon', 'wyrm'], is_constant: false, case_sensitive: false, enabled: true, priority: 3, insertion_order: 4 });
+    assert.deepEqual(row, { lorebook_id: 'book-1', title: 'Dragon', content: 'Lore.', keywords: ['Dragon', 'wyrm'], is_constant: false, case_sensitive: false, enabled: true, priority: 3, insertion_order: 4, scan_depth: null });
     const back = form.entryFromRow({ id: 'e1', title: 'T', content: 'C', keywords: ['a', 'b'], is_constant: true, case_sensitive: true, enabled: false, priority: 2 });
-    assert.deepEqual(back, { id: 'e1', title: 'T', keywords: 'a, b', content: 'C', isConstant: true, caseSensitive: true, enabled: false, priority: 2 });
+    assert.deepEqual(back, { id: 'e1', title: 'T', keywords: 'a, b', content: 'C', isConstant: true, caseSensitive: true, enabled: false, priority: 2, scanDepth: null });
+    assert.equal(form.entryFromRow({ id: 'e3', scan_depth: 7 }).scanDepth, 7);
+    assert.equal(form.entryFromRow({ id: 'e3', scan_depth: 11 }).scanDepth, null, 'a depth outside 1 to 10 is ignored');
+    assert.equal(form.entryRow({ ...base, scanDepth: 4 }, 'b', 0).scan_depth, 4);
+    assert.equal(form.entryRow({ ...base, scanDepth: 99 }, 'b', 0).scan_depth, null);
+    assert.equal(form.entryRow({ ...base, scanDepth: 2.5 }, 'b', 0).scan_depth, null);
     assert.equal(form.entryFromRow({ id: 'e2' }).enabled, true, 'enabled unless saved as off');
   } finally { await close(); }
 });
@@ -143,12 +169,14 @@ test('the chat reads only lorebooks owned by the character\'s creator and linked
   assert.match(body, /\.eq\('enabled', true\)/);
   // Read page by page in a stable order (highest priority first), so a cap can never drop entries at random.
   assert.match(body, /\.order\('priority', \{ ascending: false \}\)[\s\S]*\.order\('id', \{ ascending: true \}\)[\s\S]*\.range\(/);
-  assert.match(body, /catch \{\s*return \[\];\s*\}/, 'a failed read means no lorebook, not a failed reply');
+  assert.match(body, /catch \{\s*return none;\s*\}/, 'a failed read means no lorebook, not a failed reply');
   // A page that fails discards everything read so far: a partial lorebook would give inconsistent replies.
-  assert.match(body, /if \(error \|\| !Array\.isArray\(data\)\) return \[\];\s*\n\s*entries\.push/);
+  assert.match(body, /if \(error \|\| !Array\.isArray\(data\)\) return none;\s*\n\s*entries\.push/);
   assert.deepEqual(body.match(/break;/g), ['break;'], 'the only early exit is the last page');
   assert.match(body, /data\.length < LOREBOOK_READ_PAGE\) break;/);
-  assert.match(body, /if \(!creatorId\) return \[\]/);
+  assert.match(body, /if \(!creatorId\) return none;/);
+  assert.match(body, /if \(error \|\| !Array\.isArray\(data\)\) return none;/, 'a failed page means no lorebook');
+  assert.match(body, /\.select\('\*'\)[\s\S]*\.eq\('user_id', creatorId\)/, 'lorebooks are read with all columns, so one without a depth still works');
   // It is applied after the adult-content check, so a locked character never gets this far.
   assert.ok(chat.indexOf('requireAdultContentAccess(supabase, character.content_rating)') < chat.indexOf('loadLorebookEntries(character.id'));
 });
