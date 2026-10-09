@@ -73,7 +73,7 @@ export default function LorebooksPage() {
             onConfirm={async (read) => {
               const id = await createLorebookWithEntries(
                 user.id,
-                { title: read.name || 'Imported lorebook', description: read.description, scanDepth: read.scanDepth ?? undefined },
+                { title: read.name || 'Imported lorebook', description: read.description, scanDepth: read.scanDepth ?? undefined, replyBudget: read.replyBudget ?? undefined },
                 formsFromImport(read.entries),
               );
               navigate(`/lorebooks/${id}`);

@@ -52,12 +52,15 @@ export function validBudget(value: unknown): number | null {
   return typeof value === 'number' && Number.isInteger(value) && value >= LOREBOOK_BUDGET_MIN_CHARACTERS && value <= LOREBOOK_BUDGET_MAX_CHARACTERS ? value : null;
 }
 
-/** The text of an entry that would really be sent: cut at the entry limit, and never more than the reply size leaves room for. */
+/**
+ * The text of an entry that would really be sent. It is never longer than the entry limit, nor than what the reply size leaves
+ * after the title, and when it is cut the "…" that marks the cut is counted inside that length.
+ */
 function sentText(entry: LorebookEntry, budget: number): string {
-  // One character is kept for the "…" that marks a cut, so the title and the text together never go over the reply size.
-  const room = Math.max(0, Math.min(LOREBOOK_ENTRY_MAX_CHARACTERS, budget - (entry.title ?? '').trim().length - 1));
+  const room = Math.max(0, Math.min(LOREBOOK_ENTRY_MAX_CHARACTERS, budget - (entry.title ?? '').trim().length));
   const content = (entry.content ?? '').trim();
-  return content.length > room ? `${content.slice(0, room)}…` : content;
+  if (content.length <= room) return content;
+  return room > 0 ? `${content.slice(0, room - 1)}…` : '';
 }
 
 function keywordsOf(entry: LorebookEntry): string[] {
@@ -117,7 +120,9 @@ export function selectLorebookEntries(
   const picked: LorebookEntry[] = [];
   let used = 0;
   for (const entry of candidates) {
-    const size = sentText(entry, budget).length + (entry.title ?? '').trim().length;
+    const text = sentText(entry, budget);
+    if (!text) continue;
+    const size = text.length + (entry.title ?? '').trim().length;
     if (used + size > budget) continue;
     picked.push(entry);
     used += size;

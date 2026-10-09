@@ -117,11 +117,12 @@ test('the block names the entries, cuts an entry that is too long, and is null w
     assert.match(block, /### The Guild\nLantern bearers\./);
     assert.match(block, /No title entry\./);
     // With the usual reply size, an entry can never be longer than the reply itself (less its title).
-    const room = book.LOREBOOK_BUDGET_CHARACTERS - 'Long'.length - 1;
-    assert.ok(block.includes('L'.repeat(room) + '…') && !block.includes('L'.repeat(room + 1)), 'a long entry is cut');
+    const room = book.LOREBOOK_BUDGET_CHARACTERS - 'Long'.length;
+    assert.ok(block.includes('L'.repeat(room - 1) + '…') && !block.includes('L'.repeat(room)), 'a long entry is cut, the … included in its length');
     // With a big reply size it is the entry limit that cuts.
     const big = book.lorebookBlock([entry({ title: 'Long', content: 'L'.repeat(25_000) })], 40_000);
-    assert.ok(big.includes('L'.repeat(book.LOREBOOK_ENTRY_MAX_CHARACTERS) + '…') && !big.includes('L'.repeat(book.LOREBOOK_ENTRY_MAX_CHARACTERS + 1)));
+    const cap = book.LOREBOOK_ENTRY_MAX_CHARACTERS;
+    assert.ok(big.includes('L'.repeat(cap - 1) + '…') && !big.includes('L'.repeat(cap)), 'cut at the entry limit, the … included in it');
     assert.match(block, /never mention this block/);
   } finally { await close(); }
 });
@@ -241,4 +242,32 @@ test('the chat reads each lorebook\'s reply size and uses the largest one asked 
   assert.match(chat, /validBudget\(book\.reply_budget\)/);
   assert.match(chat, /budget: lore\.budget/);
   assert.match(chat, /lorebookBlock\(selectLorebookEntries\([^\n]*budget: lore\.budget \}\), lore\.budget\)/, 'the block is cut with the same size used to choose');
+});
+
+test('the cut mark counts inside the entry limit, so two capped titleless entries fit exactly in 40,000, and the editor sums the same way', async () => {
+  const { book, form, close } = await load();
+  try {
+    const two = [entry({ title: '', is_constant: true, priority: 2, content: 'a'.repeat(25_000) }), entry({ title: '', is_constant: true, priority: 1, content: 'b'.repeat(25_000) })];
+    const picked = book.selectLorebookEntries(two, [], { budget: 40_000 });
+    assert.equal(picked.length, 2, 'both fit');
+    const block = book.lorebookBlock(picked, 40_000);
+    assert.ok(block.includes('a'.repeat(19_999) + '…') && !block.includes('a'.repeat(20_000)));
+
+    // Titles count: two entries of 450 characters with 60-character titles do not both fit in 1,000, and the editor knows it.
+    const titled = [0, 1].map((i) => entry({ title: `${i}`.repeat(60), is_constant: true, priority: 2 - i, content: 'x'.repeat(450) }));
+    assert.equal(book.selectLorebookEntries(titled, [], { budget: 1_000 }).length, 1);
+    const forms = titled.map((e) => ({ ...form.EMPTY_ENTRY, title: e.title, content: e.content, isConstant: true }));
+    const total = forms.reduce((sum, f) => sum + form.sentSize(f, 1_000), 0);
+    assert.equal(total, 1_020);
+    assert.ok(total > 1_000, 'the warning would show');
+    // Same answer as the server for one titled entry, cut or not.
+    for (const [title, length] of [['Guild', 30_000], ['Guild', 40], ['T'.repeat(100), 5_000]]) {
+      for (const budget of [1_000, 8_000, 40_000]) {
+        const e = entry({ title, content: 'q'.repeat(length) });
+        const block = book.lorebookBlock([e], budget);
+        const serverSize = block.slice(block.indexOf(`### ${title}\n`) + `### ${title}\n`.length).length + title.length;
+        assert.equal(form.sentSize({ ...form.EMPTY_ENTRY, title, content: e.content }, budget), serverSize, `${title.length}/${length}/${budget}`);
+      }
+    }
+  } finally { await close(); }
 });

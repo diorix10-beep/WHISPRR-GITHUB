@@ -25,6 +25,7 @@ import {
   loadEntryRows,
   lorebookRow,
   parseKeywords,
+  sentSize,
   themeOf,
   validDepth,
   validateEntry,
@@ -290,7 +291,7 @@ export default function LorebookEditorPage() {
 
   const accent = themeOf(theme);
   // What the entries marked "Always send" use of every reply, each cut at the size it would really be sent.
-  const alwaysSent = entries.reduce((total, { form }) => (form.isConstant && form.enabled ? total + Math.min(form.content.trim().length, ENTRY_SENT_CHARACTERS, replyBudget) : total), 0);
+  const alwaysSent = entries.reduce((total, { form }) => (form.isConstant && form.enabled && form.content.trim() ? total + sentSize(form, replyBudget) : total), 0);
 
   return (
     <div className="mx-auto max-w-3xl px-5 pb-12 pt-8 sm:px-8">

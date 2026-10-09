@@ -160,9 +160,14 @@ export function entryFromRow(row: Record<string, unknown>): EntryForm {
   };
 }
 
-/** How many characters of this entry the chat would actually send. */
-export function sentLength(form: EntryForm): number {
-  return Math.min(form.content.trim().length, ENTRY_SENT_CHARACTERS);
+/**
+ * How many characters of this entry the chat sends with a reply of the given size, title included: the text is cut at the entry limit
+ * or at what the size leaves after the title (see api/_lib/lorebook.ts, which does the same sum).
+ */
+export function sentSize(form: EntryForm, budget: number): number {
+  const title = form.title.trim() || parseKeywords(form.keywords)[0] || 'Entry';
+  const room = Math.max(0, Math.min(ENTRY_SENT_CHARACTERS, budget - title.length));
+  return Math.min(form.content.trim().length, room) + title.length;
 }
 
 export async function loadMyLorebooks(userId: string): Promise<LorebookSummary[]> {
