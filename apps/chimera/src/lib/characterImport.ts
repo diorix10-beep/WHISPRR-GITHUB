@@ -171,7 +171,12 @@ export function isMarkedAdult(tags: string[], notes: string): boolean {
   return tags.some((tag) => ADULT_TAG.test(tag.trim())) || (ADULT_NOTE.test(notes) && !NOT_ADULT_NOTE.test(notes));
 }
 
-export function cardToForm(raw: unknown): ImportResult {
+export interface ImportOptions {
+  /** The member may use Mature characters (confirmed 18+, adult content on). A card marked adult then arrives as Mature. */
+  allowAdult?: boolean;
+}
+
+export function cardToForm(raw: unknown, { allowAdult = false }: ImportOptions = {}): ImportResult {
   const card = cardData(raw);
   if (!card) throw new CardImportError('This does not look like a character card. It needs at least a name and a first message.');
   const { data, format } = card;
@@ -194,10 +199,11 @@ export function cardToForm(raw: unknown): ImportResult {
   const personality = [text('description'), text('personality')].filter(Boolean).join('\n\n');
   const tags = Array.isArray(data.tags) ? data.tags.filter((tag): tag is string => typeof tag === 'string') : [];
   const notes = str(data, 'creator_notes') || str(data, 'creatorcomment');
-  // Characters here are SFW only until ages can be verified. Relabelling an adult card as SFW would
-  // hand its explicit text to anyone the character is shared with, so such a card is refused.
-  if (isMarkedAdult(tags, notes)) {
-    throw new CardImportError('This card is marked as adult content (NSFW). Adult characters cannot be imported until CHIMERA can verify ages.');
+  // A card marked adult is never relabelled General: that would hand its explicit text to anyone the character is
+  // shared with. It is refused, unless the member may use Mature, and then it arrives rated Mature.
+  const adult = isMarkedAdult(tags, notes);
+  if (adult && !allowAdult) {
+    throw new CardImportError('This card is marked as adult content (NSFW). To import it, confirm in the Guardian\'s Library that you are 18 or older and turn on adult content.');
   }
 
   const leftOut: string[] = [];
@@ -221,6 +227,7 @@ export function cardToForm(raw: unknown): ImportResult {
     about: fit('About', applyPlaceholders(notes, macroName, false, unknown), LIMITS.about),
     tags: parseTags(tags.join(', ')).join(', '),
     visibility: 'private',
+    mature: adult,
   };
 
   return {
@@ -236,10 +243,10 @@ export function cardToForm(raw: unknown): ImportResult {
 }
 
 /** Reads a File chosen in the browser. */
-export async function importCardFile(file: File): Promise<ImportResult> {
+export async function importCardFile(file: File, options: ImportOptions = {}): Promise<ImportResult> {
   if (file.size > MAX_CARD_FILE_BYTES) throw new CardImportError('This file is too large. Cards are usually well under 10 MB.');
   const bytes = new Uint8Array(await file.arrayBuffer());
-  const result = cardToForm(readCardBytes(bytes));
+  const result = cardToForm(readCardBytes(bytes), options);
   result.notes.picture = isPng(bytes);
   return result;
 }

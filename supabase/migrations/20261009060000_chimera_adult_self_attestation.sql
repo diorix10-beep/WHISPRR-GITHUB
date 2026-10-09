@@ -184,7 +184,9 @@ REVOKE ALL ON FUNCTION public.attest_my_adult_status(text), public.withdraw_my_a
 GRANT EXECUTE ON FUNCTION public.attest_my_adult_status(text), public.withdraw_my_adult_attestation() TO authenticated;
 
 -- Giving a character an adult rating needs an eligible member who has adult content on. Keeping a rating a
--- character already has, and moving to General, are always allowed, so existing characters are untouched.
+-- character already has, and moving to General, are always allowed by this trigger, so existing characters are
+-- untouched. Note that Mature characters are hidden from everyone, their creator included, while adult content is
+-- off: to open one in the editor (even to move it to General) the creator turns adult content back on first.
 CREATE OR REPLACE FUNCTION chimera_private.guard_character_adult_rating()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
 DECLARE

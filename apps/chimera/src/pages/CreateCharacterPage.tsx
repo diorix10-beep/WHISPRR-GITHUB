@@ -109,7 +109,7 @@ export default function CreateCharacterPage() {
     setImporting(true);
     setImportError(null);
     try {
-      const result = await importCardFile(file);
+      const result = await importCardFile(file, { allowAdult: adultAccess });
       // Do not silently replace what the person has already typed.
       const typedSomething = JSON.stringify(form) !== JSON.stringify(EMPTY_FORM);
       if (typedSomething) setPendingImport(result);

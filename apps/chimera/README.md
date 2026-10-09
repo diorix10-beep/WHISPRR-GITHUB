@@ -66,7 +66,7 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
 - **Picture.** JPG, PNG or WebP up to 5 MB, uploaded to the existing public `profile-photos` bucket under the member's own folder
   (`<user id>/character-avatars/…`), so no migration is needed. It is optional. **There is no image moderation yet**, and the bucket is
   public to anyone with the address: acceptable while public publishing is founder-only, to be revisited before it opens.
-- Content rating: General, or Mature for members who confirmed they are 18+ and have adult content on (otherwise Mature is shown but locked, with a link to the Guardian's Library). An existing adult rating is kept on save; General can always be chosen.
+- Content rating: General, or Mature for members who confirmed they are 18+ and have adult content on (otherwise Mature is shown but locked, with a link to the Guardian's Library). An existing adult rating is kept on save; General can be chosen at any time while adult content is on. A card marked adult can be imported only by a member who may use Mature, and arrives as Mature.
 - New characters are **General** unless Mature is chosen. Visibility: **private** (default), **unlisted** (link only) or **public**.
 - **Public publishing is founder-only during the beta** (`profiles.role = 'founder'`). It is enforced in the database by
   `supabase/migrations/20261009000000_chimera_character_publication_guard.sql`, so a member cannot bypass the form with a direct
@@ -157,7 +157,9 @@ older"** in the Guardian's Library. That is a **declaration, not a verification*
 - **Writing the status:** members cannot write any age column (guard trigger). Only `attest_my_adult_status()` / `withdraw_my_adult_attestation()`
   (as the signed-in member) and `set_age_verification()` (service role, for Yoti) change it. A verified account is never downgraded by the member.
 - **Giving a character a Mature rating** needs the same eligibility plus the opt-in (trigger on `ai_characters`). Keeping an existing rating,
-  or moving to General, is always allowed. The creator form offers General and Mature.
+  or moving to General, is always allowed by the trigger. The creator form offers General and Mature. Mature characters are hidden from
+  everyone, their creator included, while adult content is off, so to edit one (even to move it to General) the creator turns adult content
+  back on first: the confirmation is one tick, and there is deliberately no owner-only read path around the age gate.
 - **When Yoti goes live:** change `chimera_private.adult_status_allows` to accept only `verified_adult` (one function decides every rule), set
   `AGE_VERIFICATION_LIVE = true`, and decide whether to reset `self_attested_adult` accounts to `unverified` (the guard then switches their
   adult content off). `ADULT_CONFIRMATION_LIVE` only controls whether the screens offer the confirmation.
