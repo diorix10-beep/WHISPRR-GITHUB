@@ -11,7 +11,7 @@ import {
   uuid,
 } from './_lib/requestProtection.js';
 import { MAX_RECALLED_MEMORIES } from './_lib/memory.js';
-import { LOREBOOK_MAX_ENTRIES_READ, lorebookBlock, selectLorebookEntries, type LorebookEntry } from './_lib/lorebook.js';
+import { LOREBOOK_MAX_ENTRIES_READ, LOREBOOK_READ_PAGE, lorebookBlock, selectLorebookEntries, type LorebookEntry } from './_lib/lorebook.js';
 import { generateReply, providerKeys } from './_lib/modelProviders.js';
 import { resolveModel } from '../src/lib/chatModels.js';
 import { chargeForReply, refundUndeliveredReply } from './_lib/replyBilling.js';
@@ -145,14 +145,24 @@ async function loadLorebookEntries(characterId: string, creatorId: string | null
       .in('id', links.map((link: { lorebook_id: string }) => link.lorebook_id))
       .eq('user_id', creatorId);
     if (bookError || !Array.isArray(books) || books.length === 0) return [];
-    const { data: entries, error: entryError } = await reader
-      .from('lorebook_entries')
-      .select('id, title, content, keywords, is_constant, case_sensitive, enabled, priority, insertion_order')
-      .in('lorebook_id', books.map((book: { id: string }) => book.id))
-      .eq('enabled', true)
-      .limit(LOREBOOK_MAX_ENTRIES_READ);
-    if (entryError || !Array.isArray(entries)) return [];
-    return entries as LorebookEntry[];
+    const bookIds = books.map((book: { id: string }) => book.id);
+    // Read page by page, highest priority first, so a very large lorebook is cut from the bottom, never at random.
+    const entries: LorebookEntry[] = [];
+    for (let from = 0; from < LOREBOOK_MAX_ENTRIES_READ; from += LOREBOOK_READ_PAGE) {
+      const { data, error } = await reader
+        .from('lorebook_entries')
+        .select('id, title, content, keywords, is_constant, case_sensitive, enabled, priority, insertion_order')
+        .in('lorebook_id', bookIds)
+        .eq('enabled', true)
+        .order('priority', { ascending: false })
+        .order('insertion_order', { ascending: true })
+        .order('id', { ascending: true })
+        .range(from, Math.min(from + LOREBOOK_READ_PAGE, LOREBOOK_MAX_ENTRIES_READ) - 1);
+      if (error || !Array.isArray(data)) break;
+      entries.push(...(data as LorebookEntry[]));
+      if (data.length < LOREBOOK_READ_PAGE) break;
+    }
+    return entries;
   } catch {
     return [];
   }

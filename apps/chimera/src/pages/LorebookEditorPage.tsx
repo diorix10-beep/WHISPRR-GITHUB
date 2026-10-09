@@ -25,6 +25,8 @@ interface EntryState {
   saved: string;
   busy: boolean;
   problem: string | null;
+  /** A new entry opens as it is added and stays as it is when saved, so it never folds up under the writer. */
+  startOpen: boolean;
 }
 
 interface CharacterOption {
@@ -79,7 +81,7 @@ export default function LorebookEditorPage() {
       setSavedHead(JSON.stringify([head.title, head.description ?? '']));
       setEntries(((entryResult.data ?? []) as Array<Record<string, unknown>>).map((row) => {
         const form = entryFromRow(row);
-        return { key: nextKey(), form, saved: JSON.stringify(form), busy: false, problem: null };
+        return { key: nextKey(), form, saved: JSON.stringify(form), busy: false, problem: null, startOpen: false };
       }));
       setCharacters((characterResult.data ?? []) as CharacterOption[]);
       setLinked(new Set(((linkResult.data ?? []) as Array<{ character_id: string }>).map((row) => row.character_id)));
@@ -120,7 +122,7 @@ export default function LorebookEditorPage() {
   const edit = (key: string, change: Partial<EntryForm>) => patchEntry(key, (state) => ({ form: { ...state.form, ...change }, problem: null }));
 
   const addEntry = () => {
-    setEntries((all) => [...all, { key: nextKey(), form: { ...EMPTY_ENTRY }, saved: '', busy: false, problem: null }]);
+    setEntries((all) => [...all, { key: nextKey(), form: { ...EMPTY_ENTRY }, saved: '', busy: false, problem: null, startOpen: true }]);
   };
 
   const saveEntry = async (state: EntryState) => {
@@ -142,8 +144,16 @@ export default function LorebookEditorPage() {
       patchEntry(state.key, { busy: false, problem: 'We could not save this entry. Your text is still here, please try again.' });
       return;
     }
-    const form: EntryForm = { ...state.form, id: (data as { id: string }).id, keywords: parseKeywords(state.form.keywords).join(', ') };
-    patchEntry(state.key, { form, saved: JSON.stringify(form), busy: false, problem: null });
+    const newId = (data as { id: string }).id;
+    const tidy = parseKeywords(state.form.keywords).join(', ');
+    // What was saved is what was sent. Anything typed while the save was in flight stays in the form, and shows as unsaved.
+    const sent: EntryForm = { ...state.form, id: newId, keywords: tidy };
+    patchEntry(state.key, (current) => ({
+      form: { ...current.form, id: newId, keywords: current.form.keywords === state.form.keywords ? tidy : current.form.keywords },
+      saved: JSON.stringify(sent),
+      busy: false,
+      problem: null,
+    }));
   };
 
   const removeEntry = async (state: EntryState) => {
@@ -235,7 +245,7 @@ export default function LorebookEditorPage() {
             const fieldId = (name: string) => `${state.key}-${name}`;
             return (
               <li key={state.key}>
-                <details open={!state.form.id} className="rounded-2xl border border-chimera-gold/20 bg-chimera-panel p-4">
+                <details open={state.startOpen} className="rounded-2xl border border-chimera-gold/20 bg-chimera-panel p-4">
                   <summary className="flex cursor-pointer flex-wrap items-center gap-2">
                     <span className="font-serif text-xl font-semibold">{state.form.title.trim() || parseKeywords(state.form.keywords)[0] || `Entry ${index + 1}`}</span>
                     {state.form.isConstant && <span className="rounded-full border border-chimera-gold/50 px-2 py-0.5 text-xs font-bold tracking-[0.1em] text-chimera-gold">ALWAYS</span>}
