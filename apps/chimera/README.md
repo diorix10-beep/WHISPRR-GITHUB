@@ -115,7 +115,8 @@ but suggestions do nothing until they exist.
 Age verification has no provider yet, so the Guardian's Library is shown as **Coming soon** (a "Soon" tag in the menu and footer, and a
 friendly page instead of controls that cannot work). This relaxes nothing: Mature and Adult content stay locked by the database and the
 server, which only open for a verified account. When verification goes live, set `AGE_VERIFICATION_LIVE` to `true` in
-`src/pages/GuardianPage.tsx` to bring back the real settings, and remove the `soon: true` flags in `AppLayout.tsx`.
+`src/lib/ageVerification.ts`: the real settings come back and every "coming soon" label (menu tag, footer, Discover, locked scenes)
+reverts with it.
 
 ## Model House (which AI writes the replies)
 

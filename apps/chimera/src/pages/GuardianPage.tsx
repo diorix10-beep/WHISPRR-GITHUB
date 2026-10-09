@@ -4,14 +4,7 @@ import { ShieldCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-
-/**
- * Age verification is not connected to a provider yet, so the Guardian's Library is shown as
- * "coming soon". Nothing is relaxed by this: Mature and Adult content stays locked by the database
- * and the server, which only open for an account that has been verified. Set this to true when
- * verification goes live to show the real settings below.
- */
-const AGE_VERIFICATION_LIVE: boolean = false;
+import { AGE_VERIFICATION_LIVE } from '../lib/ageVerification';
 
 interface Preferences {
   age_verification_status: string | null;
@@ -117,7 +110,7 @@ export default function GuardianPage() {
           <>
             {!verified && (
               <p role="note" className="my-5 rounded-xl border border-chimera-gold/30 bg-chimera-gold/10 px-4 py-3 text-[15px] leading-relaxed text-amber-100">
-                Age verification is not available yet. Until it is, CHIMERA shows General content only. Your account is not affected in any other way.
+                Your age is not verified yet, so CHIMERA shows General content only. Your account is not affected in any other way.
               </p>
             )}
             <label className={`flex items-center gap-5 py-5 ${verified ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}>
