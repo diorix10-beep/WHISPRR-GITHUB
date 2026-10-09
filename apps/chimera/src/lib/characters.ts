@@ -155,7 +155,7 @@ export function validateForm(form: CharacterForm, existing: CharacterRecord | nu
   const size = definitionSize(form, existing);
   if (size > MAX_DEFINITION_CHARACTERS) {
     const over = estimateTokens('x'.repeat(size - MAX_DEFINITION_CHARACTERS));
-    return `This character is too long for chats to work reliably: every reply carries the whole definition. Please shorten it by about ${over.toLocaleString()} tokens.`;
+    return `This character is too long for chats to work reliably: every reply carries the whole definition. Please shorten it by about ${over.toLocaleString()} tokens. A very long Full definition can be turned into a lorebook instead.`;
   }
   return null;
 }
