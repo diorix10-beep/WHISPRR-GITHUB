@@ -66,3 +66,21 @@ test('the migration can be applied twice, and it only adds columns', async () =>
     assert.doesNotMatch(sql.replace(/--.*$/gm, ''), /SECURITY|POLICY|GRANT|REVOKE/i, 'no change to access rules');
   } finally { await db.close(); }
 });
+
+const budgetMigration = () => readFile(new URL('supabase/migrations/20261009080000_chimera_lorebook_reply_budget.sql', root), 'utf8');
+
+test('reply size: existing lorebooks keep the 8,000 they always had, only 1,000 to 40,000 is accepted, and it only adds a column', async () => {
+  const db = await database();
+  try {
+    await db.exec(await migration());
+    const sql = await budgetMigration();
+    await db.exec(sql);
+    await db.exec(sql);
+    assert.deepEqual((await db.query('SELECT title, reply_budget FROM public.lorebooks')).rows, [{ title: 'Old book', reply_budget: 8000 }]);
+    const book = (value) => db.query(`INSERT INTO public.lorebooks (user_id, title, reply_budget) VALUES ($1, 'x', $2)`, [U, value]);
+    for (const size of [1000, 8000, 40000]) await book(size);
+    for (const size of [0, 999, 40001, 800000, -5]) await assert.rejects(book(size), /check constraint/, `reply size ${size}`);
+    assert.doesNotMatch(sql, /\b(DROP|DELETE|TRUNCATE|UPDATE)\b/i, 'additive only');
+    assert.doesNotMatch(sql.replace(/--.*$/gm, ''), /SECURITY|POLICY|GRANT|REVOKE/i, 'no change to access rules');
+  } finally { await db.close(); }
+});

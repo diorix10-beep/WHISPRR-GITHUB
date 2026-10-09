@@ -26,6 +26,8 @@ export interface ImportedLorebook {
   name: string;
   description: string;
   scanDepth: number | null;
+  /** The reply size in characters, read back from `token_budget` (tokens, about 4 characters each) when it is a size lorebooks here allow. */
+  replyBudget: number | null;
   entries: ImportedEntry[];
   /** Plain-words notes about what was left out or guessed. */
   notes: string[];
@@ -67,6 +69,14 @@ function keywordList(value: unknown): string[] {
 function depthOf(value: unknown): number | null {
   const n = typeof value === 'string' && /^\d+$/.test(value.trim()) ? Number(value) : value;
   return typeof n === 'number' && Number.isInteger(n) && n >= 1 && n <= 10 ? n : null;
+}
+
+/** A card's token budget as a reply size in characters (about 4 per token), or null when it is not a size allowed here. */
+function budgetOf(value: unknown): number | null {
+  const tokens = typeof value === 'string' && /^\d+$/.test(value.trim()) ? Number(value) : value;
+  if (typeof tokens !== 'number' || !Number.isFinite(tokens)) return null;
+  const characters = Math.round(tokens * 4);
+  return characters >= 1_000 && characters <= 40_000 ? characters : null;
 }
 
 function priorityOf(value: unknown): number {
@@ -173,6 +183,7 @@ export function parseLorebookJson(raw: string): ImportedLorebook {
     name: text(pick(header, ['name', 'title'])).trim().slice(0, 100),
     description: text(pick(header, ['description', 'summary'])).trim().slice(0, 1000),
     scanDepth: depthOf(pick(header, ['scan_depth', 'scanDepth', 'message_depth', 'messageDepth'])),
+    replyBudget: budgetOf(pick(header, ['token_budget', 'tokenBudget'])),
     entries,
     notes,
   };
@@ -193,12 +204,13 @@ export interface ExportableEntry {
  * The lorebook as a character card "character_book" object, which other sites read and which this page reads back.
  * Entries keep the order they were given.
  */
-export function lorebookToJson(book: { name: string; description: string; scanDepth: number }, entries: ExportableEntry[]) {
+export function lorebookToJson(book: { name: string; description: string; scanDepth: number; replyBudget?: number }, entries: ExportableEntry[]) {
   return {
     name: book.name,
     description: book.description,
     scan_depth: book.scanDepth,
-    token_budget: 8000,
+    // The card format counts tokens; about 4 characters make 1 token.
+    token_budget: Math.round((book.replyBudget ?? 8000) / 4),
     recursive_scanning: false,
     extensions: {},
     entries: entries.map((entry, index) => ({

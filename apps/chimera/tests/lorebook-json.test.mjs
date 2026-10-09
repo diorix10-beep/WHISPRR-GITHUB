@@ -127,11 +127,12 @@ test('export then import gives the same lorebook back', async () => {
       { title: 'Kamala', keywords: ['Kamala', 'Kamala Harris'], content: 'Lead.', isConstant: false, caseSensitive: true, enabled: true, priority: 3, scanDepth: 10 },
       { title: 'Timeline', keywords: [], content: 'Universe Two.', isConstant: true, caseSensitive: false, enabled: false, priority: 0, scanDepth: null },
     ];
-    const exported = json.lorebookToJson({ name: 'Codex', description: 'About.', scanDepth: 4 }, entries);
+    const exported = json.lorebookToJson({ name: 'Codex', description: 'About.', scanDepth: 4, replyBudget: 40_000 }, entries);
+    assert.equal(exported.token_budget, 10_000);
     assert.equal(exported.entries[0].insertion_order, 0);
     assert.equal(exported.entries[1].insertion_order, 1);
     const back = json.parseLorebookJson(JSON.stringify(exported));
-    assert.deepEqual([back.name, back.description, back.scanDepth], ['Codex', 'About.', 4]);
+    assert.deepEqual([back.name, back.description, back.scanDepth, back.replyBudget], ['Codex', 'About.', 4, 40_000]);
     assert.deepEqual(back.entries, entries);
     assert.deepEqual(back.notes, []);
   } finally { await close(); }
@@ -181,4 +182,15 @@ test('a failed import takes the batches already saved out again, so trying again
     assert.ok(deletes.every((d) => /lorebook_id=eq\.book-1/.test(d.url)), 'only inside this lorebook');
     assert.ok(deletes[0].url.includes('b1-0') && deletes[1].url.includes('b2-99'), deletes.map((d) => d.url).join('\n'));
   } finally { globalThis.fetch = realFetch; await server.close(); }
+});
+
+test('a card\'s token budget becomes a reply size only when it is one lorebooks here allow', async () => {
+  const { json, close } = await load();
+  try {
+    const budgetOf = (token_budget) => json.parseLorebookJson(text({ token_budget, entries: [{ keys: ['a'], content: 'b' }] })).replyBudget;
+    assert.equal(budgetOf(2000), 8000);
+    assert.equal(budgetOf(10000), 40000);
+    assert.equal(budgetOf('2048'), 8192);
+    for (const bad of [0, 100, 249, 10001, 100000, -5, 'lots', null, undefined, {}]) assert.equal(budgetOf(bad), null, String(bad));
+  } finally { await close(); }
 });

@@ -6,7 +6,7 @@
  * writer reviews every entry before anything is saved. Nothing here talks to the database.
  */
 
-/** Longest entry the splitter makes. The chat sends at most 2,500 characters of an entry, so this stays under it. */
+/** Longest entry the splitter makes. Short entries keep a reply's room (8,000 characters by default) for several of them at once. */
 export const SPLIT_CHUNK_CHARACTERS = 2_400;
 /** Entries marked "always send" beyond this many characters in total do not all fit in one reply (see api/_lib/lorebook.ts). */
 export const ALWAYS_SEND_BUDGET = 8_000;

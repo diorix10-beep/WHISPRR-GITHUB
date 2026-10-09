@@ -11,7 +11,7 @@ import {
   uuid,
 } from './_lib/requestProtection.js';
 import { MAX_RECALLED_MEMORIES } from './_lib/memory.js';
-import { LOREBOOK_MAX_ENTRIES_READ, LOREBOOK_READ_PAGE, lorebookBlock, selectLorebookEntries, validDepth, type LorebookEntry } from './_lib/lorebook.js';
+import { LOREBOOK_BUDGET_CHARACTERS, LOREBOOK_MAX_ENTRIES_READ, LOREBOOK_READ_PAGE, lorebookBlock, selectLorebookEntries, validBudget, validDepth, type LorebookEntry } from './_lib/lorebook.js';
 import { generateReply, providerKeys } from './_lib/modelProviders.js';
 import { resolveModel } from '../src/lib/chatModels.js';
 import { chargeForReply, refundUndeliveredReply } from './_lib/replyBilling.js';
@@ -136,8 +136,8 @@ async function loadApprovedMemories(input: {
 async function loadLorebookEntries(
   characterId: string,
   creatorId: string | null,
-): Promise<{ entries: LorebookEntry[]; bookDepths: Map<string, number> }> {
-  const none = { entries: [] as LorebookEntry[], bookDepths: new Map<string, number>() };
+): Promise<{ entries: LorebookEntry[]; bookDepths: Map<string, number>; budget: number }> {
+  const none = { entries: [] as LorebookEntry[], bookDepths: new Map<string, number>(), budget: LOREBOOK_BUDGET_CHARACTERS };
   if (!creatorId) return none;
   try {
     const reader = serverClient();
@@ -152,9 +152,17 @@ async function loadLorebookEntries(
     if (bookError || !Array.isArray(books) || books.length === 0) return none;
     const bookIds = books.map((book: { id: string }) => book.id);
     const bookDepths = new Map<string, number>();
-    for (const book of books as Array<{ id: string; scan_depth?: unknown }>) {
+    // How much lorebook text one reply may carry: the largest size asked for by the character's lorebooks (the default if none asks).
+    let budget = LOREBOOK_BUDGET_CHARACTERS;
+    let asked = false;
+    for (const book of books as Array<{ id: string; scan_depth?: unknown; reply_budget?: unknown }>) {
       const depth = validDepth(book.scan_depth);
       if (depth) bookDepths.set(book.id, depth);
+      const size = validBudget(book.reply_budget);
+      if (size && (!asked || size > budget)) {
+        budget = size;
+        asked = true;
+      }
     }
     // Read page by page, highest priority first, so a very large lorebook is cut from the bottom, never at random.
     const entries: LorebookEntry[] = [];
@@ -173,7 +181,7 @@ async function loadLorebookEntries(
       entries.push(...(data as LorebookEntry[]));
       if (data.length < LOREBOOK_READ_PAGE) break;
     }
-    return { entries, bookDepths };
+    return { entries, bookDepths, budget };
   } catch {
     return none;
   }
@@ -325,7 +333,7 @@ export default async function handler(req: Request) {
       personaId,
     });
     const lore = await loadLorebookEntries(character.id, (character as { creator_id?: string | null }).creator_id ?? null);
-    sceneSettings.lorebook = lorebookBlock(selectLorebookEntries(lore.entries, chronological.map((m) => m.content), { bookDepths: lore.bookDepths }));
+    sceneSettings.lorebook = lorebookBlock(selectLorebookEntries(lore.entries, chronological.map((m) => m.content), { bookDepths: lore.bookDepths, budget: lore.budget }), lore.budget);
     const playerLabel = persona?.name || 'Player';
     const contents: GeminiTurn[] = history.map((m) => ({
       role: m.sender_id === botId ? 'model' : 'user',
