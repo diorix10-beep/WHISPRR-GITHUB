@@ -16,6 +16,7 @@ import {
 import { GuidedTurningPointCard, type GuidedTurningPoint } from '../components/GuidedTurningPointCard';
 import { createPendingPlayerSends, PendingPlayerSendError } from '../lib/pendingPlayerSend';
 import { loadMyPersonas, type PersonaSummary } from '../lib/personas';
+import { cleanOpenings, surpriseOpening } from '../lib/openings';
 import { ADULT_CONFIRMATION_LIVE, AGE_VERIFICATION_LIVE } from '../lib/ageVerification';
 import {
   MEMORY_LIMITS,
@@ -47,6 +48,8 @@ interface SceneInfo {
   /** The player's own title for this scene, if they set one. */
   title: string | null;
   greeting: string | null;
+  /** Every way this character can open a scene: its main opening first. More than one means the player picks. */
+  openings: string[];
   rating: string | null;
   canon: string;
   canonRevision: number;
@@ -62,6 +65,8 @@ const MODES: Array<{ id: ComposerMode; label: string; hint: string }> = [
 const TURNING_POINT_MIN_MESSAGES = 8;
 
 export default function ConversationPage() {
+  const openingBusyRef = useRef(false);
+  const [openingBusy, setOpeningBusy] = useState(false);
   const { id: conversationId } = useParams<{ id: string }>();
   const { user } = useAuth();
   const userId = user?.id;
@@ -195,7 +200,7 @@ export default function ConversationPage() {
           return;
         }
         const [{ data: character }, { data: profile }] = await Promise.all([
-          supabase.from('ai_characters').select('id, name:chat_name, greeting, content_rating').eq('user_id', botUserId).maybeSingle(),
+          supabase.from('ai_characters').select('id, name:chat_name, greeting, alternate_greetings, content_rating').eq('user_id', botUserId).maybeSingle(),
           supabase.from('profiles').select('display_name').eq('user_id', botUserId).maybeSingle(),
         ]);
         if (!active) return;
@@ -210,6 +215,7 @@ export default function ConversationPage() {
           botName: character.name || profile?.display_name || 'Character',
           title: conversation.name?.trim() || null,
           greeting: character.greeting?.trim() || null,
+          openings: cleanOpenings(character.greeting, (character as { alternate_greetings?: unknown }).alternate_greetings),
           rating: character.content_rating ?? null,
           canon: conversation.memory_summary ?? '',
           canonRevision: Number(conversation.canon_revision ?? 0),
@@ -252,8 +258,9 @@ export default function ConversationPage() {
         setTurningPoint((active_point as GuidedTurningPoint | null) ?? null);
         setLoading(false);
 
-        // A brand-new scene opens with the character's own greeting.
-        if (rows.length === 0 && !(isAdultRating(info.rating) && !adultAccess)) {
+        // A brand-new scene opens with the character's own greeting. With several openings the player picks one (see the
+        // picker below), so nothing is written until they do.
+        if (rows.length === 0 && info.openings.length <= 1 && !(isAdultRating(info.rating) && !adultAccess)) {
           if (info.greeting) {
             const { error } = await supabase.rpc('respond_as_ai_character', {
               p_conversation_id: conversationId,
@@ -283,6 +290,23 @@ export default function ConversationPage() {
     endRef.current?.scrollIntoView?.({ block: 'end' });
   }, [messages.length, busy]);
 
+  // Writes the opening the player picked as the scene's first message.
+  const beginWith = async (opening: string) => {
+    if (!scene || !conversationId || openingBusyRef.current) return;
+    openingBusyRef.current = true;
+    setOpeningBusy(true);
+    try {
+      const { error } = await supabase.rpc('respond_as_ai_character', { p_conversation_id: conversationId, p_bot_id: scene.botUserId, p_content: opening });
+      if (error) throw error;
+      await loadMessages();
+    } catch {
+      showToast('We could not begin the scene. Please try again.', 'error');
+    } finally {
+      openingBusyRef.current = false;
+      setOpeningBusy(false);
+    }
+  };
+
   if (loading || accessLoading) return <p className="px-5 py-24 text-center text-chimera-mute">Opening the scene…</p>;
 
   if (loadError || !scene || !user) {
@@ -296,6 +320,8 @@ export default function ConversationPage() {
   }
 
   const adultLocked = isAdultRating(scene.rating) && !adultAccess;
+  // An empty scene of a character with several openings waits for the player to pick one.
+  const choosingOpening = messages.length === 0 && scene.openings.length > 1 && !adultLocked;
   const last = messages[messages.length - 1];
   const awaitingReply = !!last && last.sender_id === user.id;
   const canRegenerate = !!last && last.sender_id === scene.botUserId && messages.length > 1 && !busy;
@@ -432,7 +458,7 @@ export default function ConversationPage() {
 
   const send = async () => {
     const text = draft.trim();
-    if (!text || busyRef.current || adultLocked) return;
+    if (!text || busyRef.current || adultLocked || choosingOpening) return;
     const line = formatPlayerLine(mode, text);
     busyRef.current = true;
     setBusy(true);
@@ -861,6 +887,26 @@ export default function ConversationPage() {
       )}
 
       <div className="flex-1 space-y-4 py-2" aria-live="polite">
+        {choosingOpening && (
+          <section aria-labelledby="opening-picker" className="rounded-2xl border border-chimera-gold/30 bg-chimera-panel p-4">
+            <h2 id="opening-picker" className="font-serif text-2xl font-semibold">How should this scene begin?</h2>
+            <p className="mt-1 text-sm text-chimera-mute">{scene.botName} has {scene.openings.length} ways to open a scene. Pick one, or let chance choose.</p>
+            <ul className="mt-4 flex flex-col gap-3">
+              {scene.openings.map((opening, index) => (
+                <li key={index} className="rounded-xl border border-chimera-gold/20 bg-chimera-bg p-3">
+                  <p className="text-xs font-bold tracking-[0.12em] text-chimera-gold">OPENING {index + 1}</p>
+                  <p className="mt-1 max-h-56 overflow-y-auto whitespace-pre-wrap text-[16px] leading-relaxed text-violet-50">{opening}</p>
+                  <button type="button" onClick={() => void beginWith(opening)} disabled={openingBusy} aria-label={`Begin with opening ${index + 1}`} className="mt-3 min-h-[44px] rounded-full bg-chimera-gold px-5 font-bold text-[#1a1208] hover:brightness-110 disabled:opacity-50">
+                    Begin with this one
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <button type="button" onClick={() => void beginWith(surpriseOpening(scene.openings, Math.random()))} disabled={openingBusy} className="mt-4 min-h-[44px] rounded-full border border-chimera-gold/50 px-5 font-bold hover:bg-chimera-gold/10 disabled:opacity-50">
+              Surprise me
+            </button>
+          </section>
+        )}
         {messages.map((message) => {
           const mine = message.sender_id === user.id;
           const pinned = pinnedIds.includes(message.id);
@@ -943,11 +989,11 @@ export default function ConversationPage() {
             }}
             maxLength={4000}
             rows={2}
-            disabled={adultLocked}
+            disabled={adultLocked || choosingOpening}
             placeholder={MODES.find((m) => m.id === mode)?.hint}
             className="min-h-[56px] flex-1 resize-none rounded-2xl border border-chimera-gold/35 bg-chimera-panel px-4 py-3 text-base text-chimera-ink outline-none placeholder:text-chimera-mute/70 focus:border-chimera-gold disabled:opacity-50"
           />
-          <button type="submit" disabled={busy || !draft.trim() || adultLocked} className="grid h-[56px] w-[56px] shrink-0 place-items-center rounded-full bg-chimera-gold text-[#1a1208] disabled:opacity-40" aria-label="Send">
+          <button type="submit" disabled={busy || !draft.trim() || adultLocked || choosingOpening} className="grid h-[56px] w-[56px] shrink-0 place-items-center rounded-full bg-chimera-gold text-[#1a1208] disabled:opacity-40" aria-label="Send">
             <Send size={22} aria-hidden="true" />
           </button>
         </form>

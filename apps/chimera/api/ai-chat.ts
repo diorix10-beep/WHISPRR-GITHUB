@@ -11,6 +11,7 @@ import {
   uuid,
 } from './_lib/requestProtection.js';
 import { MAX_RECALLED_MEMORIES } from './_lib/memory.js';
+import { cleanOpenings, openingUsed } from './_lib/openings.js';
 import { LOREBOOK_BUDGET_CHARACTERS, LOREBOOK_MAX_ENTRIES_READ, LOREBOOK_READ_PAGE, lorebookBlock, selectLorebookEntries, validBudget, validDepth, type LorebookEntry } from './_lib/lorebook.js';
 import { generateReply, providerKeys } from './_lib/modelProviders.js';
 import { resolveModel } from '../src/lib/chatModels.js';
@@ -354,7 +355,25 @@ export default async function handler(req: Request) {
     }
     if (contents.length === 0) throw new RequestError(409, 'There is nothing to answer yet.');
 
-    const systemPrompt = buildSystemPrompt(character, botProfile, persona, conversation.memory_summary, sceneSettings);
+    // A character with several openings: the tone baseline in the prompt is the one this scene really began with.
+    const openings = cleanOpenings(character.greeting, (character as { alternate_greetings?: unknown }).alternate_greetings);
+    let promptCharacter = character;
+    if (openings.length > 1) {
+      const { data: firstMessage } = await supabase
+        .from('messages')
+        .select('content')
+        .eq('conversation_id', conversationId)
+        .eq('sender_id', botId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+        .then((result) => result, () => ({ data: null }));
+      promptCharacter = { ...character, greeting: openingUsed(openings, (firstMessage as { content?: string | null } | null)?.content) };
+    }
+
+    const systemPrompt = buildSystemPrompt(promptCharacter, botProfile, persona, conversation.memory_summary, sceneSettings);
     const promptSize = systemPrompt.length + contents.reduce((size, turn) => size + turn.parts[0].text.length, 0);
     if (promptSize > MAX_PROMPT_CHARACTERS) throw new RequestError(413, 'This character context is too large to generate safely.');
 

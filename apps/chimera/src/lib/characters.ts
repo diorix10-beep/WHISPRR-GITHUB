@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { MAX_ALTERNATE_OPENINGS, cleanOpenings } from './openings';
 
 export const CATEGORIES = ['General', 'Adventure', 'Fantasy', 'Mystery', 'Sci-Fi', 'Slice of life', 'Companion', 'Comedy', 'Drama'] as const;
 
@@ -59,6 +60,8 @@ export interface CharacterForm {
   notes: string;
   tagline: string;
   greeting: string;
+  /** Other ways a scene can begin; the player picks one. At most MAX_ALTERNATE_OPENINGS. */
+  alternateGreetings: string[];
   scenario: string;
   personality: string;
   /** A complete written definition (codex, world and rules). Read by the AI as "Detailed Character Definition", right after the personality. */
@@ -82,6 +85,7 @@ export const EMPTY_FORM: CharacterForm = {
   notes: '',
   tagline: '',
   greeting: '',
+  alternateGreetings: [],
   scenario: '',
   personality: '',
   definition: '',
@@ -120,10 +124,12 @@ const HIDDEN_PROMPT_FIELDS = ['system_definition', 'rp_definition', 'example_con
 /**
  * What the AI receives with every reply, in characters. The bio is only shown on cards, so it does not count.
  * The opening message is counted twice: a new scene sends it in the system prompt and again in the opening turn
- * (api/ai-chat.ts). Fields kept from an older version of the character count too.
+ * (api/ai-chat.ts). A scene uses one opening, so the longest of them counts. Fields kept from an older version of the
+ * character count too.
  */
 export function definitionSize(form: CharacterForm, existing: CharacterRecord | null = null): number {
-  const written = [form.tagline, form.greeting, form.greeting, form.scenario, form.personality, form.definition, form.examples, form.style, form.lore, form.avoid, form.notes]
+  const longest = cleanOpenings(form.greeting, form.alternateGreetings).reduce((max, opening) => (opening.length > max.length ? opening : max), '');
+  const written = [form.tagline, longest, longest, form.scenario, form.personality, form.definition, form.examples, form.style, form.lore, form.avoid, form.notes]
     .reduce((total, value) => total + value.trim().length, 0);
   const kept = HIDDEN_PROMPT_FIELDS.reduce((total, key) => total + text(existing, key).trim().length, 0);
   return written + kept;
@@ -143,6 +149,8 @@ export function validateForm(form: CharacterForm, existing: CharacterRecord | nu
   if (!form.name.trim()) return 'Give your character a name.';
   if (!form.greeting.trim()) return 'Write the first message your character says to open a scene.';
   if (!form.personality.trim()) return 'Describe their personality so they stay in character.';
+  if (form.alternateGreetings.length > MAX_ALTERNATE_OPENINGS) return `A character can have at most ${MAX_ALTERNATE_OPENINGS} other opening messages.`;
+  if (form.alternateGreetings.some((opening) => opening.length > LIMITS.greeting)) return 'An opening message is too long to be shown. Please shorten it.';
   const checks: Array<[string, string, number]> = [
     ['Name', form.name, LIMITS.name],
     ['Chat name', form.chatName, LIMITS.chatName],
@@ -196,7 +204,8 @@ export function buildSaveArgs(form: CharacterForm, existing: CharacterRecord | n
     p_rp_definition: text(existing, 'rp_definition'),
     p_system_definition: text(existing, 'system_definition'),
     p_system_character_definition: form.definition.trim(),
-    p_alternate_greetings: Array.isArray(existing?.alternate_greetings) ? existing?.alternate_greetings : [],
+    // The main opening is never repeated in the list, and the list is bounded.
+    p_alternate_greetings: cleanOpenings(form.greeting, form.alternateGreetings).slice(1, MAX_ALTERNATE_OPENINGS + 1),
     p_banned_words: form.avoid.trim(),
     p_suggested_persona_name: text(existing, 'suggested_persona_name'),
     p_voice_id: text(existing, 'voice_id'),
@@ -222,6 +231,7 @@ export function formFromRecord(row: CharacterRecord, displayName = ''): Characte
     avatarUrl: text(row, 'avatar_url'),
     tagline: text(row, 'short_description'),
     greeting: text(row, 'greeting'),
+    alternateGreetings: Array.isArray(row.alternate_greetings) ? (row.alternate_greetings as unknown[]).filter((item): item is string => typeof item === 'string' && item.trim() !== '') : [],
     scenario: text(row, 'scenario'),
     personality: text(row, 'personality'),
     definition: text(row, 'system_character_definition'),
