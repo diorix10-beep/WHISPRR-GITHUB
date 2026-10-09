@@ -166,6 +166,25 @@ older"** in the Guardian's Library. That is a **declaration, not a verification*
   adult content off). `ADULT_CONFIRMATION_LIVE` only controls whether the screens offer the confirmation.
 - Migration: `supabase/migrations/20261009060000_chimera_adult_self_attestation.sql`. Tests: `tests/adult-self-attestation.test.mjs`.
 
+## Lorebooks (roleplay only)
+
+`/lorebooks` lists a member's lorebooks and `/lorebooks/:id` edits one. A lorebook holds entries (name, keywords, text, *Always send*, *On*,
+*Match capitals exactly*, priority) and is linked to the member's own characters. No migration: the tables `lorebooks`, `lorebook_entries` and
+`lorebook_characters` already existed with their row-level security (the owner manages them, links need a character the member created).
+
+- **Private by default.** The page creates lorebooks with `visibility = 'private'` (the table's own default is `public`, so the page always sets it).
+  Existing lorebooks keep whatever visibility they have. There is no sharing or discovery of lorebooks yet.
+- **At reply time** (`api/ai-chat.ts`, `api/_lib/lorebook.ts`): the server reads, with the server key, the entries of lorebooks that are linked to the
+  character **and owned by the character's creator** (so it also works for people chatting with the character, who cannot read the private lorebook).
+  An entry is sent when one of its keywords appears in the last 6 messages, or when it is *Always send*. Chosen by priority (higher first), then the
+  creator's order. At most 8,000 characters of lorebook go with one reply and one entry is cut at 2,500 (the full text stays saved), so a big lorebook
+  cannot crowd out the character or the story. It is added to the prompt as `## Lorebook`, after the world and before the player. A failed read means
+  no lorebook, never a failed reply. It runs after the adult-content check, so a locked character never gets that far.
+- **Known limits.** Matching is plain keyword search (no regular expressions, no recursion between entries). Importing a card's `character_book` is not
+  built yet (the importer still lists it as left out). Like the rest of a character's definition, a lorebook can be coaxed out of the AI by someone who chats
+  with the character. A lorebook has no content rating: explicit entries linked to a General character are not detected (same gap as explicit text in a
+  General character).
+
 ## Model House (which AI writes the replies)
 
 `/models` lists the models CHIMERA offers and lets a member pick their own. The list lives in one file, `src/lib/chatModels.ts`
