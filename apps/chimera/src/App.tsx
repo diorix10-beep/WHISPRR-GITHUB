@@ -11,6 +11,7 @@ import ChatsPage from './pages/ChatsPage';
 import ConversationPage from './pages/ConversationPage';
 import CreateCharacterPage from './pages/CreateCharacterPage';
 import MyCharactersPage from './pages/MyCharactersPage';
+import ModelHousePage from './pages/ModelHousePage';
 import PersonasPage from './pages/PersonasPage';
 import PersonaEditorPage from './pages/PersonaEditorPage';
 import LibraryPage from './pages/LibraryPage';
@@ -63,6 +64,7 @@ export default function App() {
             <Route path="/create" element={<CreateCharacterPage />} />
             <Route path="/create/:id" element={<CreateCharacterPage />} />
             <Route path="/my-characters" element={<MyCharactersPage />} />
+            <Route path="/models" element={<ModelHousePage />} />
             <Route path="/personas" element={<PersonasPage />} />
             <Route path="/personas/new" element={<PersonaEditorPage />} />
             <Route path="/personas/:id" element={<PersonaEditorPage />} />
