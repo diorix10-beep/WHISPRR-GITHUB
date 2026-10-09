@@ -20,6 +20,7 @@ import {
   entryRow,
   formsFromImport,
   insertEntries,
+  loadEntryRows,
   lorebookRow,
   parseKeywords,
   themeOf,
@@ -81,11 +82,16 @@ export default function LorebookEditorPage() {
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortKey>('priority');
   const [shown, setShown] = useState(PAGE);
+  const [justAdded, setJustAdded] = useState<string | null>(null);
 
-  const loadEntries = useCallback(async () => {
+  // After an import: adds the new rows and leaves every entry already on the page exactly as it is, unsaved edits included.
+  const addImportedEntries = useCallback(async () => {
     if (!id) return;
-    const { data } = await supabase.from('lorebook_entries').select('*').eq('lorebook_id', id).order('insertion_order', { ascending: true }).order('created_at', { ascending: true });
-    setEntries(((data ?? []) as Array<Record<string, unknown>>).map(toState));
+    const rows = await loadEntryRows(id);
+    setEntries((current) => {
+      const known = new Set(current.map((entry) => entry.form.id).filter(Boolean));
+      return [...current, ...rows.filter((row) => !known.has(row.id as string)).map(toState)];
+    });
   }, [id]);
 
   useEffect(() => {
@@ -151,9 +157,21 @@ export default function LorebookEditorPage() {
 
   const addEntry = () => {
     setSearch('');
-    setEntries((all) => [...all, { key: nextKey(), form: { ...EMPTY_ENTRY }, saved: '', busy: false, problem: null, startOpen: true }]);
-    setShown((n) => n + 1);
+    const key = nextKey();
+    setEntries((all) => [...all, { key, form: { ...EMPTY_ENTRY }, saved: '', busy: false, problem: null, startOpen: true }]);
+    setJustAdded(key);
   };
+
+  // The new entry may sit far down the list: bring it into view and put the cursor in its name.
+  useEffect(() => {
+    if (!justAdded) return;
+    const field = document.getElementById(`${justAdded}-title`);
+    if (field) {
+      field.scrollIntoView?.({ block: 'center' });
+      field.focus({ preventScroll: true });
+      setJustAdded(null);
+    }
+  }, [justAdded, entries]);
 
   const saveEntry = async (state: EntryState) => {
     if (!id) return;
@@ -252,7 +270,8 @@ export default function LorebookEditorPage() {
     else if (sort === 'name') items.sort((a, b) => displayName(a.state.form, a.index).localeCompare(displayName(b.state.form, b.index)));
     return items;
   }, [entries, search, sort]);
-  const visible = list.slice(0, shown);
+  // Entries written on this page (startOpen) stay listed whatever the page limit is, so adding one never seems to do nothing.
+  const visible = list.filter(({ state }, position) => position < shown || state.startOpen);
 
   if (loading) return <p className="py-24 text-center text-chimera-mute">Opening the lorebook…</p>;
   if (notFound) {
@@ -316,7 +335,7 @@ export default function LorebookEditorPage() {
             confirmLabel={(read) => `Add ${read.entries.length.toLocaleString()} ${read.entries.length === 1 ? 'entry' : 'entries'} to this lorebook`}
             onConfirm={async (read) => {
               await insertEntries(id!, formsFromImport(read.entries), entries.length);
-              await loadEntries();
+              await addImportedEntries();
               showToast(`${read.entries.length.toLocaleString()} ${read.entries.length === 1 ? 'entry' : 'entries'} added.`, 'success');
             }}
           />

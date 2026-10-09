@@ -119,6 +119,7 @@ export function parseLorebookJson(raw: string): ImportedLorebook {
   let nameless = 0;
   let guessed = 0;
   let notObjects = 0;
+  let selective = 0;
   for (const raw of list.slice(0, MAX_IMPORTED_ENTRIES)) {
     if (!isObj(raw)) {
       notObjects += 1;
@@ -142,7 +143,13 @@ export function parseLorebookJson(raw: string): ImportedLorebook {
     }
     if (!title) title = keywords[0] ?? 'Entry';
     const disable = bool(pick(raw, ['disable', 'disabled']));
-    const enabled = bool(pick(raw, ['enabled', 'active', 'is_active', 'isActive'])) ?? (disable === null ? true : !disable);
+    let enabled = bool(pick(raw, ['enabled', 'active', 'is_active', 'isActive'])) ?? (disable === null ? true : !disable);
+    // "Selective" entries need a second keyword too. Lorebooks here match on the main keywords alone, so such an entry would
+    // fire more often than its author meant: it is kept, but switched off until the creator has looked at it.
+    if (!isConstant && bool(raw.selective) === true && keywordList(pick(raw, ['secondary_keys', 'keysecondary', 'secondaryKeys'])).length > 0) {
+      selective += 1;
+      enabled = false;
+    }
     entries.push({
       title,
       keywords,
@@ -159,6 +166,7 @@ export function parseLorebookJson(raw: string): ImportedLorebook {
   if (nameless > 0) notes.push(`${nameless.toLocaleString()} ${nameless === 1 ? 'entry' : 'entries'} with no keyword and no name ${nameless === 1 ? 'was' : 'were'} left out.`);
   if (notObjects > 0) notes.push(`${notObjects.toLocaleString()} ${notObjects === 1 ? 'item' : 'items'} that ${notObjects === 1 ? 'is' : 'are'} not entries ${notObjects === 1 ? 'was' : 'were'} left out.`);
   if (guessed > 0) notes.push(`${guessed.toLocaleString()} ${guessed === 1 ? 'entry had' : 'entries had'} no keyword: its name was used. Check ${guessed === 1 ? 'it' : 'them'}.`);
+  if (selective > 0) notes.push(`${selective.toLocaleString()} ${selective === 1 ? 'entry needs' : 'entries need'} a second keyword in the original, which lorebooks here do not support. ${selective === 1 ? 'It was' : 'They were'} added switched off: check ${selective === 1 ? 'its' : 'their'} keywords, then turn ${selective === 1 ? 'it' : 'them'} on.`);
   if (entries.length === 0) throw new LorebookJsonError('None of the entries could be used: they have no text, or no keyword and no name.');
 
   return {
