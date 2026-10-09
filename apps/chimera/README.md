@@ -9,7 +9,25 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
 - Ratings on every character. **Mature and NSFW are hidden unless the member is a verified adult who opted in**
   (`supabase/migrations/20261006120000_chimera_age_verification_gate.sql`, `useAdultContentAccess`).
 - Guardian's Library: shows age status and the adult toggle. **Age verification is not connected to a provider yet**, so nobody is verified.
-- Terms and Privacy are drafts.
+- Terms and Privacy are **drafts** (see "Legal pages" below).
+
+## Legal pages (`/terms`, `/privacy`)
+
+- **Draft, for legal review.** Both pages show a "DRAFT, NOT YET IN FORCE" notice, say they are not legal advice and have not been
+  reviewed by a lawyer, and mark every missing detail (**TODO**) and every drafted choice that needs approval (**To confirm**).
+  Do not remove the notice until a lawyer has reviewed the text and the markers are gone.
+- **Where the text lives:** `src/legal/terms.ts` and `src/legal/privacy.ts` are plain data (sections of paragraphs, lists, notes and
+  cards), rendered by `src/components/legal/LegalDocumentView.tsx`. Inline markup: `**bold**`, `[text](/path)`, `{{TODO:KEY}}`,
+  `{{CONFIRM:reason}}`.
+- **Missing facts** (legal entity, contacts, governing law, payment provider, retention periods, creator payout rules, and so on) are
+  registered once in `src/legal/placeholders.ts`. Set a key's `value` and every place that uses it is filled in.
+  `docs/legal/OPEN_QUESTIONS.md` lists every open question, where it is used, and what the product does that the text depends on;
+  regenerate it with `npm run legal:questions`.
+- **Only what the code establishes is stated as fact.** `tests/legal-documents.test.mjs` checks that every topic requested is covered,
+  that no placeholder is invented, and that the text still matches the code: a new use of cookies or browser storage, a tracking library,
+  or a new external service called by the server fails the test until the Privacy Policy is updated.
+- **Not done on purpose:** `CURRENT_LEGAL_VERSION` (the version saved at sign-up) was not changed, because a draft must not be recorded as
+  accepted. Bump it when the final text is published. There is no mechanism yet to make existing members accept a new version.
 
 ## Roleplay (step 2)
 

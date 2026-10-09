@@ -21,7 +21,8 @@ import WorkspacePage from './pages/WorkspacePage';
 import NewStoryPage from './pages/NewStoryPage';
 import StoryEditPage from './pages/StoryEditPage';
 import ChapterEditorPage from './pages/ChapterEditorPage';
-import LegalPlaceholderPage from './pages/LegalPlaceholderPage';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
 
 // SHARDS and VELLUM keep the screens they had before.
 const ShardsPage = lazy(() => import('./pages/ShardsPage'));
@@ -53,8 +54,8 @@ export default function App() {
           <Route path="/characters/:id" element={<CharacterPage />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/guardian" element={<GuardianPage />} />
-          <Route path="/terms" element={<LegalPlaceholderPage title="Terms of Service" />} />
-          <Route path="/privacy" element={<LegalPlaceholderPage title="Privacy Policy" />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
 
           <Route element={<ProtectedRoute />}>
             <Route path="/shards" element={<ShardsPage />} />
