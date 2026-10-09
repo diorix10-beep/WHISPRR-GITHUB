@@ -13,6 +13,8 @@ import CreateCharacterPage from './pages/CreateCharacterPage';
 import MyCharactersPage from './pages/MyCharactersPage';
 import ModelHousePage from './pages/ModelHousePage';
 import PersonasPage from './pages/PersonasPage';
+import LorebooksPage from './pages/LorebooksPage';
+import LorebookEditorPage from './pages/LorebookEditorPage';
 import PersonaEditorPage from './pages/PersonaEditorPage';
 import LibraryPage from './pages/LibraryPage';
 import StoryPage from './pages/StoryPage';
@@ -69,6 +71,8 @@ export default function App() {
             <Route path="/personas" element={<PersonasPage />} />
             <Route path="/personas/new" element={<PersonaEditorPage />} />
             <Route path="/personas/:id" element={<PersonaEditorPage />} />
+            <Route path="/lorebooks" element={<LorebooksPage />} />
+            <Route path="/lorebooks/:id" element={<LorebookEditorPage />} />
             {/* Reading stories needs a sign-in for now: the database only lets signed-in members read them. */}
             <Route path="/library" element={<LibraryPage />} />
             <Route path="/stories/:id" element={<StoryPage />} />

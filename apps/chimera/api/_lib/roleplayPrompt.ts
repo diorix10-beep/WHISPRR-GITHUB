@@ -61,6 +61,8 @@ export interface SceneSettings {
   pinned?: PinnedLine[];
   /** Facts the player approved as long-term memory. */
   memories?: string[];
+  /** The lorebook block for this reply (see lorebook.ts): only the entries that matter right now. */
+  lorebook?: string | null;
 }
 
 export const MAX_BANNED_WORDS_CHARACTERS = 500;
@@ -190,6 +192,8 @@ export function buildSystemPrompt(
     world.push('', '## World Directives', character.system_definition);
   }
   sections.push(world.join('\n'));
+
+  if (settings.lorebook?.trim()) sections.push(settings.lorebook.trim());
 
   const partner: string[] = ['## The Player'];
   if (persona) {
