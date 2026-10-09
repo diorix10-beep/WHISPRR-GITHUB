@@ -5,6 +5,14 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 
+/**
+ * Age verification is not connected to a provider yet, so the Guardian's Library is shown as
+ * "coming soon". Nothing is relaxed by this: Mature and Adult content stays locked by the database
+ * and the server, which only open for an account that has been verified. Set this to true when
+ * verification goes live to show the real settings below.
+ */
+const AGE_VERIFICATION_LIVE: boolean = false;
+
 interface Preferences {
   age_verification_status: string | null;
   adult_content_enabled: boolean | null;
@@ -13,13 +21,13 @@ interface Preferences {
 export default function GuardianPage() {
   const { user } = useAuth();
   const { showToast } = useToast();
-  const [loading, setLoading] = useState(Boolean(user));
+  const [loading, setLoading] = useState(Boolean(user) && AGE_VERIFICATION_LIVE);
   const [saving, setSaving] = useState(false);
   const [verified, setVerified] = useState(false);
   const [adultEnabled, setAdultEnabled] = useState(false);
 
   useEffect(() => {
-    if (!user) {
+    if (!user || !AGE_VERIFICATION_LIVE) {
       setLoading(false);
       return;
     }
@@ -61,6 +69,25 @@ export default function GuardianPage() {
     }
     showToast(adultEnabled ? 'Mature and Adult stories are now shown to you.' : 'Mature and Adult stories are hidden.', 'success');
   };
+
+  if (!AGE_VERIFICATION_LIVE) {
+    return (
+      <div className="mx-auto max-w-3xl px-5 pb-10 pt-10 sm:px-8">
+        <p className="mb-3 text-center text-sm font-bold tracking-[0.26em] text-chimera-gold">THE GUARDIAN&apos;S LIBRARY</p>
+        <h1 className="text-center font-serif text-5xl font-semibold leading-[1.05] sm:text-6xl">Coming soon.</h1>
+        <section className="mt-9 rounded-[22px] border border-chimera-gold/20 bg-chimera-panel px-7 py-8 text-center">
+          <ShieldCheck className="mx-auto text-chimera-gold" size={34} aria-hidden="true" />
+          <p className="mx-auto mt-4 max-w-xl text-lg text-violet-100/90">
+            This is where you will verify your age and choose whether Mature and Adult stories are shown to you.
+          </p>
+          <p className="mx-auto mt-3 max-w-xl text-[15px] text-chimera-mute">
+            Until it opens, CHIMERA shows General content only. Nothing about your account needs to change.
+          </p>
+          <Link to="/discover" className="mt-6 inline-flex min-h-[48px] items-center rounded-full bg-chimera-gold px-7 font-bold text-[#1a1208] hover:brightness-110">Back to Discover</Link>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-5 pb-10 pt-10 sm:px-8">

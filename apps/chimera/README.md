@@ -110,6 +110,13 @@ Migration `20261009030000_chimera_auto_memory.sql` adds two columns to `chimera_
 functions above. Apply it **before** the deploy: the screen reads the settings with `select *`, so it still works without the columns,
 but suggestions do nothing until they exist.
 
+## Guardian's Library: "coming soon"
+
+Age verification has no provider yet, so the Guardian's Library is shown as **Coming soon** (a "Soon" tag in the menu and footer, and a
+friendly page instead of controls that cannot work). This relaxes nothing: Mature and Adult content stay locked by the database and the
+server, which only open for a verified account. When verification goes live, set `AGE_VERIFICATION_LIVE` to `true` in
+`src/pages/GuardianPage.tsx` to bring back the real settings, and remove the `soon: true` flags in `AppLayout.tsx`.
+
 ## Model House (which AI writes the replies)
 
 `/models` lists the models CHIMERA offers and lets a member pick their own. The list lives in one file, `src/lib/chatModels.ts`

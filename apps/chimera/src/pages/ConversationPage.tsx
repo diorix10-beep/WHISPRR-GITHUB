@@ -853,7 +853,7 @@ export default function ConversationPage() {
 
       {adultLocked && (
         <p role="note" className="mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-          This character is rated Mature or NSFW. You can read this scene, but replies are paused until your age is verified and adult content is turned on in the <Link to="/guardian" className="font-bold underline">Guardian&apos;s Library</Link>.
+          This character is rated Mature or NSFW. You can read this scene, but replies are paused until age verification opens. It is <Link to="/guardian" className="font-bold underline">coming soon</Link>.
         </p>
       )}
 

@@ -7,19 +7,25 @@ import { ShardsHubModal } from '../common/ShardsHubModal';
 
 const formatNumber = (value: number) => new Intl.NumberFormat().format(value);
 
-const NAV: Record<CreativeMode, { to: string; label: string }[]> = {
+type NavLinkItem = { to: string; label: string; soon?: boolean };
+
+const SoonTag = () => (
+  <span className="ml-2 rounded-full border border-chimera-mute/40 px-2 py-0.5 align-middle text-[10px] font-bold uppercase tracking-wider text-chimera-mute">Soon</span>
+);
+
+const NAV: Record<CreativeMode, NavLinkItem[]> = {
   roleplay: [
     { to: '/discover', label: 'Discover' },
     { to: '/chats', label: 'Chats' },
     { to: '/create', label: 'Create' },
     { to: '/personas', label: 'Personas' },
     { to: '/models', label: 'Model House' },
-    { to: '/guardian', label: "Guardian's Library" },
+    { to: '/guardian', label: "Guardian's Library", soon: true },
   ],
   storytelling: [
     { to: '/library', label: 'Library' },
     { to: '/workspace', label: "Writer's Desk" },
-    { to: '/guardian', label: "Guardian's Library" },
+    { to: '/guardian', label: "Guardian's Library", soon: true },
   ],
 };
 
@@ -74,11 +80,12 @@ export default function AppLayout() {
                 }
               >
                 {link.label}
+                {link.soon && <SoonTag />}
               </NavLink>
             ))}
           </nav>
 
-          <div className="ml-auto flex items-center gap-3 md:ml-0">
+          <div className="ml-auto flex items-center gap-3">
             <div role="group" aria-label="Mode" className={`flex gap-1 rounded-full border p-1 text-sm font-bold ${isStory ? 'border-chimera-blue/50' : 'border-chimera-gold/40'}`}>
               <button
                 type="button"
@@ -130,7 +137,7 @@ export default function AppLayout() {
           <nav id="mobile-menu" aria-label="Mobile" className="border-t border-chimera-gold/15 px-5 py-4 md:hidden">
             <ul className="flex flex-col gap-1">
               {links.map((link) => (
-                <li key={link.to}><NavLink to={link.to} className="block rounded-xl px-3 py-3 text-base font-medium hover:bg-white/5">{link.label}</NavLink></li>
+                <li key={link.to}><NavLink to={link.to} className="block rounded-xl px-3 py-3 text-base font-medium hover:bg-white/5">{link.label}{link.soon && <SoonTag />}</NavLink></li>
               ))}
               <li><NavLink to={isStory ? '/vellum' : '/shards'} className="block rounded-xl px-3 py-3 text-base font-medium hover:bg-white/5">{reserveLabel}</NavLink></li>
               <li>{user ? <button type="button" onClick={() => void signOut()} className="block w-full rounded-xl px-3 py-3 text-left text-base font-medium hover:bg-white/5">Sign out</button> : <NavLink to="/auth" className="block rounded-xl px-3 py-3 text-base font-medium hover:bg-white/5">Sign in</NavLink>}</li>
@@ -147,7 +154,7 @@ export default function AppLayout() {
         <div className="mx-auto flex max-w-7xl flex-wrap gap-x-8 gap-y-2">
           <Link to="/terms" className="hover:text-chimera-gold">Terms</Link>
           <Link to="/privacy" className="hover:text-chimera-gold">Privacy</Link>
-          <Link to="/guardian" className="hover:text-chimera-gold">Guardian&apos;s Library</Link>
+          <Link to="/guardian" className="hover:text-chimera-gold">Guardian&apos;s Library <span className="text-xs">(soon)</span></Link>
           <span className="sm:ml-auto">CHIMERA is in early development.</span>
         </div>
       </footer>
