@@ -6,9 +6,9 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
 ## What exists now (step 1)
 
 - Home, Discover (search and categories), character page, sign in / sign up.
-- Ratings on every character. **Mature and NSFW are hidden unless the member is a verified adult who opted in**
+- Ratings on every character. **Mature and NSFW are hidden unless the member confirmed they are 18+ (or is verified) and opted in**
   (`supabase/migrations/20261006120000_chimera_age_verification_gate.sql`, `useAdultContentAccess`).
-- Guardian's Library: shows age status and the adult toggle. **Age verification is not connected to a provider yet**, so nobody is verified.
+- Guardian's Library: shows age status, the "I am 18 or older" confirmation and the adult toggle. **Age verification is not connected to a provider yet**, so nobody is *verified*; a confirmation is only a declaration.
 - Terms and Privacy are **drafts** (see "Legal pages" below).
 
 ## Legal pages (`/terms`, `/privacy`)
@@ -66,13 +66,12 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
 - **Picture.** JPG, PNG or WebP up to 5 MB, uploaded to the existing public `profile-photos` bucket under the member's own folder
   (`<user id>/character-avatars/…`), so no migration is needed. It is optional. **There is no image moderation yet**, and the bucket is
   public to anyone with the address: acceptable while public publishing is founder-only, to be revisited before it opens.
-- Content rating shows General only; Mature is greyed out as "coming soon" while age verification is not open. A character that already has an adult rating shows that rating and keeps it on save (the form cannot give or change one).
-- New characters are **SFW only** until age verification exists. Visibility: **private** (default), **unlisted** (link only) or **public**.
+- Content rating: General, or Mature for members who confirmed they are 18+ and have adult content on (otherwise Mature is shown but locked, with a link to the Guardian's Library). An existing adult rating is kept on save; General can always be chosen.
+- New characters are **General** unless Mature is chosen. Visibility: **private** (default), **unlisted** (link only) or **public**.
 - **Public publishing is founder-only during the beta** (`profiles.role = 'founder'`). It is enforced in the database by
   `supabase/migrations/20261009000000_chimera_character_publication_guard.sql`, so a member cannot bypass the form with a direct
   update. **Apply that migration before relying on it.** Until then only the form (not the database) blocks members from choosing Public.
-- Known gap for review: `create_ai_character` / `save_ai_character_soul` do not check that a Mature or NSFW rating comes from a verified adult.
-  The form never offers it, but a direct call could set it.
+- A trigger on `ai_characters` now refuses a new Mature or NSFW rating from a member who is not eligible. Still a known gap: explicit text under a General rating is not detected at creation.
 
 ## Personas (who you are in a scene)
 
@@ -146,13 +145,23 @@ Migration `20261009030000_chimera_auto_memory.sql` adds two columns to `chimera_
 functions above. Apply it **before** the deploy: the screen reads the settings with `select *`, so it still works without the columns,
 but suggestions do nothing until they exist.
 
-## Guardian's Library: "coming soon"
+## Guardian's Library: age settings (temporary confirmation, real check later)
 
-Age verification has no provider yet, so the Guardian's Library is shown as **Coming soon** (a "Soon" tag in the menu and footer, and a
-friendly page instead of controls that cannot work). This relaxes nothing: Mature and Adult content stay locked by the database and the
-server, which only open for a verified account. When verification goes live, set `AGE_VERIFICATION_LIVE` to `true` in
-`src/lib/ageVerification.ts`: the real settings come back and every "coming soon" label (menu tag, footer, Discover, locked scenes)
-reverts with it.
+There is no age-check provider yet (`AGE_VERIFICATION_LIVE = false`; Yoti is planned). Until there is, a member can say **"I am 18 years old or
+older"** in the Guardian's Library. That is a **declaration, not a verification**: it is stored as `age_verification_status =
+'self_attested_adult'` (with `adult_attested_at` and `adult_attestation_version`), never as `verified_adult`, and the provider columns
+(`age_verified_at`, `age_verification_provider`, `age_verification_reference`) stay empty. The page labels it "18+ confirmed by you".
+
+- **Who can see Mature / NSFW:** only an account whose status is `verified_adult` or `self_attested_adult` AND that switched adult content on
+  (the opt-in is a separate step). Everyone else sees General only. The database enforces it (RLS, `get_my_adult_content_access`, the server gate).
+- **Writing the status:** members cannot write any age column (guard trigger). Only `attest_my_adult_status()` / `withdraw_my_adult_attestation()`
+  (as the signed-in member) and `set_age_verification()` (service role, for Yoti) change it. A verified account is never downgraded by the member.
+- **Giving a character a Mature rating** needs the same eligibility plus the opt-in (trigger on `ai_characters`). Keeping an existing rating,
+  or moving to General, is always allowed. The creator form offers General and Mature.
+- **When Yoti goes live:** change `chimera_private.adult_status_allows` to accept only `verified_adult` (one function decides every rule), set
+  `AGE_VERIFICATION_LIVE = true`, and decide whether to reset `self_attested_adult` accounts to `unverified` (the guard then switches their
+  adult content off). `ADULT_CONFIRMATION_LIVE` only controls whether the screens offer the confirmation.
+- Migration: `supabase/migrations/20261009060000_chimera_adult_self_attestation.sql`. Tests: `tests/adult-self-attestation.test.mjs`.
 
 ## Model House (which AI writes the replies)
 

@@ -81,6 +81,7 @@ async function database() {
   await db.exec(await readFile(new URL('supabase/migrations/20261008104038_chimera_character_adult_authorization.sql', root), 'utf8'));
   await db.exec(await readFile(new URL('supabase/migrations/20261008110354_chimera_service_adult_recheck.sql', root), 'utf8'));
   await db.exec(await readFile(new URL('supabase/migrations/20261008113846_chimera_lock_room_adult_preferences.sql', root), 'utf8'));
+  await db.exec(await readFile(new URL('supabase/migrations/20261009060000_chimera_adult_self_attestation.sql', root), 'utf8'));
   await db.exec(`
     INSERT INTO profiles VALUES ('${bot}','Bot','ai_character');
     INSERT INTO ai_characters VALUES
