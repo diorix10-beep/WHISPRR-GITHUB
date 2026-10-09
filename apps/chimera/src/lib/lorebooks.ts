@@ -14,9 +14,16 @@ export const LOREBOOK_LIMITS = {
 } as const;
 
 /** What the chat sends of one entry. The full text stays saved, but only this much is sent with a reply. */
-export const ENTRY_SENT_CHARACTERS = 2_500;
-/** What the chat sends of a whole lorebook with one reply. */
-export const LOREBOOK_SENT_CHARACTERS = 8_000;
+export const ENTRY_SENT_CHARACTERS = 20_000;
+/** What the chat sends of a whole lorebook with one reply unless the lorebook asks for another size, and the range it can ask for. */
+export const DEFAULT_REPLY_BUDGET = 8_000;
+export const MIN_REPLY_BUDGET = 1_000;
+export const MAX_REPLY_BUDGET = 40_000;
+
+/** A reply size from 1,000 to 40,000 characters, or null when the value is not one. */
+export function validBudget(value: unknown): number | null {
+  return typeof value === 'number' && Number.isInteger(value) && value >= MIN_REPLY_BUDGET && value <= MAX_REPLY_BUDGET ? value : null;
+}
 
 /** The colours a lorebook can have in the member's list. The ids are what the database accepts. */
 export const THEMES = [
@@ -59,6 +66,8 @@ export interface LorebookSummary {
   theme: ThemeId;
   /** How many of the latest messages this lorebook checks. */
   scan_depth: number;
+  /** The most characters of this lorebook sent with one reply. */
+  reply_budget: number;
   /** How many of the member's characters use it. */
   characters: number;
 }
@@ -68,6 +77,7 @@ export interface LorebookInput {
   description: string;
   theme: ThemeId;
   scanDepth: number;
+  replyBudget: number;
 }
 
 export interface EntryForm {
@@ -178,6 +188,7 @@ export async function loadMyLorebooks(userId: string): Promise<LorebookSummary[]
     updated_at: typeof row.updated_at === 'string' ? row.updated_at : '',
     theme: themeOf(row.theme).id,
     scan_depth: validDepth(row.scan_depth) ?? DEFAULT_SCAN_DEPTH,
+    reply_budget: validBudget(row.reply_budget) ?? DEFAULT_REPLY_BUDGET,
     characters: counts.get(String(row.id)) ?? 0,
   }));
 }
@@ -189,6 +200,7 @@ export function lorebookRow(input: Partial<LorebookInput>) {
     description: (input.description ?? '').trim().slice(0, LOREBOOK_LIMITS.description),
     theme: themeOf(input.theme).id,
     scan_depth: validDepth(input.scanDepth) ?? DEFAULT_SCAN_DEPTH,
+    reply_budget: validBudget(input.replyBudget) ?? DEFAULT_REPLY_BUDGET,
   };
 }
 

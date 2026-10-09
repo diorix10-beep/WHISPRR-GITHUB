@@ -7,10 +7,13 @@
  * Nothing here talks to the database or the network.
  */
 
-/** Characters of lorebook text sent with one reply, in total. */
+/** Characters of lorebook text sent with one reply, in total, unless the lorebook asks for another number. */
 export const LOREBOOK_BUDGET_CHARACTERS = 8_000;
-/** One entry is cut at this length when it is sent (the full text stays saved). */
-export const LOREBOOK_ENTRY_MAX_CHARACTERS = 2_500;
+/** The least and the most a lorebook can ask for. The most keeps the character, the memory and the chat inside the model's reach. */
+export const LOREBOOK_BUDGET_MIN_CHARACTERS = 1_000;
+export const LOREBOOK_BUDGET_MAX_CHARACTERS = 40_000;
+/** One entry is cut at this length when it is sent (the full text stays saved), or at the reply size if that is smaller. */
+export const LOREBOOK_ENTRY_MAX_CHARACTERS = 20_000;
 /** How many of the latest messages are searched for keywords when neither the entry nor its lorebook says. */
 export const LOREBOOK_SCAN_MESSAGES = 3;
 /** The most messages an entry or a lorebook can ask to search. */
@@ -42,6 +45,19 @@ export interface LorebookEntry {
 /** A depth the member can ask for, or null when it is missing or not a whole number from 1 to 10. */
 export function validDepth(value: unknown): number | null {
   return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= LOREBOOK_MAX_SCAN_MESSAGES ? value : null;
+}
+
+/** A reply size the member can ask for, or null when it is missing or outside the allowed range. */
+export function validBudget(value: unknown): number | null {
+  return typeof value === 'number' && Number.isInteger(value) && value >= LOREBOOK_BUDGET_MIN_CHARACTERS && value <= LOREBOOK_BUDGET_MAX_CHARACTERS ? value : null;
+}
+
+/** The text of an entry that would really be sent: cut at the entry limit, and never more than the reply size leaves room for. */
+function sentText(entry: LorebookEntry, budget: number): string {
+  // One character is kept for the "…" that marks a cut, so the title and the text together never go over the reply size.
+  const room = Math.max(0, Math.min(LOREBOOK_ENTRY_MAX_CHARACTERS, budget - (entry.title ?? '').trim().length - 1));
+  const content = (entry.content ?? '').trim();
+  return content.length > room ? `${content.slice(0, room)}…` : content;
 }
 
 function keywordsOf(entry: LorebookEntry): string[] {
@@ -101,7 +117,7 @@ export function selectLorebookEntries(
   const picked: LorebookEntry[] = [];
   let used = 0;
   for (const entry of candidates) {
-    const size = Math.min((entry.content ?? '').trim().length, LOREBOOK_ENTRY_MAX_CHARACTERS) + (entry.title ?? '').trim().length;
+    const size = sentText(entry, budget).length + (entry.title ?? '').trim().length;
     if (used + size > budget) continue;
     picked.push(entry);
     used += size;
@@ -109,12 +125,12 @@ export function selectLorebookEntries(
   return picked;
 }
 
-/** The block added to the character's prompt, or null when nothing applies. */
-export function lorebookBlock(entries: LorebookEntry[]): string | null {
+/** The block added to the character's prompt, or null when nothing applies. `budget` is the reply size used to choose the entries. */
+export function lorebookBlock(entries: LorebookEntry[], budget: number = LOREBOOK_BUDGET_CHARACTERS): string | null {
   if (entries.length === 0) return null;
+  const size = budget;
   const lines = entries.map((entry) => {
-    const content = (entry.content ?? '').trim();
-    const text = content.length > LOREBOOK_ENTRY_MAX_CHARACTERS ? `${content.slice(0, LOREBOOK_ENTRY_MAX_CHARACTERS)}…` : content;
+    const text = sentText(entry, size);
     const title = (entry.title ?? '').trim();
     return title ? `### ${title}\n${text}` : text;
   });

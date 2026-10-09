@@ -5,16 +5,18 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { CharacterAvatar } from '../components/characters/CharacterAvatar';
+import { BudgetSlider } from '../components/lorebooks/BudgetSlider';
 import { DepthStepper } from '../components/lorebooks/DepthStepper';
 import { LorebookJsonImport } from '../components/lorebooks/LorebookJsonImport';
 import { ThemePicker } from '../components/lorebooks/ThemePicker';
 import { lorebookToJson } from '../lib/lorebookJson';
 import {
+  DEFAULT_REPLY_BUDGET,
   DEFAULT_SCAN_DEPTH,
   EMPTY_ENTRY,
   ENTRY_SENT_CHARACTERS,
   LOREBOOK_LIMITS,
-  LOREBOOK_SENT_CHARACTERS,
+  MAX_REPLY_BUDGET,
   MAX_SCAN_DEPTH,
   entryFromRow,
   entryRow,
@@ -73,6 +75,7 @@ export default function LorebookEditorPage() {
   const [description, setDescription] = useState('');
   const [theme, setTheme] = useState<ThemeId>('purple');
   const [scanDepth, setScanDepth] = useState(DEFAULT_SCAN_DEPTH);
+  const [replyBudget, setReplyBudget] = useState(DEFAULT_REPLY_BUDGET);
   const [savedHead, setSavedHead] = useState('');
   const [savingHead, setSavingHead] = useState(false);
   const [entries, setEntries] = useState<EntryState[]>([]);
@@ -113,12 +116,13 @@ export default function LorebookEditorPage() {
       ]);
       if (!active) return;
       const head = book as Record<string, unknown>;
-      const row = lorebookRow({ title: String(head.title ?? ''), description: String(head.description ?? ''), theme: head.theme as ThemeId, scanDepth: Number(head.scan_depth) });
+      const row = lorebookRow({ title: String(head.title ?? ''), description: String(head.description ?? ''), theme: head.theme as ThemeId, scanDepth: Number(head.scan_depth), replyBudget: Number(head.reply_budget) });
       setTitle(row.title);
       setDescription(row.description);
       setTheme(row.theme);
       setScanDepth(row.scan_depth);
-      setSavedHead(JSON.stringify([row.title, row.description, row.theme, row.scan_depth]));
+      setReplyBudget(row.reply_budget);
+      setSavedHead(JSON.stringify([row.title, row.description, row.theme, row.scan_depth, row.reply_budget]));
       setEntries(((entryResult.data ?? []) as Array<Record<string, unknown>>).map(toState));
       setCharacters((characterResult.data ?? []) as CharacterOption[]);
       setLinked(new Set(((linkResult.data ?? []) as Array<{ character_id: string }>).map((link) => link.character_id)));
@@ -134,19 +138,19 @@ export default function LorebookEditorPage() {
     };
   }, [user, id]);
 
-  const headDirty = useMemo(() => JSON.stringify([title, description, theme, scanDepth]) !== savedHead, [title, description, theme, scanDepth, savedHead]);
+  const headDirty = useMemo(() => JSON.stringify([title, description, theme, scanDepth, replyBudget]) !== savedHead, [title, description, theme, scanDepth, replyBudget, savedHead]);
 
   const saveHead = async () => {
     if (!user || !id || savingHead) return;
     setSavingHead(true);
-    const row = lorebookRow({ title, description, theme, scanDepth });
+    const row = lorebookRow({ title, description, theme, scanDepth, replyBudget });
     const { error } = await supabase.from('lorebooks').update(row).eq('id', id).eq('user_id', user.id);
     setSavingHead(false);
     if (error) {
       showToast('We could not save the lorebook.', 'error');
       return;
     }
-    setSavedHead(JSON.stringify([title, description, theme, scanDepth]));
+    setSavedHead(JSON.stringify([title, description, theme, scanDepth, replyBudget]));
     showToast('Lorebook saved.', 'success');
   };
 
@@ -239,7 +243,7 @@ export default function LorebookEditorPage() {
   const exportJson = () => {
     const ready = entries.filter((entry) => entry.form.content.trim());
     const data = lorebookToJson(
-      { name: title.trim() || 'Lorebook', description: description.trim(), scanDepth },
+      { name: title.trim() || 'Lorebook', description: description.trim(), scanDepth, replyBudget },
       ready.map((entry, index) => ({
         title: displayName(entry.form, index),
         keywords: parseKeywords(entry.form.keywords),
@@ -285,6 +289,8 @@ export default function LorebookEditorPage() {
   }
 
   const accent = themeOf(theme);
+  // What the entries marked "Always send" use of every reply, each cut at the size it would really be sent.
+  const alwaysSent = entries.reduce((total, { form }) => (form.isConstant && form.enabled ? total + Math.min(form.content.trim().length, ENTRY_SENT_CHARACTERS, replyBudget) : total), 0);
 
   return (
     <div className="mx-auto max-w-3xl px-5 pb-12 pt-8 sm:px-8">
@@ -306,6 +312,16 @@ export default function LorebookEditorPage() {
           <p className="text-sm text-chimera-mute">How many of the latest chat messages this lorebook checks for keywords, newest first (1 to {MAX_SCAN_DEPTH}). An entry can ask for its own number.</p>
           <DepthStepper id="lb-depth" value={scanDepth} onChange={setScanDepth} />
         </div>
+        <div className="mt-4">
+          <p id="lb-budget" className="font-bold">Size per reply <span className="font-normal text-chimera-mute">(characters)</span></p>
+          <p className="text-sm text-chimera-mute">The most text from this lorebook sent with one reply (up to {MAX_REPLY_BUDGET.toLocaleString()}). More lets bigger entries through, but every reply then costs more and leaves less room for the chat. About 4 characters make 1 token.</p>
+          <BudgetSlider id="lb-budget" value={replyBudget} onChange={setReplyBudget} />
+          {alwaysSent > 0 && (
+            <p className={`mt-1 text-sm ${alwaysSent > replyBudget ? 'text-amber-200' : 'text-chimera-mute'}`}>
+              Entries marked &quot;Always send&quot; already take about {alwaysSent.toLocaleString()} characters{alwaysSent > replyBudget ? ': more than this size, so some of them will be left out' : ''}.
+            </p>
+          )}
+        </div>
         <div className="mt-5 flex items-center gap-3">
           <button type="button" onClick={() => void saveHead()} disabled={!headDirty || savingHead} className="inline-flex min-h-[44px] items-center rounded-full bg-chimera-gold px-6 font-bold text-[#1a1208] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50">
             {savingHead ? 'Saving…' : 'Save lorebook'}
@@ -318,7 +334,7 @@ export default function LorebookEditorPage() {
         <h2 id="lb-how" className="font-serif text-xl font-semibold text-chimera-gold">How it works</h2>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-violet-100/85">
           <li>An entry is sent to the AI only when one of its keywords appears in the latest {scanDepth} {scanDepth === 1 ? 'message' : 'messages'}, or when &quot;Always send&quot; is on.</li>
-          <li>At most about {LOREBOOK_SENT_CHARACTERS.toLocaleString()} characters of lorebook go with one reply, and an entry is cut at {ENTRY_SENT_CHARACTERS.toLocaleString()}. Several short entries work better than one long one. When there is not room for everything, higher priority goes first.</li>
+          <li>At most {replyBudget.toLocaleString()} characters of lorebook go with one reply (you can change this above), and an entry is cut at {ENTRY_SENT_CHARACTERS.toLocaleString()}. Several short entries work better than one long one. When there is not room for everything, higher priority goes first.</li>
           <li>Only the characters you tick below use this lorebook. It is private to you, but like the rest of a character&apos;s definition, someone chatting with your character may manage to get it to reveal what it says.</li>
         </ul>
       </section>

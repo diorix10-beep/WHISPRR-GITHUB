@@ -193,12 +193,13 @@ export interface ExportableEntry {
  * The lorebook as a character card "character_book" object, which other sites read and which this page reads back.
  * Entries keep the order they were given.
  */
-export function lorebookToJson(book: { name: string; description: string; scanDepth: number }, entries: ExportableEntry[]) {
+export function lorebookToJson(book: { name: string; description: string; scanDepth: number; replyBudget?: number }, entries: ExportableEntry[]) {
   return {
     name: book.name,
     description: book.description,
     scan_depth: book.scanDepth,
-    token_budget: 8000,
+    // The card format counts tokens; about 4 characters make 1 token.
+    token_budget: Math.round((book.replyBudget ?? 8000) / 4),
     recursive_scanning: false,
     extensions: {},
     entries: entries.map((entry, index) => ({

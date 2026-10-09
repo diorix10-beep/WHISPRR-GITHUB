@@ -181,14 +181,18 @@ as written); Add entry, Import JSON (adds to this lorebook), Export JSON; and th
 links need a character the member created). `supabase/migrations/20261009070000_chimera_lorebook_depth_theme.sql` only adds three columns with defaults:
 `lorebooks.scan_depth` (1 to 10, default 3), `lorebooks.theme` (the 11 colour ids, default purple) and `lorebook_entries.scan_depth` (optional override).
 **Apply it before the pages that write them go live.** The reads use all columns, so a lorebook without them still opens and works with the defaults.
+`20261009080000_chimera_lorebook_reply_budget.sql` adds one more: `lorebooks.reply_budget` (1,000 to 40,000, default 8,000, the size every lorebook had until now).
+Same rule: apply it before this version's pages go live, because saving a lorebook writes it.
 
 - **Private by default.** The pages create lorebooks with `visibility = 'private'` (the table's own default is `public`, so it is always set).
   Existing lorebooks keep whatever visibility they have. There is no sharing or discovery of lorebooks yet.
 - **At reply time** (`api/ai-chat.ts`, `api/_lib/lorebook.ts`): the server reads, with the server key, the entries of lorebooks that are linked to the
   character **and owned by the character's creator** (so it also works for people chatting with the character, who cannot read the private lorebook).
   An entry is sent when one of its keywords appears in the last *depth* messages (the entry's own number, else its lorebook's, else 3), or when it is
-  *Always send*. Chosen by priority (higher first), then the creator's order. At most 8,000 characters of lorebook go with one reply and one entry is cut at
-  2,500 (the full text stays saved), so a big lorebook cannot crowd out the character or the story. Entries are read in pages, highest priority first, up to
+  *Always send*. Chosen by priority (higher first), then the creator's order. The lorebook's *size per reply* (1,000 to 40,000 characters, 8,000 by default, set on the
+  lorebook page; the largest one among a character's lorebooks counts) is the most lorebook text that goes with one reply, and one entry is cut at 20,000 or at
+  that size if smaller (the full text stays saved), so a big lorebook cannot crowd out the character or the story. A bigger size lets long entries through whole
+  but costs more tokens on every reply (about 4 characters per token); the editor shows what the *Always send* entries already take. Entries are read in pages, highest priority first, up to
   2,000 per character. It is added to the prompt as `## Lorebook`, after the world and before the player. A failed read, or a failed page, means no lorebook,
   never a failed reply and never half a lorebook. It runs after the adult-content check, so a locked character never gets that far.
 - **JSON** (`src/lib/lorebookJson.ts`). Import reads a character card's `character_book` (V2), a SillyTavern world (entries keyed by number) or a bare list of
