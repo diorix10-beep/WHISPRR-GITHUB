@@ -11,8 +11,10 @@
 export const LOREBOOK_BUDGET_CHARACTERS = 8_000;
 /** One entry is cut at this length when it is sent (the full text stays saved). */
 export const LOREBOOK_ENTRY_MAX_CHARACTERS = 2_500;
-/** How many of the latest messages are searched for keywords. */
-export const LOREBOOK_SCAN_MESSAGES = 6;
+/** How many of the latest messages are searched for keywords when neither the entry nor its lorebook says. */
+export const LOREBOOK_SCAN_MESSAGES = 3;
+/** The most messages an entry or a lorebook can ask to search. */
+export const LOREBOOK_MAX_SCAN_MESSAGES = 10;
 /**
  * The most entries ever read for one character, a safety bound for the database read. They are read highest priority
  * first, so if a character somehow has more than this, it is the lowest-priority ones that are left out.
@@ -31,6 +33,15 @@ export interface LorebookEntry {
   enabled: boolean | null;
   priority: number | null;
   insertion_order: number | null;
+  /** The lorebook this entry belongs to, to find its default depth. */
+  lorebook_id?: string | null;
+  /** This entry's own depth, or null to use its lorebook's. */
+  scan_depth?: number | null;
+}
+
+/** A depth the member can ask for, or null when it is missing or not a whole number from 1 to 10. */
+export function validDepth(value: unknown): number | null {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= LOREBOOK_MAX_SCAN_MESSAGES ? value : null;
 }
 
 function keywordsOf(entry: LorebookEntry): string[] {
@@ -56,15 +67,32 @@ export function entryMatches(entry: LorebookEntry, text: string): boolean {
 export function selectLorebookEntries(
   entries: LorebookEntry[],
   recentMessages: string[],
-  options: { budget?: number; scan?: number } = {},
+  options: {
+    budget?: number;
+    /** Messages searched by an entry that does not say, and whose lorebook is not in `bookDepths`. */
+    scan?: number;
+    /** Each lorebook's own depth, by lorebook id. */
+    bookDepths?: ReadonlyMap<string, number>;
+  } = {},
 ): LorebookEntry[] {
   const budget = options.budget ?? LOREBOOK_BUDGET_CHARACTERS;
-  const scan = options.scan ?? LOREBOOK_SCAN_MESSAGES;
-  const scanned = recentMessages.slice(-scan).join('\n');
+  const fallback = validDepth(options.scan) ?? LOREBOOK_SCAN_MESSAGES;
+  // The text of the latest `n` messages, built once per depth.
+  const texts = new Map<number, string>();
+  const textFor = (n: number) => {
+    let text = texts.get(n);
+    if (text === undefined) {
+      text = recentMessages.slice(-n).join('\n');
+      texts.set(n, text);
+    }
+    return text;
+  };
+  const depthOf = (entry: LorebookEntry) =>
+    validDepth(entry.scan_depth) ?? (entry.lorebook_id ? validDepth(options.bookDepths?.get(entry.lorebook_id)) : null) ?? fallback;
 
   const candidates = entries
     .filter((entry) => entry.enabled !== false && (entry.content ?? '').trim().length > 0)
-    .filter((entry) => entry.is_constant === true || entryMatches(entry, scanned))
+    .filter((entry) => entry.is_constant === true || entryMatches(entry, textFor(depthOf(entry))))
     .sort((a, b) =>
       (b.priority ?? 0) - (a.priority ?? 0)
       || (a.insertion_order ?? 0) - (b.insertion_order ?? 0)

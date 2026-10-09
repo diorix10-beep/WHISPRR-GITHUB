@@ -18,6 +18,37 @@ export const ENTRY_SENT_CHARACTERS = 2_500;
 /** What the chat sends of a whole lorebook with one reply. */
 export const LOREBOOK_SENT_CHARACTERS = 8_000;
 
+/** The colours a lorebook can have in the member's list. The ids are what the database accepts. */
+export const THEMES = [
+  { id: 'purple', label: 'Purple', from: '#a78bfa', to: '#6d28d9' },
+  { id: 'midnight', label: 'Midnight', from: '#6366f1', to: '#312e81' },
+  { id: 'sky', label: 'Sky', from: '#7dd3fc', to: '#0284c7' },
+  { id: 'teal', label: 'Teal', from: '#5eead4', to: '#0f766e' },
+  { id: 'forest', label: 'Forest', from: '#86efac', to: '#166534' },
+  { id: 'mint', label: 'Mint', from: '#6ee7b7', to: '#059669' },
+  { id: 'green', label: 'Green', from: '#a3e635', to: '#4d7c0f' },
+  { id: 'orange', label: 'Orange', from: '#fdba74', to: '#c2410c' },
+  { id: 'sunset', label: 'Sunset', from: '#fbbf24', to: '#e11d48' },
+  { id: 'red', label: 'Red', from: '#fca5a5', to: '#b91c1c' },
+  { id: 'candy', label: 'Candy', from: '#f9a8d4', to: '#be185d' },
+] as const;
+
+export type ThemeId = (typeof THEMES)[number]['id'];
+export const DEFAULT_THEME: ThemeId = 'purple';
+
+export function themeOf(id: unknown): (typeof THEMES)[number] {
+  return THEMES.find((theme) => theme.id === id) ?? THEMES[0];
+}
+
+/** How many of the latest messages a lorebook checks for keywords unless it says otherwise (1 to 10). */
+export const DEFAULT_SCAN_DEPTH = 3;
+export const MAX_SCAN_DEPTH = 10;
+
+/** A whole number from 1 to 10, or null when the value is not one. */
+export function validDepth(value: unknown): number | null {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= MAX_SCAN_DEPTH ? value : null;
+}
+
 export interface LorebookSummary {
   id: string;
   title: string;
@@ -25,6 +56,18 @@ export interface LorebookSummary {
   visibility: string;
   entry_count: number;
   updated_at: string;
+  theme: ThemeId;
+  /** How many of the latest messages this lorebook checks. */
+  scan_depth: number;
+  /** How many of the member's characters use it. */
+  characters: number;
+}
+
+export interface LorebookInput {
+  title: string;
+  description: string;
+  theme: ThemeId;
+  scanDepth: number;
 }
 
 export interface EntryForm {
@@ -40,6 +83,8 @@ export interface EntryForm {
   enabled: boolean;
   /** Higher goes first when there is not room for everything. */
   priority: number;
+  /** This entry checks that many of the latest messages instead of its lorebook's number. Null: use the lorebook's. */
+  scanDepth: number | null;
 }
 
 export const EMPTY_ENTRY: EntryForm = {
@@ -51,6 +96,7 @@ export const EMPTY_ENTRY: EntryForm = {
   caseSensitive: false,
   enabled: true,
   priority: 0,
+  scanDepth: null,
 };
 
 /** Splits "a, b\nc" into clean keywords: trimmed, no empty ones, no duplicates (ignoring case), bounded in length and count. */
@@ -86,6 +132,7 @@ export function entryRow(form: EntryForm, lorebookId: string, order: number) {
     enabled: form.enabled,
     priority: Math.trunc(form.priority) || 0,
     insertion_order: order,
+    scan_depth: validDepth(form.scanDepth),
   };
 }
 
@@ -99,6 +146,7 @@ export function entryFromRow(row: Record<string, unknown>): EntryForm {
     caseSensitive: row.case_sensitive === true,
     enabled: row.enabled !== false,
     priority: typeof row.priority === 'number' ? row.priority : 0,
+    scanDepth: validDepth(row.scan_depth),
   };
 }
 
@@ -108,20 +156,48 @@ export function sentLength(form: EntryForm): number {
 }
 
 export async function loadMyLorebooks(userId: string): Promise<LorebookSummary[]> {
+  // All columns, so the list still opens for a lorebook that has no colour or depth yet.
   const { data, error } = await supabase
     .from('lorebooks')
-    .select('id, title, description, visibility, entry_count, updated_at')
+    .select('*')
     .eq('user_id', userId)
     .order('updated_at', { ascending: false });
   if (error) throw error;
-  return (data ?? []) as LorebookSummary[];
+  const rows = (data ?? []) as Array<Record<string, unknown>>;
+  const counts = new Map<string, number>();
+  if (rows.length > 0) {
+    const links = await supabase.from('lorebook_characters').select('lorebook_id').in('lorebook_id', rows.map((row) => String(row.id)));
+    for (const link of (links.data ?? []) as Array<{ lorebook_id: string }>) counts.set(link.lorebook_id, (counts.get(link.lorebook_id) ?? 0) + 1);
+  }
+  return rows.map((row) => ({
+    id: String(row.id),
+    title: typeof row.title === 'string' ? row.title : '',
+    description: typeof row.description === 'string' ? row.description : '',
+    visibility: typeof row.visibility === 'string' ? row.visibility : 'private',
+    entry_count: typeof row.entry_count === 'number' ? row.entry_count : 0,
+    updated_at: typeof row.updated_at === 'string' ? row.updated_at : '',
+    theme: themeOf(row.theme).id,
+    scan_depth: validDepth(row.scan_depth) ?? DEFAULT_SCAN_DEPTH,
+    characters: counts.get(String(row.id)) ?? 0,
+  }));
+}
+
+/** The values to save for a lorebook, tidied and bounded. */
+export function lorebookRow(input: Partial<LorebookInput>) {
+  return {
+    title: (input.title ?? '').trim().slice(0, LOREBOOK_LIMITS.title) || 'Untitled lorebook',
+    description: (input.description ?? '').trim().slice(0, LOREBOOK_LIMITS.description),
+    theme: themeOf(input.theme).id,
+    scan_depth: validDepth(input.scanDepth) ?? DEFAULT_SCAN_DEPTH,
+  };
 }
 
 /** Lorebooks start private: only their creator sees them. */
-export async function createLorebook(userId: string, title: string): Promise<string> {
+export async function createLorebook(userId: string, input: string | Partial<LorebookInput>): Promise<string> {
+  const row = lorebookRow(typeof input === 'string' ? { title: input } : input);
   const { data, error } = await supabase
     .from('lorebooks')
-    .insert({ user_id: userId, title: title.trim().slice(0, LOREBOOK_LIMITS.title) || 'Untitled lorebook', description: '', visibility: 'private' })
+    .insert({ user_id: userId, ...row, visibility: 'private' })
     .select('id')
     .single();
   if (error || !data) throw error ?? new Error('not created');
@@ -132,17 +208,25 @@ export async function createLorebook(userId: string, title: string): Promise<str
 const INSERT_BATCH = 100;
 
 /**
- * Creates a private lorebook with all its entries. If anything fails part-way, the lorebook is deleted again (its
- * entries go with it), so a failed conversion leaves nothing half-made behind.
+ * Saves entries into a lorebook, in order, a batch at a time. `firstOrder` is where numbering starts, so entries added to
+ * an existing lorebook go after the ones it already has.
  */
-export async function createLorebookWithEntries(userId: string, title: string, entries: EntryForm[]): Promise<string> {
-  const id = await createLorebook(userId, title);
+export async function insertEntries(lorebookId: string, entries: EntryForm[], firstOrder = 0): Promise<void> {
+  const rows = entries.map((form, index) => entryRow(form, lorebookId, firstOrder + index));
+  for (let from = 0; from < rows.length; from += INSERT_BATCH) {
+    const { error } = await supabase.from('lorebook_entries').insert(rows.slice(from, from + INSERT_BATCH));
+    if (error) throw error;
+  }
+}
+
+/**
+ * Creates a private lorebook with all its entries. If anything fails part-way, the lorebook is deleted again (its
+ * entries go with it), so a failed creation leaves nothing half-made behind.
+ */
+export async function createLorebookWithEntries(userId: string, input: string | Partial<LorebookInput>, entries: EntryForm[]): Promise<string> {
+  const id = await createLorebook(userId, input);
   try {
-    const rows = entries.map((form, index) => entryRow(form, id, index));
-    for (let from = 0; from < rows.length; from += INSERT_BATCH) {
-      const { error } = await supabase.from('lorebook_entries').insert(rows.slice(from, from + INSERT_BATCH));
-      if (error) throw error;
-    }
+    await insertEntries(id, entries);
   } catch (error) {
     await supabase.from('lorebooks').delete().eq('id', id).eq('user_id', userId);
     throw error;
@@ -154,4 +238,19 @@ export async function createLorebookWithEntries(userId: string, title: string, e
 export async function linkLorebookToCharacter(lorebookId: string, characterId: string): Promise<void> {
   const { error } = await supabase.from('lorebook_characters').insert({ lorebook_id: lorebookId, character_id: characterId });
   if (error && error.code !== '23505') throw error;
+}
+
+/** Entries read from a JSON file, as forms ready to save. */
+export function formsFromImport(entries: Array<{ title: string; keywords: string[]; content: string; isConstant: boolean; caseSensitive: boolean; enabled: boolean; priority: number; scanDepth: number | null }>): EntryForm[] {
+  return entries.map((entry) => ({
+    id: null,
+    title: entry.title,
+    keywords: entry.keywords.join(', '),
+    content: entry.content,
+    isConstant: entry.isConstant,
+    caseSensitive: entry.caseSensitive,
+    enabled: entry.enabled,
+    priority: entry.priority,
+    scanDepth: entry.scanDepth,
+  }));
 }
