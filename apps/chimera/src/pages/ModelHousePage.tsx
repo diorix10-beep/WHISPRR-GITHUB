@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react';
 import { Check } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { CHAT_MODELS, isUsable, usableModels, type ChatModel } from '../lib/chatModels';
+import { CHAT_MODELS, isUsable, replyCost, usableModels, type ChatModel } from '../lib/chatModels';
 import { loadModelChoice, saveModelChoice } from '../lib/modelPreference';
 
 function badge(model: ChatModel): { text: string; style: string } {
   if (model.status === 'soon') return { text: 'Coming soon', style: 'border-chimera-mute/40 text-chimera-mute' };
   return model.tier === 'free'
     ? { text: 'Free', style: 'border-chimera-mint/50 text-chimera-mint' }
-    : { text: 'Uses SHARDS', style: 'border-chimera-gold/50 text-chimera-gold' };
+    : { text: replyCost(model) > 0 ? `${replyCost(model)} SHARDS / reply` : 'Uses SHARDS', style: 'border-chimera-gold/50 text-chimera-gold' };
 }
 
 export default function ModelHousePage() {
@@ -57,6 +57,11 @@ export default function ModelHousePage() {
       {!canChoose && (
         <p role="note" className="mt-5 rounded-xl border border-chimera-gold/25 bg-chimera-panel px-4 py-3 text-sm text-chimera-mute">
           SUPERNOVA is the only model available for now, so every scene uses it. More models are on the way and will appear here.
+        </p>
+      )}
+      {usableModels().some((model) => model.tier === 'shards') && (
+        <p role="note" className="mt-5 rounded-xl border border-chimera-gold/25 bg-chimera-panel px-4 py-3 text-sm text-chimera-mute">
+          Paid models take their SHARDS when a reply starts and give them back if no reply arrives. Regenerating a reply costs the same again. SUPERNOVA is always free.
         </p>
       )}
       {failed && <p role="note" className="mt-5 text-sm text-amber-200">We could not load your current choice. Scenes keep using SUPERNOVA until it is saved.</p>}

@@ -131,8 +131,26 @@ everything else through OpenRouter with `OPENROUTER_API_KEY`).
   Google answers "model not found" (404, or a 400/403 saying the model is retired or unsupported); any other failure stops at once and
   never falls back. Memory suggestions and turning points use the same default engine and fallback (`geminiGenerate`), and no longer send a
   `thinkingConfig`, which is not valid for every model. `thinkingHeadroom` adds output tokens for models that think before answering.
-- **Today only SUPERNOVA is usable.** AURELIA and NIVALIS are shown as "Coming soon" (they come from the old site). A model with
-  `tier: 'shards'` can never be used, because nothing charges SHARDS per reply yet: that is a separate piece of money logic.
+- **Today only SUPERNOVA is usable.** AURELIA and NIVALIS are shown as "Coming soon" (they come from the old site).
+- **Paying with SHARDS (built, not switched on).** A `tier: 'shards'` model is usable only when it is `available` **and** has a
+  `shardsCost` (a whole number, 1 to 10 000, per reply); without a valid price it stays unusable, so a model can never be free by
+  mistake. Only the player's own choice can select a paid model: a creator's recommended `ai_model` is honoured only if free.
+  - The route calls `charge_chimera_reply` **after** the request is reserved and checked, and **before** the model is called. It takes
+    the price from `shards_wallets` in one transaction, writes a `creative_spend` ledger line, and stores one row in
+    `chimera_private.shards_charges` keyed by the request id. Repeating the same request finds the open charge and takes nothing more.
+  - Not enough SHARDS: the route answers **402** before calling the model, and nothing is taken.
+  - No reply delivered (model error, timeout, bad output): the route calls `refund_chimera_reply` (a `refund` ledger line, once). It
+    refunds nothing for a reply that was saved, and nothing to a request another attempt has taken over (lease check).
+  - If the server stops between charging and refunding, the next charge for that member first returns every charge whose request
+    ended without a reply (`failed`, expired, or gone). A member who never chats again is not swept: reconcile from
+    `chimera_private.shards_charges where state = 'charged'` joined to `ai_requests`.
+  - A regeneration is a new model call and costs the price again. Free models never touch the wallet.
+  - The three functions are for the service role only. Members still cannot write to the wallet or ledger (row-level security gives
+    them read access to their own rows only).
+  - Code: `supabase/migrations/20261009040000_chimera_reply_billing.sql`, `api/_lib/replyBilling.ts`, tests in
+    `tests/reply-billing.test.mjs` and `tests/chat-models.test.mjs`.
+  - To switch a paid model on: set its `shardsCost`, make sure the provider key is set in Vercel, set `status: 'available'`.
+    Checkout (buying SHARDS) is a separate matter: see the Stripe note below.
 - An `uncensored` model would only ever be used in a scene the member is verified and opted in for. None exist; the decision is to add
   none before age verification and a content check at character creation.
 - If a chosen model's provider key is missing the route answers 503 naming the model and pointing to the Model House, **before** any
