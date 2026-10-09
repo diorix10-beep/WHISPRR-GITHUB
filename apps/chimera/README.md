@@ -62,7 +62,7 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
   is sent with every reply, and the chat refuses a request once the whole prompt passes 100,000 characters, so a definition above
   `MAX_DEFINITION_CHARACTERS` (60,000, the bio excluded) could never answer. The count follows what the chat really sends: the opening message counts twice (system prompt and opening turn), and fields kept from older versions of the character (`system_definition`, `system_character_definition`, `rp_definition`, `example_conversations`) count too. Saving above it explains how many tokens to cut, without
   printing the number, and the preview warns well before. Short fields stay short because cards show them (names 100, tagline 200;
-  tags up to ten). The Bio has **no limit**: the AI never reads it and the database column is plain `text`. On the profile page a tagline
+  tags up to ten). The Bio has **no limit**: the AI never reads it and the database column is plain `text`. Discover never downloads the Bio (cards show the tagline only), so a very long Bio cannot slow the grid. On the profile page a tagline
   stays in the header and a long Bio is folded under "About this character". Not enforced in the database: a direct call can still store a longer text, which the chat would then refuse.
 - **Picture.** JPG, PNG or WebP up to 5 MB, uploaded to the existing public `profile-photos` bucket under the member's own folder
   (`<user id>/character-avatars/…`), so no migration is needed. It is optional. **There is no image moderation yet**, and the bucket is
