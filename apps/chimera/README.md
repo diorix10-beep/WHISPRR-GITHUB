@@ -51,7 +51,7 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
   with the old creator lose nothing.
 - **Form layout** (inspired by the usual character-creator pattern, written in our own words): picture, character name, optional chat
   name, tagline, bio, then three foldable sections: *Character settings* (category, tag chips, content rating, visibility), *Character
-  definition* (personality, scenario, opening message, example dialogue, and a folded *More guidance*: speech style, lore, phrases to
+  definition* (personality, an optional *Full definition*, scenario, opening message, example dialogue, and a folded *More guidance*: speech style, lore, phrases to
   avoid, notes for the AI) and *Character preview*. Create stays disabled until a name, a personality and an opening message exist, and
   the page says which is missing. Only fields that really reach the chat prompt are offered (the unused `suggested_persona_name` is not).
 - **Name and chat name.** The editor refuses to open ("Character not found") if the profile name cannot be read, because it would otherwise show the nickname as the name and overwrite it on save. The card name is the profile's display name; `chat_name` is the nickname used in chats and by the AI (it
@@ -60,7 +60,7 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
 - **No visible limits.** Nothing shows "n / max" and long writing is accepted: the database has no length checks, and the form only
   shows a rough token size (about four characters per token, an estimate). There is **one real ceiling**: everything written for the AI
   is sent with every reply, and the chat refuses a request once the whole prompt passes 100,000 characters, so a definition above
-  `MAX_DEFINITION_CHARACTERS` (60,000, the bio excluded) could never answer. The count follows what the chat really sends: the opening message counts twice (system prompt and opening turn), and fields kept from older versions of the character (`system_definition`, `system_character_definition`, `rp_definition`, `example_conversations`) count too. Saving above it explains how many tokens to cut, without
+  `MAX_DEFINITION_CHARACTERS` (60,000, the bio excluded) could never answer. *Full definition* is saved as `system_character_definition`, which the chat prompt already renders as "Detailed Character Definition" right after the personality (no migration). The count follows what the chat really sends: the opening message counts twice (system prompt and opening turn), and fields kept from older versions of the character (`system_definition`, `system_character_definition`, `rp_definition`, `example_conversations`) count too. Saving above it explains how many tokens to cut, without
   printing the number, and the preview warns well before. Short fields stay short because cards show them (names 100, tagline 200;
   tags up to ten). The Bio has **no limit**: the AI never reads it and the database column is plain `text`. Discover never downloads the Bio (cards show the tagline only), so a very long Bio cannot slow the grid. On the profile page a tagline
   stays in the header and a long Bio is folded under "About this character". Not enforced in the database: a direct call can still store a longer text, which the chat would then refuse.

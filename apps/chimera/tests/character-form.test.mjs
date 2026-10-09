@@ -117,7 +117,7 @@ test('the size matches what the chat really sends: the opening message twice, an
 
     const kept = { id: 'c1', system_definition: 'a'.repeat(100), system_character_definition: 'b'.repeat(200), rp_definition: 'c'.repeat(300), example_conversations: 'd'.repeat(400), voice_id: 'x'.repeat(5000) };
     const plain = filled(EMPTY_FORM);
-    assert.equal(definitionSize(plain, kept) - definitionSize(plain), 1000, 'the four prompt fields kept on edit count, other fields do not');
+    assert.equal(definitionSize(plain, kept) - definitionSize(plain), 800, 'the three prompt fields kept on edit count (the full definition is in the form now, so it is not counted twice), other fields do not');
     const nearly = filled(EMPTY_FORM, { personality: 'p'.repeat(MAX_DEFINITION_CHARACTERS - 10 - 500) });
     assert.equal(validateForm(nearly, null), null);
     assert.match(validateForm(nearly, kept) ?? '', /too long for chats/, 'the same text no longer fits once the kept fields are counted');
@@ -140,5 +140,26 @@ test('rating: General unless Mature is chosen; a stored NSFW stays NSFW; General
     assert.equal(formFromRecord({ id: 'a', content_rating: 'SFW' }).mature, false);
     assert.equal(formFromRecord({ id: 'a' }).mature, false, 'no rating means General');
     assert.equal(EMPTY_FORM.mature, false, 'a new or imported card starts General');
+  } finally { await close(); }
+});
+
+test('full definition: written in the form, saved as the detailed character definition, counted once, and read back on edit', async () => {
+  const { buildSaveArgs, formFromRecord, definitionSize, validateForm, EMPTY_FORM, MAX_DEFINITION_CHARACTERS, close } = await load();
+  try {
+    assert.equal(EMPTY_FORM.definition, '');
+    const base = filled(EMPTY_FORM, { name: 'Isolde' });
+    assert.equal(buildSaveArgs(base, null).p_system_character_definition, '', 'empty by default');
+    assert.equal(buildSaveArgs({ ...base, definition: '  MAISON VERITY codex  ' }, null).p_system_character_definition, 'MAISON VERITY codex');
+    // An older character that already has one: the form shows it, and saving without touching it keeps it.
+    const stored = { id: 'c1', system_character_definition: 'Old detailed definition' };
+    const form = formFromRecord(stored, 'Isolde');
+    assert.equal(form.definition, 'Old detailed definition');
+    assert.equal(buildSaveArgs({ ...form, personality: 'p', greeting: 'g' }, stored).p_system_character_definition, 'Old detailed definition');
+    // Counted once, whether it comes from the form or from the stored row.
+    assert.equal(definitionSize(filled(EMPTY_FORM, { definition: 'x'.repeat(100) }), stored) - definitionSize(filled(EMPTY_FORM), null), 100);
+    assert.equal(definitionSize({ ...form }, stored), definitionSize({ ...form }, null));
+    // It is part of what the AI reads, so it counts toward the ceiling.
+    assert.match(validateForm(filled(EMPTY_FORM, { definition: 'd'.repeat(MAX_DEFINITION_CHARACTERS + 1) })) ?? '', /too long for chats/);
+    assert.equal(validateForm(filled(EMPTY_FORM, { definition: 'd'.repeat(30_000) })), null);
   } finally { await close(); }
 });
