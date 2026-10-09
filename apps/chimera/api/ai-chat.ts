@@ -158,7 +158,8 @@ async function loadLorebookEntries(characterId: string, creatorId: string | null
         .order('insertion_order', { ascending: true })
         .order('id', { ascending: true })
         .range(from, Math.min(from + LOREBOOK_READ_PAGE, LOREBOOK_MAX_ENTRIES_READ) - 1);
-      if (error || !Array.isArray(data)) break;
+      // A page that fails means no lorebook at all: half of the lore would give inconsistent replies.
+      if (error || !Array.isArray(data)) return [];
       entries.push(...(data as LorebookEntry[]));
       if (data.length < LOREBOOK_READ_PAGE) break;
     }
