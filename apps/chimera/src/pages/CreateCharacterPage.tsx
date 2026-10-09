@@ -338,6 +338,12 @@ export default function CreateCharacterPage() {
           </div>
 
           <div>
+            <div className="flex items-baseline justify-between"><label htmlFor="c-definition" className="font-bold">Full definition <span className="font-normal text-chimera-mute">(optional)</span></label>{tokens(form.definition)}</div>
+            <p className="text-sm text-chimera-mute">A complete written definition, such as a character codex with its world and rules. The AI reads it as the character&apos;s detailed definition, right after the personality, with every reply.</p>
+            <textarea id="c-definition" value={form.definition} onChange={(e) => set('definition', e.target.value)} rows={10} className={FIELD} />
+          </div>
+
+          <div>
             <div className="flex items-baseline justify-between"><label htmlFor="c-scenario" className="font-bold">Scenario <span className="font-normal text-chimera-mute">(optional)</span></label>{tokens(form.scenario)}</div>
             <p className="text-sm text-chimera-mute">The setting and the situation your scenes start from.</p>
             <textarea id="c-scenario" value={form.scenario} onChange={(e) => set('scenario', e.target.value)} rows={5} className={FIELD} />

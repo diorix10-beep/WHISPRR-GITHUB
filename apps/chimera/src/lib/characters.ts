@@ -61,6 +61,8 @@ export interface CharacterForm {
   greeting: string;
   scenario: string;
   personality: string;
+  /** A complete written definition (codex, world and rules). Read by the AI as "Detailed Character Definition", right after the personality. */
+  definition: string;
   about: string;
   examples: string;
   category: string;
@@ -82,6 +84,7 @@ export const EMPTY_FORM: CharacterForm = {
   greeting: '',
   scenario: '',
   personality: '',
+  definition: '',
   about: '',
   examples: '',
   category: 'General',
@@ -112,7 +115,7 @@ function text(row: CharacterRecord | null, key: string, fallback = ''): string {
  * Fields that reach the chat prompt but are not in the form. They are kept as they were on edit, so they still count.
  * (Old characters can have them; the form never writes them.)
  */
-const HIDDEN_PROMPT_FIELDS = ['system_definition', 'system_character_definition', 'rp_definition', 'example_conversations'] as const;
+const HIDDEN_PROMPT_FIELDS = ['system_definition', 'rp_definition', 'example_conversations'] as const;
 
 /**
  * What the AI receives with every reply, in characters. The bio is only shown on cards, so it does not count.
@@ -120,7 +123,7 @@ const HIDDEN_PROMPT_FIELDS = ['system_definition', 'system_character_definition'
  * (api/ai-chat.ts). Fields kept from an older version of the character count too.
  */
 export function definitionSize(form: CharacterForm, existing: CharacterRecord | null = null): number {
-  const written = [form.tagline, form.greeting, form.greeting, form.scenario, form.personality, form.examples, form.style, form.lore, form.avoid, form.notes]
+  const written = [form.tagline, form.greeting, form.greeting, form.scenario, form.personality, form.definition, form.examples, form.style, form.lore, form.avoid, form.notes]
     .reduce((total, value) => total + value.trim().length, 0);
   const kept = HIDDEN_PROMPT_FIELDS.reduce((total, key) => total + text(existing, key).trim().length, 0);
   return written + kept;
@@ -192,7 +195,7 @@ export function buildSaveArgs(form: CharacterForm, existing: CharacterRecord | n
     p_example_conversations: text(existing, 'example_conversations'),
     p_rp_definition: text(existing, 'rp_definition'),
     p_system_definition: text(existing, 'system_definition'),
-    p_system_character_definition: text(existing, 'system_character_definition'),
+    p_system_character_definition: form.definition.trim(),
     p_alternate_greetings: Array.isArray(existing?.alternate_greetings) ? existing?.alternate_greetings : [],
     p_banned_words: form.avoid.trim(),
     p_suggested_persona_name: text(existing, 'suggested_persona_name'),
@@ -221,6 +224,7 @@ export function formFromRecord(row: CharacterRecord, displayName = ''): Characte
     greeting: text(row, 'greeting'),
     scenario: text(row, 'scenario'),
     personality: text(row, 'personality'),
+    definition: text(row, 'system_character_definition'),
     about: text(row, 'long_description'),
     examples: text(row, 'example_dialogues'),
     style: text(row, 'conversation_style'),
