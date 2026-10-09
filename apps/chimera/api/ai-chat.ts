@@ -332,7 +332,7 @@ export default async function handler(req: Request) {
       model: chatModel,
       systemPrompt,
       turns: contents.map((turn) => ({ role: turn.role, text: turn.parts[0].text })),
-      maxOutputTokens: Math.min(maxOutputTokensFor(sceneSettings.responseLength ?? 'medium'), chatModel.maxOutputTokens ?? Infinity),
+      maxOutputTokens: Math.min(maxOutputTokensFor(sceneSettings.responseLength ?? 'medium') + (chatModel.thinkingHeadroom ?? 0), chatModel.maxOutputTokens ?? Infinity),
       keys,
     });
     const reply = cleanReply(replyText);

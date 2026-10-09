@@ -110,6 +110,14 @@ Migration `20261009030000_chimera_auto_memory.sql` adds two columns to `chimera_
 functions above. Apply it **before** the deploy: the screen reads the settings with `select *`, so it still works without the columns,
 but suggestions do nothing until they exist.
 
+## Guardian's Library: "coming soon"
+
+Age verification has no provider yet, so the Guardian's Library is shown as **Coming soon** (a "Soon" tag in the menu and footer, and a
+friendly page instead of controls that cannot work). This relaxes nothing: Mature and Adult content stay locked by the database and the
+server, which only open for a verified account. When verification goes live, set `AGE_VERIFICATION_LIVE` to `true` in
+`src/lib/ageVerification.ts`: the real settings come back and every "coming soon" label (menu tag, footer, Discover, locked scenes)
+reverts with it.
+
 ## Model House (which AI writes the replies)
 
 `/models` lists the models CHIMERA offers and lets a member pick their own. The list lives in one file, `src/lib/chatModels.ts`
@@ -117,7 +125,12 @@ but suggestions do nothing until they exist.
 everything else through OpenRouter with `OPENROUTER_API_KEY`).
 
 - The chat route picks the model like this: the **member's choice** (`chimera_user_preferences.default_ai_model`), then the character's
-  `ai_model`, then SUPERNOVA (`gemini-2.5-flash`). A stored value is never trusted: it must be in the catalog, `available`, and `free`.
+  `ai_model`, then SUPERNOVA (`gemini-3.1-flash-lite`). A stored value is never trusted: it must be in the catalog, `available`, and `free`.
+- **Gemini 2.5 Flash is retired on 2026-10-20** (the OpenRouter catalog lists that expiry for the whole 2.5 family). SUPERNOVA moved to
+  Gemini 3.1 Flash Lite; members who saved the old id keep SUPERNOVA through `aliases`. `fallbackApiModels` lists older models to try if
+  Google answers "model not found" (404, or a 400/403 saying the model is retired or unsupported); any other failure stops at once and
+  never falls back. Memory suggestions and turning points use the same default engine and fallback (`geminiGenerate`), and no longer send a
+  `thinkingConfig`, which is not valid for every model. `thinkingHeadroom` adds output tokens for models that think before answering.
 - **Today only SUPERNOVA is usable.** AURELIA and NIVALIS are shown as "Coming soon" (they come from the old site). A model with
   `tier: 'shards'` can never be used, because nothing charges SHARDS per reply yet: that is a separate piece of money logic.
 - An `uncensored` model would only ever be used in a scene the member is verified and opted in for. None exist; the decision is to add

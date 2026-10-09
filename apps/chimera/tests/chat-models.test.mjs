@@ -15,11 +15,14 @@ async function load() {
 const model = (over) => ({ id: 'x', name: 'X', provider: 'openrouter', company: 'c', engineName: 'e', description: '', strengths: [], bestFor: '', consideration: '', tier: 'free', status: 'available', ...over });
 
 test('the real catalog: SUPERNOVA is the default and the only model that can be used today', async () => {
-  const { CHAT_MODELS, DEFAULT_MODEL_ID, usableModels, findModel, isUsable, close } = await load();
+  const { CHAT_MODELS, DEFAULT_MODEL_ID, usableModels, findModel, isUsable, defaultGeminiModels, close } = await load();
   try {
-    assert.equal(DEFAULT_MODEL_ID, 'gemini-2.5-flash');
+    assert.equal(DEFAULT_MODEL_ID, 'gemini-3.1-flash-lite');
     assert.deepEqual(usableModels().map((m) => m.name), ['SUPERNOVA']);
     assert.equal(findModel(DEFAULT_MODEL_ID).provider, 'gemini');
+    // Gemini 2.5 Flash is retired on 2026-10-20: saved preferences keep working through an alias.
+    assert.equal(findModel('gemini-2.5-flash').id, DEFAULT_MODEL_ID);
+    assert.deepEqual(defaultGeminiModels(), ['gemini-3.1-flash-lite', 'gemini-2.5-flash']);
     assert.equal(new Set(CHAT_MODELS.map((m) => m.id)).size, CHAT_MODELS.length, 'ids are unique');
     assert.ok(CHAT_MODELS.every((m) => !m.uncensored), 'no uncensored model before age verification exists');
     assert.ok(CHAT_MODELS.filter((m) => m.tier === 'shards').every((m) => !isUsable(m)), 'a paid model is never usable');
@@ -30,7 +33,7 @@ test('resolveModel: member, then character, then default; unusable or unknown ch
   const { resolveModel, close } = await load();
   try {
     const catalog = [
-      model({ id: 'gemini-2.5-flash', name: 'DEFAULT', provider: 'gemini' }),
+      model({ id: 'gemini-3.1-flash-lite', name: 'DEFAULT', provider: 'gemini', aliases: ['old-default'] }),
       model({ id: 'a/free', name: 'FREE' }),
       model({ id: 'a/free2', name: 'FREE2' }),
       model({ id: 'a/paid', name: 'PAID', tier: 'shards' }),
@@ -39,6 +42,7 @@ test('resolveModel: member, then character, then default; unusable or unknown ch
     ];
     const pick = (choice, adultVerified = false) => resolveModel(choice, { adultVerified }, catalog).name;
     assert.equal(pick({}), 'DEFAULT');
+    assert.equal(pick({ member: 'old-default' }), 'DEFAULT', 'an alias resolves to its model');
     assert.equal(pick({ member: 'a/free', character: 'a/free2' }), 'FREE');
     assert.equal(pick({ character: 'a/free2' }), 'FREE2');
     assert.equal(pick({ member: 'a/paid', character: 'a/free2' }), 'FREE2', 'a paid member choice is skipped');
@@ -87,6 +91,37 @@ test('generateReply: Gemini and OpenRouter requests are shaped correctly, and er
     await assert.rejects(generateReply({ model: model({ provider: 'gemini' }), systemPrompt: 'S', turns, maxOutputTokens: 1, keys: {} }), (error) => error.status === 503);
     assert.deepEqual(providerKeys({ GEMINI_API_KEY_SERVER: 'a', OPENROUTER_API_KEY: 'b' }), { gemini: 'a', openrouter: 'b' });
     assert.equal(providerKeys({ GEMINI_API_KEY: 'legacy' }).gemini, 'legacy');
+  } finally {
+    globalThis.fetch = realFetch;
+    await close();
+  }
+});
+
+test('geminiGenerate: moves to the next model only when Google says the model is gone', async () => {
+  const { geminiGenerate, geminiText, RequestError, close } = await load();
+  const realFetch = globalThis.fetch;
+  try {
+    const seen = [];
+    let script = [];
+    globalThis.fetch = async (url) => { seen.push(String(url).match(/models\/([^:]+):/)[1]); const next = script.shift(); return new Response(next.body, { status: next.status }); };
+    const ok = JSON.stringify({ candidates: [{ content: { parts: [{ text: 'A' }, { text: 'B' }] } }] });
+
+    script = [{ status: 404, body: 'x' }, { status: 200, body: ok }];
+    const first = await geminiGenerate('KEY', ['new', 'old'], {});
+    assert.equal(first.model, 'old'); assert.equal(geminiText(first.data), 'AB'); assert.deepEqual(seen, ['new', 'old']);
+
+    for (const [status, body] of [[500, 'boom'], [429, 'quota'], [400, 'Invalid JSON payload'], [401, 'bad key']]) {
+      seen.length = 0; script = [{ status, body }, { status: 200, body: ok }];
+      await assert.rejects(geminiGenerate('KEY', ['new', 'old'], {}), (error) => error instanceof RequestError && error.status === 502 && !/KEY|boom|quota|Invalid|bad key/.test(error.message), String(status));
+      assert.deepEqual(seen, ['new'], `${status} must not try the next model`);
+    }
+    for (const body of ['This model is no longer available', 'model is deprecated', 'models/x is not supported for generateContent']) {
+      seen.length = 0; script = [{ status: 400, body }, { status: 200, body: ok }];
+      assert.equal((await geminiGenerate('KEY', ['new', 'old'], {})).model, 'old', body);
+    }
+    seen.length = 0; script = [{ status: 404, body: 'gone' }, { status: 404, body: 'gone too' }];
+    await assert.rejects(geminiGenerate('KEY', ['new', 'old'], {}), (error) => error.status === 502 && !/gone/.test(error.message));
+    assert.equal(geminiText(null), ''); assert.equal(geminiText({ candidates: [] }), '');
   } finally {
     globalThis.fetch = realFetch;
     await close();
