@@ -3,28 +3,38 @@ import { Check } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { CHAT_MODELS, isUsable, replyCost, usableModels, type ChatModel } from '../lib/chatModels';
-import { loadModelChoice, saveModelChoice } from '../lib/modelPreference';
+import { loadIsModelTester, loadModelChoice, saveModelChoice } from '../lib/modelPreference';
 
 function badge(model: ChatModel): { text: string; style: string } {
   if (model.status === 'soon') return { text: 'Coming soon', style: 'border-chimera-mute/40 text-chimera-mute' };
+  if (model.testersOnly) return { text: replyCost(model) > 0 ? `Testing · ${replyCost(model)} SHARDS` : 'Testing', style: 'border-chimera-rose/50 text-chimera-rose' };
   return model.tier === 'free'
     ? { text: 'Free', style: 'border-chimera-mint/50 text-chimera-mint' }
     : { text: replyCost(model) > 0 ? `${replyCost(model)} SHARDS / reply` : 'Uses SHARDS', style: 'border-chimera-gold/50 text-chimera-gold' };
 }
 
 export default function ModelHousePage() {
-  const { user } = useAuth();
+  const { user, shardsBalance } = useAuth();
   const { showToast } = useToast();
   const [chosen, setChosen] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
-  const canChoose = usableModels().length > 1;
+  const [tester, setTester] = useState(false);
+  // Models still being tried are not listed at all for other members.
+  const visibleModels = CHAT_MODELS.filter((model) => !model.testersOnly || tester);
+  const canChoose = usableModels(CHAT_MODELS, tester).length > 1;
 
   useEffect(() => {
     if (!user) return;
     let active = true;
-    loadModelChoice(user.id)
-      .then((id) => active && setChosen(id))
+    loadIsModelTester(user.id)
+      .catch(() => false)
+      .then((isTester) => {
+        if (!active) return undefined;
+        setTester(isTester);
+        return loadModelChoice(user.id, isTester);
+      })
+      .then((id) => active && id && setChosen(id))
       .catch(() => active && setFailed(true));
     return () => {
       active = false;
@@ -32,7 +42,7 @@ export default function ModelHousePage() {
   }, [user]);
 
   const choose = async (model: ChatModel) => {
-    if (!user || saving || chosen === model.id || !isUsable(model)) return;
+    if (!user || saving || chosen === model.id || !isUsable(model, tester)) return;
     const previous = chosen;
     setSaving(model.id);
     setChosen(model.id);
@@ -59,17 +69,18 @@ export default function ModelHousePage() {
           SUPERNOVA is the only model available for now, so every scene uses it. More models are on the way and will appear here.
         </p>
       )}
-      {usableModels().some((model) => model.tier === 'shards') && (
+      {usableModels(CHAT_MODELS, tester).some((model) => model.tier === 'shards') && (
         <p role="note" className="mt-5 rounded-xl border border-chimera-gold/25 bg-chimera-panel px-4 py-3 text-sm text-chimera-mute">
           Paid models take their SHARDS when a reply starts and give them back if no reply arrives. Regenerating a reply costs the same again. SUPERNOVA is always free.
+          {shardsBalance !== null && <> Your reserve: <strong className="text-chimera-ink">{new Intl.NumberFormat().format(shardsBalance)} SHARDS</strong>.</>}
         </p>
       )}
       {failed && <p role="note" className="mt-5 text-sm text-amber-200">We could not load your current choice. Scenes keep using SUPERNOVA until it is saved.</p>}
 
       <ul className="mt-8 grid gap-4 sm:grid-cols-2">
-        {CHAT_MODELS.map((model) => {
+        {visibleModels.map((model) => {
           const tag = badge(model);
-          const selectable = canChoose && isUsable(model);
+          const selectable = canChoose && isUsable(model, tester);
           const selected = chosen === model.id;
           return (
             <li key={model.id} className={`flex flex-col rounded-[22px] border bg-chimera-panel p-5 ${selected ? 'border-chimera-gold' : 'border-chimera-gold/20'} ${model.status === 'soon' ? 'opacity-80' : ''}`}>

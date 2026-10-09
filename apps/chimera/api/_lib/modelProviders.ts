@@ -92,6 +92,7 @@ export async function generateReply(call: ModelCall): Promise<string> {
         ...turns.map((turn) => ({ role: turn.role === 'model' ? 'assistant' : 'user', content: turn.text })),
       ],
       ...(model.noSampling ? {} : { temperature: 0.9, top_p: 0.95 }),
+      ...(model.reasoningEffort ? { reasoning: { effort: model.reasoningEffort } } : {}),
       max_tokens: maxOutputTokens,
     }),
   });

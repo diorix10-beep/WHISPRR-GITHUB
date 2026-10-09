@@ -44,6 +44,10 @@ export interface ChatModel {
   status: 'available' | 'soon';
   /** Largest reply the model is asked for. */
   maxOutputTokens?: number;
+  /** Reasoning effort asked of the provider (OpenRouter). Roleplay wants a quick reply, not a long hidden chain of thought. */
+  reasoningEffort?: 'none' | 'low';
+  /** Visible and usable only to members listed in `chimera_model_testers`, so a model can be tried for real before everyone sees it. */
+  testersOnly?: boolean;
   /** A model without its own safety training. Only usable in a verified adult scene. None exist yet. */
   uncensored?: boolean;
 }
@@ -67,6 +71,77 @@ export const CHAT_MODELS: ChatModel[] = [
     consideration: 'Favors momentum over the most intricate prose on every reply.',
     tier: 'free',
     status: 'available',
+  },
+  // Paid models, in testing: `testersOnly` keeps them hidden from everyone but the members listed in
+  // `chimera_model_testers` until they have been tried for real. Prices (SHARDS per reply) are about twice the
+  // provider's cost for a typical reply (10k tokens in, ~1.5k out including a little reasoning) at the best pack price.
+  {
+    id: 'deepseek/deepseek-v4.1-flash',
+    name: 'PULSAR',
+    provider: 'openrouter',
+    company: 'DeepSeek',
+    engineName: 'DeepSeek V4.1 Flash',
+    description: 'An economical engine for long scenes where you want many turns for few SHARDS.',
+    strengths: ['Low price', 'Very long memory window'],
+    bestFor: 'Long back-and-forth scenes on a small budget',
+    consideration: 'New to CHIMERA: its writing style has not been tuned for our characters yet.',
+    tier: 'shards',
+    shardsCost: 3,
+    status: 'available',
+    testersOnly: true,
+    reasoningEffort: 'low',
+    thinkingHeadroom: 1024,
+  },
+  {
+    id: 'mistralai/mistral-large-4-0',
+    name: 'QUANTUM',
+    provider: 'openrouter',
+    company: 'Mistral AI',
+    engineName: 'Mistral Large 4',
+    description: 'A large general-purpose engine from Mistral, run without extra deliberation so replies come quickly.',
+    strengths: ['Large model', 'Very long memory window', 'Direct replies'],
+    bestFor: 'Everyday roleplay with a larger model than the free engine',
+    consideration: 'New to CHIMERA: its writing style has not been tuned for our characters yet.',
+    tier: 'shards',
+    shardsCost: 5,
+    status: 'available',
+    testersOnly: true,
+    reasoningEffort: 'none',
+  },
+  {
+    id: 'google/gemini-3.8-flash',
+    name: 'HELIOS',
+    provider: 'openrouter',
+    company: 'Google',
+    engineName: 'Gemini 3.8 Flash',
+    description: 'Google’s newer and larger Flash engine, for scenes with many threads to keep straight.',
+    strengths: ['Newer Gemini engine', 'Very long memory window', 'Multi-step reasoning'],
+    bestFor: 'Complex scenes with several characters and plot threads',
+    consideration: 'It always thinks a little before answering, so replies can take a moment longer.',
+    tier: 'shards',
+    shardsCost: 7,
+    status: 'available',
+    testersOnly: true,
+    reasoningEffort: 'low',
+    thinkingHeadroom: 1536,
+  },
+  {
+    id: 'anthropic/claude-sonnet-5.5',
+    name: 'ECLIPSE',
+    provider: 'openrouter',
+    company: 'Anthropic',
+    engineName: 'Claude Sonnet 5.5',
+    description: 'The premium engine and the most expensive choice: the strongest model on offer.',
+    strengths: ['Premium engine', 'Very long memory window'],
+    bestFor: 'Scenes you want to be at their best, when SHARDS are not a concern',
+    consideration: 'It follows its own content rules, so it may decline some dark themes. It always thinks before answering.',
+    tier: 'shards',
+    shardsCost: 18,
+    status: 'available',
+    testersOnly: true,
+    noSampling: true,
+    reasoningEffort: 'low',
+    thinkingHeadroom: 1536,
   },
   {
     id: 'chimera-aurelia-summer-2026',
@@ -116,14 +191,15 @@ export function replyCost(model: ChatModel): number {
  * What a member can use. A paid model needs a valid price, so a model can never be used for free just
  * because it is listed or because its price was forgotten.
  */
-export function isUsable(model: ChatModel | null): model is ChatModel {
+export function isUsable(model: ChatModel | null, tester = false): model is ChatModel {
   if (!model || model.status !== 'available') return false;
+  if (model.testersOnly && !tester) return false;
   if (model.tier === 'free') return true;
   return Number.isInteger(model.shardsCost) && (model.shardsCost ?? 0) > 0 && (model.shardsCost ?? 0) <= 10_000;
 }
 
-export function usableModels(catalog: ChatModel[] = CHAT_MODELS): ChatModel[] {
-  return catalog.filter(isUsable);
+export function usableModels(catalog: ChatModel[] = CHAT_MODELS, tester = false): ChatModel[] {
+  return catalog.filter((model) => isUsable(model, tester));
 }
 
 export interface ModelChoice {
@@ -137,8 +213,8 @@ export interface ModelChoice {
  * Picks the model for a reply: the member's choice, then the character's (free models only), then the default. A model
  * that is unknown, not usable, or uncensored outside an adult scene is skipped, never used.
  */
-export function resolveModel(choice: ModelChoice, scene: { adultVerified: boolean }, catalog: ChatModel[] = CHAT_MODELS): ChatModel {
-  const allowed = (model: ChatModel | null): model is ChatModel => isUsable(model) && (!model.uncensored || scene.adultVerified);
+export function resolveModel(choice: ModelChoice, scene: { adultVerified: boolean; tester?: boolean }, catalog: ChatModel[] = CHAT_MODELS): ChatModel {
+  const allowed = (model: ChatModel | null): model is ChatModel => isUsable(model, scene.tester === true) && (!model.uncensored || scene.adultVerified);
   const own = findModel(choice.member, catalog);
   if (allowed(own)) return own;
   // A creator's recommendation can never spend the player's SHARDS: only the player's own choice can.

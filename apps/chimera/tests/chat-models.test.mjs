@@ -187,3 +187,58 @@ test('chargeForReply: free models take nothing; paid ones charge the catalog pri
     await assert.doesNotReject(refundUndeliveredReply(broken, reservation), 'a refund that cannot run never breaks the response');
   } finally { await close(); }
 });
+
+test('testers-only models: invisible and unusable for everyone else, usable by testers; fallbacks never expose them', async () => {
+  const { isUsable, usableModels, resolveModel, close } = await load();
+  try {
+    const catalog = [
+      model({ id: 'gemini-3.1-flash-lite', name: 'DEFAULT', provider: 'gemini' }),
+      model({ id: 'a/beta', name: 'BETA', tier: 'shards', shardsCost: 6, testersOnly: true }),
+      model({ id: 'a/free-beta', name: 'FREEBETA', testersOnly: true }),
+    ];
+    const beta = catalog[1];
+    assert.equal(isUsable(beta), false);
+    assert.equal(isUsable(beta, true), true);
+    assert.deepEqual(usableModels(catalog).map((m) => m.name), ['DEFAULT']);
+    assert.deepEqual(usableModels(catalog, true).map((m) => m.name), ['DEFAULT', 'BETA', 'FREEBETA']);
+
+    const pick = (choice, tester) => resolveModel(choice, { adultVerified: false, tester }, catalog).name;
+    assert.equal(pick({ member: 'a/beta' }, true), 'BETA');
+    assert.equal(pick({ member: 'a/beta' }, false), 'DEFAULT', 'a saved choice does not outlive tester access');
+    assert.equal(pick({ member: 'a/beta' }, undefined), 'DEFAULT');
+    assert.equal(pick({ character: 'a/free-beta' }, false), 'DEFAULT', 'a creator cannot expose a model that is still being tried');
+  } finally { await close(); }
+});
+
+test('the real catalog: every paid model on offer is priced, testers-only for now, and kept out of reach of other members', async () => {
+  const { CHAT_MODELS, usableModels, resolveModel, replyCost, close } = await load();
+  try {
+    const paid = CHAT_MODELS.filter((m) => m.tier === 'shards' && m.status === 'available');
+    assert.deepEqual(paid.map((m) => m.name), ['PULSAR', 'QUANTUM', 'HELIOS', 'ECLIPSE']);
+    assert.ok(paid.every((m) => m.testersOnly && replyCost(m) > 0), 'priced, and not public yet');
+    assert.deepEqual(usableModels().map((m) => m.name), ['SUPERNOVA'], 'other members still only get SUPERNOVA');
+    for (const m of paid) {
+      assert.equal(resolveModel({ member: m.id }, { adultVerified: true }).name, 'SUPERNOVA', `${m.name} is refused for a non-tester`);
+      assert.equal(resolveModel({ member: m.id }, { adultVerified: false, tester: true }).name, m.name);
+    }
+    assert.ok(paid.every((m) => m.provider === 'openrouter' && m.reasoningEffort), 'each paid model asks for minimal reasoning');
+  } finally { await close(); }
+});
+
+test('OpenRouter requests carry the reasoning effort of the model, and nothing for models that do not set one', async () => {
+  const { generateReply, close } = await load();
+  const realFetch = globalThis.fetch;
+  try {
+    const bodies = [];
+    globalThis.fetch = async (_url, init) => { bodies.push(JSON.parse(init.body)); return new Response(JSON.stringify({ choices: [{ message: { content: 'ok' } }] }), { status: 200 }); };
+    const turns = [{ role: 'user', text: 'hi' }];
+    const keys = { openrouter: 'K' };
+    await generateReply({ model: model({ id: 'v/m', reasoningEffort: 'low' }), systemPrompt: 'S', turns, maxOutputTokens: 100, keys });
+    await generateReply({ model: model({ id: 'v/n', reasoningEffort: 'none', noSampling: true }), systemPrompt: 'S', turns, maxOutputTokens: 100, keys });
+    await generateReply({ model: model({ id: 'v/o' }), systemPrompt: 'S', turns, maxOutputTokens: 100, keys });
+    assert.deepEqual(bodies[0].reasoning, { effort: 'low' });
+    assert.deepEqual(bodies[1].reasoning, { effort: 'none' });
+    assert.equal('temperature' in bodies[1], false);
+    assert.equal('reasoning' in bodies[2], false);
+  } finally { globalThis.fetch = realFetch; await close(); }
+});
