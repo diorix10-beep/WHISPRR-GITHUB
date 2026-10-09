@@ -127,3 +127,31 @@ export async function createLorebook(userId: string, title: string): Promise<str
   if (error || !data) throw error ?? new Error('not created');
   return (data as { id: string }).id;
 }
+
+/** Entries are saved this many at a time. */
+const INSERT_BATCH = 100;
+
+/**
+ * Creates a private lorebook with all its entries. If anything fails part-way, the lorebook is deleted again (its
+ * entries go with it), so a failed conversion leaves nothing half-made behind.
+ */
+export async function createLorebookWithEntries(userId: string, title: string, entries: EntryForm[]): Promise<string> {
+  const id = await createLorebook(userId, title);
+  try {
+    const rows = entries.map((form, index) => entryRow(form, id, index));
+    for (let from = 0; from < rows.length; from += INSERT_BATCH) {
+      const { error } = await supabase.from('lorebook_entries').insert(rows.slice(from, from + INSERT_BATCH));
+      if (error) throw error;
+    }
+  } catch (error) {
+    await supabase.from('lorebooks').delete().eq('id', id).eq('user_id', userId);
+    throw error;
+  }
+  return id;
+}
+
+/** Lets a character of the member use a lorebook of the member. Already linked counts as done. */
+export async function linkLorebookToCharacter(lorebookId: string, characterId: string): Promise<void> {
+  const { error } = await supabase.from('lorebook_characters').insert({ lorebook_id: lorebookId, character_id: characterId });
+  if (error && error.code !== '23505') throw error;
+}

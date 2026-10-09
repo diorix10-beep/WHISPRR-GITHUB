@@ -11,6 +11,8 @@ import { ratingLabel } from '../lib/ratings';
 import { CharacterAvatar } from '../components/characters/CharacterAvatar';
 import { FormSection } from '../components/characters/FormSection';
 import { TagPicker } from '../components/characters/TagPicker';
+import { LorebookConverter, type ConvertedLorebook } from '../components/characters/LorebookConverter';
+import { linkLorebookToCharacter } from '../lib/lorebooks';
 import {
   CATEGORIES,
   EMPTY_FORM,
@@ -57,6 +59,9 @@ export default function CreateCharacterPage() {
   const avatarInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [converting, setConverting] = useState(false);
+  // A lorebook made from the Full definition. It is linked to the character once the character exists.
+  const [madeLorebook, setMadeLorebook] = useState<(ConvertedLorebook & { linked: boolean }) | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -150,6 +155,13 @@ export default function CreateCharacterPage() {
     setSaving(true);
     try {
       const id = await saveCharacter(form, existing);
+      if (madeLorebook && !madeLorebook.linked) {
+        try {
+          await linkLorebookToCharacter(madeLorebook.lorebookId, id);
+        } catch {
+          showToast('The character was saved, but its lorebook could not be linked. Tick the character on the lorebook page.', 'error');
+        }
+      }
       showToast(editId ? 'Character updated.' : 'Character created.', 'success');
       navigate(`/characters/${id}`);
     } catch (error) {
@@ -341,6 +353,37 @@ export default function CreateCharacterPage() {
             <div className="flex items-baseline justify-between"><label htmlFor="c-definition" className="font-bold">Full definition <span className="font-normal text-chimera-mute">(optional)</span></label>{tokens(form.definition)}</div>
             <p className="text-sm text-chimera-mute">A complete written definition, such as a character codex with its world and rules. The AI reads it as the character&apos;s detailed definition, right after the personality, with every reply.</p>
             <textarea id="c-definition" value={form.definition} onChange={(e) => set('definition', e.target.value)} rows={10} className={FIELD} />
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <button type="button" onClick={() => setConverting(true)} disabled={!form.definition.trim() || converting || !user} className="min-h-[44px] rounded-full border border-chimera-gold/50 px-5 font-bold hover:bg-chimera-gold/10 disabled:cursor-not-allowed disabled:opacity-50">
+                Turn it into a lorebook
+              </button>
+              <span className="text-sm text-chimera-mute">For a very long text: only the parts that matter go to the AI with each reply.</span>
+            </div>
+            {converting && user && (
+              <LorebookConverter
+                userId={user.id}
+                text={form.definition}
+                defaultName={`${form.name.trim() || 'Character'} lorebook`}
+                onCancel={() => setConverting(false)}
+                onDone={(result) => {
+                  set('definition', '');
+                  setConverting(false);
+                  setMadeLorebook({ ...result, linked: false });
+                  if (existing?.id) {
+                    linkLorebookToCharacter(result.lorebookId, existing.id)
+                      .then(() => setMadeLorebook((current) => (current ? { ...current, linked: true } : current)))
+                      .catch(() => showToast('The lorebook was created but could not be linked yet. It will be linked when you save.', 'error'));
+                  }
+                }}
+              />
+            )}
+            {madeLorebook && (
+              <p role="status" className="mt-3 rounded-xl border border-chimera-mint/40 bg-chimera-mint/10 px-4 py-3 text-[15px] text-green-100">
+                The lorebook &quot;{madeLorebook.title}&quot; was created with {madeLorebook.count.toLocaleString()} {madeLorebook.count === 1 ? 'entry' : 'entries'}, and the field above is now empty.{' '}
+                {madeLorebook.linked ? 'This character already uses it.' : 'This character will use it as soon as you save it.'}{' '}
+                <Link to={`/lorebooks/${madeLorebook.lorebookId}`} target="_blank" rel="noreferrer" className="font-bold underline">Open it</Link> (in a new tab).
+              </p>
+            )}
           </div>
 
           <div>

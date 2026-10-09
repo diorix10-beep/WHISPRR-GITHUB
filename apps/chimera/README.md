@@ -180,6 +180,14 @@ older"** in the Guardian's Library. That is a **declaration, not a verification*
   creator's order. At most 8,000 characters of lorebook go with one reply and one entry is cut at 2,500 (the full text stays saved), so a big lorebook
   cannot crowd out the character or the story. Entries are read in pages, highest priority first, up to 2,000 per character (beyond that, the lowest priority ones are not used). It is added to the prompt as `## Lorebook`, after the world and before the player. A failed read means
   no lorebook, never a failed reply. It runs after the adult-content check, so a locked character never gets that far.
+- **From a long text.** Under the creator's *Full definition* a button "Turn it into a lorebook" cuts the text into entries (`src/lib/lorebookSplit.ts`,
+  `src/components/characters/LorebookConverter.tsx`). The writer picks how the text is organised (detected: `#` lines, Episode/Chapter/Part lines, CAPITALS lines,
+  numbered lines, or cut by size only, each with its entry count), then reviews every entry: name, keywords (taken from the heading, or from the most repeated
+  names in the text), *Always send* (the short introduction starts on), remove. Entries are at most 2,400 characters (long sections become "Title (1)", "(2)"…),
+  and no text is lost (a test checks it on a 650,000-character codex). Nothing is saved before Create; the lorebook is made private in one go (a failure
+  deletes what was made and keeps the text); the field is then emptied and the lorebook is linked to the character (at once when editing, when saving when new).
+  Lorebooks can still be written by hand at `/lorebooks`. Limits: the cut is approximate and keywords from headings need a quick look; the "always send" entries
+  together should stay under about 8,000 characters (the review screen warns).
 - **Known limits.** Matching is plain keyword search (no regular expressions, no recursion between entries). Importing a card's `character_book` is not
   built yet (the importer still lists it as left out). Like the rest of a character's definition, a lorebook can be coaxed out of the AI by someone who chats
   with the character. A lorebook has no content rating: explicit entries linked to a General character are not detected (same gap as explicit text in a
