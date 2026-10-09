@@ -98,10 +98,30 @@ export function parseTags(raw: string): string[] {
   return Array.from(seen.values()).slice(0, LIMITS.tags);
 }
 
-/** What the AI receives with every reply, in characters. The bio is only shown on cards, so it does not count. */
-export function definitionSize(form: CharacterForm): number {
-  return [form.tagline, form.greeting, form.scenario, form.personality, form.examples, form.style, form.lore, form.avoid, form.notes]
+/** Row as stored. Fields the form does not show are carried through unchanged on edit. */
+export type CharacterRecord = Record<string, unknown> & { id: string };
+
+function text(row: CharacterRecord | null, key: string, fallback = ''): string {
+  const value = row?.[key];
+  return typeof value === 'string' ? value : fallback;
+}
+
+/**
+ * Fields that reach the chat prompt but are not in the form. They are kept as they were on edit, so they still count.
+ * (Old characters can have them; the form never writes them.)
+ */
+const HIDDEN_PROMPT_FIELDS = ['system_definition', 'system_character_definition', 'rp_definition', 'example_conversations'] as const;
+
+/**
+ * What the AI receives with every reply, in characters. The bio is only shown on cards, so it does not count.
+ * The opening message is counted twice: a new scene sends it in the system prompt and again in the opening turn
+ * (api/ai-chat.ts). Fields kept from an older version of the character count too.
+ */
+export function definitionSize(form: CharacterForm, existing: CharacterRecord | null = null): number {
+  const written = [form.tagline, form.greeting, form.greeting, form.scenario, form.personality, form.examples, form.style, form.lore, form.avoid, form.notes]
     .reduce((total, value) => total + value.trim().length, 0);
+  const kept = HIDDEN_PROMPT_FIELDS.reduce((total, key) => total + text(existing, key).trim().length, 0);
+  return written + kept;
 }
 
 /** What is still missing before the character can be created, in plain words. Empty when it is ready. */
@@ -114,7 +134,7 @@ export function missingForCreate(form: CharacterForm): string[] {
 }
 
 /** Returns a readable problem, or null when the form can be saved. */
-export function validateForm(form: CharacterForm): string | null {
+export function validateForm(form: CharacterForm, existing: CharacterRecord | null = null): string | null {
   if (!form.name.trim()) return 'Give your character a name.';
   if (!form.greeting.trim()) return 'Write the first message your character says to open a scene.';
   if (!form.personality.trim()) return 'Describe their personality so they stay in character.';
@@ -128,20 +148,12 @@ export function validateForm(form: CharacterForm): string | null {
   for (const [label, value, max] of checks) {
     if (value.length > max) return `${label} is too long to be shown. Please shorten it.`;
   }
-  const size = definitionSize(form);
+  const size = definitionSize(form, existing);
   if (size > MAX_DEFINITION_CHARACTERS) {
     const over = estimateTokens('x'.repeat(size - MAX_DEFINITION_CHARACTERS));
     return `This character is too long for chats to work reliably: every reply carries the whole definition. Please shorten it by about ${over.toLocaleString()} tokens.`;
   }
   return null;
-}
-
-/** Row as stored. Fields the form does not show are carried through unchanged on edit. */
-export type CharacterRecord = Record<string, unknown> & { id: string };
-
-function text(row: CharacterRecord | null, key: string, fallback = ''): string {
-  const value = row?.[key];
-  return typeof value === 'string' ? value : fallback;
 }
 
 /**

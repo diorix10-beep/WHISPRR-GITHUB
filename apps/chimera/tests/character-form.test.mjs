@@ -21,7 +21,7 @@ test('estimateTokens is a rough count and definitionSize leaves the bio out (it 
     assert.equal(estimateTokens('abcde'), 2);
     assert.equal(estimateTokens('   '), 0);
     const form = filled(EMPTY_FORM, { about: 'x'.repeat(4000), tagline: 'aa', scenario: 'bbb', examples: 'cccc', style: 'd', lore: 'ee', avoid: 'f', notes: 'g' });
-    assert.equal(definitionSize(form), 5 /* personality */ + 5 /* greeting */ + 2 + 3 + 4 + 1 + 2 + 1 + 1, 'the bio is not counted');
+    assert.equal(definitionSize(form), 5 /* personality */ + 5 * 2 /* the opening message is sent twice */ + 2 + 3 + 4 + 1 + 2 + 1 + 1, 'the bio is not counted');
   } finally { await close(); }
 });
 
@@ -29,7 +29,7 @@ test('long writing is welcome: no limit is hit by ordinary or very long definiti
   const { validateForm, EMPTY_FORM, MAX_DEFINITION_CHARACTERS, close } = await load();
   try {
     assert.equal(validateForm(filled(EMPTY_FORM, { personality: 'p'.repeat(20_000), scenario: 's'.repeat(10_000), examples: 'e'.repeat(15_000) })), null, 'about 11,000 tokens is fine');
-    assert.equal(validateForm(filled(EMPTY_FORM, { personality: 'p'.repeat(MAX_DEFINITION_CHARACTERS - 5) })), null, 'right up to the ceiling (greeting counts 5)');
+    assert.equal(validateForm(filled(EMPTY_FORM, { personality: 'p'.repeat(MAX_DEFINITION_CHARACTERS - 10) })), null, 'right up to the ceiling (the 5-character greeting counts twice)');
     const over = validateForm(filled(EMPTY_FORM, { personality: 'p'.repeat(MAX_DEFINITION_CHARACTERS + 1) }));
     assert.match(over ?? '', /too long for chats to work/);
     assert.match(over ?? '', /about [\d,]+ tokens/, 'it says by how much, in tokens');
@@ -103,5 +103,23 @@ test('pictures: only JPG, PNG and WebP up to 5 MB, stored in the member\'s own f
     assert.match(checkAvatarFile({ type: 'image/png', size: 0 }) ?? '', /empty/);
     assert.equal(avatarPath('user-1', 'image/webp', 'abc'), 'user-1/character-avatars/abc.webp');
     assert.ok(avatarPath('user-1', 'image/png', 'abc').startsWith('user-1/'), 'the first folder is the member id, as the storage rule requires');
+  } finally { await close(); }
+});
+
+test('the size matches what the chat really sends: the opening message twice, and the fields kept from older versions', async () => {
+  const { definitionSize, validateForm, EMPTY_FORM, MAX_DEFINITION_CHARACTERS, close } = await load();
+  try {
+    // The reviewed case: a very long opening with a minimal personality used to pass and then could never start a scene.
+    const longOpening = filled(EMPTY_FORM, { greeting: 'g'.repeat(MAX_DEFINITION_CHARACTERS) });
+    assert.equal(definitionSize(longOpening), MAX_DEFINITION_CHARACTERS * 2 + 5);
+    assert.match(validateForm(longOpening) ?? '', /too long for chats/);
+    assert.equal(validateForm(filled(EMPTY_FORM, { greeting: 'g'.repeat(MAX_DEFINITION_CHARACTERS / 2 - 5) })), null, 'half the ceiling, counted twice, fits');
+
+    const kept = { id: 'c1', system_definition: 'a'.repeat(100), system_character_definition: 'b'.repeat(200), rp_definition: 'c'.repeat(300), example_conversations: 'd'.repeat(400), voice_id: 'x'.repeat(5000) };
+    const plain = filled(EMPTY_FORM);
+    assert.equal(definitionSize(plain, kept) - definitionSize(plain), 1000, 'the four prompt fields kept on edit count, other fields do not');
+    const nearly = filled(EMPTY_FORM, { personality: 'p'.repeat(MAX_DEFINITION_CHARACTERS - 10 - 500) });
+    assert.equal(validateForm(nearly, null), null);
+    assert.match(validateForm(nearly, kept) ?? '', /too long for chats/, 'the same text no longer fits once the kept fields are counted');
   } finally { await close(); }
 });
