@@ -13,7 +13,6 @@ interface CharacterRow {
   user_id: string;
   name: string | null;
   short_description: string | null;
-  long_description: string | null;
   category: string | null;
   tags: string[] | null;
   content_rating: string | null;
@@ -35,7 +34,7 @@ export default function DiscoverPage() {
     setFailed(false);
     let request = supabase
       .from('ai_characters')
-      .select('id, user_id, name:chat_name, short_description, long_description, category, tags, content_rating, avatar_url')
+      .select('id, user_id, name:chat_name, short_description, category, tags, content_rating, avatar_url')
       .eq('visibility', 'public')
       .eq('status', 'published');
     // Mature / NSFW characters are listed only for verified adults who opted in.
@@ -135,7 +134,7 @@ export default function DiscoverPage() {
                     {c.category && <span className="text-sm text-chimera-mute">{c.category}</span>}
                   </div>
                 </div>
-                <p className="line-clamp-3 leading-relaxed text-violet-100/85">{c.short_description || c.long_description || 'A character waiting for a story to begin.'}</p>
+                <p className="line-clamp-3 leading-relaxed text-violet-100/85">{c.short_description || 'A character waiting for a story to begin.'}</p>
                 <div className="flex flex-wrap gap-2">
                   {(c.tags ?? []).slice(0, 2).map((tag) => (
                     <span key={tag} className="rounded-full border border-white/15 px-3 py-1 text-[13px] text-violet-100/80">{tag}</span>

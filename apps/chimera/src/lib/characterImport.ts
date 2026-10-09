@@ -224,7 +224,7 @@ export function cardToForm(raw: unknown, { allowAdult = false }: ImportOptions =
     scenario: fit('Scenario', text('scenario'), LIMITS.scenario),
     personality: fit('Personality', personality, LIMITS.personality),
     examples: fit('Example dialogue', text('mes_example', true), LIMITS.examples),
-    about: fit('About', applyPlaceholders(notes, macroName, false, unknown), LIMITS.about),
+    about: applyPlaceholders(notes, macroName, false, unknown),
     tags: parseTags(tags.join(', ')).join(', '),
     visibility: 'private',
     mature: adult,
