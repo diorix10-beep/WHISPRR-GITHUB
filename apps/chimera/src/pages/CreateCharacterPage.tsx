@@ -1,9 +1,10 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, FileUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { CardImportError, importCardFile, type ImportNotes, type ImportResult } from '../lib/characterImport';
 import {
   CATEGORIES,
   EMPTY_FORM,
@@ -37,6 +38,11 @@ export default function CreateCharacterPage() {
   const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importedNotes, setImportedNotes] = useState<ImportNotes | null>(null);
+  const [pendingImport, setPendingImport] = useState<ImportResult | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -65,6 +71,31 @@ export default function CreateCharacterPage() {
   const set = <K extends keyof CharacterForm>(key: K, value: CharacterForm[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
     setProblem(null);
+  };
+
+  const applyImport = (result: ImportResult) => {
+    setForm(result.form);
+    setImportedNotes(result.notes);
+    setPendingImport(null);
+    setProblem(null);
+  };
+
+  const chooseCard = async (file: File | undefined) => {
+    if (!file || importing) return;
+    setImporting(true);
+    setImportError(null);
+    try {
+      const result = await importCardFile(file);
+      // Do not silently replace what the person has already typed.
+      const typedSomething = JSON.stringify(form) !== JSON.stringify(EMPTY_FORM);
+      if (typedSomething) setPendingImport(result);
+      else applyImport(result);
+    } catch (error) {
+      setImportError(error instanceof CardImportError ? error.message : 'We could not read this file. Please try another card.');
+    } finally {
+      setImporting(false);
+      if (fileInput.current) fileInput.current.value = '';
+    }
   };
 
   const submit = async (event: FormEvent) => {
@@ -112,6 +143,43 @@ export default function CreateCharacterPage() {
       <p className="mt-3 text-chimera-mute">
         Characters here are rated SFW for now. Keep them fictional, never based on a real person, and never sexual in any way involving minors.
       </p>
+
+      {!editId && (
+        <section aria-labelledby="import-title" className="mt-6 rounded-2xl border border-chimera-gold/25 bg-chimera-panel p-4">
+          <h2 id="import-title" className="font-serif text-xl font-semibold text-chimera-gold">Already have a character card?</h2>
+          <p className="mt-1 text-sm text-chimera-mute">
+            Import a card from another site (a .png picture with the card inside, or a .json file). It only fills the form below: you read it through and decide before anything is saved, and it starts private. Only import characters you made or have permission to use.
+          </p>
+          <input ref={fileInput} id="card-file" type="file" accept=".png,.json,image/png,application/json" className="sr-only" onChange={(e) => void chooseCard(e.target.files?.[0])} />
+          <label htmlFor="card-file" className={`mt-3 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-full border border-chimera-gold/50 px-5 text-sm font-bold hover:bg-chimera-gold/10 ${importing ? 'opacity-60' : ''}`}>
+            <FileUp size={17} aria-hidden="true" /> {importing ? 'Reading…' : 'Choose a card file'}
+          </label>
+          {importError && <p role="alert" className="mt-3 rounded-xl border border-chimera-rose/40 bg-chimera-rose/10 px-4 py-3 text-sm text-red-100">{importError}</p>}
+          {pendingImport && (
+            <div role="group" aria-label="Replace the form" className="mt-3 rounded-xl border border-chimera-gold/40 p-3">
+              <p className="text-sm">Importing <span className="font-bold">{pendingImport.form.name || 'this card'}</span> will replace what you have typed so far.</p>
+              <div className="mt-2 flex gap-2">
+                <button type="button" onClick={() => applyImport(pendingImport)} className="min-h-[44px] rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208]">Replace the form</button>
+                <button type="button" onClick={() => setPendingImport(null)} className="min-h-[44px] rounded-full border border-chimera-gold/40 px-5 text-sm font-bold">Keep what I typed</button>
+              </div>
+            </div>
+          )}
+          {importedNotes && (
+            <div role="status" className="mt-3 rounded-xl border border-chimera-gold/30 bg-chimera-bg p-3 text-sm">
+              <p className="font-bold text-chimera-ink">Imported from a {importedNotes.format}. Please read everything through before you create it.</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-chimera-mute">
+                {importedNotes.trimmed.map((item) => (
+                  <li key={item.field}>{item.field} was {item.from.toLocaleString()} characters and was shortened to {item.to.toLocaleString()}. Check that it still ends well.</li>
+                ))}
+                {importedNotes.leftOut.map((item) => <li key={item}>Not imported: {item}.</li>)}
+                {importedNotes.picture && <li>The card&apos;s picture is not used yet.</li>}
+                {importedNotes.placeholders.length > 0 && <li>These placeholders were left as written: {importedNotes.placeholders.join(', ')}.</li>}
+                <li>Instructions for the player were written as &ldquo;you&rdquo; or &ldquo;the player&rdquo;.</li>
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
 
       <form onSubmit={(e) => void submit(e)} className="mt-8 space-y-6" noValidate>
         <div>
