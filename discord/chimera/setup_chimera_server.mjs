@@ -8,10 +8,11 @@
 //
 // The bot needs: Manage Roles, Manage Channels, View Channels, Send Messages, Embed Links.
 // Its own role must sit ABOVE the roles it creates (Discord rule) for the 🛡️ Moderator role to be created.
-import { Client, GatewayIntentBits, ChannelType, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
+import { Client, GatewayIntentBits, ChannelType, PermissionFlagsBits, EmbedBuilder, OverwriteType } from 'discord.js';
 import { readConfig, snapshot } from './lib.mjs';
 import { CATEGORIES, ROLES, STAFF_ROLE, BETA_ROLE, planChanges, summarize, normalize } from './plan.mjs';
 import { RULES, WELCOME, FAQ, LINKS } from './texts.mjs';
+import { mergeOverwrites } from './overwrites.mjs';
 
 const apply = process.argv.includes('--apply');
 const { token, guildId } = readConfig();
@@ -52,6 +53,10 @@ client.once('clientReady', async () => {
     const staffRole = roleByName.get(normalize(STAFF_ROLE));
     const betaRole = roleByName.get(normalize(BETA_ROLE));
     const everyone = guild.roles.everyone;
+    const VIEW = PermissionFlagsBits.ViewChannel;
+    const SEND = PermissionFlagsBits.SendMessages;
+    const THREADS = PermissionFlagsBits.CreatePublicThreads | PermissionFlagsBits.CreatePrivateThreads;
+    const botAccess = { id: client.user.id, type: OverwriteType.Member, allow: VIEW | SEND | PermissionFlagsBits.EmbedLinks, deny: 0n };
 
     // Categories and channels
     const categories = new Map(shot.categories.map((c) => [normalize(c.name), c.id]));
@@ -60,23 +65,31 @@ client.once('clientReady', async () => {
     for (const cat of CATEGORIES) {
       const missing = cat.channels.filter((c) => !existingChannels.has(normalize(c.name)));
       if (missing.length === 0) continue;
-      let parentId = categories.get(normalize(cat.name));
-      if (!parentId) {
+      let parent = categories.get(normalize(cat.name)) ? await guild.channels.fetch(categories.get(normalize(cat.name))) : null;
+      if (!parent) {
         const overwrites = [];
         if (cat.visibility !== 'public') {
-          overwrites.push({ id: everyone.id, deny: [PermissionFlagsBits.ViewChannel] });
-          if (staffRole) overwrites.push({ id: staffRole.id, allow: [PermissionFlagsBits.ViewChannel] });
-          if (cat.visibility === 'beta' && betaRole) overwrites.push({ id: betaRole.id, allow: [PermissionFlagsBits.ViewChannel] });
+          overwrites.push({ id: everyone.id, type: OverwriteType.Role, allow: 0n, deny: VIEW });
+          if (staffRole) overwrites.push({ id: staffRole.id, type: OverwriteType.Role, allow: VIEW, deny: 0n });
+          if (cat.visibility === 'beta' && betaRole) overwrites.push({ id: betaRole.id, type: OverwriteType.Role, allow: VIEW, deny: 0n });
+          // The bot must keep seeing the category it just hid from @everyone, or it cannot create channels in it.
+          overwrites.push(botAccess);
         }
-        parentId = (await guild.channels.create({ name: cat.name, type: ChannelType.GuildCategory, permissionOverwrites: overwrites, reason: 'CHIMERA server setup' })).id;
+        parent = await guild.channels.create({ name: cat.name, type: ChannelType.GuildCategory, permissionOverwrites: overwrites.length ? overwrites : undefined, reason: 'CHIMERA server setup' });
         console.log('created category', cat.name);
       }
+      // A new channel copies its category's permissions (so a private category's channels stay private) and adds only what it needs.
+      const inherited = [...parent.permissionOverwrites.cache.values()].map((o) => ({ id: o.id, type: o.type, allow: o.allow.bitfield, deny: o.deny.bitfield }));
       for (const def of missing) {
-        const overwrites = def.readonly
-          ? [{ id: everyone.id, deny: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.CreatePublicThreads, PermissionFlagsBits.CreatePrivateThreads] }]
-          : [];
-        if (def.readonly && staffRole) overwrites.push({ id: staffRole.id, allow: [PermissionFlagsBits.SendMessages] });
-        const make = (type) => guild.channels.create({ name: def.name, type, parent: parentId, topic: def.topic, permissionOverwrites: overwrites, reason: 'CHIMERA server setup' });
+        const extras = [];
+        if (def.readonly) {
+          extras.push({ id: everyone.id, type: OverwriteType.Role, allow: 0n, deny: SEND | THREADS });
+          if (staffRole) extras.push({ id: staffRole.id, type: OverwriteType.Role, allow: SEND, deny: 0n });
+          // The @everyone deny above also applies to the bot, so it needs its own allow to post the texts.
+          extras.push(botAccess);
+        }
+        const overwrites = mergeOverwrites(inherited, extras);
+        const make = (type) => guild.channels.create({ name: def.name, type, parent: parent.id, topic: def.topic, permissionOverwrites: overwrites, reason: 'CHIMERA server setup' });
         let channel;
         try {
           channel = await make(TYPES[def.type]);
@@ -96,7 +109,13 @@ client.once('clientReady', async () => {
     const embed = (t) => new EmbedBuilder().setTitle(t.title).setDescription(t.description.replace('<#RULES>', rulesChannel ? `<#${rulesChannel.id}>` : '#rules')).setColor(0x8b5cf6);
     for (const [name, text] of [['rules', RULES], ['welcome', WELCOME], ['faq', FAQ], ['links', LINKS]]) {
       const channel = Object.entries(posted).find(([n]) => normalize(n) === name)?.[1];
-      if (channel) await channel.send({ embeds: [embed(text)], allowedMentions: { parse: [] } });
+      if (!channel) continue;
+      try {
+        await channel.send({ embeds: [embed(text)], allowedMentions: { parse: [] } });
+      } catch (error) {
+        // The channel exists now, so a rerun will not seed it: say so, and where the text lives.
+        console.log(`  Could not post the ${name} text (${error.message}). Paste it by hand from discord/chimera/texts.mjs.`);
+      }
     }
     console.log('\nDone. Nothing that already existed was changed.');
   } finally {

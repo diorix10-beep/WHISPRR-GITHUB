@@ -5,6 +5,7 @@ import { CATEGORIES, ROLES, WHISPRR_HQ_GUILD_ID, normalize, planChanges, summari
 import { readConfig, snapshot } from '../../../discord/chimera/lib.mjs';
 import { buildAnnouncement, readArgs } from '../../../discord/chimera/announcement.mjs';
 import { RULES, WELCOME, FAQ, LINKS } from '../../../discord/chimera/texts.mjs';
+import { effective, mergeOverwrites } from '../../../discord/chimera/overwrites.mjs';
 
 const empty = { roles: [], categories: [], channels: [] };
 const allChannels = CATEGORIES.flatMap((c) => c.channels);
@@ -124,4 +125,59 @@ test('announcements: webhook URL checked, no pings by default, only the one name
   assert.throws(() => buildAnnouncement({ ...base, text: 'x'.repeat(4001) }), /4000/);
   assert.throws(() => buildAnnouncement({ ...base, pingRole: 'everyone' }), /role id/);
   assert.deepEqual(readArgs(['--title', 'A b', '--send', '--ping-role', '123']), { title: 'A b', send: true, 'ping-role': '123' });
+});
+
+const F = PermissionFlagsBits;
+const VIEW = F.ViewChannel;
+const SEND = F.SendMessages;
+const THREADS = F.CreatePublicThreads | F.CreatePrivateThreads;
+const BASE = VIEW | SEND | F.EmbedLinks | F.CreatePublicThreads;
+const EVERYONE = 'everyone', STAFF = 'staff', BOT = 'bot-user';
+const role = (id, allow, deny) => ({ id, type: 0, allow, deny });
+const botMember = { id: BOT, type: 1, allow: VIEW | SEND | F.EmbedLinks, deny: 0n };
+const staffCtx = { memberId: 'someone', roleIds: [STAFF], everyoneId: EVERYONE };
+const plainCtx = { memberId: 'someone', roleIds: [], everyoneId: EVERYONE };
+const botCtx = { memberId: BOT, roleIds: ['bot-role'], everyoneId: EVERYONE };
+const can = (perms, bit) => (perms & bit) === bit;
+
+test('read-only channels: the bot can still post its texts, members cannot write, staff can', () => {
+  const extras = [role(EVERYONE, 0n, SEND | THREADS), role(STAFF, SEND, 0n), botMember];
+  const overwrites = mergeOverwrites([], extras);
+  assert.equal(can(effective(BASE, overwrites, botCtx), SEND), true, 'the bot can send');
+  assert.equal(can(effective(BASE, overwrites, plainCtx), SEND), false, 'members cannot');
+  assert.equal(can(effective(BASE, overwrites, plainCtx), VIEW), true, 'but they can read');
+  assert.equal(can(effective(BASE, overwrites, staffCtx), SEND), true);
+  // The defect this guards against: without its own allow the bot is silenced by the @everyone deny.
+  const withoutBot = mergeOverwrites([], extras.slice(0, 2));
+  assert.equal(can(effective(BASE, withoutBot, botCtx), SEND), false);
+});
+
+test('channels in a private category stay private: they copy the category and are never given an empty list', () => {
+  const category = [role(EVERYONE, 0n, VIEW), role(STAFF, VIEW, 0n), botMember];
+  const child = mergeOverwrites(category, []);
+  assert.ok(child && child.length === 3, 'an empty extras list still copies the whole category');
+  assert.equal(can(effective(BASE, child, plainCtx), VIEW), false, 'members cannot see it');
+  assert.equal(can(effective(BASE, child, staffCtx), VIEW), true);
+  assert.equal(can(effective(BASE, child, botCtx), VIEW), true);
+  // The defect this guards against: an empty list would expose the channel to everyone who can view by default.
+  assert.equal(can(effective(BASE, [], plainCtx), VIEW), true);
+  assert.equal(mergeOverwrites([], []), undefined, 'a public channel in a plain category is left to follow it');
+});
+
+test('a read-only channel in an existing restricted category keeps the category restriction', () => {
+  const category = [role(EVERYONE, 0n, VIEW), role('members', VIEW, 0n)];
+  const child = mergeOverwrites(category, [role(EVERYONE, 0n, SEND | THREADS), botMember]);
+  const member = { memberId: 'x', roleIds: ['members'], everyoneId: EVERYONE };
+  assert.equal(can(effective(BASE, child, plainCtx), VIEW), false, 'still hidden from people the category hides it from');
+  assert.equal(can(effective(BASE, child, member), VIEW), true);
+  assert.equal(can(effective(BASE, child, member), SEND), false, 'and read-only for them');
+  // The inputs are not modified.
+  assert.deepEqual(category[0], role(EVERYONE, 0n, VIEW));
+});
+
+test('extras win over the category for the bits they mention only', () => {
+  const merged = mergeOverwrites([role(STAFF, 0n, SEND | VIEW)], [role(STAFF, SEND, 0n)]);
+  const staff = merged.find((o) => o.id === STAFF);
+  assert.equal(staff.allow, SEND);
+  assert.equal(staff.deny, VIEW, 'the category view-deny on staff is kept');
 });
