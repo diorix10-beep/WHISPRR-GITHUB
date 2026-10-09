@@ -75,7 +75,7 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
 - A trigger on `ai_characters` now refuses a new Mature or NSFW rating from a member who is not eligible. Still a known gap: explicit text under a General rating is not detected at creation.
 
 - **Other opening messages** (`src/lib/openings.ts`, `api/_lib/openings.ts`). A character has its main opening message and up to 10 others
-  (`ai_characters.alternate_greetings`, a column that already existed: no migration). Under the main opening, *Add another opening* adds more; saving
+  (`ai_characters.alternate_greetings`, a column that already existed). `supabase/migrations/20261009090000_chimera_alternate_openings.sql` replaces `respond_as_ai_character`, which posts the opening as the scene's first message and until then accepted only the main greeting: it now accepts the main greeting or one of the alternates (compared without the spaces around them), stores the creator's own text, and still refuses anything else, so a player can never post arbitrary text as the character. **Apply it before this version's pages go live**, or picking any opening but the main one fails. Under the main opening, *Add another opening* adds more; saving
   rewrites the list from the form, never repeating the main one. With one opening a new scene still starts by itself. With several, the scene stays empty
   and shows *How should this scene begin?*: each opening in full with *Begin with this one*, and *Surprise me* for a random one; the writing box is locked
   until one is picked, and the pick is written as the scene's first message (a double click writes it once). Only the opening used goes to the AI: the server
