@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="SHARDS">
+  <rect width="32" height="32" rx="4" fill="#1c1915"/>
+  <rect x=".5" y=".5" width="31" height="31" rx="3.5" fill="none" stroke="#7a7262"/>
+  <path d="M16 4 7 12h9z" fill="#f6cf6e"/>
+  <path d="M16 4l9 8h-9z" fill="#e3a72f"/>
+  <path d="M7 12h9v16z" fill="#c68a12"/>
+  <path d="M25 12h-9v16z" fill="#9a690a"/>
+</svg>

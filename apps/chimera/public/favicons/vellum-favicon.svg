@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="VELLUM">
+  <rect width="32" height="32" rx="4" fill="#1f6b63"/>
+  <path d="M9 5h11l5 5v17H9z" fill="#fbf8f1"/>
+  <path d="M20 5l5 5h-5z" fill="#b7d3ce"/>
+  <path d="M12 15h10M12 19h10M12 23h6" stroke="#1f6b63" stroke-width="1.7" stroke-linecap="round"/>
+</svg>
