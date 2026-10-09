@@ -213,10 +213,28 @@ const INSERT_BATCH = 100;
  */
 export async function insertEntries(lorebookId: string, entries: EntryForm[], firstOrder = 0): Promise<void> {
   const rows = entries.map((form, index) => entryRow(form, lorebookId, firstOrder + index));
-  for (let from = 0; from < rows.length; from += INSERT_BATCH) {
-    const { error } = await supabase.from('lorebook_entries').insert(rows.slice(from, from + INSERT_BATCH));
-    if (error) throw error;
+  // The batches are separate requests. If one fails, the ones already saved are taken out again, so a failed import leaves the
+  // lorebook as it was and trying again cannot duplicate anything.
+  const saved: string[][] = [];
+  try {
+    for (let from = 0; from < rows.length; from += INSERT_BATCH) {
+      const { data, error } = await supabase.from('lorebook_entries').insert(rows.slice(from, from + INSERT_BATCH)).select('id');
+      if (error) throw error;
+      saved.push(((data ?? []) as Array<{ id: string }>).map((row) => row.id));
+    }
+  } catch (error) {
+    for (const ids of saved) {
+      if (ids.length > 0) await supabase.from('lorebook_entries').delete().eq('lorebook_id', lorebookId).in('id', ids);
+    }
+    throw error;
   }
+}
+
+/** Reads a lorebook's entries from the database as editor rows, in the order they were written. */
+export async function loadEntryRows(lorebookId: string): Promise<Array<Record<string, unknown>>> {
+  const { data, error } = await supabase.from('lorebook_entries').select('*').eq('lorebook_id', lorebookId).order('insertion_order', { ascending: true }).order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as Array<Record<string, unknown>>;
 }
 
 /**

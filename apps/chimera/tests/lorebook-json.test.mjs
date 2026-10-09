@@ -136,3 +136,49 @@ test('export then import gives the same lorebook back', async () => {
     assert.deepEqual(back.notes, []);
   } finally { await close(); }
 });
+
+test('a "selective" entry (needs a second keyword) is kept but switched off, and the note says so', async () => {
+  const { json, close } = await load();
+  try {
+    const read = json.parseLorebookJson(text({ entries: [
+      { keys: ['a'], secondary_keys: ['b'], selective: true, content: 'Needs both.' },
+      { keys: ['c'], keysecondary: ['d'], selective: 'true', content: 'SillyTavern spelling.' },
+      { keys: ['e'], secondary_keys: ['f'], selective: false, content: 'Selective is off: normal.' },
+      { keys: ['g'], secondary_keys: [], selective: true, content: 'No second keyword: normal.' },
+      { keys: [], secondary_keys: ['h'], selective: true, constant: true, content: 'Always sent: normal.' },
+    ] }));
+    assert.deepEqual(read.entries.map((e) => e.enabled), [false, false, true, true, true]);
+    assert.match(read.notes.join(' | '), /2 entries need a second keyword.*switched off/);
+  } finally { await close(); }
+});
+
+test('a failed import takes the batches already saved out again, so trying again cannot duplicate them', async () => {
+  process.env.VITE_SUPABASE_URL = 'https://synthetic.invalid';
+  process.env.VITE_SUPABASE_ANON_KEY = 'synthetic-test-key';
+  const server = await createServer({ root: new URL('../', import.meta.url).pathname, server: { middlewareMode: true }, appType: 'custom', logLevel: 'silent' });
+  const realFetch = globalThis.fetch;
+  const calls = [];
+  let posts = 0;
+  globalThis.fetch = async (url, init = {}) => {
+    const method = (init.method || 'GET').toUpperCase();
+    calls.push({ method, url: String(url) });
+    const headers = { 'content-type': 'application/json' };
+    if (method === 'POST') {
+      posts += 1;
+      if (posts === 3) return new Response(JSON.stringify({ message: 'network down' }), { status: 500, headers });
+      const rows = JSON.parse(init.body);
+      return new Response(JSON.stringify(rows.map((_, i) => ({ id: `b${posts}-${i}` }))), { status: 201, headers });
+    }
+    return new Response('[]', { status: 200, headers });
+  };
+  try {
+    const lib = await server.ssrLoadModule('/src/lib/lorebooks.ts');
+    const forms = Array.from({ length: 250 }, (_, i) => ({ ...lib.EMPTY_ENTRY, title: `T${i}`, keywords: `k${i}`, content: `c${i}` }));
+    await assert.rejects(() => lib.insertEntries('book-1', forms, 0));
+    const deletes = calls.filter((c) => c.method === 'DELETE');
+    assert.equal(posts, 3, 'two batches saved, the third failed');
+    assert.equal(deletes.length, 2, 'both saved batches are removed');
+    assert.ok(deletes.every((d) => /lorebook_id=eq\.book-1/.test(d.url)), 'only inside this lorebook');
+    assert.ok(deletes[0].url.includes('b1-0') && deletes[1].url.includes('b2-99'), deletes.map((d) => d.url).join('\n'));
+  } finally { globalThis.fetch = realFetch; await server.close(); }
+});

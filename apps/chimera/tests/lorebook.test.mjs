@@ -187,3 +187,9 @@ test('new lorebooks are private and members only write their own', async () => {
   const page = await readFile(new URL('../src/pages/LorebookEditorPage.tsx', import.meta.url), 'utf8');
   assert.match(page, /\.eq\('user_id', user\.id\)/, 'the editor loads only lorebooks owned by the member');
 });
+
+test('the editor keeps what was typed when entries are imported, and a new entry is always listed', async () => {
+  const page = await readFile(new URL('../src/pages/LorebookEditorPage.tsx', import.meta.url), 'utf8');
+  assert.match(page, /known\.has\(row\.id/, 'rows already on the page are kept as they are');
+  assert.match(page, /position < shown \|\| state\.startOpen/, 'entries written here stay listed beyond the page limit');
+});
