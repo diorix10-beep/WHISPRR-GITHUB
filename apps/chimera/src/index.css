@@ -61,3 +61,29 @@ body {
     user-select: none;
   }
 }
+
+/* ── How a chat looks (the "Look" tab of the chat panel). Every rule has the old fixed value as its default, so a chat that
+   has not been customised looks exactly as before. The choices arrive as data attributes on `.chat-look`. ── */
+.msg-text {
+  border-radius: var(--look-radius, 1rem);
+  padding: var(--look-pad-y, 0.75rem) var(--look-pad-x, 1rem);
+  font-size: var(--look-size, 17px);
+  line-height: var(--look-lh, 1.625);
+}
+.msg-list > * + * { margin-top: var(--look-gap, 1rem); }
+
+.chat-look[data-size='s'] { --look-size: 15px; }
+.chat-look[data-size='l'] { --look-size: 19px; }
+.chat-look[data-size='xl'] { --look-size: 22px; }
+.chat-look[data-spacing='compact'] { --look-gap: 0.5rem; --look-pad-y: 0.5rem; --look-pad-x: 0.875rem; --look-lh: 1.5; }
+.chat-look[data-spacing='airy'] { --look-gap: 1.75rem; --look-pad-y: 1rem; --look-pad-x: 1.25rem; --look-lh: 1.8; }
+.chat-look[data-bubble='square'] { --look-radius: 0.375rem; }
+.chat-look[data-bubble='plain'] .msg-text { background: transparent; border-color: transparent; border-radius: 0; padding-left: 0.25rem; padding-right: 0.25rem; }
+.chat-look[data-bubble='plain'] .msg-mine { border-left: 2px solid rgba(232, 194, 122, 0.55); padding-left: 0.75rem; }
+.chat-look[data-align='left'] .msg-row-mine { flex-direction: row; }
+.chat-look[data-font='serif'] .msg-text { font-family: 'Cormorant Garamond', Georgia, serif; font-size: calc(var(--look-size, 17px) * 1.12); }
+.chat-look[data-narration='soft'] .msg-text em { color: #cfc3dd; }
+.chat-look[data-narration='gold'] .msg-text em { color: #e8c27a; }
+.chat-look[data-narration='upright'] .msg-text em { font-style: normal; }
+.chat-look[data-dialogue='gold'] .rp-dialogue { color: #e8c27a; }
+.chat-look[data-dialogue='bold'] .rp-dialogue { font-weight: 700; }

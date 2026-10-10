@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Brain, Check, Copy, Flag, GitBranch, History, Info, Loader2, Pencil, Pin, RefreshCw, Send, SlidersHorizontal, ThumbsDown, ThumbsUp, Trash2, User } from 'lucide-react';
+import { ArrowLeft, BookOpen, Brain, Palette, Check, Copy, Flag, GitBranch, History, Info, Loader2, Pencil, Pin, RefreshCw, Send, SlidersHorizontal, ThumbsDown, ThumbsUp, Trash2, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -12,6 +12,9 @@ import { AboutSection } from '../components/chat/panel/AboutSection';
 import { HistorySection } from '../components/chat/panel/HistorySection';
 import { PersonaSection } from '../components/chat/panel/PersonaSection';
 import { LorebookSection } from '../components/chat/panel/LorebookSection';
+import { LookSection } from '../components/chat/panel/LookSection';
+import { useChatLook } from '../hooks/useChatLook';
+import { lookAttributes } from '../lib/chatLook';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { readPanelOpen, writePanelOpen } from '../lib/panelPrefs';
 import { ReportDialog } from '../components/chat/ReportDialog';
@@ -81,7 +84,7 @@ interface SceneInfo {
   canonRevision: number;
 }
 
-type PanelTabId = 'about' | 'chat' | 'history' | 'world' | 'memory' | 'persona';
+type PanelTabId = 'about' | 'chat' | 'history' | 'world' | 'memory' | 'persona' | 'look';
 
 const MODES: Array<{ id: ComposerMode; label: string; hint: string }> = [
   { id: 'say', label: 'Say', hint: 'Speak as your character' },
@@ -120,6 +123,7 @@ export default function ConversationPage() {
   const [busy, setBusy] = useState(false);
   const [replyError, setReplyError] = useState<string | null>(null);
   const desktop = useMediaQuery('(min-width: 1024px)');
+  const { look, change: changeLook, reset: resetLook, saved: lookSaved } = useChatLook();
   const [panelTab, setPanelTab] = useState<PanelTabId>('chat');
   const [historyKey, setHistoryKey] = useState(0);
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -928,6 +932,7 @@ export default function ConversationPage() {
     { id: 'world', label: 'Lorebook', icon: <BookOpen size={16} /> },
     { id: 'memory', label: 'Memory', icon: <Brain size={16} />, badge: proposedMemories.length },
     { id: 'persona', label: 'Persona', icon: <User size={16} /> },
+    { id: 'look', label: 'Look', icon: <Palette size={16} /> },
   ];
 
   const chatTools = (
@@ -1219,6 +1224,8 @@ export default function ConversationPage() {
         isCreator={scene.characterMine}
         recentMessages={() => messages.slice(-10).map((m) => m.content)}
       />
+    ) : panelTab === 'look' ? (
+      <LookSection look={look} saved={lookSaved} characterName={scene.botName} onChange={changeLook} onReset={resetLook} />
     ) : panelTab === 'memory' ? (
       memoryTools
     ) : panelTab === 'persona' ? (
@@ -1239,7 +1246,7 @@ export default function ConversationPage() {
 
   return (
     <div className="mx-auto flex max-w-[78rem] items-start justify-center gap-6 lg:px-4">
-    <div className="flex min-h-[calc(100dvh-5rem)] w-full min-w-0 max-w-3xl flex-col px-4 pb-4 pt-4 sm:px-6 lg:px-0">
+    <div className="chat-look flex min-h-[calc(100dvh-5rem)] w-full min-w-0 max-w-3xl flex-col px-4 pb-4 pt-4 sm:px-6 lg:px-0" {...lookAttributes(look)}>
       <header className="mb-3 flex items-center gap-3">
         <Link to="/chats" className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-chimera-gold/30 hover:bg-chimera-gold/10" aria-label="Back to your scenes">
           <ArrowLeft size={20} aria-hidden="true" />
@@ -1296,7 +1303,7 @@ export default function ConversationPage() {
         </p>
       )}
 
-      <div className="flex-1 space-y-4 py-2" aria-live="polite">
+      <div className="msg-list flex-1 py-2" aria-live="polite">
         {choosingOpening && (
           <section aria-labelledby="opening-picker" className="rounded-2xl border border-chimera-gold/30 bg-chimera-panel p-4">
             <h2 id="opening-picker" className="font-serif text-2xl font-semibold">How should this scene begin?</h2>

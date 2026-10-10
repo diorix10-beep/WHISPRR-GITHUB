@@ -30,7 +30,7 @@ export function MessageRow({ id, mine, speaker, content, pinned, feedback, edit,
 }) {
   const [bubble, setBubble] = useState<HTMLDivElement | null>(null);
   const press = useLongPress((point) => onOpenMenu(point, bubble));
-  const tone = mine ? 'bg-chimera-gold/15 text-chimera-ink' : 'border border-chimera-gold/20 bg-chimera-panel text-violet-50';
+  const tone = mine ? 'msg-mine bg-chimera-gold/15 text-chimera-ink' : 'msg-theirs border border-chimera-gold/20 bg-chimera-panel text-violet-50';
   const label = speaker ? `${speaker} says` : 'You say';
 
   let body: ReactNode;
@@ -71,13 +71,13 @@ export function MessageRow({ id, mine, speaker, content, pinned, feedback, edit,
   }
 
   return (
-    <div id={`msg-${id}`} className={`group flex items-start gap-1 ${mine ? 'flex-row-reverse' : ''}`}>
+    <div id={`msg-${id}`} className={`msg-row group flex items-start gap-1 ${mine ? 'msg-row-mine flex-row-reverse' : ''}`}>
       <div
         ref={setBubble}
         data-message-id={id}
         {...(edit ? {} : press)}
         aria-label={edit ? undefined : label}
-        className={`${edit ? 'w-full' : 'msg-bubble max-w-[calc(100%-2.75rem)]'} whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-[17px] leading-relaxed ${tone} ${pinned ? 'ring-1 ring-chimera-gold/70' : ''}`}
+        className={`${edit ? 'w-full' : 'msg-bubble max-w-[calc(100%-2.75rem)]'} msg-text whitespace-pre-wrap break-words ${tone} ${pinned ? 'ring-1 ring-chimera-gold/70' : ''}`}
       >
         {!mine && (
           <span className="mb-1 flex items-center gap-1 text-xs font-bold tracking-[0.12em] text-chimera-gold">
