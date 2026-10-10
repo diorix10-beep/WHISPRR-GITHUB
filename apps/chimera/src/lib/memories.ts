@@ -136,3 +136,20 @@ export async function setMemoryScope(id: string, conversationId: string | null):
   if (error || !data || data.length === 0) throw error ?? new Error('Not allowed');
   return (data[0] as { updated_at: string }).updated_at;
 }
+
+/**
+ * How many memories are kept for every scene with this character as this persona, counted in the database (the screen's list is
+ * cut at 100 and mixes in the current scene's own memories, so it cannot say).
+ */
+export async function countEveryChatMemories(characterId: string, personaId: string | null): Promise<number> {
+  let query = supabase
+    .from('character_memories')
+    .select('id', { count: 'exact', head: true })
+    .eq('character_id', characterId)
+    .is('session_id', null)
+    .is('conversation_id', null);
+  query = personaId ? query.eq('persona_id', personaId) : query.is('persona_id', null);
+  const { count, error } = await query;
+  if (error || count === null) throw error ?? new Error('Count unavailable');
+  return count;
+}

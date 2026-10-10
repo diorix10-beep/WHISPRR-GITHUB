@@ -39,6 +39,7 @@ import {
   MEMORY_TYPES,
   addMemory,
   approveMemory,
+  countEveryChatMemories,
   deleteMemory,
   editMemory,
   loadMemories,
@@ -800,6 +801,11 @@ export default function ConversationPage() {
     const submitted = newMemory;
     setMemoryBusy('new');
     try {
+      // The ones for every chat appear in all of this character's chats: they are counted in the database, not on the screen's list.
+      if (submitted.everywhere && (await countEveryChatMemories(memoryContextRef.current.characterId, memoryContextRef.current.personaId)) >= MAX_MEMORIES) {
+        showToast(`There are already ${MAX_MEMORIES} memories for every chat. Forget one first.`, 'info');
+        return;
+      }
       await addMemory({
         userId: user.id,
         characterId: memoryContextRef.current.characterId,
@@ -822,13 +828,17 @@ export default function ConversationPage() {
   // Moves a kept memory between this chat only and every chat with this character (as this persona).
   const moveMemory = async (memory: SceneMemory) => {
     if (memoryBusy) return;
-    // Memories for every chat appear in all of the character's chats, so there is room for this many of them only.
-    if (memory.conversationId && memories.filter((m) => !m.conversationId).length >= MAX_MEMORIES) {
-      showToast(`There are already ${MAX_MEMORIES} memories for every chat. Forget one first.`, 'info');
-      return;
-    }
     setMemoryBusy(memory.id);
     try {
+      // Memories for every chat appear in all of the character's chats, so there is room for this many of them only. Counted in the
+      // database: the screen's list is cut at 100 and mixes in this chat's own memories.
+      if (memory.conversationId && memoryContextRef.current) {
+        const everywhere = await countEveryChatMemories(memoryContextRef.current.characterId, memoryContextRef.current.personaId);
+        if (everywhere >= MAX_MEMORIES) {
+          showToast(`There are already ${MAX_MEMORIES} memories for every chat. Forget one first.`, 'info');
+          return;
+        }
+      }
       const to = memory.conversationId ? null : conversationId!;
       const updatedAt = await setMemoryScope(memory.id, to);
       setMemories((list) => list.map((m) => (m.id === memory.id ? { ...m, conversationId: to, updatedAt } : m)));
