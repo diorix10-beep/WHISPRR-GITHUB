@@ -179,7 +179,7 @@ test('the picture never leaves the device: the code that handles it has no netwo
   assert.match(layer, /aria-hidden="true"/);
   assert.match(layer, /pointer-events-none absolute inset-0 -z-10/);
   const page = await read('src/pages/ConversationPage.tsx');
-  assert.match(page, /<div className="relative isolate">\s*<WallpaperLayer/);
+  assert.match(page, /<div className="relative isolate">\s*(?:\{look\.motion !== 'calm' && )?<WallpaperLayer/);
   const image = await read('src/lib/wallpaperImage.ts');
   assert.match(image, /canvas\.toBlob\(resolve, 'image\/jpeg'/, 'redrawn as a JPEG: camera details are gone');
   assert.match(image, /checkImageBytes\(head, file\.size\)/, 'checked before it is decoded');

@@ -14,6 +14,7 @@ const GROUPS: Array<{ key: LookKey; title: string; help?: string }> = [
   { key: 'font', title: 'Typeface' },
   { key: 'narration', title: 'Narration', help: 'Actions written between asterisks, like *she smiles*.' },
   { key: 'dialogue', title: 'Dialogue', help: 'Words between quotation marks.' },
+  { key: 'motion', title: 'Movement', help: 'For people who find animation tiring or dizzying. Only the look of the app changes, never what is said or saved.' },
 ];
 
 const SAMPLE_YOU = 'I step closer. *My hand rests on the rail.* "Tell me the truth, Captain."';
@@ -38,7 +39,7 @@ export function LookSection({ look, saved, wallpaper, characterName, onChange, o
       <p className="text-sm text-chimera-mute">Make the chat easier or nicer to read. It changes how messages look on this device only; what they say, and what is saved, never change.</p>
 
       <div className="chat-look relative isolate overflow-hidden rounded-xl border border-chimera-gold/20 bg-chimera-bg p-3" aria-label="Preview" role="group" {...lookAttributes(look)}>
-        <WallpaperLayer setting={wallpaper.setting} imageUrl={wallpaper.imageUrl} />
+        {look.motion !== 'calm' && <WallpaperLayer setting={wallpaper.setting} imageUrl={wallpaper.imageUrl} />}
         <p className="mb-2 text-xs font-bold tracking-[0.12em] text-chimera-gold">PREVIEW</p>
         <div className="msg-list">
           <div className="msg-row flex items-start gap-1">

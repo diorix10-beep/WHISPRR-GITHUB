@@ -38,6 +38,16 @@ body {
 .animate-fade-in  { animation: fadeIn 0.15s ease-out; }
 .animate-scale-in { animation: scaleIn 0.15s ease-out; }
 
+/* The player's own choice (Look tab). It is set on the page root as well, so the side panel and the menus are covered. */
+[data-motion='reduced'], [data-motion='calm'] { scroll-behavior: auto; }
+[data-motion='reduced'] *, [data-motion='reduced'] *::before, [data-motion='reduced'] *::after,
+[data-motion='calm'] *, [data-motion='calm'] *::before, [data-motion='calm'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {

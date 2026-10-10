@@ -17,6 +17,14 @@ export function useChatLook() {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
+  // The page root carries the choice so that the side panel and the menus (outside the chat) follow it too.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (look.motion === 'device') root.removeAttribute('data-motion');
+    else root.setAttribute('data-motion', look.motion);
+    return () => root.removeAttribute('data-motion');
+  }, [look.motion]);
+
   const change = useCallback((patch: Partial<ChatLook>) => {
     setLook((current) => {
       const next = normalizeLook({ ...current, ...patch });
