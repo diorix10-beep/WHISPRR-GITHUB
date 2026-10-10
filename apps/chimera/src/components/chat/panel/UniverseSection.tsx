@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import {
   COMMUNICATION_KINDS,
@@ -26,6 +26,8 @@ export function UniverseSection({ conversationId, userId }: { conversationId: st
   const [ready, setReady] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
+  const draftRef = useRef<UniverseRules>(EMPTY_RULES);
+  draftRef.current = draft;
 
   const load = useCallback(async () => {
     setReady(null);
@@ -50,11 +52,17 @@ export function UniverseSection({ conversationId, userId }: { conversationId: st
     if (busy || !ready) return;
     setBusy(true);
     setMessage(null);
+    const draftAtStart = draftRef.current;
     try {
       const clean = await saveUniverseRules(conversationId, userId, next);
       setSaved(clean);
-      setDraft(clean);
-      setMessage({ kind: 'ok', text: isEmptyRules(clean) ? 'Cleared. The story no longer has any world rules.' : 'Saved. The next reply follows these rules.' });
+      // The form stays editable while saving: keep anything typed since Save was pressed.
+      const typedMeanwhile = !sameRules(draftRef.current, draftAtStart);
+      if (!typedMeanwhile) setDraft(clean);
+      setMessage({
+        kind: 'ok',
+        text: typedMeanwhile ? 'Saved. You have newer changes that are not saved yet.' : isEmptyRules(clean) ? 'Cleared. The story no longer has any world rules.' : 'Saved. The next reply follows these rules.',
+      });
     } catch {
       setMessage({ kind: 'error', text: 'We could not save the universe rules. Please try again.' });
     } finally {

@@ -16,7 +16,7 @@ export const UNIVERSE_LIMITS = {
   communicationName: 30,
   communicationNote: 60,
   /** The whole block that reaches the prompt, headings included. */
-  block: 1_400,
+  block: 1_800,
 } as const;
 
 export const COMMUNICATION_KINDS = [
@@ -26,6 +26,16 @@ export const COMMUNICATION_KINDS = [
   { id: 'communicator', label: 'Radio or communicator', hint: 'Radio, hologram, ship comms' },
   { id: 'other', label: 'Something else', hint: 'Anything your world has' },
 ] as const;
+
+/**
+ * What the character is told does not exist when no listed way is of that kind. Letters are never forbidden, and neither is
+ * "something else": the list says what exists, and only technology the player did not list is ruled out.
+ */
+const ABSENT_WHEN_UNLISTED: Partial<Record<(typeof COMMUNICATION_KINDS)[number]['id'], string>> = {
+  phone: 'phones, messaging apps and the internet',
+  communicator: 'radios, holograms and communicators',
+  magic: 'magical ways to speak across distance',
+};
 
 export type CommunicationKind = (typeof COMMUNICATION_KINDS)[number]['id'];
 
@@ -100,8 +110,12 @@ export function universeRulesBlock(raw: unknown): string | null {
   if (rules.genre) lines.push(`Genre: ${rules.genre}`);
   if (rules.technology) lines.push(`Technology: ${rules.technology}`);
   if (rules.communications.length > 0) {
-    const ways = rules.communications.map((method) => (method.note ? `${method.name} (${method.note})` : method.name)).join('; ');
-    lines.push(`Ways people reach each other over distance: ${ways}. Nothing else exists in this world for that: do not invent a phone, the internet or any other device it does not list.`);
+    const label = (kind: string) => COMMUNICATION_KINDS.find((k) => k.id === kind)?.label.toLowerCase() ?? kind;
+    const ways = rules.communications.map((method) => `${method.name} (${label(method.kind)}${method.note ? `: ${method.note}` : ''})`).join('; ');
+    lines.push(`Ways people reach each other over distance: ${ways}.`);
+    const listed = new Set(rules.communications.map((method) => method.kind));
+    const absent = Object.entries(ABSENT_WHEN_UNLISTED).filter(([kind]) => !listed.has(kind as CommunicationKind)).map(([, text]) => text);
+    if (absent.length > 0) lines.push(`These do not exist in this world, so do not invent them: ${absent.join('; ')}.`);
   }
   if (rules.calendar) lines.push(`How time is counted: ${rules.calendar}`);
   if (rules.customs) lines.push(`Customs and laws: ${rules.customs}`);
