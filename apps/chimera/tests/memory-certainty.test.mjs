@@ -142,18 +142,98 @@ test('the client refuses what the database refuses: only a confirmed memory is k
   } finally { await close(); }
 });
 
-test('the reply path and the suggestion path read memories in a way that survives a database without the new columns', async () => {
+// A small stand-in for the database client: it keeps rows, applies the filters the code asks for, orders and limits like
+// the real one, and can pretend the newer columns do not exist.
+function fakeDatabase(rows, { missingColumns = false, throws = false } = {}) {
+  const calls = [];
+  const builder = () => {
+    const state = { filters: [], limit: Infinity, bad: false };
+    const q = {
+      select: () => q,
+      eq: (column, value) => { if (missingColumns && column === 'certainty') state.bad = true; state.filters.push((r) => r[column] === value); return q; },
+      neq: (column, value) => { if (missingColumns && column === 'known_by') state.bad = true; state.filters.push((r) => (r[column] ?? 'character') !== value); return q; },
+      is: (column, value) => { state.filters.push((r) => (r[column] ?? null) === value); return q; },
+      or: () => q,
+      order: () => q,
+      limit: (n) => { state.limit = n; return q; },
+      then: (resolve) => {
+        calls.push(state);
+        if (throws) throw new Error('down');
+        if (state.bad) return resolve({ data: null, error: { message: 'column does not exist' } });
+        const out = rows
+          .filter((r) => state.filters.every((f) => f(r)))
+          .sort((a, b) => b.importance - a.importance || String(b.updated_at).localeCompare(String(a.updated_at)))
+          .slice(0, state.limit);
+        return resolve({ data: out, error: null });
+      },
+    };
+    return q;
+  };
+  return { client: { from: () => builder() }, calls };
+}
+
+test('reading the memories: each kind has its own limit, so rumours cannot push facts out, even past a hundred memories', async () => {
+  const { module, close } = await load('/api/_lib/memoryStore.ts');
+  try {
+    const { loadRecalledMemories } = module;
+    const base = { user_id: 'u', character_id: 'c', approval_status: 'approved', session_id: null, persona_id: null, importance: 5 };
+    const input = { userId: 'u', conversationId: 'scene', characterId: 'c', personaId: null };
+    // 100 newer rumours and 30 older confirmed facts: a single limit of 100 would keep only rumours.
+    const crowd = [
+      ...Array.from({ length: 100 }, (_, i) => ({ ...base, id: `a${i}`, content: `Rumour ${i}`, certainty: 'assumption', known_by: 'character', updated_at: `2026-02-01T00:${String(i % 60).padStart(2, '0')}:00Z` })),
+      ...Array.from({ length: 30 }, (_, i) => ({ ...base, id: `c${i}`, content: `Fact ${i}`, certainty: 'canon', known_by: 'character', updated_at: `2026-01-01T00:${String(i).padStart(2, '0')}:00Z` })),
+    ];
+    const { client } = fakeDatabase(crowd);
+    const picked = await loadRecalledMemories(client, input);
+    assert.equal(picked.length, 24);
+    assert.ok(picked.every((m) => m.certainty === 'canon'), 'twenty-four confirmed facts, no rumour');
+
+    const mixed = [
+      { ...base, id: '1', content: 'A rumour.', certainty: 'assumption', known_by: 'character', updated_at: 't3' },
+      { ...base, id: '2', content: 'The player knows the butler did it.', certainty: 'canon', known_by: 'player', updated_at: 't2' },
+      { ...base, id: '3', content: 'An injury.', certainty: 'temporary', known_by: 'character', updated_at: 't2' },
+      { ...base, id: '4', content: 'A fact.', certainty: 'canon', known_by: 'character', updated_at: 't1' },
+      { ...base, id: '5', content: 'A private suspicion.', certainty: 'assumption', known_by: 'player', updated_at: 't1' },
+    ];
+    assert.deepEqual((await loadRecalledMemories(fakeDatabase(mixed).client, input)).map((m) => m.content), ['A fact.', 'An injury.', 'A rumour.'], 'confirmed, temporary, assumption; nothing the player keeps to themselves');
+
+    // Only confirmed memories: the same single read as before, with the same limit of 24.
+    const only = Array.from({ length: 40 }, (_, i) => ({ ...base, id: `o${i}`, content: `Old fact ${i}`, certainty: 'canon', known_by: 'character', importance: 40 - i, updated_at: 't' }));
+    const old = await loadRecalledMemories(fakeDatabase(only).client, input);
+    assert.deepEqual(old.map((m) => m.content), only.slice(0, 24).map((m) => m.content), 'the 24 most important, as always');
+
+    // A database without the newer columns: the character still gets its memories, exactly as before.
+    const legacyRows = Array.from({ length: 30 }, (_, i) => ({ ...base, id: `l${i}`, content: `Legacy ${i}`, importance: 30 - i, updated_at: 't' }));
+    const legacy = fakeDatabase(legacyRows, { missingColumns: true });
+    const fromLegacy = await loadRecalledMemories(legacy.client, input);
+    assert.deepEqual(fromLegacy.map((m) => m.content), legacyRows.slice(0, 24).map((m) => m.content), 'rows without the columns count as confirmed and known');
+    assert.ok(legacy.calls.length >= 4, 'it tried the new way first, then the old way');
+
+    assert.deepEqual(await loadRecalledMemories(fakeDatabase([], { throws: true }).client, input), [], 'a failed read never stops the reply');
+  } finally { await close(); }
+});
+
+test('the reply and suggestion paths use it, and the story only suggests', async () => {
   const chat = await readFile(new URL('apps/chimera/api/ai-chat.ts', root), 'utf8');
-  const part = chat.slice(chat.indexOf('async function loadApprovedMemories'), chat.indexOf("The creator's lorebook"));
-  assert.match(part, /\.select\('\*'\)/, 'all columns, so a missing one cannot fail the read');
-  assert.ok(!/known_by|certainty/.test(part.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '').replace(/pickRecalledMemories/g, '')), 'no query filter on the new columns');
-  assert.match(part, /pickRecalledMemories\(data\)/);
+  assert.match(chat, /sceneSettings\.memories = await loadRecalledMemories\(supabase,/);
+  assert.ok(!chat.includes('async function loadApprovedMemories'), 'one place reads the memories');
   const suggest = await readFile(new URL('apps/chimera/api/chimera-memory.ts', root), 'utf8');
   assert.match(suggest, /normalizeKnownBy\(row\.known_by\) === 'character'/, '"only me" memories are not sent to the AI to avoid repeats');
   assert.match(suggest, /candidate\.certainty !== 'canon'[\s\S]*\.update\(\{ certainty: candidate\.certainty \}\)[\s\S]*\.then\(\(\) => undefined, \(\) => undefined\)/, 'the suggested certainty is best effort');
   assert.ok(!/known_by/.test(suggest.slice(suggest.indexOf('propose_chimera_memory'))), 'the story never sets who knows');
   const client = await readFile(new URL('apps/chimera/src/lib/memories.ts', root), 'utf8');
   assert.match(client, /\.select\('\*'\)/);
+});
+
+test('the extraction prompt asks for stated beliefs as assumptions without contradicting "never invent"', async () => {
+  const { module, close } = await load('/api/_lib/memory.ts');
+  try {
+    const prompt = module.buildExtractionPrompt([], { botName: 'Mara', playerName: 'You' });
+    assert.ok(!prompt.includes('anything you are not sure of'), 'the old blanket "not sure" exclusion is gone');
+    assert.ok(prompt.includes('Never invent or guess what happened'));
+    assert.ok(prompt.includes('clearly states in the excerpt is worth keeping as an assumption'), 'a belief somebody states is eligible');
+    assert.ok(prompt.includes('never as a fact') && prompt.includes('nobody stated'));
+  } finally { await close(); }
 });
 
 async function database() {
