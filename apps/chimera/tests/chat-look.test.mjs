@@ -196,3 +196,26 @@ test('the Look tab is wired and only changes how things are drawn: nothing is se
   assert.match(section, /Back to the defaults/);
   assert.match(section, /would not keep your choices/);
 });
+
+test('dialogue wins over narration where they overlap: its selectors are more specific than the narration ones', async () => {
+  const css = await read('src/index.css');
+  // Specificity as (ids, classes and attributes, elements) of the selector part before the declaration block.
+  const specificity = (selector) => {
+    const classes = (selector.match(/\.[\w-]+|\[[^\]]+\]/g) ?? []).length;
+    const elements = (selector.replace(/\[[^\]]+\]/g, '').replace(/\.[\w-]+/g, '').match(/(^|\s)[a-z][\w-]*/g) ?? []).length;
+    return [classes, elements];
+  };
+  const rule = (needle) => {
+    const line = css.split('\n').find((l) => l.startsWith(needle));
+    assert.ok(line, needle);
+    return line.slice(0, line.indexOf('{')).trim();
+  };
+  const higher = (a, b) => a[0] > b[0] || (a[0] === b[0] && a[1] > b[1]);
+  for (const narration of ['soft', 'gold', 'upright']) {
+    for (const dialogue of ['gold', 'bold']) {
+      const n = specificity(rule(`.chat-look[data-narration='${narration}']`));
+      const d = specificity(rule(`.chat-look[data-dialogue='${dialogue}']`));
+      assert.ok(higher(d, n), `dialogue ${dialogue} (${d}) must beat narration ${narration} (${n})`);
+    }
+  }
+});

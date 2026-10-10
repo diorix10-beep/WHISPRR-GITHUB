@@ -85,5 +85,6 @@ body {
 .chat-look[data-narration='soft'] .msg-text em { color: #cfc3dd; }
 .chat-look[data-narration='gold'] .msg-text em { color: #e8c27a; }
 .chat-look[data-narration='upright'] .msg-text em { font-style: normal; }
-.chat-look[data-dialogue='gold'] .rp-dialogue { color: #e8c27a; }
-.chat-look[data-dialogue='bold'] .rp-dialogue { font-weight: 700; }
+/* Dialogue wins over narration where they overlap (speech inside an action): these selectors are one class more specific than the narration ones. */
+.chat-look[data-dialogue='gold'] .msg-text .rp-dialogue { color: #e8c27a; }
+.chat-look[data-dialogue='bold'] .msg-text .rp-dialogue { font-weight: 700; }
