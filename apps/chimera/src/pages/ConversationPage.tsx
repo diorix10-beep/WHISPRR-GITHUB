@@ -14,6 +14,8 @@ import { PersonaSection } from '../components/chat/panel/PersonaSection';
 import { LorebookSection } from '../components/chat/panel/LorebookSection';
 import { LookSection } from '../components/chat/panel/LookSection';
 import { useChatLook } from '../hooks/useChatLook';
+import { useWallpaper } from '../hooks/useWallpaper';
+import { WallpaperLayer } from '../components/chat/WallpaperLayer';
 import { lookAttributes } from '../lib/chatLook';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { readPanelOpen, writePanelOpen } from '../lib/panelPrefs';
@@ -124,6 +126,7 @@ export default function ConversationPage() {
   const [replyError, setReplyError] = useState<string | null>(null);
   const desktop = useMediaQuery('(min-width: 1024px)');
   const { look, change: changeLook, reset: resetLook, saved: lookSaved } = useChatLook();
+  const wallpaper = useWallpaper();
   const [panelTab, setPanelTab] = useState<PanelTabId>('chat');
   const [historyKey, setHistoryKey] = useState(0);
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -1225,7 +1228,7 @@ export default function ConversationPage() {
         recentMessages={() => messages.slice(-10).map((m) => m.content)}
       />
     ) : panelTab === 'look' ? (
-      <LookSection look={look} saved={lookSaved} characterName={scene.botName} onChange={changeLook} onReset={resetLook} />
+      <LookSection look={look} saved={lookSaved} wallpaper={wallpaper} characterName={scene.botName} onChange={changeLook} onReset={resetLook} />
     ) : panelTab === 'memory' ? (
       memoryTools
     ) : panelTab === 'persona' ? (
@@ -1245,6 +1248,8 @@ export default function ConversationPage() {
     );
 
   return (
+    <div className="relative isolate">
+    <WallpaperLayer setting={wallpaper.setting} imageUrl={wallpaper.imageUrl} />
     <div className="mx-auto flex max-w-[78rem] items-start justify-center gap-6 lg:px-4">
     <div className="chat-look flex min-h-[calc(100dvh-5rem)] w-full min-w-0 max-w-3xl flex-col px-4 pb-4 pt-4 sm:px-6 lg:px-0" {...lookAttributes(look)}>
       <header className="mb-3 flex items-center gap-3">
@@ -1446,6 +1451,7 @@ export default function ConversationPage() {
         {panelContent}
       </ManagementPanel>
     )}
+    </div>
     </div>
   );
 }

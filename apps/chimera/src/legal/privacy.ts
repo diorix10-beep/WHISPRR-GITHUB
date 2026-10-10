@@ -153,6 +153,7 @@ export const PRIVACY: LegalDocument = {
             ['Story drafts and retry markers', 'Browser local storage', 'To keep unsaved writing safe and to avoid running a paid action twice.'],
             ['Whether the chat management panel stays open (on a computer)', 'Browser local storage, key "chimera.chat.panel.open"', 'To reopen the panel as you left it.'],
             ['How you like chats to look (text size, spacing, alignment, bubbles, typeface, narration and dialogue style)', 'Browser local storage, key "chimera.chat.look"', 'To show your chats the way you chose, on this device.'],
+            ['Your chat background (a ready-made one, a colour, or a picture you choose)', 'Browser local storage, key "chimera.chat.wallpaper", and, for a picture, the browser\'s own database (IndexedDB, name "chimera-local")', 'To show your chats with the background you chose, on this device. A picture you choose is never uploaded: it is resized and stripped of its camera details, and kept only in your browser.'],
             ['A temporary checkout reference', 'Browser session storage, cleared when you close the tab', 'To avoid creating a second order if you retry a purchase.'],
           ],
         } },
