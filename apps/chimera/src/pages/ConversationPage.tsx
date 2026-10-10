@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Brain, Check, Copy, Flag, GitBranch, History, Info, Loader2, Pencil, Pin, RefreshCw, Send, SlidersHorizontal, ThumbsDown, ThumbsUp, Trash2, User } from 'lucide-react';
+import { ArrowLeft, BookOpen, Brain, Check, Copy, Flag, GitBranch, History, Info, Loader2, Pencil, Pin, RefreshCw, Send, SlidersHorizontal, ThumbsDown, ThumbsUp, Trash2, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -11,6 +11,7 @@ import { ManagementPanel, type PanelTab } from '../components/chat/ManagementPan
 import { AboutSection } from '../components/chat/panel/AboutSection';
 import { HistorySection } from '../components/chat/panel/HistorySection';
 import { PersonaSection } from '../components/chat/panel/PersonaSection';
+import { LorebookSection } from '../components/chat/panel/LorebookSection';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { readPanelOpen, writePanelOpen } from '../lib/panelPrefs';
 import { ReportDialog } from '../components/chat/ReportDialog';
@@ -33,12 +34,18 @@ import { loadMyPersonas, type PersonaSummary } from '../lib/personas';
 import { cleanOpenings, surpriseOpening } from '../lib/openings';
 import { ADULT_CONFIRMATION_LIVE, AGE_VERIFICATION_LIVE } from '../lib/ageVerification';
 import {
+  MAX_MEMORIES,
   MEMORY_LIMITS,
+  MEMORY_TYPES,
+  addMemory,
   approveMemory,
   deleteMemory,
   editMemory,
   loadMemories,
+  memoryTypeLabel,
   requestMemorySuggestions,
+  setMemoryScope,
+  type MemoryTypeId,
   type SceneMemory,
 } from '../lib/memories';
 import {
@@ -64,6 +71,8 @@ interface SceneInfo {
   greeting: string | null;
   /** The scene is the player's own, so they may also edit and delete the character's messages in it. */
   createdByMe: boolean;
+  /** The player made this character, so they may link lorebooks to it. */
+  characterMine: boolean;
   /** Every way this character can open a scene: its main opening first. More than one means the player picks. */
   openings: string[];
   rating: string | null;
@@ -71,7 +80,7 @@ interface SceneInfo {
   canonRevision: number;
 }
 
-type PanelTabId = 'about' | 'chat' | 'history' | 'memory' | 'persona';
+type PanelTabId = 'about' | 'chat' | 'history' | 'world' | 'memory' | 'persona';
 
 const MODES: Array<{ id: ComposerMode; label: string; hint: string }> = [
   { id: 'say', label: 'Say', hint: 'Speak as your character' },
@@ -140,6 +149,7 @@ export default function ConversationPage() {
   const [memoriesFailed, setMemoriesFailed] = useState(false);
   const [editingMemory, setEditingMemory] = useState<{ id: string; text: string } | null>(null);
   const [memoryBusy, setMemoryBusy] = useState<string | null>(null);
+  const [newMemory, setNewMemory] = useState<{ text: string; type: MemoryTypeId; everywhere: boolean }>({ text: '', type: 'long_term', everywhere: false });
   const suggestingRef = useRef(false);
   const busyRef = useRef(false);
   const pendingSendsRef = useRef<ReturnType<typeof createPendingPlayerSends> | null>(null);
@@ -239,7 +249,7 @@ export default function ConversationPage() {
           return;
         }
         const [{ data: character }, { data: profile }] = await Promise.all([
-          supabase.from('ai_characters').select('id, name:chat_name, greeting, alternate_greetings, content_rating').eq('user_id', botUserId).maybeSingle(),
+          supabase.from('ai_characters').select('id, creator_id, name:chat_name, greeting, alternate_greetings, content_rating').eq('user_id', botUserId).maybeSingle(),
           supabase.from('profiles').select('display_name').eq('user_id', botUserId).maybeSingle(),
         ]);
         if (!active) return;
@@ -255,6 +265,7 @@ export default function ConversationPage() {
           title: conversation.name?.trim() || null,
           greeting: character.greeting?.trim() || null,
           createdByMe: (conversation as { created_by?: string | null }).created_by === user.id,
+          characterMine: (character as { creator_id?: string | null }).creator_id === user.id,
           openings: cleanOpenings(character.greeting, (character as { alternate_greetings?: unknown }).alternate_greetings),
           rating: character.content_rating ?? null,
           canon: conversation.memory_summary ?? '',
@@ -777,6 +788,48 @@ export default function ConversationPage() {
     }
   };
 
+  // Written by hand: the player's own words, kept at once. For this scene only, or for every scene with this character as this persona.
+  const addMemoryByHand = async () => {
+    if (memoryBusy || !memoryContextRef.current) return;
+    if (memories.length >= MAX_MEMORIES) {
+      showToast(`You can keep up to ${MAX_MEMORIES} memories here. Forget one first.`, 'info');
+      return;
+    }
+    setMemoryBusy('new');
+    try {
+      await addMemory({
+        userId: user.id,
+        characterId: memoryContextRef.current.characterId,
+        personaId: memoryContextRef.current.personaId,
+        conversationId: newMemory.everywhere ? null : conversationId!,
+        type: newMemory.type,
+        content: newMemory.text,
+      });
+      setNewMemory({ ...newMemory, text: '' });
+      await refreshMemories();
+      showToast(newMemory.everywhere ? `${scene.botName} will remember this in every chat.` : 'This chat will remember that.', 'success');
+    } catch {
+      showToast('We could not save that memory. What you wrote is still here.', 'error');
+    } finally {
+      setMemoryBusy(null);
+    }
+  };
+
+  // Moves a kept memory between this chat only and every chat with this character (as this persona).
+  const moveMemory = async (memory: SceneMemory) => {
+    if (memoryBusy) return;
+    setMemoryBusy(memory.id);
+    try {
+      const to = memory.conversationId ? null : conversationId!;
+      const updatedAt = await setMemoryScope(memory.id, to);
+      setMemories((list) => list.map((m) => (m.id === memory.id ? { ...m, conversationId: to, updatedAt } : m)));
+    } catch {
+      showToast('We could not change where this memory applies. Nothing was changed.', 'error');
+    } finally {
+      setMemoryBusy(null);
+    }
+  };
+
   const proposedMemories = memories.filter((m) => m.status === 'proposed');
   const approvedMemories = memories.filter((m) => m.status === 'approved');
 
@@ -853,6 +906,7 @@ export default function ConversationPage() {
     { id: 'about', label: 'Character', icon: <Info size={16} /> },
     { id: 'chat', label: 'Chat', icon: <SlidersHorizontal size={16} /> },
     { id: 'history', label: 'History', icon: <History size={16} /> },
+    { id: 'world', label: 'Lorebook', icon: <BookOpen size={16} /> },
     { id: 'memory', label: 'Memory', icon: <Brain size={16} />, badge: proposedMemories.length },
     { id: 'persona', label: 'Persona', icon: <User size={16} /> },
   ];
@@ -987,6 +1041,7 @@ export default function ConversationPage() {
 
   const memoryTools = (
     <div>
+    <h3 className="font-serif text-lg font-semibold text-chimera-gold">Notes for this scene</h3>
     <p className="mt-1 text-sm text-chimera-mute">
       {scene.botName} reads the most recent part of the conversation each time; older messages fall out of view. Write here what must never be forgotten: names, places, promises, tone. Edit or clear it at any time.
     </p>
@@ -1007,10 +1062,51 @@ export default function ConversationPage() {
     </div>
 
     <div className="mt-6 border-t border-chimera-gold/15 pt-4">
-      <h3 className="font-serif text-lg font-semibold text-chimera-gold">Remembered from the story</h3>
+      <h3 className="font-serif text-lg font-semibold text-chimera-gold">Memories</h3>
       <p className="mt-1 text-sm text-chimera-mute">
-        Every few messages the story can suggest things worth remembering. {scene.botName} only uses a suggestion after you keep it. You can reword or remove any of them.
+        Short things {scene.botName} should keep in mind: events, relationships, facts about the world, lasting traits. Every few messages the story can suggest some; {scene.botName} only uses a suggestion after you keep it. You can reword, move or remove any of them. Memories from your other chats are never mixed in unless you chose &ldquo;every chat&rdquo;, and they follow the persona you play ({personaName ?? 'yourself'}).
       </p>
+      <form
+        className="mt-3 space-y-3 rounded-xl border border-chimera-gold/20 bg-chimera-bg p-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void addMemoryByHand();
+        }}
+      >
+        <label htmlFor="new-memory" className="block text-sm font-bold">Add a memory</label>
+        <textarea
+          id="new-memory"
+          value={newMemory.text}
+          onChange={(e) => setNewMemory({ ...newMemory, text: e.target.value })}
+          maxLength={MEMORY_LIMITS.content}
+          rows={2}
+          placeholder="For example: Isolde owes Captain Rook a debt she will not admit."
+          className="w-full rounded-lg border border-chimera-gold/25 bg-chimera-panel p-2 text-base text-chimera-ink outline-none placeholder:text-chimera-mute/70 focus:border-chimera-gold"
+        />
+        <div className="flex flex-wrap gap-3">
+          <div>
+            <label htmlFor="new-memory-type" className="block text-xs font-bold text-chimera-gold">Kind</label>
+            <select id="new-memory-type" value={newMemory.type} onChange={(e) => setNewMemory({ ...newMemory, type: e.target.value as MemoryTypeId })} className="mt-1 min-h-[44px] rounded-lg border border-chimera-gold/25 bg-chimera-panel px-3 text-base text-chimera-ink outline-none focus:border-chimera-gold">
+              {MEMORY_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}: {t.hint}</option>)}
+            </select>
+          </div>
+        </div>
+        <fieldset>
+          <legend className="text-xs font-bold text-chimera-gold">Applies to</legend>
+          <label className="mt-1 flex min-h-[44px] items-center gap-3 text-sm">
+            <input type="radio" name="new-memory-scope" checked={!newMemory.everywhere} onChange={() => setNewMemory({ ...newMemory, everywhere: false })} className="h-5 w-5 accent-[#e8c27a]" />
+            This chat only
+          </label>
+          <label className="flex min-h-[44px] items-center gap-3 text-sm">
+            <input type="radio" name="new-memory-scope" checked={newMemory.everywhere} onChange={() => setNewMemory({ ...newMemory, everywhere: true })} className="h-5 w-5 accent-[#e8c27a]" />
+            Every chat with {scene.botName}
+          </label>
+        </fieldset>
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-xs text-chimera-mute">{newMemory.text.length} / {MEMORY_LIMITS.content}</span>
+          <button type="submit" disabled={memoryBusy !== null || !newMemory.text.trim()} className="min-h-[44px] rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">{memoryBusy === 'new' ? 'Saving…' : 'Add memory'}</button>
+        </div>
+      </form>
       {memoriesFailed && <p role="note" className="mt-3 text-sm text-amber-200">We could not load your memories right now.</p>}
 
       {proposedMemories.length > 0 && (
@@ -1059,7 +1155,8 @@ export default function ConversationPage() {
                 <div className="flex items-start gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="text-base text-chimera-ink">{memory.content}</p>
-                    <p className="mt-1 text-xs text-chimera-mute">{memory.conversationId ? 'This scene only' : `Every scene with ${scene.botName}`}</p>
+                    <p className="mt-1 text-xs text-chimera-mute">{memoryTypeLabel(memory.type)} · {memory.conversationId ? 'This chat only' : `Every chat with ${scene.botName}`}</p>
+                    <button type="button" onClick={() => void moveMemory(memory)} disabled={memoryBusy !== null} className="mt-1 min-h-[44px] rounded-full border border-chimera-gold/30 px-4 text-xs font-bold hover:bg-chimera-gold/10 disabled:opacity-50">{memory.conversationId ? `Keep for every chat with ${scene.botName}` : 'Keep for this chat only'}</button>
                   </div>
                   <button type="button" onClick={() => setEditingMemory({ id: memory.id, text: memory.content })} aria-label="Reword this memory" className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-chimera-mute hover:text-chimera-gold"><Pencil size={16} aria-hidden="true" /></button>
                   <button type="button" onClick={() => void forgetMemory(memory)} disabled={memoryBusy !== null} aria-label="Forget this memory" className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-chimera-mute hover:text-chimera-rose disabled:opacity-50"><Trash2 size={16} aria-hidden="true" /></button>
@@ -1094,6 +1191,14 @@ export default function ConversationPage() {
           setTitleDraft(title ?? '');
         }}
         onOpen={() => !desktop && closePanel()}
+      />
+    ) : panelTab === 'world' ? (
+      <LorebookSection
+        characterId={scene.characterId}
+        characterName={scene.botName}
+        viewerId={user.id}
+        isCreator={scene.characterMine}
+        recentMessages={() => messages.slice(-10).map((m) => m.content)}
       />
     ) : panelTab === 'memory' ? (
       memoryTools

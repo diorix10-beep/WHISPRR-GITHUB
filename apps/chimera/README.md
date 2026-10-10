@@ -157,20 +157,21 @@ screen a small menu by the pointer; both close with Escape or a tap outside, loo
 
 Like / Dislike and Report are built but off until their database part is reviewed and applied (next section); voice playback is out of scope for now.
 
-## Chat management panel (phase 1: character, chat, history, memory, persona)
+## Chat management panel (character, chat, history, lorebook, memory, persona)
 
-One **Manage** button in the chat header opens a panel with five tabs. It replaces the two old "Scene" and "Memory" sections; what they did is unchanged (same functions, same database calls).
+One **Manage** button in the chat header opens a panel with six tabs. It replaces the two old "Scene" and "Memory" sections; what they did is unchanged (same functions, same database calls).
 
 - **Phone and tablet (under 1024 px):** a bottom sheet over the chat (focus kept inside, Escape and a tap outside close it, always starts closed). **Computer (1024 px and up):** a column next to the chat that never covers it; Escape or the close button folds it away and the choice is remembered in this browser (`chimera.chat.panel.open`, listed in the Privacy Policy).
 - **Character:** name, rating, creator, visibility (shown to the creator only), the public descriptions, a link to the character's page. It reads only the fields the character page already shows (never the instructions or private notes). If the character is no longer readable (for example made private), it says so calmly and the chat keeps working.
 - **Chat:** name, reply length, words to avoid, memory suggestions switch, pinned messages, **Start new chat**, **Chat history**, **Refresh** (only re-reads from the database: nothing stored can be erased by it) and **Delete chat** (asks first).
 - **History:** the player's chats with this character, newest first, the open one marked, a chat made with "Start new chat from here" marked as a branch of its source. Rename, delete (asks first; uses `delete_chimera_scene`, which only deletes a chat the player started; chats branched from a deleted one are kept) and start a new one. The chat list page marks branches too.
-- **Memory:** the scene memory and the remembered items, as before (memories stay per character, persona and scene: nothing is mixed between unrelated chats).
+- **Lorebook:** the lorebooks linked to this character. The **creator** sees theirs (entries, visibility, depth, size per reply), can open the editor, **link** another of their lorebooks or **unlink** one (the lorebook and its entries are kept; it applies to every chat with this character from the next reply) and press **Check now** to see which entries the next reply would carry (it runs the very same selection as the reply code, `api/_lib/lorebook.ts`, on the latest messages: always-on entries, keywords just mentioned, each lorebook's depth and size). **Everyone else** sees only the lorebooks the creator made public (name and size) and a note that private notes may exist; their entries are never read. A lorebook belongs to a character, so lore from one character's chats cannot reach another's.
+- **Memory:** the scene notes and the memories, as before, plus **Add a memory** by hand (Event, Relationship, World fact or Trait; for this chat only, or for every chat with this character), and moving a kept memory between "this chat only" and "every chat". Memories stay per character, persona and chat: nothing is mixed between unrelated chats unless the player chose "every chat". Up to 100 per character and persona.
 - **Persona:** choose, create or edit the persona. It is free until the first message and then fixed (so the character always knows who it talks to and earlier messages never change); to play as someone else, start a new chat.
 
-No migration. Not in this phase (see the plan): lorebook in the panel, layout and chat style settings, wallpapers. Voice playback, text-to-speech, AI image generation and away messages are on the roadmap and deliberately not built.
+No migration. Not built yet (see the plan): layout and chat style settings, wallpapers, a lorebook attached to a single chat (it would need a table and a change to the reply code: proposed separately). Voice playback, text-to-speech, AI image generation and away messages are on the roadmap and deliberately not built.
 
-Checks: `tests/management-panel.test.mjs` (lists, branches, character details, remembered choice, wiring, accessibility) and browser checks on a stand-in backend (desktop, phone with touch, tablet and wide screens). Not tested on a real iPhone Safari, Android Chrome or Desktop Safari.
+Checks: `tests/management-panel.test.mjs` and `tests/panel-lore-memory.test.mjs` (lists, branches, character details, remembered choice, lorebooks and what is in play, memories by hand, wiring, accessibility) and browser checks on a stand-in backend (desktop, phone with touch, tablet and wide screens). Not tested on a real iPhone Safari, Android Chrome or Desktop Safari.
 
 ## Like / Dislike, reports and moderation (FOR REVIEW: needs two migrations, off until applied)
 

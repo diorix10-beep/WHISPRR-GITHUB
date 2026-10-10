@@ -54,7 +54,7 @@ test('the prompt describes the opening the scene really began with, not always t
 
 test('the chat page waits for the player to pick when there are several openings, and the server reads the one used', async () => {
   const page = await readFile(new URL('../src/pages/ConversationPage.tsx', import.meta.url), 'utf8');
-  assert.match(page, /select\('id, name:chat_name, greeting, alternate_greetings, content_rating'\)/);
+  assert.match(page, /select\('id, creator_id, name:chat_name, greeting, alternate_greetings, content_rating'\)/);
   assert.match(page, /info\.openings\.length <= 1/, 'with one opening the scene still opens by itself');
   assert.match(page, /const choosingOpening = messages\.length === 0 && scene\.openings\.length > 1 && !adultLocked/);
   assert.match(page, /disabled=\{adultLocked \|\| choosingOpening\}/, 'nothing can be written before an opening is picked');
