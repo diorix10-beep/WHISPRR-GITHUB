@@ -8,7 +8,7 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
 - Home, Discover (search and categories), character page, sign in / sign up.
 - Ratings on every character. **Mature and NSFW are hidden unless the member confirmed they are 18+ (or is verified) and opted in**
   (`supabase/migrations/20261006120000_chimera_age_verification_gate.sql`, `useAdultContentAccess`).
-- Guardian's Library: shows age status, the "I am 18 or older" confirmation and the adult toggle. **Age verification is not connected to a provider yet**, so nobody is *verified*; a confirmation is only a declaration.
+- Adult Content Settings: shows age status, the "I am 18 or older" confirmation and the adult toggle. **Age verification is not connected to a provider yet**, so nobody is *verified*; a confirmation is only a declaration.
 - Terms and Privacy are **drafts** (see "Legal pages" below).
 
 ## Legal pages (`/terms`, `/privacy`)
@@ -67,7 +67,7 @@ The previous app is still in git history (for example on `codex/chimera-phases1-
 - **Picture.** JPG, PNG or WebP up to 5 MB, uploaded to the existing public `profile-photos` bucket under the member's own folder
   (`<user id>/character-avatars/…`), so no migration is needed. It is optional. **There is no image moderation yet**, and the bucket is
   public to anyone with the address: acceptable while public publishing is founder-only, to be revisited before it opens.
-- Content rating: General, or Mature for members who confirmed they are 18+ and have adult content on (otherwise Mature is shown but locked, with a link to the Guardian's Library). An existing adult rating is kept on save; General can be chosen at any time while adult content is on. A card marked adult can be imported only by a member who may use Mature, and arrives as Mature.
+- Content rating: General, or Mature for members who confirmed they are 18+ and have adult content on (otherwise Mature is shown but locked, with a link to the Adult Content Settings). An existing adult rating is kept on save; General can be chosen at any time while adult content is on. A card marked adult can be imported only by a member who may use Mature, and arrives as Mature.
 - New characters are **General** unless Mature is chosen. Visibility: **private** (default), **unlisted** (link only) or **public**.
 - **Public publishing is founder-only during the beta** (`profiles.role = 'founder'`). It is enforced in the database by
   `supabase/migrations/20261009000000_chimera_character_publication_guard.sql`, so a member cannot bypass the form with a direct
@@ -224,10 +224,12 @@ Migration `20261009030000_chimera_auto_memory.sql` adds two columns to `chimera_
 functions above. Apply it **before** the deploy: the screen reads the settings with `select *`, so it still works without the columns,
 but suggestions do nothing until they exist.
 
-## Guardian's Library: age settings (temporary confirmation, real check later)
+## Adult Content Settings: age settings (temporary confirmation, real check later)
+
+*Renamed from "Guardian's Library" (the page is now `/adult-content-settings`; `/guardian` still works and redirects there, keeping any query or anchor). Only the name and the address changed: the age confirmation, the adult-content switch and the database are untouched. The "Guardian Sigil" is a different, planned thing (a contextual safety screen), not this page.*
 
 There is no age-check provider yet (`AGE_VERIFICATION_LIVE = false`; Yoti is planned). Until there is, a member can say **"I am 18 years old or
-older"** in the Guardian's Library. That is a **declaration, not a verification**: it is stored as `age_verification_status =
+older"** in the Adult Content Settings. That is a **declaration, not a verification**: it is stored as `age_verification_status =
 'self_attested_adult'` (with `adult_attested_at` and `adult_attestation_version`), never as `verified_adult`, and the provider columns
 (`age_verified_at`, `age_verification_provider`, `age_verification_reference`) stay empty. The page labels it "18+ confirmed by you".
 

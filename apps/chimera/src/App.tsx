@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Link, Navigate, Route, Routes } from 'react-router-dom';
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useMotionPreference } from './hooks/useMotionPreference';
 import AppLayout from './components/layout/AppLayout';
 import ProtectedRoute from './components/layout/ProtectedRoute';
@@ -7,7 +7,7 @@ import HomePage from './pages/HomePage';
 import DiscoverPage from './pages/DiscoverPage';
 import CharacterPage from './pages/CharacterPage';
 import AuthPage from './pages/AuthPage';
-import GuardianPage from './pages/GuardianPage';
+import AdultContentSettingsPage from './pages/AdultContentSettingsPage';
 import ChatsPage from './pages/ChatsPage';
 import ConversationPage from './pages/ConversationPage';
 import CreateCharacterPage from './pages/CreateCharacterPage';
@@ -51,6 +51,15 @@ const Loading = () => (
   </div>
 );
 
+/**
+ * The page used to have another name ("Guardian") and lived at /guardian. Old links (bookmarks, e-mails, search results) keep
+ * working: they land on the same page under its new name, with any query or anchor they carried.
+ */
+function LegacyGuardianRedirect() {
+  const { search, hash } = useLocation();
+  return <Navigate to={{ pathname: '/adult-content-settings', search, hash }} replace />;
+}
+
 export default function App() {
   useMotionPreference();
   return (
@@ -61,7 +70,8 @@ export default function App() {
           <Route path="/discover" element={<DiscoverPage />} />
           <Route path="/characters/:id" element={<CharacterPage />} />
           <Route path="/auth" element={<AuthPage />} />
-          <Route path="/guardian" element={<GuardianPage />} />
+          <Route path="/adult-content-settings" element={<AdultContentSettingsPage />} />
+          <Route path="/guardian" element={<LegacyGuardianRedirect />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
 

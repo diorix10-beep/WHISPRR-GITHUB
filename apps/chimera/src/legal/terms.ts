@@ -49,7 +49,7 @@ export const TERMS: LegalDocument = {
         { list: [
           '**Roleplay.** You play scenes with fictional AI characters that you or other members create. You can create characters, set up personas (who you play as), pin messages, set response length and banned words for a scene, and approve memories that the story suggests. In the Model House you choose which AI model writes the replies. Some models are free, some are paid with SHARDS, and some are in testing and only available to selected members.',
           '**Storytelling.** You write stories and chapters with an AI co-author. You can ask for scene illustrations, which cost VELLUM.',
-          '**Guardian\'s Library.** Where you confirm that you are 18 or older and choose whether Mature and Adult stories are shown to you. For now this is your own declaration: we do not check it. A real age check is planned.',
+          '**Adult Content Settings.** Where you confirm that you are 18 or older and choose whether Mature and Adult stories are shown to you. For now this is your own declaration: we do not check it. A real age check is planned.',
         ] },
         'We may add, change, limit or remove features, models, prices and limits at any time, including to protect the service or to follow the law. We will try to give notice of significant changes that affect what you have paid for.',
       ],
@@ -122,7 +122,7 @@ export const TERMS: LegalDocument = {
       id: 'ratings',
       title: '9. Content ratings and adult content',
       blocks: [
-        'Characters and stories carry a rating. General content is for everyone. Mature and Adult content is hidden unless you have confirmed in the Guardian\'s Library that you are 18 or older and have chosen to see it. For now that confirmation is your own declaration, which we do not check, and you must only give it if it is true. When we add a real age check, we may ask you to complete it to keep seeing Mature and Adult content.',
+        'Characters and stories carry a rating. General content is for everyone. Mature and Adult content is hidden unless you have confirmed in the Adult Content Settings that you are 18 or older and have chosen to see it. For now that confirmation is your own declaration, which we do not check, and you must only give it if it is true. When we add a real age check, we may ask you to complete it to keep seeing Mature and Adult content.',
         'You must rate what you publish honestly. We may change a rating, hide content or remove it if it does not match. Adult material may never be shown to people under 18, and never involves anyone under 18.',
       ],
     },

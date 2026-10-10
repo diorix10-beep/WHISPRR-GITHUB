@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { RequestError } from './requestProtection.js';
 
 export const ADULT_ACCESS_MESSAGE =
-  'This character is rated Mature or NSFW. Verify your age and turn on adult content in the Guardian\'s Library to continue.';
+  'This character is rated Mature or NSFW. Verify your age and turn on adult content in the Adult Content Settings to continue.';
 
 /**
  * Mirrors the prompt builder, which treats a missing rating as SFW. Any other

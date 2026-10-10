@@ -174,7 +174,7 @@ export default function CreateCharacterPage() {
       setProblem(/founder|public publishing/i.test(text ?? '')
         ? 'Public publishing is limited to the CHIMERA founder during the beta. Choose private or unlisted.'
         : /Mature characters need/i.test(text ?? '')
-          ? 'Mature characters need a confirmed 18+ account with adult content turned on. Check the Guardian\'s Library, or choose General.'
+          ? 'Mature characters need a confirmed 18+ account with adult content turned on. Check the Adult Content Settings, or choose General.'
           : 'We could not save this character. Your text is still here, please try again.');
     } finally {
       setSaving(false);
@@ -316,7 +316,7 @@ export default function CreateCharacterPage() {
                       ? 'For adults: intense themes and explicit content. Only shown to members who confirmed they are 18 or older.'
                       : adultLoading
                         ? 'Checking your account…'
-                        : <>Needs a confirmed 18+ account with adult content turned on. <Link to="/guardian" className="font-bold text-chimera-gold underline">Open the Guardian&apos;s Library</Link>.</>}
+                        : <>Needs a confirmed 18+ account with adult content turned on. <Link to="/adult-content-settings" className="font-bold text-chimera-gold underline">Open the Adult Content Settings</Link>.</>}
                   </span>
                 </span>
               </label>
