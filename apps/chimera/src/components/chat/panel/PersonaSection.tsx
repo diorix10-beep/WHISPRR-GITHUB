@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import type { PersonaSummary } from '../../../lib/personas';
+import { radioGroupKeys } from '../../../lib/radioKeys';
 
 /**
  * Who the player is in this chat. Until the first message the choice is free; after that it is fixed, so the character
@@ -32,7 +33,7 @@ export function PersonaSection({ personas, personaId, locked, botName, onChoose,
           <button type="button" onClick={onNewChat} className="mt-3 min-h-[44px] rounded-full border border-chimera-gold/40 px-5 text-sm font-bold hover:bg-chimera-gold/10">Start a new chat</button>
         </div>
       ) : (
-        <div role="radiogroup" aria-label="Playing as" className="space-y-2">
+        <div role="radiogroup" aria-label="Playing as" onKeyDown={radioGroupKeys} className="space-y-2">
           {options.map((option) => {
             const selected = (option.id ?? null) === (personaId ?? null);
             return (
@@ -41,6 +42,7 @@ export function PersonaSection({ personas, personaId, locked, botName, onChoose,
                 type="button"
                 role="radio"
                 aria-checked={selected}
+                tabIndex={selected ? 0 : -1}
                 onClick={() => !selected && onChoose(option.id)}
                 className={`flex min-h-[56px] w-full items-center gap-3 rounded-xl border p-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-chimera-gold ${selected ? 'border-chimera-gold bg-chimera-gold/10' : 'border-chimera-gold/25 hover:border-chimera-gold/60'}`}
               >

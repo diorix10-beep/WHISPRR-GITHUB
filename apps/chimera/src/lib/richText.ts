@@ -148,3 +148,96 @@ export function parseRoleplayText(text: string): Span[] {
 export function plainText(text: string): string {
   return parseRoleplayText(text).map((span) => span.text).join('');
 }
+
+/** A stretch of plain text, and whether it is spoken (inside quotation marks). */
+export interface DialoguePart {
+  text: string;
+  spoken: boolean;
+}
+
+/** A quotation longer than this is not treated as dialogue: it is more likely a stray mark than a line of speech. */
+const MAX_QUOTE = 1_200;
+/** The most characters looked at, in total, for one stretch of text: a message of thousands of unmatched marks stops being split instead of freezing the page. */
+const MAX_QUOTE_WORK = 200_000;
+const OPENERS = new Set(['"', '\u201C']);
+const CLOSERS = new Set(['"', '\u201D']);
+
+/**
+ * Cuts a stretch of plain text into what is said aloud ("like this", with the quotation marks kept) and the rest, so dialogue can
+ * be shown differently from narration. A quotation must close on the same line and within a reasonable length; a mark with no
+ * partner stays ordinary text. One pass over the text, no backtracking: the work grows with the length, never faster.
+ */
+export function splitDialogue(text: string): DialoguePart[] {
+  const parts: DialoguePart[] = [];
+  let plainFrom = 0;
+  let i = 0;
+  let work = 0;
+  while (i < text.length && work < MAX_QUOTE_WORK) {
+    if (OPENERS.has(text[i])) {
+      let end = -1;
+      const limit = Math.min(text.length, i + 1 + MAX_QUOTE);
+      for (let j = i + 1; j < limit; j += 1) {
+        work += 1;
+        if (text[j] === '\n') break;
+        if (CLOSERS.has(text[j])) {
+          end = j;
+          break;
+        }
+      }
+      // Empty quotation marks ("") say nothing: left alone.
+      if (end > i + 1) {
+        if (i > plainFrom) parts.push({ text: text.slice(plainFrom, i), spoken: false });
+        parts.push({ text: text.slice(i, end + 1), spoken: true });
+        plainFrom = end + 1;
+        i = end + 1;
+        continue;
+      }
+    }
+    i += 1;
+  }
+  if (plainFrom < text.length) parts.push({ text: text.slice(plainFrom), spoken: false });
+  return parts;
+}
+
+/** A formatted stretch of a message, and whether it is spoken (inside quotation marks, which may run across bold or italic parts). */
+export interface MessageSpan extends Span {
+  spoken?: boolean;
+}
+
+/**
+ * The message as the screen draws it: the formatted spans of `parseRoleplayText`, each cut where speech starts or stops. Speech is
+ * found in the text as it is read (so `"Sit down, **please**."` is one quotation although it crosses a bold word), then every
+ * span is split at those boundaries. The characters are never changed: joining the spans gives the same text as before.
+ */
+export function parseMessage(text: string): MessageSpan[] {
+  const spans = parseRoleplayText(text);
+  const visible = spans.map((span) => span.text).join('');
+  if (visible.indexOf('"') === -1 && visible.indexOf('\u201C') === -1) return spans;
+  // Where speech runs, as [from, to) offsets in the visible text.
+  const ranges: Array<[number, number]> = [];
+  let at = 0;
+  for (const part of splitDialogue(visible)) {
+    if (part.spoken) ranges.push([at, at + part.text.length]);
+    at += part.text.length;
+  }
+  if (ranges.length === 0) return spans;
+  const out: MessageSpan[] = [];
+  let offset = 0;
+  let r = 0;
+  for (const span of spans) {
+    const end = offset + span.text.length;
+    let cursor = offset;
+    while (cursor < end) {
+      while (r < ranges.length && ranges[r][1] <= cursor) r += 1;
+      const range = ranges[r];
+      const inside = range !== undefined && range[0] <= cursor;
+      const stop = inside ? Math.min(end, range[1]) : Math.min(end, range ? range[0] : end);
+      const piece: MessageSpan = { ...span, text: span.text.slice(cursor - offset, stop - offset) };
+      if (inside) piece.spoken = true;
+      out.push(piece);
+      cursor = stop;
+    }
+    offset = end;
+  }
+  return out;
+}
