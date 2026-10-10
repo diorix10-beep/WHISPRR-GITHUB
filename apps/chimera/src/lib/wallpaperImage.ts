@@ -138,7 +138,9 @@ function load(file: Blob): Promise<HTMLImageElement> {
 
 /** Checks the file, then makes the stored version of it. Throws `WallpaperImageError` with a readable message. */
 export async function processWallpaperFile(file: File): Promise<ProcessedImage> {
-  const head = new Uint8Array(await file.slice(0, 64 * 1024).arrayBuffer());
+  let head = new Uint8Array(await file.slice(0, 64 * 1024).arrayBuffer());
+  // A JPEG can carry large camera or colour-profile segments before its size marker: for those, read the whole (bounded) file.
+  if (sniffImage(head) === 'jpeg' && file.size > head.length && file.size <= MAX_FILE_BYTES) head = new Uint8Array(await file.arrayBuffer());
   checkImageBytes(head, file.size);
   const image = await load(file);
   const scale = Math.min(1, STORED_LONG_SIDE / Math.max(image.naturalWidth, image.naturalHeight));

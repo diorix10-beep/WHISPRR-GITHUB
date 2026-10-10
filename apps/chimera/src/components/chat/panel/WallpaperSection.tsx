@@ -19,6 +19,8 @@ export function WallpaperSection({ wallpaper }: { wallpaper: WallpaperState }) {
   const shown = effectiveDim(setting);
   const colorValue = choice.kind === 'color' ? choice.color : '#1c1030';
   const none = choice.kind === 'none';
+  // With a colour or a picture chosen no radio is selected: Default stays reachable by keyboard.
+  const noneSelected = !(choice.kind === 'preset');
 
   return (
     <section aria-labelledby="wallpaper-title" className="space-y-4 border-t border-chimera-gold/15 pt-5">
@@ -32,7 +34,7 @@ export function WallpaperSection({ wallpaper }: { wallpaper: WallpaperState }) {
           type="button"
           role="radio"
           aria-checked={none}
-          tabIndex={none ? 0 : -1}
+          tabIndex={noneSelected ? 0 : -1}
           onClick={clear}
           className={`min-h-[64px] rounded-xl border p-2 text-xs font-bold outline-none focus-visible:ring-2 focus-visible:ring-chimera-gold ${none ? 'border-chimera-gold bg-chimera-gold/10' : 'border-chimera-gold/30 hover:border-chimera-gold/70'}`}
         >
