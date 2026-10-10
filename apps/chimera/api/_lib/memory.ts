@@ -6,6 +6,8 @@
  * the player approves it in the Memory panel.
  */
 
+import { CERTAINTIES, normalizeCertainty, normalizeKnownBy, type MemoryCertainty } from '../../src/lib/memoryCertainty.js';
+
 export type MemoryType = 'long_term' | 'relationship' | 'lore' | 'personality';
 
 export const MEMORY_TYPES: readonly MemoryType[] = ['long_term', 'relationship', 'lore', 'personality'];
@@ -28,6 +30,8 @@ export interface WindowMessage {
 export interface MemoryCandidate {
   fact: string;
   type: MemoryType;
+  /** How sure the story is about it. A hint for the player, who can change it when keeping the memory. */
+  certainty: MemoryCertainty;
   /** Real message ids, resolved from the numbers the model saw. */
   sourceIds: string[];
 }
@@ -80,8 +84,9 @@ export function buildExtractionPrompt(known: string[], names: { botName: string;
     '- Every fact must be supported by the lines you cite. Never invent or guess.',
     '- Keep sexual content out of the facts, or at most say that they became intimate. Never record anything sexual involving a minor: skip it.',
     '- type is one of: long_term (events, decisions), relationship (how they feel or relate), lore (facts about the world), personality (lasting traits or preferences).',
+    '- certainty is one of: canon (clearly established in the story), temporary (true now but expected to change soon: an injury, a journey, a plan), assumption (a belief, rumour, suspicion or guess that nobody has confirmed). When in doubt between canon and assumption, choose assumption.',
     '',
-    'Answer with JSON only: {"memories":[{"fact":"...","sources":[1,2],"type":"long_term"}]}. "sources" are the line numbers.',
+    'Answer with JSON only: {"memories":[{"fact":"...","sources":[1,2],"type":"long_term","certainty":"canon"}]}. "sources" are the line numbers.',
   ];
   if (known.length) {
     lines.push('', 'Already remembered (do not repeat or rephrase these):', ...known.map((fact) => `- ${fact}`));
@@ -100,8 +105,9 @@ export const EXTRACTION_SCHEMA = {
           fact: { type: 'STRING' },
           sources: { type: 'ARRAY', items: { type: 'INTEGER' } },
           type: { type: 'STRING', enum: [...MEMORY_TYPES] },
+          certainty: { type: 'STRING', enum: CERTAINTIES.map((c) => c.id) },
         },
-        required: ['fact', 'sources', 'type'],
+        required: ['fact', 'sources', 'type', 'certainty'],
       },
     },
   },
@@ -137,7 +143,7 @@ export function parseExtraction(raw: string, ids: Map<number, string>, known: st
   for (const entry of list) {
     if (out.length >= MAX_PROPOSALS_PER_RUN) break;
     if (!entry || typeof entry !== 'object') continue;
-    const { fact, sources, type } = entry as { fact?: unknown; sources?: unknown; type?: unknown };
+    const { fact, sources, type, certainty } = entry as { fact?: unknown; sources?: unknown; type?: unknown; certainty?: unknown };
     if (typeof fact !== 'string') continue;
     const text = fact.replace(/\s+/g, ' ').trim();
     if (text.length < MIN_FACT_CHARACTERS || text.length > MAX_FACT_CHARACTERS) continue;
@@ -151,27 +157,66 @@ export function parseExtraction(raw: string, ids: Map<number, string>, known: st
     out.push({
       fact: text,
       type: MEMORY_TYPES.includes(type as MemoryType) ? (type as MemoryType) : 'long_term',
+      certainty: normalizeCertainty(certainty),
       sourceIds: sourceIds.slice(0, 20),
     });
   }
   return out;
 }
 
-/** Approved memories, as a block for the character's prompt. Capped so it never crowds out the character. */
-export function memoryBlock(facts: string[]): string | null {
-  const lines: string[] = [];
+/** A memory as the character reads it: its words and how sure the story is about it. */
+export interface RecalledMemory {
+  content: string;
+  certainty?: MemoryCertainty;
+}
+
+/**
+ * Approved memories, as a block for the character's prompt. Capped so it never crowds out the character.
+ * Confirmed memories come first (they are what the cap should keep), then the temporary ones, then the assumptions, each under
+ * a line that says how to treat it. With only confirmed memories the block is exactly what it always was.
+ * Memories the character must not know are never passed here: the caller leaves them out.
+ */
+export function memoryBlock(facts: Array<string | RecalledMemory>): string | null {
+  const groups: Record<MemoryCertainty, string[]> = { canon: [], temporary: [], assumption: [] };
+  let count = 0;
   let used = 0;
-  for (const fact of facts.slice(0, MAX_RECALLED_MEMORIES)) {
-    const text = fact.replace(/\s+/g, ' ').trim();
-    if (!text) continue;
-    if (used + text.length > MAX_MEMORY_BLOCK_CHARACTERS) break;
-    used += text.length;
-    lines.push(`- ${text}`);
+  const entries = facts.map((fact) => (typeof fact === 'string' ? { content: fact, certainty: 'canon' as MemoryCertainty } : { content: fact?.content, certainty: normalizeCertainty(fact?.certainty) }));
+  for (const certainty of ['canon', 'temporary', 'assumption'] as const) {
+    for (const entry of entries) {
+      if (entry.certainty !== certainty || typeof entry.content !== 'string') continue;
+      if (count >= MAX_RECALLED_MEMORIES) break;
+      const text = entry.content.replace(/\s+/g, ' ').trim();
+      if (!text) continue;
+      if (used + text.length > MAX_MEMORY_BLOCK_CHARACTERS) break;
+      used += text.length;
+      count += 1;
+      groups[certainty].push(`- ${text}`);
+    }
   }
-  if (!lines.length) return null;
-  return [
+  if (count === 0) return null;
+  const out = [
     '## Long-Term Memory',
     'These facts were established earlier in your story with the player. Treat them as true and let them shape how you act. If the scene canon above disagrees, the canon wins. Never mention this list:',
-    ...lines,
-  ].join('\n');
+    ...groups.canon,
+  ];
+  if (groups.temporary.length) out.push('True for now, but expected to change:', ...groups.temporary);
+  if (groups.assumption.length) {
+    out.push('Not confirmed (an exception to the rule above): beliefs, rumours or suspicions that characters may be wrong about. Do not state them as fact:', ...groups.assumption);
+  }
+  return out.join('\n');
+}
+
+/**
+ * From the player's approved memories as the database returned them, the ones the character may be told, confirmed first.
+ * - A memory the player keeps to themselves ("only me") is never included.
+ * - Rows without the newer columns (a database not yet updated) count as confirmed and known, exactly as before.
+ * - Within each kind the order is the one received (most important and most recent first), then the usual limit applies.
+ */
+export function pickRecalledMemories(rows: unknown): RecalledMemory[] {
+  if (!Array.isArray(rows)) return [];
+  const readable = rows
+    .filter((row): row is { content: string; certainty?: unknown; known_by?: unknown } => !!row && typeof (row as { content?: unknown }).content === 'string')
+    .filter((row) => normalizeKnownBy(row.known_by) === 'character')
+    .map((row): RecalledMemory => ({ content: row.content, certainty: normalizeCertainty(row.certainty) }));
+  return (['canon', 'temporary', 'assumption'] as const).flatMap((kind) => readable.filter((memory) => memory.certainty === kind)).slice(0, MAX_RECALLED_MEMORIES);
 }

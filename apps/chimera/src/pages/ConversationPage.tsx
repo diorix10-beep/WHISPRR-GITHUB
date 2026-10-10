@@ -14,6 +14,8 @@ import { PersonaSection } from '../components/chat/panel/PersonaSection';
 import { LorebookSection } from '../components/chat/panel/LorebookSection';
 import { LookSection } from '../components/chat/panel/LookSection';
 import { UniverseSection } from '../components/chat/panel/UniverseSection';
+import { MemoryNatureEditor, MemoryNatureFields, MemoryTags } from '../components/chat/panel/MemoryNature';
+import { canBeEverywhere, type KnownBy, type MemoryCertainty } from '../lib/memoryCertainty';
 import { useChatLook } from '../hooks/useChatLook';
 import { useWallpaper } from '../hooks/useWallpaper';
 import { WallpaperLayer } from '../components/chat/WallpaperLayer';
@@ -52,6 +54,7 @@ import {
   loadMemories,
   memoryTypeLabel,
   requestMemorySuggestions,
+  setMemoryNature,
   setMemoryScope,
   type MemoryTypeId,
   type SceneMemory,
@@ -159,7 +162,7 @@ export default function ConversationPage() {
   const [memoriesFailed, setMemoriesFailed] = useState(false);
   const [editingMemory, setEditingMemory] = useState<{ id: string; text: string } | null>(null);
   const [memoryBusy, setMemoryBusy] = useState<string | null>(null);
-  const [newMemory, setNewMemory] = useState<{ text: string; type: MemoryTypeId; everywhere: boolean }>({ text: '', type: 'long_term', everywhere: false });
+  const [newMemory, setNewMemory] = useState<{ text: string; type: MemoryTypeId; everywhere: boolean; certainty: MemoryCertainty; knownBy: KnownBy }>({ text: '', type: 'long_term', everywhere: false, certainty: 'canon', knownBy: 'character' });
   const suggestingRef = useRef(false);
   const busyRef = useRef(false);
   const pendingSendsRef = useRef<ReturnType<typeof createPendingPlayerSends> | null>(null);
@@ -822,6 +825,8 @@ export default function ConversationPage() {
         conversationId: submitted.everywhere ? null : conversationId!,
         type: submitted.type,
         content: submitted.text,
+        certainty: submitted.certainty,
+        knownBy: submitted.knownBy,
       });
       // Empties the box only if it still holds what was just saved; newer typing and choices stay.
       setNewMemory((current) => (current.text === submitted.text ? { ...current, text: '' } : current));
@@ -837,6 +842,10 @@ export default function ConversationPage() {
   // Moves a kept memory between this chat only and every chat with this character (as this persona).
   const moveMemory = async (memory: SceneMemory) => {
     if (memoryBusy) return;
+    if (memory.conversationId && !canBeEverywhere(memory.certainty)) {
+      showToast('Only a confirmed memory can be kept for every chat. Mark it confirmed first.', 'info');
+      return;
+    }
     setMemoryBusy(memory.id);
     try {
       // Memories for every chat appear in all of the character's chats, so there is room for this many of them only. Counted in the
@@ -853,6 +862,20 @@ export default function ConversationPage() {
       setMemories((list) => list.map((m) => (m.id === memory.id ? { ...m, conversationId: to, updatedAt } : m)));
     } catch {
       showToast('We could not change where this memory applies. Nothing was changed.', 'error');
+    } finally {
+      setMemoryBusy(null);
+    }
+  };
+
+  // How sure the story is about a kept memory, and who knows it. A memory the player keeps to themselves is never sent to the AI.
+  const adjustMemory = async (memory: SceneMemory, patch: { certainty?: MemoryCertainty; knownBy?: KnownBy }) => {
+    if (memoryBusy) return;
+    setMemoryBusy(memory.id);
+    try {
+      const updatedAt = await setMemoryNature(memory, patch);
+      setMemories((list) => list.map((m) => (m.id === memory.id ? { ...m, ...(patch.certainty ? { certainty: patch.certainty } : {}), ...(patch.knownBy ? { knownBy: patch.knownBy } : {}), updatedAt } : m)));
+    } catch {
+      showToast('We could not change that. Nothing was changed.', 'error');
     } finally {
       setMemoryBusy(null);
     }
@@ -1094,7 +1117,7 @@ export default function ConversationPage() {
     <div className="mt-6 border-t border-chimera-gold/15 pt-4">
       <h3 className="font-serif text-lg font-semibold text-chimera-gold">Memories</h3>
       <p className="mt-1 text-sm text-chimera-mute">
-        Short things {scene.botName} should keep in mind: events, relationships, facts about the world, lasting traits. Every few messages the story can suggest some; {scene.botName} only uses a suggestion after you keep it. You can reword, move or remove any of them. Memories from your other chats are never mixed in unless you chose &ldquo;every chat&rdquo;, and they follow the persona you play ({personaName ?? 'yourself'}).
+        Short things {scene.botName} should keep in mind: events, relationships, facts about the world, lasting traits. Every few messages the story can suggest some; {scene.botName} only uses a suggestion after you keep it. You can reword, move or remove any of them. Each one can be confirmed, temporary or an assumption, and you can keep it to yourself (&ldquo;Only me&rdquo;): {scene.botName} is then never told. Memories from your other chats are never mixed in unless you chose &ldquo;every chat&rdquo;, and they follow the persona you play ({personaName ?? 'yourself'}).
       </p>
       <form
         className="mt-3 space-y-3 rounded-xl border border-chimera-gold/20 bg-chimera-bg p-3"
@@ -1121,6 +1144,14 @@ export default function ConversationPage() {
             </select>
           </div>
         </div>
+        <MemoryNatureFields
+          certainty={newMemory.certainty}
+          knownBy={newMemory.knownBy}
+          scopeIsEverywhere={newMemory.everywhere}
+          characterName={scene.botName}
+          onCertainty={(certainty) => setNewMemory((current) => ({ ...current, certainty, everywhere: canBeEverywhere(certainty) ? current.everywhere : false }))}
+          onKnownBy={(knownBy) => setNewMemory((current) => ({ ...current, knownBy }))}
+        />
         <fieldset>
           <legend className="text-xs font-bold text-chimera-gold">Applies to</legend>
           <label className="mt-1 flex min-h-[44px] items-center gap-3 text-sm">
@@ -1128,8 +1159,8 @@ export default function ConversationPage() {
             This chat only
           </label>
           <label className="flex min-h-[44px] items-center gap-3 text-sm">
-            <input type="radio" name="new-memory-scope" checked={newMemory.everywhere} onChange={() => setNewMemory({ ...newMemory, everywhere: true })} className="h-5 w-5 accent-[#e8c27a]" />
-            Every chat with {scene.botName}
+            <input type="radio" name="new-memory-scope" checked={newMemory.everywhere} disabled={!canBeEverywhere(newMemory.certainty)} onChange={() => setNewMemory({ ...newMemory, everywhere: true })} className="h-5 w-5 accent-[#e8c27a]" />
+            Every chat with {scene.botName}{!canBeEverywhere(newMemory.certainty) && <span className="text-xs text-chimera-mute"> (only for confirmed memories)</span>}
           </label>
         </fieldset>
         <div className="flex items-center justify-between gap-3">
@@ -1154,10 +1185,12 @@ export default function ConversationPage() {
                 </div>
               ) : (
                 <>
-                  <p className="text-base text-chimera-ink">{memory.content}</p>
+                  <p className="text-base text-chimera-ink"><MemoryTags certainty={memory.certainty} knownBy={memory.knownBy} />{memory.content}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button type="button" onClick={() => void approveSuggestion(memory, false)} disabled={memoryBusy !== null} className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-chimera-gold px-4 text-sm font-bold text-[#1a1208] disabled:opacity-50"><Check size={16} aria-hidden="true" /> Keep for this scene</button>
-                    <button type="button" onClick={() => void approveSuggestion(memory, true)} disabled={memoryBusy !== null} className="min-h-[44px] rounded-full border border-chimera-gold/50 px-4 text-sm font-bold hover:bg-chimera-gold/10 disabled:opacity-50">Keep for every scene with {scene.botName}</button>
+                    {canBeEverywhere(memory.certainty) && (
+                      <button type="button" onClick={() => void approveSuggestion(memory, true)} disabled={memoryBusy !== null} className="min-h-[44px] rounded-full border border-chimera-gold/50 px-4 text-sm font-bold hover:bg-chimera-gold/10 disabled:opacity-50">Keep for every scene with {scene.botName}</button>
+                    )}
                     <button type="button" onClick={() => setEditingMemory({ id: memory.id, text: memory.content })} className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-chimera-gold/30 px-4 text-sm font-bold hover:bg-chimera-gold/10"><Pencil size={15} aria-hidden="true" /> Reword</button>
                     <button type="button" onClick={() => void forgetMemory(memory)} disabled={memoryBusy !== null} className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-chimera-rose/40 px-4 text-sm font-bold text-chimera-rose hover:bg-chimera-rose/10 disabled:opacity-50"><Trash2 size={15} aria-hidden="true" /> Not worth keeping</button>
                   </div>
@@ -1184,9 +1217,12 @@ export default function ConversationPage() {
               ) : (
                 <div className="flex items-start gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-base text-chimera-ink">{memory.content}</p>
+                    <p className="text-base text-chimera-ink"><MemoryTags certainty={memory.certainty} knownBy={memory.knownBy} />{memory.content}</p>
                     <p className="mt-1 text-xs text-chimera-mute">{memoryTypeLabel(memory.type)} · {memory.conversationId ? 'This chat only' : `Every chat with ${scene.botName}`}</p>
-                    <button type="button" onClick={() => void moveMemory(memory)} disabled={memoryBusy !== null} className="mt-1 min-h-[44px] rounded-full border border-chimera-gold/30 px-4 text-xs font-bold hover:bg-chimera-gold/10 disabled:opacity-50">{memory.conversationId ? `Keep for every chat with ${scene.botName}` : 'Keep for this chat only'}</button>
+                    {(memory.conversationId === null || canBeEverywhere(memory.certainty)) && (
+                      <button type="button" onClick={() => void moveMemory(memory)} disabled={memoryBusy !== null} className="mt-1 min-h-[44px] rounded-full border border-chimera-gold/30 px-4 text-xs font-bold hover:bg-chimera-gold/10 disabled:opacity-50">{memory.conversationId ? `Keep for every chat with ${scene.botName}` : 'Keep for this chat only'}</button>
+                    )}
+                    <MemoryNatureEditor certainty={memory.certainty} knownBy={memory.knownBy} isEverywhere={memory.conversationId === null} disabled={memoryBusy !== null} characterName={scene.botName} onChange={(patch) => void adjustMemory(memory, patch)} />
                   </div>
                   <button type="button" onClick={() => setEditingMemory({ id: memory.id, text: memory.content })} aria-label="Reword this memory" className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-chimera-mute hover:text-chimera-gold"><Pencil size={16} aria-hidden="true" /></button>
                   <button type="button" onClick={() => void forgetMemory(memory)} disabled={memoryBusy !== null} aria-label="Forget this memory" className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-chimera-mute hover:text-chimera-rose disabled:opacity-50"><Trash2 size={16} aria-hidden="true" /></button>

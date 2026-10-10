@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { canBeEverywhere, normalizeCertainty, normalizeKnownBy, type KnownBy, type MemoryCertainty } from './memoryCertainty';
 
 export const MEMORY_LIMITS = { content: 300 } as const;
 /** The most memories one player keeps for one character and persona: the list the screen reads holds this many. */
@@ -25,6 +26,10 @@ export interface SceneMemory {
   /** Null means the memory is kept for every scene with this character. */
   conversationId: string | null;
   updatedAt: string;
+  /** How sure the story is about it. */
+  certainty: MemoryCertainty;
+  /** Who knows it: the character, or only the player (then the character is never told). */
+  knownBy: KnownBy;
 }
 
 interface MemoryRow {
@@ -34,13 +39,16 @@ interface MemoryRow {
   approval_status: string;
   conversation_id: string | null;
   updated_at: string;
+  certainty?: string | null;
+  known_by?: string | null;
 }
 
 /** The memories this player has for this character and persona: this scene's, and the ones kept for all scenes. */
 export async function loadMemories(conversationId: string, characterId: string, personaId: string | null): Promise<SceneMemory[]> {
   let query = supabase
     .from('character_memories')
-    .select('id, content, memory_type, approval_status, conversation_id, updated_at')
+    // `*` rather than a column list: a database without the newer columns (certainty, known_by) must still list every memory.
+    .select('*')
     .eq('character_id', characterId)
     .is('session_id', null)
     .or(`conversation_id.eq.${conversationId},conversation_id.is.null`)
@@ -56,6 +64,8 @@ export async function loadMemories(conversationId: string, characterId: string, 
     status: row.approval_status === 'proposed' ? 'proposed' : 'approved',
     conversationId: row.conversation_id,
     updatedAt: row.updated_at,
+    certainty: normalizeCertainty(row.certainty),
+    knownBy: normalizeKnownBy(row.known_by),
   }));
 }
 
@@ -113,10 +123,17 @@ export async function addMemory(input: {
   conversationId: string | null;
   type: MemoryTypeId;
   content: string;
+  /** Defaults to confirmed. Only confirmed memories can be kept for every scene. */
+  certainty?: MemoryCertainty;
+  /** Defaults to "the character knows". */
+  knownBy?: KnownBy;
 }): Promise<void> {
   const content = input.content.trim();
   if (content.length === 0 || content.length > MEMORY_LIMITS.content) throw new Error('A memory is 1 to 300 characters.');
   if (!MEMORY_TYPES.some((t) => t.id === input.type)) throw new Error('Choose a kind of memory.');
+  const certainty = normalizeCertainty(input.certainty);
+  const knownBy = normalizeKnownBy(input.knownBy);
+  if (input.conversationId === null && !canBeEverywhere(certainty)) throw new Error('Only a confirmed memory can be kept for every scene.');
   const { error } = await supabase.from('character_memories').insert({
     user_id: input.userId,
     character_id: input.characterId,
@@ -126,6 +143,9 @@ export async function addMemory(input: {
     content,
     approval_status: 'approved',
     metadata: { origin: 'player' },
+    // Only sent when it is not the default, so that a database without these columns still accepts an ordinary memory.
+    ...(certainty === 'canon' ? {} : { certainty }),
+    ...(knownBy === 'character' ? {} : { known_by: knownBy }),
   });
   if (error) throw error;
 }
@@ -152,4 +172,22 @@ export async function countEveryChatMemories(characterId: string, personaId: str
   const { count, error } = await query;
   if (error || count === null) throw error ?? new Error('Count unavailable');
   return count;
+}
+
+/**
+ * Changes how sure the story is about a kept memory, or who knows it. Returns the new `updatedAt`. A memory that is not
+ * confirmed belongs to its scene: the database refuses to keep it for every scene, and so does this.
+ */
+export async function setMemoryNature(memory: SceneMemory, patch: { certainty?: MemoryCertainty; knownBy?: KnownBy }): Promise<string> {
+  const change: Record<string, string> = {};
+  if (patch.certainty !== undefined) {
+    const certainty = normalizeCertainty(patch.certainty);
+    if (memory.conversationId === null && !canBeEverywhere(certainty)) throw new Error('Only a confirmed memory can be kept for every scene.');
+    change.certainty = certainty;
+  }
+  if (patch.knownBy !== undefined) change.known_by = normalizeKnownBy(patch.knownBy);
+  if (Object.keys(change).length === 0) return memory.updatedAt;
+  const { data, error } = await supabase.from('character_memories').update(change).eq('id', memory.id).select('updated_at');
+  if (error || !data || data.length === 0) throw error ?? new Error('Not allowed');
+  return (data[0] as { updated_at: string }).updated_at;
 }
