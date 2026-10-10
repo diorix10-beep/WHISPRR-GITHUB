@@ -170,9 +170,9 @@ test('the documents match what the code does today (so a change in the code fail
     const hosts = new Set();
     for (const f of apiFiles) for (const m of (await read(f)).matchAll(/https?:\/\/([a-z0-9.-]+)/gi)) hosts.add(m[1]);
     hosts.delete('www.chimera.it.com');
-    assert.deepEqual([...hosts].sort(), ['generativelanguage.googleapis.com', 'openrouter.ai'], 'a new external service is called: add it to the Privacy Policy');
+    assert.deepEqual([...hosts].sort(), ['api.resend.com', 'generativelanguage.googleapis.com', 'openrouter.ai'], 'a new external service is called: add it to the Privacy Policy');
     assert.match(await read('api/create-shards-checkout.ts'), /from 'stripe'/);
-    for (const name of ['Google', 'OpenRouter', 'Stripe', 'Supabase', 'Vercel']) assert.match(privacy, new RegExp(name));
+    for (const name of ['Google', 'OpenRouter', 'Stripe', 'Supabase', 'Vercel', 'Resend']) assert.match(privacy, new RegExp(name));
 
     // The credits rules the product states on its own pages are in the Terms.
     const shardsPage = await read('src/pages/ShardsPage.tsx');
