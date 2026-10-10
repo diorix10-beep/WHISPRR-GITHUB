@@ -64,6 +64,11 @@ test('the prompt block is capped, says it is setting and not instructions, and c
       genre: 'g'.repeat(500), technology: 't'.repeat(500), calendar: 'c'.repeat(500), customs: 'u'.repeat(500),
       communications: Array.from({ length: 9 }, (_, i) => ({ name: `n${i}`.padEnd(100, 'n'), kind: 'phone', note: 'x'.repeat(300) })),
     };
+    const realistic = universeRulesBlock({
+      genre: 'g'.repeat(80), technology: 't'.repeat(140), calendar: 'c'.repeat(140), customs: 'u'.repeat(240),
+      communications: ['letter', 'magic', 'other', 'other'].map((kind, i) => ({ name: `${i}`.padEnd(30, 'n'), kind, note: 'x'.repeat(60) })),
+    });
+    assert.ok(realistic.length <= UNIVERSE_LIMITS.block && realistic.endsWith('u'.repeat(240)), `the biggest realistic block (${realistic.length} characters) is not cut short`);
     const worst = universeRulesBlock(full);
     assert.ok(worst.length <= UNIVERSE_LIMITS.block, `worst case ${worst.length} characters`);
     assert.ok(universeRulesBlock({ genre: '🌙'.repeat(500), customs: '🌙'.repeat(500), technology: '🌙'.repeat(500), calendar: '🌙'.repeat(500) }).length <= UNIVERSE_LIMITS.block);
@@ -94,11 +99,21 @@ test('the prompt follows the rules: no rules, no change; letters without a phone
 
     const rules = { genre: 'Low fantasy', technology: 'Swords and ships', calendar: 'Twelve moons a year', communications: [{ name: 'Raven post', kind: 'letter', note: 'a day across the valley' }] };
     const prompt = buildSystemPrompt(character, bot, null, 'The ship left port.', { universeRules: rules });
-    assert.ok(prompt.includes('## Universe Rules') && prompt.includes('Genre: Low fantasy') && prompt.includes('Raven post (a day across the valley)'));
-    assert.ok(prompt.includes('do not invent a phone, the internet'), 'a world with letters has no phone');
+    assert.ok(prompt.includes('## Universe Rules') && prompt.includes('Genre: Low fantasy') && prompt.includes('Raven post'));
+    assert.ok(prompt.includes('These do not exist in this world, so do not invent them: phones, messaging apps and the internet'), 'a world with letters has no phone');
+    assert.ok(prompt.includes('Raven post (letters: a day across the valley)'), 'each way is named with its kind');
     assert.ok(prompt.includes('How time is counted: Twelve moons a year'));
     assert.ok(prompt.indexOf('## Safety Boundaries') < prompt.indexOf('## Universe Rules'), 'the safety rules come first');
     assert.ok(prompt.indexOf('## Universe Rules') < prompt.indexOf('## Established Scene Canon'), 'the world comes before the scene canon');
+
+    // What the player listed is never contradicted, whatever the way is called.
+    const phoneWorld = buildSystemPrompt(character, bot, null, null, { universeRules: { communications: [{ name: 'Telephone', kind: 'phone' }, { name: 'Quantum link', kind: 'other' }] } });
+    const absent = phoneWorld.split('\n').find((l) => l.startsWith('These do not exist'));
+    assert.ok(phoneWorld.includes('Telephone (phone or messages)'));
+    assert.ok(!/phone|internet/.test(absent ?? ''), 'a listed phone is not forbidden in the same block');
+    assert.ok(absent.includes('radios') && absent.includes('magical'), 'what is not listed is ruled out');
+    const everything = buildSystemPrompt(character, bot, null, null, { universeRules: { communications: ['phone', 'letter', 'magic', 'communicator'].map((kind) => ({ name: kind, kind })) } });
+    assert.ok(!everything.includes('These do not exist'), 'nothing to rule out when every kind is listed');
 
     const noWays = buildSystemPrompt(character, bot, null, null, { universeRules: { genre: 'Cosy mystery' } });
     assert.ok(!noWays.includes('reach each other'), 'no list of ways, nothing said about devices');
