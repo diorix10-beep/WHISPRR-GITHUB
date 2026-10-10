@@ -40,6 +40,11 @@ export const LOOK_OPTIONS = {
     { id: 'gold', label: 'Gold', hint: 'Quoted words in gold' },
     { id: 'bold', label: 'Bold', hint: 'Quoted words in bold' },
   ],
+  motion: [
+    { id: 'device', label: 'Follow my device', hint: 'The default: movement is reduced when your device asks for it' },
+    { id: 'reduced', label: 'Reduce movement', hint: 'No sliding, fading or smooth scrolling in the app' },
+    { id: 'calm', label: 'Calm', hint: 'No movement, and the chat background is not drawn' },
+  ],
 } as const;
 
 export type LookKey = keyof typeof LOOK_OPTIONS;
@@ -53,6 +58,7 @@ export const DEFAULT_LOOK: ChatLook = {
   font: 'sans',
   narration: 'italic',
   dialogue: 'normal',
+  motion: 'device',
 };
 
 export const LOOK_KEYS = Object.keys(LOOK_OPTIONS) as LookKey[];
@@ -81,6 +87,7 @@ export function lookAttributes(look: ChatLook): Record<string, string> {
     'data-font': look.font,
     'data-narration': look.narration,
     'data-dialogue': look.dialogue,
+    'data-motion': look.motion,
   };
 }
 

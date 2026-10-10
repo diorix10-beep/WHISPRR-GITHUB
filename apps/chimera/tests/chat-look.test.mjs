@@ -19,10 +19,10 @@ test('the look: only known choices are kept, anything else goes back to the defa
     assert.deepEqual(normalizeLook(null), DEFAULT_LOOK);
     assert.deepEqual(normalizeLook('xl'), DEFAULT_LOOK);
     assert.deepEqual(normalizeLook([1, 2]), DEFAULT_LOOK);
-    assert.deepEqual(normalizeLook({ size: 'huge', spacing: 7, align: null, bubble: {}, font: 'comic', narration: 'x', dialogue: '' }), DEFAULT_LOOK, 'unknown values');
+    assert.deepEqual(normalizeLook({ size: 'huge', spacing: 7, align: null, bubble: {}, font: 'comic', narration: 'x', dialogue: '', motion: 'wild' }), DEFAULT_LOOK, 'unknown values');
     const mixed = normalizeLook({ size: 'xl', spacing: 'nope', bubble: 'plain', extra: 'ignored', __proto__: { size: 's' } });
     assert.deepEqual(mixed, { ...DEFAULT_LOOK, size: 'xl', bubble: 'plain' }, 'a valid choice survives next to invalid ones; extra keys are dropped');
-    assert.equal(Object.keys(mixed).length, 7);
+    assert.equal(Object.keys(mixed).length, 8);
     assert.equal(isDefaultLook(DEFAULT_LOOK), true);
     assert.equal(isDefaultLook(mixed), false);
     assert.ok(!('extra' in mixed));

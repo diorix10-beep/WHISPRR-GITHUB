@@ -1249,7 +1249,7 @@ export default function ConversationPage() {
 
   return (
     <div className="relative isolate">
-    <WallpaperLayer setting={wallpaper.setting} imageUrl={wallpaper.imageUrl} />
+    {look.motion !== 'calm' && <WallpaperLayer setting={wallpaper.setting} imageUrl={wallpaper.imageUrl} />}
     <div className="mx-auto flex max-w-[78rem] items-start justify-center gap-6 lg:px-4">
     <div className="chat-look flex min-h-[calc(100dvh-5rem)] w-full min-w-0 max-w-3xl flex-col px-4 pb-4 pt-4 sm:px-6 lg:px-0" {...lookAttributes(look)}>
       <header className="mb-3 flex items-center gap-3">

@@ -303,7 +303,8 @@ export function buildSystemPrompt(
   const meta: string[] = ['## Runtime'];
   if (character.category) meta.push(`Category: ${character.category}`);
   if (character.tags && character.tags.length > 0) meta.push(`Tags: ${character.tags.join(', ')}`);
-  meta.push(`Current datetime: ${new Date().toISOString()}`);
+  // No real clock: the story has its own time. The model must take it from the scene and never from the real world.
+  meta.push('Story time: only what the scene itself says. Never use the real-world date or time, and do not invent one the scene has not given.');
   sections.push(meta.join('\n'));
 
   return sections.join('\n\n---\n\n');

@@ -20,7 +20,9 @@ export interface Anchor {
 
 const CLOSE_MS = 180;
 const MOBILE = '(max-width: 639px)';
-const reducedMotion = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+const reducedMotion = () =>
+  typeof window !== 'undefined' &&
+  (!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || document.documentElement.hasAttribute('data-motion'));
 
 /**
  * A backdrop and a panel that slides up on a phone and sits next to the pointer on a wide screen. Escape, a tap outside
