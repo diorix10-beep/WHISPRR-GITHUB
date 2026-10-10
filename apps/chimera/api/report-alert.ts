@@ -34,13 +34,12 @@ export default async function handler(req: Request) {
     // Someone else's report looks exactly like a missing one.
     if (error || !report || report.reporter_id !== user.id || report.content_type !== 'chimera_message') throw new RequestError(404, 'Report not found.');
 
-    const since = new Date(Date.now() - WINDOW_MINUTES * 60_000).toISOString();
-    const recent = await admin.from('reports').select('id', { count: 'exact', head: true }).gte('alert_sent_at', since);
-    if ((recent.count ?? 0) >= MAX_ALERTS) return jsonResponse({ sent: false, reason: 'throttled' });
-
-    // Claim it first, so two requests cannot send two e-mails.
-    const claim = await admin.from('reports').update({ alert_sent_at: new Date().toISOString() }).eq('id', report.id).is('alert_sent_at', null).select('id');
-    if (claim.error || !claim.data?.length) return jsonResponse({ sent: false, reason: 'already_sent' });
+    // The count of recent alerts and the claim happen together in the database, under one lock: several reports sent at
+    // the same moment cannot all pass the limit, and two requests for one report cannot both send.
+    const claim = await admin.rpc('claim_chimera_report_alert', { p_report_id: report.id, p_max: MAX_ALERTS, p_window_minutes: WINDOW_MINUTES });
+    if (claim.error) throw new RequestError(502, 'The alert could not be prepared.');
+    if (claim.data === 'throttled') return jsonResponse({ sent: false, reason: 'throttled' });
+    if (claim.data !== 'claimed') return jsonResponse({ sent: false, reason: 'already_sent' });
 
     // The link points at the site that served this request, unless a public address is set.
     const message = buildReportAlert(report, process.env.CHIMERA_PUBLIC_URL || new URL(req.url).origin);

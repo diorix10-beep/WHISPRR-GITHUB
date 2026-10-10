@@ -121,7 +121,7 @@ async function alertHarness({ report, alertedRecently = 0, resendOk = true, env 
   const previous = { ...process.env };
   if (env) Object.assign(process.env, { CHIMERA_REPORT_ALERT_EMAILS: 'admin@example.com', RESEND_API_KEY: 'key', CHIMERA_REPORT_ALERT_FROM: 'alerts@example.com', SUPABASE_SERVICE_ROLE_KEY: 'service' });
   const row = report === undefined ? { id: REPORT, reporter_id: USER, reason: 'spam', created_at: '2026-10-10T08:30:00Z', content_type: 'chimera_message', alert_sent_at: null } : report;
-  const log = { resend: [], claims: 0, audit: [], released: 0 };
+  const log = { resend: [], claims: 0, claimCalls: [], audit: [], released: 0 };
   const realFetch = globalThis.fetch;
   globalThis.fetch = async (input, init = {}) => {
     const url = new URL(typeof input === 'string' ? input : input.url ?? String(input));
@@ -130,14 +130,19 @@ async function alertHarness({ report, alertedRecently = 0, resendOk = true, env 
     if (url.hostname === 'api.resend.com') { log.resend.push(JSON.parse(init.body)); return json({}, resendOk ? 200 : 500); }
     if (url.pathname === '/auth/v1/user') return json({ id: USER, aud: 'authenticated', email: 'm@example.com' });
     if (url.pathname === '/rest/v1/reports') {
-      if (method === 'HEAD') return new Response(null, { status: 200, headers: { 'content-range': `*/${alertedRecently}` } });
       if (method === 'GET') return row ? json(row) : json({ message: 'none' }, 406);
       if (method === 'PATCH') {
         const body = JSON.parse(init.body);
-        if (body.alert_sent_at === null) { log.released += 1; return json([{ id: REPORT }]); }
-        if (row.alert_sent_at) return json([]);
-        row.alert_sent_at = body.alert_sent_at; log.claims += 1; return json([{ id: REPORT }]);
+        if (body.alert_sent_at === null) { log.released += 1; row.alert_sent_at = null; return json([{ id: REPORT }]); }
       }
+    }
+    // The count and the claim are one database call (under a lock there), not two requests the handler makes.
+    if (url.pathname === '/rest/v1/rpc/claim_chimera_report_alert' && method === 'POST') {
+      const args = JSON.parse(init.body);
+      log.claimCalls.push(args);
+      if (row.alert_sent_at) return json('already_sent');
+      if (alertedRecently >= args.p_max) return json('throttled');
+      row.alert_sent_at = new Date().toISOString(); log.claims += 1; return json('claimed');
     }
     if (url.pathname === '/rest/v1/chimera_report_audit' && method === 'POST') { log.audit.push(JSON.parse(init.body)); return json({}, 201); }
     throw new Error(`unexpected ${method} ${url}`);
@@ -156,6 +161,7 @@ test('alert API: the reporter triggers one e-mail, and it is logged', async () =
     assert.deepEqual(h.log.resend[0].to, ['admin@example.com']);
     assert.ok(h.log.resend[0].text.includes(REPORT) && !JSON.stringify(h.log.resend[0]).includes(SECRET));
     assert.deepEqual(h.log.audit, [{ report_id: REPORT, actor_id: null, action: 'alert_sent' }]);
+    assert.deepEqual(h.log.claimCalls, [{ p_report_id: REPORT, p_max: 5, p_window_minutes: 10 }], 'the limit is checked by the database, together with the claim');
     // Asking again does not send again.
     const again = await h.call({ report_id: REPORT });
     assert.deepEqual(await again.json(), { sent: false, reason: 'already_sent' });

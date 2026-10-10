@@ -18,6 +18,7 @@ const msgId = (n) => `00000000-0000-4000-8000-${String(1000 + n).padStart(12, '0
 const file = (name) => readFile(new URL(`supabase/migrations/${name}`, root), 'utf8');
 const FEEDBACK = '20261010090000_chimera_message_feedback.sql';
 const MODERATION = '20261010100000_chimera_moderation_reports.sql';
+const FOLLOWUPS = '20261010110000_chimera_report_followups.sql';
 
 /** The parts of production these migrations touch, as they are there (reports as WHISPRR's migration made it). */
 async function database({ apply = true } = {}) {
@@ -66,6 +67,7 @@ async function database({ apply = true } = {}) {
   if (apply) {
     await db.exec(await file(FEEDBACK));
     await db.exec(await file(MODERATION));
+    await db.exec(await file(FOLLOWUPS));
   }
   const as = async (role, uid, sql, params = []) => {
     await db.exec(`SET ROLE ${role}; SELECT set_config('request.jwt.claim.sub', '${uid ?? ''}', false);`);
@@ -364,6 +366,10 @@ test('the migrations only add, widen two WHISPRR lists, and can be applied twice
   try {
     await db.exec(await file(FEEDBACK));
     await db.exec(await file(MODERATION));
+    await db.exec(await file(FOLLOWUPS));
+    // Applying the first two again, then the follow-ups again, changes nothing and does not fail.
+    await db.exec(await file(MODERATION));
+    await db.exec(await file(FOLLOWUPS));
     const statuses = (await db.query("SELECT pg_get_constraintdef(oid) AS d FROM pg_constraint WHERE conname IN ('reports_status_check', 'reports_content_type_check') ORDER BY conname")).rows.map((r) => r.d).join(' ');
     for (const old of ['whisper', 'comment', 'user', 'pending', 'reviewed', 'resolved']) assert.ok(statuses.includes(`'${old}'`), `${old} is still allowed`);
     for (const added of ['chimera_message', 'under_review', 'dismissed', 'escalated']) assert.ok(statuses.includes(`'${added}'`), `${added} is allowed`);
@@ -371,7 +377,7 @@ test('the migrations only add, widen two WHISPRR lists, and can be applied twice
     await db.exec(`SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub', '${ME}', false);`);
     try { await db.query(`INSERT INTO public.reports (reporter_id, reported_user_id, content_type, reason, details) VALUES ('${ME}', '${OTHER}', 'whisper', 'spam', 'x')`); } finally { await db.exec('RESET ROLE'); }
   } finally { await db.close(); }
-  for (const name of [FEEDBACK, MODERATION]) {
+  for (const name of [FEEDBACK, MODERATION, FOLLOWUPS]) {
     const code = (await file(name)).replace(/--.*$/gm, '');
     // (The one DELETE is a member taking back their own like.)
     assert.doesNotMatch(code, /\b(DROP\s+(TABLE|COLUMN|FUNCTION|SCHEMA)|TRUNCATE|DELETE\s+FROM\s+public\.(?!chimera_message_feedback)|UPDATE\s+public\.messages\s+SET)/i, name);
@@ -398,5 +404,51 @@ test('every function that moderators or members call is locked down: no PUBLIC o
       assert.equal(r.anon_exec, false, `${r.proname} is not callable by anon`);
       assert.equal(r.auth_exec, true, r.proname);
     }
+  } finally { await db.close(); }
+});
+
+// ───────────────────────────── review follow-ups ─────────────────────────────
+
+test('the 2,000-character limit applies to CHIMERA reports only: WHISPRR\'s long explanations keep working, and old long rows do not block the migration', async () => {
+  // Production as it was before: a legacy report with a very long explanation already in the table.
+  const old = await database({ apply: false });
+  try {
+    await old.db.query("INSERT INTO public.reports (reporter_id, reported_user_id, content_type, reason, details) VALUES ($1, $2, 'user', 'spam', $3)", [ME, OTHER, 'x'.repeat(6000)]);
+    await old.db.exec(await file(FEEDBACK));
+    await old.db.exec(await file(MODERATION));
+    await old.db.exec(await file(FOLLOWUPS));
+    const legacy = (await old.user(ME, "SELECT char_length(details) AS n FROM public.reports WHERE content_type = 'user'")).rows[0];
+    assert.equal(legacy.n, 6000);
+    await old.user(ME, `INSERT INTO public.reports (reporter_id, reported_user_id, content_type, reason, details) VALUES ('${ME}', '${OTHER}', 'user', 'spam', '${'y'.repeat(5000)}')`);
+    await rejects(old.db.query(`INSERT INTO public.reports (reporter_id, content_type, content_id, reason, details) VALUES ('${ME}', 'chimera_message', '${msgId(2)}', 'spam', '${'z'.repeat(2001)}')`), /reports_details_length/);
+  } finally { await old.db.close(); }
+});
+
+test('the alert claim: one e-mail per report, at most N in the window, counted and claimed under one lock, server only', async () => {
+  const { db, user, as, report } = await database();
+  try {
+    const ids = [];
+    for (const n of [2, 4, 6]) ids.push((await report(ME, msgId(n), 'spam')).id);
+    const claim = (id, max = 2, mins = 10) => as('service_role', null, 'SELECT public.claim_chimera_report_alert($1, $2, $3) AS r', [id, max, mins]).then((r) => r.rows[0].r);
+    assert.equal(await claim(ids[0]), 'claimed');
+    assert.equal(await claim(ids[0]), 'already_sent', 'one e-mail per report');
+    assert.equal(await claim(ids[1]), 'claimed');
+    assert.equal(await claim(ids[2]), 'throttled', 'the limit holds');
+    assert.equal((await db.query('SELECT alert_sent_at FROM public.reports WHERE id = $1', [ids[2]])).rows[0].alert_sent_at, null, 'a throttled report can still be announced later');
+    // Several at once cannot get past the limit.
+    await db.query('UPDATE public.reports SET alert_sent_at = NULL');
+    const results = await Promise.all(ids.map((id) => claim(id, 1)));
+    assert.equal(results.filter((r) => r === 'claimed').length, 1, results.join());
+    // Alerts older than the window no longer count.
+    await db.query("UPDATE public.reports SET alert_sent_at = now() - interval '11 minutes' WHERE alert_sent_at IS NOT NULL");
+    assert.equal(await claim(ids.find((_, i) => results[i] !== 'claimed'), 1), 'claimed');
+    await rejects(claim(ids[0], 0), /Invalid limit/);
+    // Only the server can call it: members, anonymous visitors and moderators cannot.
+    await rejects(user(ME, 'SELECT public.claim_chimera_report_alert($1, 5, 10)', [ids[0]]), /permission denied/);
+    await rejects(user(FOUNDER, 'SELECT public.claim_chimera_report_alert($1, 5, 10)', [ids[0]]), /permission denied/);
+    await rejects(as('anon', null, 'SELECT public.claim_chimera_report_alert($1, 5, 10)', [ids[0]]), /permission denied/);
+    const fn = (await db.query("SELECT prosecdef, coalesce(array_to_string(proconfig, ','), '') AS cfg FROM pg_proc WHERE proname = 'claim_chimera_report_alert'")).rows[0];
+    assert.equal(fn.prosecdef, true);
+    assert.match(fn.cfg, /search_path=""/);
   } finally { await db.close(); }
 });
