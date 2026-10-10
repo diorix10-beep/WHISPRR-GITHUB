@@ -9,6 +9,7 @@ import {
 import { requireAdultContentAccess } from './_lib/adultContentGate.js';
 import { geminiGenerate, geminiText } from './_lib/modelProviders.js';
 import { defaultGeminiModels } from '../src/lib/chatModels.js';
+import { normalizeKnownBy } from '../src/lib/memoryCertainty.js';
 import {
   EXTRACTION_SCHEMA,
   buildExcerpt,
@@ -108,7 +109,8 @@ export default async function handler(req: Request) {
 
     let knownQuery = supabase
       .from('character_memories')
-      .select('content')
+      // `*`, filtered below: a database without the newer columns must still give the model the list to avoid repeating.
+      .select('*')
       .eq('user_id', user.id)
       .eq('character_id', character.id)
       .is('session_id', null)
@@ -117,7 +119,11 @@ export default async function handler(req: Request) {
       .limit(40);
     knownQuery = window.persona_id ? knownQuery.eq('persona_id', window.persona_id) : knownQuery.is('persona_id', null);
     const { data: knownRows } = await knownQuery;
-    const known = ((knownRows ?? []) as Array<{ content: string }>).map((row) => row.content).filter((text) => typeof text === 'string');
+    // What the player keeps to themselves is not sent to the AI, not even to avoid repeating it.
+    const known = ((knownRows ?? []) as Array<{ content: string; known_by?: unknown }>)
+      .filter((row) => normalizeKnownBy(row.known_by) === 'character')
+      .map((row) => row.content)
+      .filter((text) => typeof text === 'string');
 
     const excerpt = buildExcerpt(messages, { botId, botName, playerName });
     const { data: geminiData } = await geminiGenerate(geminiKey, defaultGeminiModels(), {
@@ -130,7 +136,7 @@ export default async function handler(req: Request) {
 
     let proposed = 0;
     for (const candidate of candidates) {
-      const { error } = await supabase.rpc('propose_chimera_memory', {
+      const { data: saved, error } = await supabase.rpc('propose_chimera_memory', {
         p_conversation_id: conversationId,
         p_character_id: character.id,
         p_content: candidate.fact,
@@ -138,6 +144,11 @@ export default async function handler(req: Request) {
         p_memory_type: candidate.type,
       });
       if (!error) proposed += 1;
+      // The story may say how sure it is. That is only a hint on a suggestion the player has not kept yet, and it is best effort:
+      // without the newer columns, or if this fails, the suggestion simply stays "confirmed" and the player decides.
+      if (!error && typeof saved === 'string' && candidate.certainty !== 'canon') {
+        await supabase.from('character_memories').update({ certainty: candidate.certainty }).eq('id', saved).then(() => undefined, () => undefined);
+      }
     }
     // Every suggestion failed to save (a database hiccup): give the window back so it is looked at again.
     // Some saved and some did not: keep it read, the next look skips what is already there.

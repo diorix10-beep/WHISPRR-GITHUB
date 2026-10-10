@@ -10,7 +10,7 @@ import {
   serverClient,
   uuid,
 } from './_lib/requestProtection.js';
-import { MAX_RECALLED_MEMORIES } from './_lib/memory.js';
+import { pickRecalledMemories, type RecalledMemory } from './_lib/memory.js';
 import { cleanOpenings, openingUsed } from './_lib/openings.js';
 import { LOREBOOK_BUDGET_CHARACTERS, LOREBOOK_MAX_ENTRIES_READ, LOREBOOK_READ_PAGE, lorebookBlock, selectLorebookEntries, validBudget, validDepth, type LorebookEntry } from './_lib/lorebook.js';
 import { generateReply, providerKeys } from './_lib/modelProviders.js';
@@ -35,6 +35,8 @@ import {
 export const config = { runtime: 'edge' };
 
 const MAX_PROMPT_CHARACTERS = 100_000;
+/** How many approved memories are read before they are sorted by certainty and cut to what the prompt can carry (the app keeps at most 100). */
+const MAX_MEMORIES_READ = 100;
 
 interface MessageRow extends ChatMessage {
   id: string;
@@ -123,6 +125,12 @@ async function loadUniverseRules(input: {
 /**
  * Facts the player approved as long-term memory for this character and persona: the ones tied to this
  * scene and the ones kept for every scene. Optional: if they cannot be read the character still answers.
+ *
+ * Two rules about what the character may be told:
+ *  - a memory the player marked "only me" is never read here (the character does not know it);
+ *  - confirmed memories are picked first, then temporary ones, then assumptions, so a pile of rumours cannot push out facts.
+ * Rows are read with `*` and filtered here, not in the query: a database that does not have the new columns yet must still
+ * give the character every memory it had before (they all count as confirmed and known).
  */
 async function loadApprovedMemories(input: {
   supabase: Awaited<ReturnType<typeof authenticate>>['supabase'];
@@ -130,11 +138,11 @@ async function loadApprovedMemories(input: {
   conversationId: string;
   characterId: string;
   personaId: string | null;
-}): Promise<string[]> {
+}): Promise<RecalledMemory[]> {
   try {
     let query = input.supabase
       .from('character_memories')
-      .select('content')
+      .select('*')
       .eq('user_id', input.userId)
       .eq('character_id', input.characterId)
       .eq('approval_status', 'approved')
@@ -142,11 +150,11 @@ async function loadApprovedMemories(input: {
       .or(`conversation_id.eq.${input.conversationId},conversation_id.is.null`)
       .order('importance', { ascending: false })
       .order('updated_at', { ascending: false })
-      .limit(MAX_RECALLED_MEMORIES);
+      .limit(MAX_MEMORIES_READ);
     query = input.personaId ? query.eq('persona_id', input.personaId) : query.is('persona_id', null);
     const { data, error } = await query;
     if (error || !Array.isArray(data)) return [];
-    return data.map((row: { content: string }) => row.content).filter((text) => typeof text === 'string');
+    return pickRecalledMemories(data);
   } catch {
     return [];
   }

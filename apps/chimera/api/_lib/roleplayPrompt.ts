@@ -3,7 +3,7 @@
  * network, no database. `api/ai-chat.ts` wires them to the request.
  */
 
-import { memoryBlock } from './memory.js';
+import { memoryBlock, type RecalledMemory } from './memory.js';
 import { universeRulesBlock } from '../../src/lib/universeRules.js';
 
 export interface CharacterData {
@@ -60,8 +60,8 @@ export interface SceneSettings {
   responseLength?: ResponseLength;
   bannedWords?: string;
   pinned?: PinnedLine[];
-  /** Facts the player approved as long-term memory. */
-  memories?: string[];
+  /** Facts the player approved as long-term memory, with how sure the story is about each (a plain string counts as confirmed). */
+  memories?: Array<string | RecalledMemory>;
   /** The lorebook block for this reply (see lorebook.ts): only the entries that matter right now. */
   lorebook?: string | null;
   /** The world the player described (see universeRules.ts). Normalised and capped when the prompt is built, so raw saved data is fine here. */
