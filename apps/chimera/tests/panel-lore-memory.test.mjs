@@ -187,15 +187,24 @@ test('the Lorebook and Memory tabs are wired: creator only controls, no migratio
   assert.match(page, /isCreator=\{scene\.characterMine\}/);
   assert.match(page, /creator_id, name:chat_name/);
   assert.match(page, /await addMemory\(\{/);
-  assert.match(page, /conversationId: newMemory\.everywhere \? null : conversationId!/);
+  assert.match(page, /conversationId: submitted\.everywhere \? null : conversationId!/);
   assert.match(page, /personaId: memoryContextRef\.current\.personaId/);
   assert.match(page, /memories\.length >= MAX_MEMORIES/);
+  // A slow save must not overwrite what was typed meanwhile (the box is emptied only if it still holds what was saved).
+  assert.match(page, /setNewMemory\(\(current\) => \(current\.text === submitted\.text \? \{ \.\.\.current, text: '' \} : current\)\)/);
+  assert.doesNotMatch(page, /setNewMemory\(\{ \.\.\.newMemory, text: '' \}\)/);
+  // Moving a memory to "every chat" cannot overflow the list every chat shows.
+  assert.match(page, /filter\(\(m\) => !m\.conversationId\)\.length >= MAX_MEMORIES/);
   assert.match(page, /never mixed in unless you chose/);
   const section = await read('src/components/chat/panel/LorebookSection.tsx');
   assert.match(section, /\{isCreator && \(/, 'linking, creating and checking are for the creator');
   assert.match(section, /book\.mine && \(/, 'open and unlink only on the player\'s own lorebooks');
   assert.doesNotMatch(section, /loadEnabledEntries\([^)]*books\.map/, 'entries of other people\'s lorebooks are never read');
   assert.match(section, /own\.map\(\(b\) => b\.id\)/);
+  // A failure reading the creator's own lorebooks is shown, with a retry, never as an empty library.
+  assert.match(section, /setMineFailed\(true\)/);
+  assert.doesNotMatch(section, /loadMyLorebooks\(viewerId\)\.catch\(\(\) => \[\]\)/);
+  assert.match(section, /We could not load your lorebooks, so linking is unavailable/);
   const lib = await read('src/lib/sceneLore.ts');
   assert.doesNotMatch(lib, /\.(update|insert|upsert)\(/, 'this file never writes lore');
   assert.match(lib, /api\/_lib\/lorebook\.ts/, 'one selection, shared with the server');
