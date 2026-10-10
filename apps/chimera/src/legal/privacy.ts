@@ -151,6 +151,7 @@ export const PRIVACY: LegalDocument = {
             ['Your sign-in session', 'Browser local storage (set by the sign-in library)', 'To keep you signed in. Without it you cannot use the account.'],
             ['Your last space (Roleplay or Storytelling)', 'Browser local storage, key "chimera-mode"', 'To reopen the space you used.'],
             ['Story drafts and retry markers', 'Browser local storage', 'To keep unsaved writing safe and to avoid running a paid action twice.'],
+            ['Whether the chat management panel stays open (on a computer)', 'Browser local storage, key "chimera.chat.panel.open"', 'To reopen the panel as you left it.'],
             ['A temporary checkout reference', 'Browser session storage, cleared when you close the tab', 'To avoid creating a second order if you retry a purchase.'],
           ],
         } },

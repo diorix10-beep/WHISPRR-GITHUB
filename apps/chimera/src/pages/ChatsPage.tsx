@@ -1,79 +1,30 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageCircle } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { GitBranch, MessageCircle } from 'lucide-react';
+import { branchNote, formatWhen, loadScenes, sceneName, type SceneListItem } from '../lib/sceneList';
 import { useAuth } from '../contexts/AuthContext';
-
-interface SceneRow {
-  id: string;
-  name: string | null;
-  last_message: string | null;
-  last_message_at: string | null;
-  created_at: string;
-  conversation_participants: Array<{ user_id: string }>;
-}
-
-interface Scene {
-  id: string;
-  characterName: string;
-  /** The player's own title, when they set one. */
-  title: string | null;
-  preview: string | null;
-  when: string;
-}
-
-function formatWhen(iso: string) {
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
 
 export default function ChatsPage() {
   const { user } = useAuth();
-  const [scenes, setScenes] = useState<Scene[]>([]);
+  const [scenes, setScenes] = useState<SceneListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     let active = true;
-    (async () => {
-      const { data, error } = await supabase
-        .from('conversations')
-        .select('id, name, last_message, last_message_at, created_at, conversation_participants(user_id)')
-        .eq('type', 'dm')
-        .order('last_message_at', { ascending: false, nullsFirst: false })
-        .limit(100);
-      if (!active) return;
-      if (error) {
+    loadScenes(user.id).then(
+      (list) => {
+        if (!active) return;
+        setScenes(list);
+        setLoading(false);
+      },
+      () => {
+        if (!active) return;
         setFailed(true);
         setLoading(false);
-        return;
-      }
-      const rows = (data ?? []) as unknown as SceneRow[];
-      const botIds = Array.from(new Set(rows.flatMap((r) => r.conversation_participants.map((p) => p.user_id)).filter((id) => id !== user.id)));
-      const names = new Map<string, string>();
-      if (botIds.length > 0) {
-        const { data: profiles } = await supabase.from('profiles').select('user_id, display_name, role').in('user_id', botIds);
-        // This list can also contain ordinary WHISPRR conversations between people. Only scenes with a character belong here.
-        (profiles ?? [])
-          .filter((p: { role: string | null }) => p.role === 'ai_character')
-          .forEach((p: { user_id: string; display_name: string | null }) => names.set(p.user_id, p.display_name ?? 'Character'));
-      }
-      if (!active) return;
-      setScenes(
-        rows.filter((r) => r.conversation_participants.some((p) => p.user_id !== user.id && names.has(p.user_id))).map((r) => {
-          const other = r.conversation_participants.find((p) => p.user_id !== user.id)?.user_id;
-          return {
-            id: r.id,
-            characterName: (other && names.get(other)) || 'Character',
-            title: r.name?.trim() || null,
-            preview: r.last_message,
-            when: formatWhen(r.last_message_at ?? r.created_at),
-          };
-        }),
-      );
-      setLoading(false);
-    })();
+      },
+    );
     return () => {
       active = false;
     };
@@ -102,11 +53,12 @@ export default function ChatsPage() {
                 <Link to={`/chats/${scene.id}`} className="flex items-center gap-4 rounded-2xl border border-chimera-gold/20 bg-chimera-panel p-4 transition hover:border-chimera-gold/60">
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-700 to-chimera-rose font-serif text-xl text-white" aria-hidden="true">{scene.characterName.slice(0, 1).toUpperCase()}</span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-serif text-xl font-semibold">{scene.title ?? scene.characterName}</span>
+                    <span className="block truncate font-serif text-xl font-semibold">{sceneName(scene)}</span>
                     {scene.title && <span className="block truncate text-xs text-chimera-gold/80">with {scene.characterName}</span>}
+                    {branchNote(scene, scenes) && <span className="flex items-center gap-1 text-xs text-chimera-gold/90"><GitBranch size={12} aria-hidden="true" />{branchNote(scene, scenes)}</span>}
                     <span className="block truncate text-sm text-chimera-mute">{scene.preview || 'No messages yet'}</span>
                   </span>
-                  <span className="shrink-0 text-xs text-chimera-mute">{scene.when}</span>
+                  <span className="shrink-0 text-xs text-chimera-mute">{formatWhen(scene.lastAt)}</span>
                 </Link>
               </li>
             ))}
