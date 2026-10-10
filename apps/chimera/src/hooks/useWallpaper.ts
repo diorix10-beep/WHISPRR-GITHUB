@@ -94,10 +94,8 @@ export function useWallpaper() {
   const setPreset = useCallback((id: string) => choose({ kind: 'preset', id }), [choose]);
   const setColor = useCallback((color: string) => choose({ kind: 'color', color }), [choose]);
   const clear = useCallback(() => choose({ kind: 'none' }), [choose]);
-  const setDim = useCallback((dim: number) => {
-    generation.current += 1;
-    commit({ choice: setting.choice, dim: Math.min(MAX_DIM, Math.max(0, dim)) });
-  }, [commit, setting.choice]);
+  // Dimming is not a different background, so it does not cancel a picture still being prepared.
+  const setDim = useCallback((dim: number) => commit({ choice: setting.choice, dim: Math.min(MAX_DIM, Math.max(0, dim)) }), [commit, setting.choice]);
 
   /** Prepares and keeps a picture. Resolves true when it is now the background; otherwise `problem` says why not. */
   const setImage = useCallback(
