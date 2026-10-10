@@ -98,6 +98,29 @@ async function loadSceneSettings(input: {
 }
 
 /**
+ * The world the player described for this scene (genre, technology, how people reach each other, calendar, customs).
+ * Read on its own, apart from the other settings, so that a database without the column yet (or a failed read) only
+ * loses these rules and never the reply length, word list or pins.
+ */
+async function loadUniverseRules(input: {
+  supabase: Awaited<ReturnType<typeof authenticate>>['supabase'];
+  userId: string;
+  conversationId: string;
+}): Promise<unknown> {
+  try {
+    const { data, error } = await input.supabase
+      .from('chimera_scene_settings')
+      .select('universe_rules')
+      .eq('conversation_id', input.conversationId)
+      .eq('user_id', input.userId)
+      .maybeSingle();
+    return error || !data ? null : data.universe_rules;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Facts the player approved as long-term memory for this character and persona: the ones tied to this
  * scene and the ones kept for every scene. Optional: if they cannot be read the character still answers.
  */
@@ -326,6 +349,7 @@ export default async function handler(req: Request) {
       playerName: persona?.name || 'Player',
       inWindow: new Set(history.map((m) => (m as MessageRow).id)),
     });
+    sceneSettings.universeRules = await loadUniverseRules({ supabase, userId: user.id, conversationId });
     sceneSettings.memories = await loadApprovedMemories({
       supabase,
       userId: user.id,

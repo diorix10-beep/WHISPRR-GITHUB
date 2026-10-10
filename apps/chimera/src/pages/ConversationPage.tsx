@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Brain, Palette, Check, Copy, Flag, GitBranch, History, Info, Loader2, Pencil, Pin, RefreshCw, Send, SlidersHorizontal, ThumbsDown, ThumbsUp, Trash2, User } from 'lucide-react';
+import { ArrowLeft, BookOpen, Brain, Globe, Palette, Check, Copy, Flag, GitBranch, History, Info, Loader2, Pencil, Pin, RefreshCw, Send, SlidersHorizontal, ThumbsDown, ThumbsUp, Trash2, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -13,6 +13,7 @@ import { HistorySection } from '../components/chat/panel/HistorySection';
 import { PersonaSection } from '../components/chat/panel/PersonaSection';
 import { LorebookSection } from '../components/chat/panel/LorebookSection';
 import { LookSection } from '../components/chat/panel/LookSection';
+import { UniverseSection } from '../components/chat/panel/UniverseSection';
 import { useChatLook } from '../hooks/useChatLook';
 import { useWallpaper } from '../hooks/useWallpaper';
 import { WallpaperLayer } from '../components/chat/WallpaperLayer';
@@ -87,7 +88,7 @@ interface SceneInfo {
   canonRevision: number;
 }
 
-type PanelTabId = 'about' | 'chat' | 'history' | 'world' | 'memory' | 'persona' | 'look';
+type PanelTabId = 'about' | 'chat' | 'history' | 'world' | 'universe' | 'memory' | 'persona' | 'look';
 
 const MODES: Array<{ id: ComposerMode; label: string; hint: string }> = [
   { id: 'say', label: 'Say', hint: 'Speak as your character' },
@@ -934,6 +935,7 @@ export default function ConversationPage() {
     { id: 'chat', label: 'Chat', icon: <SlidersHorizontal size={16} /> },
     { id: 'history', label: 'History', icon: <History size={16} /> },
     { id: 'world', label: 'Lorebook', icon: <BookOpen size={16} /> },
+    { id: 'universe', label: 'Universe', icon: <Globe size={16} /> },
     { id: 'memory', label: 'Memory', icon: <Brain size={16} />, badge: proposedMemories.length },
     { id: 'persona', label: 'Persona', icon: <User size={16} /> },
     { id: 'look', label: 'Look', icon: <Palette size={16} /> },
@@ -1228,6 +1230,8 @@ export default function ConversationPage() {
         isCreator={scene.characterMine}
         recentMessages={() => messages.slice(-10).map((m) => m.content)}
       />
+    ) : panelTab === 'universe' ? (
+      <UniverseSection conversationId={conversationId!} userId={user.id} />
     ) : panelTab === 'look' ? (
       <LookSection look={look} saved={lookSaved} wallpaper={wallpaper} characterName={scene.botName} onChange={changeLook} onReset={resetLook} />
     ) : panelTab === 'memory' ? (

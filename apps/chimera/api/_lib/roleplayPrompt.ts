@@ -4,6 +4,7 @@
  */
 
 import { memoryBlock } from './memory.js';
+import { universeRulesBlock } from '../../src/lib/universeRules.js';
 
 export interface CharacterData {
   category?: string | null;
@@ -63,6 +64,8 @@ export interface SceneSettings {
   memories?: string[];
   /** The lorebook block for this reply (see lorebook.ts): only the entries that matter right now. */
   lorebook?: string | null;
+  /** The world the player described (see universeRules.ts). Normalised and capped when the prompt is built, so raw saved data is fine here. */
+  universeRules?: unknown;
 }
 
 export const MAX_BANNED_WORDS_CHARACTERS = 500;
@@ -272,6 +275,9 @@ export function buildSystemPrompt(
   if (character.creator_notes?.trim()) {
     sections.push(['## Creator Notes', character.creator_notes.trim()].join('\n'));
   }
+
+  const universe = universeRulesBlock(settings.universeRules);
+  if (universe) sections.push(universe);
 
   if (sceneCanon?.trim()) {
     sections.push(
