@@ -17,6 +17,7 @@ import { useChatLook } from '../hooks/useChatLook';
 import { useWallpaper } from '../hooks/useWallpaper';
 import { WallpaperLayer } from '../components/chat/WallpaperLayer';
 import { lookAttributes } from '../lib/chatLook';
+import { scrollBehavior } from '../lib/motion';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { readPanelOpen, writePanelOpen } from '../lib/panelPrefs';
 import { ReportDialog } from '../components/chat/ReportDialog';
@@ -505,7 +506,7 @@ export default function ConversationPage() {
     }
   };
 
-  const jumpTo = (messageId: string) => document.getElementById(`msg-${messageId}`)?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+  const jumpTo = (messageId: string) => document.getElementById(`msg-${messageId}`)?.scrollIntoView?.({ block: 'center', behavior: scrollBehavior() });
 
   const menuItems = (message: ChatMessageRow): MenuItem[] => {
     const pinned = pinnedIds.includes(message.id);

@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Link, Navigate, Route, Routes } from 'react-router-dom';
+import { useMotionPreference } from './hooks/useMotionPreference';
 import AppLayout from './components/layout/AppLayout';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import HomePage from './pages/HomePage';
@@ -51,6 +52,7 @@ const Loading = () => (
 );
 
 export default function App() {
+  useMotionPreference();
   return (
     <Suspense fallback={<Loading />}>
       <Routes>

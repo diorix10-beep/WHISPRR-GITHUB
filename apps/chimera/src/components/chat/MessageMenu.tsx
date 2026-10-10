@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useDialogFocus } from '../../hooks/useDialogFocus';
+import { wantsLessMotion } from '../../lib/motion';
 
 export interface MenuItem {
   id: string;
@@ -20,9 +21,7 @@ export interface Anchor {
 
 const CLOSE_MS = 180;
 const MOBILE = '(max-width: 639px)';
-const reducedMotion = () =>
-  typeof window !== 'undefined' &&
-  (!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || document.documentElement.hasAttribute('data-motion'));
+const reducedMotion = wantsLessMotion;
 
 /**
  * A backdrop and a panel that slides up on a phone and sits next to the pointer on a wide screen. Escape, a tap outside

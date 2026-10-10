@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { applyMotion } from '../lib/motion';
 import { DEFAULT_LOOK, LOOK_STORAGE_KEY, normalizeLook, readLook, writeLook, type ChatLook } from '../lib/chatLook';
 
 /**
@@ -17,12 +18,9 @@ export function useChatLook() {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  // The page root carries the choice so that the side panel and the menus (outside the chat) follow it too.
+  // The page root carries the choice so that the whole app follows it (the app also applies it on every page, see useMotionPreference).
   useEffect(() => {
-    const root = document.documentElement;
-    if (look.motion === 'device') root.removeAttribute('data-motion');
-    else root.setAttribute('data-motion', look.motion);
-    return () => root.removeAttribute('data-motion');
+    applyMotion(look.motion);
   }, [look.motion]);
 
   const change = useCallback((patch: Partial<ChatLook>) => {
