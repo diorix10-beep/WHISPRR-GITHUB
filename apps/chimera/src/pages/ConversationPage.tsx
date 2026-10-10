@@ -791,23 +791,27 @@ export default function ConversationPage() {
   // Written by hand: the player's own words, kept at once. For this scene only, or for every scene with this character as this persona.
   const addMemoryByHand = async () => {
     if (memoryBusy || !memoryContextRef.current) return;
+    // The screen holds the memories that apply to this chat: its own and the ones for every chat (that is what the character reads).
     if (memories.length >= MAX_MEMORIES) {
-      showToast(`You can keep up to ${MAX_MEMORIES} memories here. Forget one first.`, 'info');
+      showToast(`This chat already has ${MAX_MEMORIES} memories (its own and the ones for every chat). Forget one first.`, 'info');
       return;
     }
+    // What was submitted, kept apart from the form: the player may keep typing while the save is under way.
+    const submitted = newMemory;
     setMemoryBusy('new');
     try {
       await addMemory({
         userId: user.id,
         characterId: memoryContextRef.current.characterId,
         personaId: memoryContextRef.current.personaId,
-        conversationId: newMemory.everywhere ? null : conversationId!,
-        type: newMemory.type,
-        content: newMemory.text,
+        conversationId: submitted.everywhere ? null : conversationId!,
+        type: submitted.type,
+        content: submitted.text,
       });
-      setNewMemory({ ...newMemory, text: '' });
+      // Empties the box only if it still holds what was just saved; newer typing and choices stay.
+      setNewMemory((current) => (current.text === submitted.text ? { ...current, text: '' } : current));
       await refreshMemories();
-      showToast(newMemory.everywhere ? `${scene.botName} will remember this in every chat.` : 'This chat will remember that.', 'success');
+      showToast(submitted.everywhere ? `${scene.botName} will remember this in every chat.` : 'This chat will remember that.', 'success');
     } catch {
       showToast('We could not save that memory. What you wrote is still here.', 'error');
     } finally {
@@ -818,6 +822,11 @@ export default function ConversationPage() {
   // Moves a kept memory between this chat only and every chat with this character (as this persona).
   const moveMemory = async (memory: SceneMemory) => {
     if (memoryBusy) return;
+    // Memories for every chat appear in all of the character's chats, so there is room for this many of them only.
+    if (memory.conversationId && memories.filter((m) => !m.conversationId).length >= MAX_MEMORIES) {
+      showToast(`There are already ${MAX_MEMORIES} memories for every chat. Forget one first.`, 'info');
+      return;
+    }
     setMemoryBusy(memory.id);
     try {
       const to = memory.conversationId ? null : conversationId!;

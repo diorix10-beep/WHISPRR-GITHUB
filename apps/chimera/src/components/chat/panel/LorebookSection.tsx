@@ -31,6 +31,8 @@ export function LorebookSection({ characterId, characterName, viewerId, isCreato
   const [books, setBooks] = useState<CharacterLorebook[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [mine, setMine] = useState<LorebookSummary[]>([]);
+  // The creator's own library could not be read: linking is unavailable then, and the screen must say so instead of looking empty.
+  const [mineFailed, setMineFailed] = useState(false);
   const [choice, setChoice] = useState('');
   const [busy, setBusy] = useState(false);
   const [play, setPlay] = useState<InPlay | null>(null);
@@ -41,7 +43,14 @@ export function LorebookSection({ characterId, characterName, viewerId, isCreato
     try {
       const linked = await loadCharacterLorebooks(characterId, viewerId);
       setBooks(linked);
-      if (isCreator) setMine(await loadMyLorebooks(viewerId).catch(() => []));
+      if (isCreator) {
+        try {
+          setMine(await loadMyLorebooks(viewerId));
+          setMineFailed(false);
+        } catch {
+          setMineFailed(true);
+        }
+      }
     } catch {
       setFailed(true);
     }
@@ -155,9 +164,15 @@ export function LorebookSection({ characterId, characterName, viewerId, isCreato
           <div>
             <label htmlFor="link-lorebook" className="block text-sm font-bold">Link one of your lorebooks</label>
             <p className="mt-1 text-xs text-chimera-mute">It applies to every chat with {characterName}, from the next reply.</p>
+            {mineFailed && (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <p role="note" className="text-sm text-amber-200">We could not load your lorebooks, so linking is unavailable for now.</p>
+                <button type="button" onClick={() => void load()} className="min-h-[44px] rounded-full border border-chimera-gold/40 px-5 text-sm font-bold hover:bg-chimera-gold/10">Try again</button>
+              </div>
+            )}
             <div className="mt-2 flex gap-2">
-              <select id="link-lorebook" value={choice} onChange={(e) => setChoice(e.target.value)} disabled={available.length === 0 || busy} className="min-h-[44px] min-w-0 flex-1 rounded-xl border border-chimera-gold/25 bg-chimera-bg px-3 text-base text-chimera-ink outline-none focus:border-chimera-gold disabled:opacity-50">
-                <option value="">{available.length === 0 ? 'No other lorebook to link' : 'Choose a lorebook'}</option>
+              <select id="link-lorebook" value={choice} onChange={(e) => setChoice(e.target.value)} disabled={available.length === 0 || busy || mineFailed} className="min-h-[44px] min-w-0 flex-1 rounded-xl border border-chimera-gold/25 bg-chimera-bg px-3 text-base text-chimera-ink outline-none focus:border-chimera-gold disabled:opacity-50">
+                <option value="">{mineFailed ? 'Unavailable right now' : available.length === 0 ? 'No other lorebook to link' : 'Choose a lorebook'}</option>
                 {available.map((b) => <option key={b.id} value={b.id}>{b.title || 'Untitled lorebook'}</option>)}
               </select>
               <button type="button" onClick={() => void link()} disabled={!choice || busy} className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">
