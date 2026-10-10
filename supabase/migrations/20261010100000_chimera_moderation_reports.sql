@@ -52,7 +52,8 @@ ALTER TABLE public.reports ADD CONSTRAINT reports_content_type_check CHECK (cont
 ALTER TABLE public.reports DROP CONSTRAINT IF EXISTS reports_status_check;
 ALTER TABLE public.reports ADD CONSTRAINT reports_status_check CHECK (status IN ('pending', 'reviewed', 'resolved', 'under_review', 'dismissed', 'escalated'));
 ALTER TABLE public.reports DROP CONSTRAINT IF EXISTS reports_details_length;
-ALTER TABLE public.reports ADD CONSTRAINT reports_details_length CHECK (char_length(coalesce(details, '')) <= 2000);
+-- Only CHIMERA's reports are limited: WHISPRR's own report form has no limit and its rows must stay valid.
+ALTER TABLE public.reports ADD CONSTRAINT reports_details_length CHECK (content_type <> 'chimera_message' OR char_length(coalesce(details, '')) <= 2000);
 
 -- One report per member per message.
 CREATE UNIQUE INDEX IF NOT EXISTS reports_one_per_reporter_message ON public.reports (reporter_id, content_id) WHERE content_type = 'chimera_message';
