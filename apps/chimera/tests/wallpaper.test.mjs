@@ -145,6 +145,17 @@ test('a file is judged by its own bytes and its header before anything is decode
     assert.deepEqual(readImageSize(webpLossy(640, 480), 'webp'), { width: 640, height: 480 });
     assert.equal(readImageSize(new Uint8Array([0x89, 0x50, 0x4e, 0x47]), 'png'), null, 'a cut-off header');
     assert.equal(readImageSize(Uint8Array.from([0xff, 0xd8, 0xff, 0xe0, 0, 0]), 'jpeg'), null);
+    // A camera or colour-profile segment can be large: the size marker then sits past the first 64 KiB.
+    const plain = jpeg(4032, 3024);
+    // Segment lengths are 16-bit: four 60 KB profile segments in a row.
+    const profile = new Uint8Array(4 * 60_002);
+    for (let k = 0; k < 4; k += 1) profile.set([0xff, 0xe2, 60_000 >> 8, 60_000 & 255], k * 60_002);
+    const withProfile = new Uint8Array(plain.length + profile.length);
+    withProfile.set(plain.subarray(0, 2));
+    withProfile.set(profile, 2);
+    withProfile.set(plain.subarray(2), 2 + profile.length);
+    assert.equal(readImageSize(withProfile.subarray(0, 64 * 1024), 'jpeg'), null, 'not in the first 64 KiB');
+    assert.deepEqual(readImageSize(withProfile, 'jpeg'), { width: 4032, height: 3024 });
     const refuses = (bytes, size, pattern) => assert.throws(() => checkImageBytes(bytes, size), (e) => e instanceof WallpaperImageError && pattern.test(e.message));
     assert.equal(checkImageBytes(png(1920, 1080), 500_000), 'png');
     assert.equal(checkImageBytes(jpeg(4000, 3000), 3_000_000), 'jpeg', '12 megapixels is fine');

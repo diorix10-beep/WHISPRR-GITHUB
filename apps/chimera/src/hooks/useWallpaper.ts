@@ -24,6 +24,8 @@ export function useWallpaper() {
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const urlRef = useRef<string | null>(null);
+  // Bumped by every other choice, so a picture that finishes preparing late cannot replace what was chosen meanwhile.
+  const generation = useRef(0);
 
   const showBlob = useCallback((blob: Blob | null) => {
     if (urlRef.current) URL.revokeObjectURL(urlRef.current);
@@ -77,6 +79,7 @@ export function useWallpaper() {
 
   const choose = useCallback(
     (choice: WallpaperChoice) => {
+      generation.current += 1;
       setProblem(null);
       // Moving away from a picture frees the stored one.
       if (setting.choice.kind === 'image' && choice.kind !== 'image') {
@@ -91,17 +94,27 @@ export function useWallpaper() {
   const setPreset = useCallback((id: string) => choose({ kind: 'preset', id }), [choose]);
   const setColor = useCallback((color: string) => choose({ kind: 'color', color }), [choose]);
   const clear = useCallback(() => choose({ kind: 'none' }), [choose]);
-  const setDim = useCallback((dim: number) => commit({ choice: setting.choice, dim: Math.min(MAX_DIM, Math.max(0, dim)) }), [commit, setting.choice]);
+  const setDim = useCallback((dim: number) => {
+    generation.current += 1;
+    commit({ choice: setting.choice, dim: Math.min(MAX_DIM, Math.max(0, dim)) });
+  }, [commit, setting.choice]);
 
   /** Prepares and keeps a picture. Resolves true when it is now the background; otherwise `problem` says why not. */
   const setImage = useCallback(
     async (file: File): Promise<boolean> => {
+      const mine = ++generation.current;
       setBusy(true);
       setProblem(null);
       try {
         const processed = await processWallpaperFile(file);
+        if (mine !== generation.current) return false;
         if (!(await saveWallpaperBlob(processed.blob))) {
           setProblem('This browser would not keep the picture (a private window, or no room left). Try a ready-made background instead.');
+          return false;
+        }
+        if (mine !== generation.current) {
+          // Something else was chosen while the picture was being kept: let the picture go.
+          void removeWallpaperBlob();
           return false;
         }
         showBlob(processed.blob);
