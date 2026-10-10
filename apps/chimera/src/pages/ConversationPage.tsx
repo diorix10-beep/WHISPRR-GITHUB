@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Brain, Check, Copy, Flag, GitBranch, Loader2, Pencil, Pin, RefreshCw, Send, SlidersHorizontal, ThumbsDown, ThumbsUp, Trash2 } from 'lucide-react';
+import { ArrowLeft, Brain, Check, Copy, Flag, GitBranch, History, Info, Loader2, Pencil, Pin, RefreshCw, Send, SlidersHorizontal, ThumbsDown, ThumbsUp, Trash2, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { isAdultRating, useAdultContentAccess } from '../hooks/useAdultContentAccess';
 import { ConfirmDialog, MessageMenu, type Anchor, type MenuItem } from '../components/chat/MessageMenu';
 import { MessageRow } from '../components/chat/MessageRow';
+import { ManagementPanel, type PanelTab } from '../components/chat/ManagementPanel';
+import { AboutSection } from '../components/chat/panel/AboutSection';
+import { HistorySection } from '../components/chat/panel/HistorySection';
+import { PersonaSection } from '../components/chat/panel/PersonaSection';
+import { useMediaQuery } from '../hooks/useMediaQuery';
+import { readPanelOpen, writePanelOpen } from '../lib/panelPrefs';
 import { ReportDialog } from '../components/chat/ReportDialog';
 import { FEEDBACK_LIVE, MODERATION_LIVE, submitMessageReport } from '../lib/moderation';
 import { loadMyFeedback, setMessageFeedback, type Rating } from '../lib/messageFeedback';
@@ -65,6 +71,8 @@ interface SceneInfo {
   canonRevision: number;
 }
 
+type PanelTabId = 'about' | 'chat' | 'history' | 'memory' | 'persona';
+
 const MODES: Array<{ id: ComposerMode; label: string; hint: string }> = [
   { id: 'say', label: 'Say', hint: 'Speak as your character' },
   { id: 'act', label: 'Act', hint: 'Describe what your character does' },
@@ -101,7 +109,12 @@ export default function ConversationPage() {
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [replyError, setReplyError] = useState<string | null>(null);
-  const [memoryOpen, setMemoryOpen] = useState(false);
+  const desktop = useMediaQuery('(min-width: 1024px)');
+  const [panelTab, setPanelTab] = useState<PanelTabId>('chat');
+  const [historyKey, setHistoryKey] = useState(0);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  // True when the player has just opened the panel (not when it came back open from the last visit): only then does it take the keyboard focus.
+  const [focusPanel, setFocusPanel] = useState(false);
   const [canonDraft, setCanonDraft] = useState('');
   const [savingCanon, setSavingCanon] = useState(false);
   const [turningPoint, setTurningPoint] = useState<GuidedTurningPoint | null>(null);
@@ -109,7 +122,8 @@ export default function ConversationPage() {
   const [personas, setPersonas] = useState<PersonaSummary[]>([]);
   const [personaId, setPersonaId] = useState<string | null>(null);
   const [personaSelected, setPersonaSelected] = useState(false);
-  const [toolsOpen, setToolsOpen] = useState(false);
+  // On a computer the panel stays open next to the chat if it was left open; on a phone it always starts closed.
+  const [panelOpen, setPanelOpen] = useState(() => typeof window !== 'undefined' && !!window.matchMedia?.('(min-width: 1024px)').matches && readPanelOpen());
   const [settings, setSettings] = useState<SceneSettings>(DEFAULT_SCENE_SETTINGS);
   // False when the saved settings could not be read: the controls lock so they cannot overwrite them with defaults.
   const [settingsReady, setSettingsReady] = useState(true);
@@ -618,7 +632,7 @@ export default function ConversationPage() {
         showToast('The new scene is ready, but some of your choices were not carried over. You can set them again.', 'info');
       }
       setConfirming(null);
-      setToolsOpen(false);
+      setPanelOpen(false);
       navigate(`/chats/${result.id}`);
     } catch {
       showToast('We could not start a new scene. Nothing was changed.', 'error');
@@ -708,7 +722,6 @@ export default function ConversationPage() {
       return;
     }
     setScene({ ...scene, canon: canonDraft.trim(), canonRevision: Number(revision) });
-    setMemoryOpen(false);
     showToast('This scene will remember that.', 'success');
   };
 
@@ -767,6 +780,37 @@ export default function ConversationPage() {
   const proposedMemories = memories.filter((m) => m.status === 'proposed');
   const approvedMemories = memories.filter((m) => m.status === 'approved');
 
+  const openPanel = (tab?: PanelTabId) => {
+    if (tab) setPanelTab(tab);
+    setFocusPanel(true);
+    setPanelOpen(true);
+    if (desktop) writePanelOpen(true);
+  };
+  const closePanel = () => {
+    setFocusPanel(false);
+    setPanelOpen(false);
+    if (desktop) {
+      writePanelOpen(false);
+      toggleRef.current?.focus();
+    }
+  };
+
+  // Reads everything again from the database. It only reads: nothing stored is changed or removed.
+  const refreshConversation = async () => {
+    if (toolsBusy || busyRef.current) return;
+    setToolsBusy(true);
+    try {
+      await loadMessages();
+      await refreshMemories();
+      setHistoryKey((key) => key + 1);
+      showToast('Up to date. Nothing was removed.', 'success');
+    } catch {
+      showToast('We could not refresh right now. Your messages are safe; try again in a moment.', 'error');
+    } finally {
+      setToolsBusy(false);
+    }
+  };
+
   const openTurningPoint = async () => {
     if (turningPointLoading) return;
     setTurningPointLoading(true);
@@ -805,8 +849,273 @@ export default function ConversationPage() {
     }
   };
 
+  const panelTabs: PanelTab[] = [
+    { id: 'about', label: 'Character', icon: <Info size={16} /> },
+    { id: 'chat', label: 'Chat', icon: <SlidersHorizontal size={16} /> },
+    { id: 'history', label: 'History', icon: <History size={16} /> },
+    { id: 'memory', label: 'Memory', icon: <Brain size={16} />, badge: proposedMemories.length },
+    { id: 'persona', label: 'Persona', icon: <User size={16} /> },
+  ];
+
+  const chatTools = (
+    <>
+    {!settingsReady && (
+      <p role="note" className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+        Your saved choices for this scene could not be loaded, so length, words and pins are locked to keep them safe. Reload the page to try again. You can still rename, start over or delete.
+      </p>
+    )}
+
+    <div>
+      <label htmlFor="scene-title" className="block text-sm font-bold">Name this chat</label>
+      <div className="mt-2 flex gap-2">
+        <input
+          id="scene-title"
+          value={titleDraft}
+          onChange={(e) => setTitleDraft(e.target.value)}
+          maxLength={SCENE_LIMITS.title}
+          placeholder={scene.botName}
+          className="min-h-[44px] min-w-0 flex-1 rounded-xl border border-chimera-gold/25 bg-chimera-bg px-3 text-base text-chimera-ink outline-none focus:border-chimera-gold"
+        />
+        <button type="button" onClick={() => void saveTitle()} disabled={toolsBusy || titleDraft.trim() === (scene.title ?? '')} className="min-h-[44px] rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">Save name</button>
+      </div>
+      <p className="mt-1 text-xs text-chimera-mute">Only you see this. Leave it empty to use {scene.botName}&apos;s name.</p>
+    </div>
+
+    <fieldset>
+      <legend className="text-sm font-bold">How long are {scene.botName}&apos;s replies?</legend>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {RESPONSE_LENGTHS.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            aria-pressed={settings.responseLength === option.id}
+            title={option.hint}
+            disabled={!settingsReady}
+            onClick={() => void updateSettings({ responseLength: option.id }, 'We could not save that choice. Please try again.')}
+            className={`min-h-[40px] rounded-full border px-5 text-sm font-bold ${settings.responseLength === option.id ? 'border-chimera-gold bg-chimera-gold text-[#1a1208]' : 'border-chimera-gold/35 hover:border-chimera-gold'}`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+      <p className="mt-1 text-xs text-chimera-mute">{RESPONSE_LENGTHS.find((o) => o.id === settings.responseLength)?.hint}. It applies from the next reply.</p>
+    </fieldset>
+
+    <div>
+      <label htmlFor="scene-banned" className="block text-sm font-bold">Words {scene.botName} should avoid</label>
+      <textarea
+        id="scene-banned"
+        value={bannedDraft}
+        onChange={(e) => setBannedDraft(e.target.value)}
+        maxLength={SCENE_LIMITS.bannedWords}
+        rows={2}
+        placeholder="For example: suddenly, orbs, shivers down your spine"
+        className="mt-2 w-full rounded-xl border border-chimera-gold/25 bg-chimera-bg p-3 text-base text-chimera-ink outline-none placeholder:text-chimera-mute/70 focus:border-chimera-gold"
+      />
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <span className="text-xs text-chimera-mute">Separate with commas. {bannedDraft.length} / {SCENE_LIMITS.bannedWords}</span>
+        <button type="button" onClick={() => void saveBannedWords()} disabled={toolsBusy || !settingsReady || bannedDraft.trim() === settings.bannedWords.trim()} className="min-h-[44px] rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">Save words</button>
+      </div>
+    </div>
+
+    <div>
+      <label className="flex min-h-[44px] items-start gap-3 text-sm">
+        <input
+          type="checkbox"
+          checked={settings.autoMemory}
+          disabled={!settingsReady}
+          onChange={(e) => void updateSettings({ autoMemory: e.target.checked }, 'We could not save that choice. Please try again.')}
+          className="mt-0.5 h-5 w-5 shrink-0 accent-[#e8c27a]"
+        />
+        <span>
+          <span className="font-bold">Suggest things to remember</span>
+          <span className="block text-xs text-chimera-mute">Every few messages the story may suggest memories for you to keep or dismiss. Nothing is used until you keep it.</span>
+        </span>
+      </label>
+    </div>
+
+    <div>
+      <p className="text-sm font-bold">Pinned messages: {pinnedIds.length} of {SCENE_LIMITS.pins}</p>
+      <p className="mt-1 text-xs text-chimera-mute">Open a message&apos;s menu (the three dots, or a long press) and choose Pin to keep it in {scene.botName}&apos;s mind, even when the conversation grows long.</p>
+      {pinnedIds.length > 0 && (
+        <ul className="mt-2 space-y-2" aria-label="Pinned messages">
+          {messages.filter((m) => pinnedIds.includes(m.id)).map((m) => (
+            <li key={m.id} className="flex items-start gap-2 rounded-xl border border-chimera-gold/20 bg-chimera-bg p-2">
+              <button type="button" onClick={() => jumpTo(m.id)} className="min-h-[44px] min-w-0 flex-1 text-left text-sm">
+                <span className="block text-xs font-bold tracking-[0.1em] text-chimera-gold">{isMine(m) ? 'YOU' : scene.botName.toUpperCase()}</span>
+                <span className="block truncate">{plainText(m.content)}</span>
+              </button>
+              <button type="button" onClick={() => void togglePinned(m.id)} disabled={!settingsReady} aria-label={`Unpin: ${plainText(m.content).slice(0, 40)}`} className="min-h-[44px] rounded-full border border-chimera-gold/40 px-3 text-xs font-bold hover:bg-chimera-gold/10 disabled:opacity-50">Unpin</button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+
+    <div className="border-t border-chimera-gold/15 pt-4">
+      {confirming === 'restart' ? (
+        <div role="group" aria-label="Confirm starting over" className="space-y-3">
+          <p className="text-sm">Start a new chat with {scene.botName}? This chat stays in your list exactly as it is.</p>
+          <label className="flex min-h-[44px] items-center gap-3 text-sm">
+            <input type="checkbox" checked={keepMemory} onChange={(e) => setKeepMemory(e.target.checked)} className="h-5 w-5 accent-[#e8c27a]" />
+            Keep what this chat remembers
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => void startOver()} disabled={toolsBusy} className="min-h-[44px] rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">{toolsBusy ? 'Starting…' : 'Start new chat'}</button>
+            <button type="button" onClick={() => setConfirming(null)} disabled={toolsBusy} className="min-h-[44px] rounded-full border border-chimera-gold/40 px-5 text-sm font-bold">Cancel</button>
+          </div>
+        </div>
+      ) : confirming === 'delete' ? (
+        <div role="group" aria-label="Confirm deleting" className="space-y-3">
+          <p className="text-sm text-red-100">Delete this chat for good? Every message and what it remembers will be gone. This cannot be undone.</p>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => void removeScene()} disabled={toolsBusy} className="min-h-[44px] rounded-full bg-chimera-rose px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">{toolsBusy ? 'Deleting…' : 'Delete this chat'}</button>
+            <button type="button" onClick={() => setConfirming(null)} disabled={toolsBusy} className="min-h-[44px] rounded-full border border-chimera-gold/40 px-5 text-sm font-bold">Keep it</button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => setConfirming('restart')} className="min-h-[44px] rounded-full border border-chimera-gold/40 px-5 text-sm font-bold hover:bg-chimera-gold/10">Start new chat</button>
+          <button type="button" onClick={() => setPanelTab('history')} className="min-h-[44px] rounded-full border border-chimera-gold/40 px-5 text-sm font-bold hover:bg-chimera-gold/10">Chat history</button>
+          <button type="button" onClick={() => void refreshConversation()} disabled={toolsBusy} className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-chimera-gold/40 px-5 text-sm font-bold hover:bg-chimera-gold/10 disabled:opacity-50"><RefreshCw size={16} aria-hidden="true" /> Refresh</button>
+          <button type="button" onClick={() => setConfirming('delete')} className="min-h-[44px] rounded-full border border-chimera-rose/50 px-5 text-sm font-bold text-chimera-rose hover:bg-chimera-rose/10">Delete chat</button>
+        </div>
+      )}
+    </div>
+    </>
+  );
+
+  const memoryTools = (
+    <div>
+    <p className="mt-1 text-sm text-chimera-mute">
+      {scene.botName} reads the most recent part of the conversation each time; older messages fall out of view. Write here what must never be forgotten: names, places, promises, tone. Edit or clear it at any time.
+    </p>
+    <label htmlFor="canon" className="sr-only">Scene memory</label>
+    <textarea
+      id="canon"
+      value={canonDraft}
+      onChange={(e) => setCanonDraft(e.target.value)}
+      maxLength={6000}
+      rows={6}
+      className="mt-3 w-full rounded-xl border border-chimera-gold/25 bg-chimera-bg p-3 text-base text-chimera-ink outline-none focus:border-chimera-gold"
+    />
+    <div className="mt-3 flex items-center justify-between gap-3">
+      <span className="text-xs text-chimera-mute">{canonDraft.length} / 6000</span>
+      <button type="button" onClick={() => void saveCanon()} disabled={savingCanon || canonDraft.trim() === scene.canon.trim()} className="min-h-[44px] rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">
+        {savingCanon ? 'Saving…' : 'Save memory'}
+      </button>
+    </div>
+
+    <div className="mt-6 border-t border-chimera-gold/15 pt-4">
+      <h3 className="font-serif text-lg font-semibold text-chimera-gold">Remembered from the story</h3>
+      <p className="mt-1 text-sm text-chimera-mute">
+        Every few messages the story can suggest things worth remembering. {scene.botName} only uses a suggestion after you keep it. You can reword or remove any of them.
+      </p>
+      {memoriesFailed && <p role="note" className="mt-3 text-sm text-amber-200">We could not load your memories right now.</p>}
+
+      {proposedMemories.length > 0 && (
+        <ul className="mt-3 space-y-3" aria-label="Suggested memories">
+          {proposedMemories.map((memory) => (
+            <li key={memory.id} className="rounded-xl border border-chimera-gold/35 bg-chimera-bg p-3">
+              {editingMemory?.id === memory.id ? (
+                <div>
+                  <label htmlFor={`edit-${memory.id}`} className="sr-only">Memory text</label>
+                  <textarea id={`edit-${memory.id}`} value={editingMemory.text} onChange={(e) => setEditingMemory({ id: memory.id, text: e.target.value })} maxLength={MEMORY_LIMITS.content} rows={3} className="w-full rounded-lg border border-chimera-gold/25 bg-chimera-panel p-2 text-base text-chimera-ink outline-none focus:border-chimera-gold" />
+                  <div className="mt-2 flex gap-2">
+                    <button type="button" onClick={() => void saveMemoryEdit()} disabled={memoryBusy === memory.id} className="min-h-[44px] rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">Save wording</button>
+                    <button type="button" onClick={() => setEditingMemory(null)} className="min-h-[44px] rounded-full border border-chimera-gold/40 px-5 text-sm font-bold">Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-base text-chimera-ink">{memory.content}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => void approveSuggestion(memory, false)} disabled={memoryBusy !== null} className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-chimera-gold px-4 text-sm font-bold text-[#1a1208] disabled:opacity-50"><Check size={16} aria-hidden="true" /> Keep for this scene</button>
+                    <button type="button" onClick={() => void approveSuggestion(memory, true)} disabled={memoryBusy !== null} className="min-h-[44px] rounded-full border border-chimera-gold/50 px-4 text-sm font-bold hover:bg-chimera-gold/10 disabled:opacity-50">Keep for every scene with {scene.botName}</button>
+                    <button type="button" onClick={() => setEditingMemory({ id: memory.id, text: memory.content })} className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-chimera-gold/30 px-4 text-sm font-bold hover:bg-chimera-gold/10"><Pencil size={15} aria-hidden="true" /> Reword</button>
+                    <button type="button" onClick={() => void forgetMemory(memory)} disabled={memoryBusy !== null} className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-chimera-rose/40 px-4 text-sm font-bold text-chimera-rose hover:bg-chimera-rose/10 disabled:opacity-50"><Trash2 size={15} aria-hidden="true" /> Not worth keeping</button>
+                  </div>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {approvedMemories.length > 0 ? (
+        <ul className="mt-4 space-y-2" aria-label="Kept memories">
+          {approvedMemories.map((memory) => (
+            <li key={memory.id} className="rounded-xl border border-chimera-gold/15 p-3">
+              {editingMemory?.id === memory.id ? (
+                <div>
+                  <label htmlFor={`edit-${memory.id}`} className="sr-only">Memory text</label>
+                  <textarea id={`edit-${memory.id}`} value={editingMemory.text} onChange={(e) => setEditingMemory({ id: memory.id, text: e.target.value })} maxLength={MEMORY_LIMITS.content} rows={3} className="w-full rounded-lg border border-chimera-gold/25 bg-chimera-bg p-2 text-base text-chimera-ink outline-none focus:border-chimera-gold" />
+                  <div className="mt-2 flex gap-2">
+                    <button type="button" onClick={() => void saveMemoryEdit()} disabled={memoryBusy === memory.id} className="min-h-[44px] rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">Save wording</button>
+                    <button type="button" onClick={() => setEditingMemory(null)} className="min-h-[44px] rounded-full border border-chimera-gold/40 px-5 text-sm font-bold">Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-base text-chimera-ink">{memory.content}</p>
+                    <p className="mt-1 text-xs text-chimera-mute">{memory.conversationId ? 'This scene only' : `Every scene with ${scene.botName}`}</p>
+                  </div>
+                  <button type="button" onClick={() => setEditingMemory({ id: memory.id, text: memory.content })} aria-label="Reword this memory" className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-chimera-mute hover:text-chimera-gold"><Pencil size={16} aria-hidden="true" /></button>
+                  <button type="button" onClick={() => void forgetMemory(memory)} disabled={memoryBusy !== null} aria-label="Forget this memory" className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-chimera-mute hover:text-chimera-rose disabled:opacity-50"><Trash2 size={16} aria-hidden="true" /></button>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        proposedMemories.length === 0 && !memoriesFailed && <p className="mt-3 text-sm text-chimera-mute">Nothing yet. After a few more messages the story may suggest something.</p>
+      )}
+    </div>
+    </div>
+  );
+
+  const panelContent =
+    panelTab === 'about' ? (
+      <AboutSection characterId={scene.characterId} viewerId={user.id} fallbackName={scene.botName} />
+    ) : panelTab === 'history' ? (
+      <HistorySection
+        userId={user.id}
+        botUserId={scene.botUserId}
+        botName={scene.botName}
+        currentId={conversationId!}
+        reloadKey={historyKey}
+        onNewChat={() => {
+          setConfirming('restart');
+          setPanelTab('chat');
+        }}
+        onRenamedCurrent={(title) => {
+          setScene({ ...scene, title });
+          setTitleDraft(title ?? '');
+        }}
+        onOpen={() => !desktop && closePanel()}
+      />
+    ) : panelTab === 'memory' ? (
+      memoryTools
+    ) : panelTab === 'persona' ? (
+      <PersonaSection
+        personas={personas}
+        personaId={personaId}
+        locked={hasPlayerMessages}
+        botName={scene.botName}
+        onChoose={(id) => void changePersona(id ?? 'none')}
+        onNewChat={() => {
+          setConfirming('restart');
+          setPanelTab('chat');
+        }}
+      />
+    ) : (
+      chatTools
+    );
+
   return (
-    <div className="mx-auto flex min-h-[calc(100dvh-5rem)] max-w-3xl flex-col px-4 pb-4 pt-4 sm:px-6">
+    <div className="mx-auto flex max-w-[78rem] items-start justify-center gap-6 lg:px-4">
+    <div className="flex min-h-[calc(100dvh-5rem)] w-full min-w-0 max-w-3xl flex-col px-4 pb-4 pt-4 sm:px-6 lg:px-0">
       <header className="mb-3 flex items-center gap-3">
         <Link to="/chats" className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-chimera-gold/30 hover:bg-chimera-gold/10" aria-label="Back to your scenes">
           <ArrowLeft size={20} aria-hidden="true" />
@@ -816,24 +1125,16 @@ export default function ConversationPage() {
           {scene.title && <p className="truncate text-xs text-chimera-mute">with {scene.botName}</p>}
         </div>
         <button
+          ref={toggleRef}
           type="button"
-          onClick={() => setToolsOpen((open) => !open)}
-          aria-expanded={toolsOpen}
-          aria-controls="scene-tools"
+          onClick={() => (panelOpen ? closePanel() : openPanel())}
+          aria-expanded={panelOpen}
+          aria-controls="scene-panel"
           className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-chimera-gold/40 px-4 text-sm font-bold hover:bg-chimera-gold/10"
         >
-          <SlidersHorizontal size={18} aria-hidden="true" /> <span className="hidden sm:inline">Scene</span><span className="sr-only sm:hidden">Scene tools</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setMemoryOpen((open) => !open)}
-          aria-expanded={memoryOpen}
-          aria-controls="scene-memory"
-          className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-chimera-gold/40 px-4 text-sm font-bold hover:bg-chimera-gold/10"
-        >
-          <Brain size={18} aria-hidden="true" /> Memory
+          <SlidersHorizontal size={18} aria-hidden="true" /> <span className="hidden sm:inline">Manage</span><span className="sr-only sm:hidden">Manage this chat</span>
           {proposedMemories.length > 0 && (
-            <span className="grid h-6 min-w-[24px] place-items-center rounded-full bg-chimera-gold px-1.5 text-xs font-bold text-[#1a1208]" aria-label={`${proposedMemories.length} suggestions to review`}>{proposedMemories.length}</span>
+            <span className="grid h-6 min-w-[24px] place-items-center rounded-full bg-chimera-gold px-1.5 text-xs font-bold text-[#1a1208]" aria-label={`${proposedMemories.length} memory suggestions to review`}>{proposedMemories.length}</span>
           )}
         </button>
       </header>
@@ -861,224 +1162,6 @@ export default function ConversationPage() {
             </>
           )}
         </div>
-      )}
-
-      {toolsOpen && (
-        <section id="scene-tools" className="mb-3 space-y-5 rounded-2xl border border-chimera-gold/25 bg-chimera-panel p-4">
-          <h2 className="font-serif text-xl font-semibold text-chimera-gold">Scene tools</h2>
-          {!settingsReady && (
-            <p role="note" className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-              Your saved choices for this scene could not be loaded, so length, words and pins are locked to keep them safe. Reload the page to try again. You can still rename, start over or delete.
-            </p>
-          )}
-
-          <div>
-            <label htmlFor="scene-title" className="block text-sm font-bold">Name this scene</label>
-            <div className="mt-2 flex gap-2">
-              <input
-                id="scene-title"
-                value={titleDraft}
-                onChange={(e) => setTitleDraft(e.target.value)}
-                maxLength={SCENE_LIMITS.title}
-                placeholder={scene.botName}
-                className="min-h-[44px] min-w-0 flex-1 rounded-xl border border-chimera-gold/25 bg-chimera-bg px-3 text-base text-chimera-ink outline-none focus:border-chimera-gold"
-              />
-              <button type="button" onClick={() => void saveTitle()} disabled={toolsBusy || titleDraft.trim() === (scene.title ?? '')} className="min-h-[44px] rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">Save name</button>
-            </div>
-            <p className="mt-1 text-xs text-chimera-mute">Only you see this. Leave it empty to use {scene.botName}&apos;s name.</p>
-          </div>
-
-          <fieldset>
-            <legend className="text-sm font-bold">How long are {scene.botName}&apos;s replies?</legend>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {RESPONSE_LENGTHS.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  aria-pressed={settings.responseLength === option.id}
-                  title={option.hint}
-                  disabled={!settingsReady}
-                  onClick={() => void updateSettings({ responseLength: option.id }, 'We could not save that choice. Please try again.')}
-                  className={`min-h-[40px] rounded-full border px-5 text-sm font-bold ${settings.responseLength === option.id ? 'border-chimera-gold bg-chimera-gold text-[#1a1208]' : 'border-chimera-gold/35 hover:border-chimera-gold'}`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-            <p className="mt-1 text-xs text-chimera-mute">{RESPONSE_LENGTHS.find((o) => o.id === settings.responseLength)?.hint}. It applies from the next reply.</p>
-          </fieldset>
-
-          <div>
-            <label htmlFor="scene-banned" className="block text-sm font-bold">Words {scene.botName} should avoid</label>
-            <textarea
-              id="scene-banned"
-              value={bannedDraft}
-              onChange={(e) => setBannedDraft(e.target.value)}
-              maxLength={SCENE_LIMITS.bannedWords}
-              rows={2}
-              placeholder="For example: suddenly, orbs, shivers down your spine"
-              className="mt-2 w-full rounded-xl border border-chimera-gold/25 bg-chimera-bg p-3 text-base text-chimera-ink outline-none placeholder:text-chimera-mute/70 focus:border-chimera-gold"
-            />
-            <div className="mt-2 flex items-center justify-between gap-3">
-              <span className="text-xs text-chimera-mute">Separate with commas. {bannedDraft.length} / {SCENE_LIMITS.bannedWords}</span>
-              <button type="button" onClick={() => void saveBannedWords()} disabled={toolsBusy || !settingsReady || bannedDraft.trim() === settings.bannedWords.trim()} className="min-h-[44px] rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">Save words</button>
-            </div>
-          </div>
-
-          <div>
-            <label className="flex min-h-[44px] items-start gap-3 text-sm">
-              <input
-                type="checkbox"
-                checked={settings.autoMemory}
-                disabled={!settingsReady}
-                onChange={(e) => void updateSettings({ autoMemory: e.target.checked }, 'We could not save that choice. Please try again.')}
-                className="mt-0.5 h-5 w-5 shrink-0 accent-[#e8c27a]"
-              />
-              <span>
-                <span className="font-bold">Suggest things to remember</span>
-                <span className="block text-xs text-chimera-mute">Every few messages the story may suggest memories for you to keep or dismiss. Nothing is used until you keep it.</span>
-              </span>
-            </label>
-          </div>
-
-          <div>
-            <p className="text-sm font-bold">Pinned messages: {pinnedIds.length} of {SCENE_LIMITS.pins}</p>
-            <p className="mt-1 text-xs text-chimera-mute">Open a message&apos;s menu (the three dots, or a long press) and choose Pin to keep it in {scene.botName}&apos;s mind, even when the conversation grows long.</p>
-            {pinnedIds.length > 0 && (
-              <ul className="mt-2 space-y-2" aria-label="Pinned messages">
-                {messages.filter((m) => pinnedIds.includes(m.id)).map((m) => (
-                  <li key={m.id} className="flex items-start gap-2 rounded-xl border border-chimera-gold/20 bg-chimera-bg p-2">
-                    <button type="button" onClick={() => jumpTo(m.id)} className="min-h-[44px] min-w-0 flex-1 text-left text-sm">
-                      <span className="block text-xs font-bold tracking-[0.1em] text-chimera-gold">{isMine(m) ? 'YOU' : scene.botName.toUpperCase()}</span>
-                      <span className="block truncate">{plainText(m.content)}</span>
-                    </button>
-                    <button type="button" onClick={() => void togglePinned(m.id)} disabled={!settingsReady} aria-label={`Unpin: ${plainText(m.content).slice(0, 40)}`} className="min-h-[44px] rounded-full border border-chimera-gold/40 px-3 text-xs font-bold hover:bg-chimera-gold/10 disabled:opacity-50">Unpin</button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div className="border-t border-chimera-gold/15 pt-4">
-            {confirming === 'restart' ? (
-              <div role="group" aria-label="Confirm starting over" className="space-y-3">
-                <p className="text-sm">Start a new scene with {scene.botName}? This scene stays in your list exactly as it is.</p>
-                <label className="flex min-h-[44px] items-center gap-3 text-sm">
-                  <input type="checkbox" checked={keepMemory} onChange={(e) => setKeepMemory(e.target.checked)} className="h-5 w-5 accent-[#e8c27a]" />
-                  Keep what this scene remembers
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => void startOver()} disabled={toolsBusy} className="min-h-[44px] rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">{toolsBusy ? 'Starting…' : 'Start new scene'}</button>
-                  <button type="button" onClick={() => setConfirming(null)} disabled={toolsBusy} className="min-h-[44px] rounded-full border border-chimera-gold/40 px-5 text-sm font-bold">Cancel</button>
-                </div>
-              </div>
-            ) : confirming === 'delete' ? (
-              <div role="group" aria-label="Confirm deleting" className="space-y-3">
-                <p className="text-sm text-red-100">Delete this scene for good? Every message and what it remembers will be gone. This cannot be undone.</p>
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => void removeScene()} disabled={toolsBusy} className="min-h-[44px] rounded-full bg-chimera-rose px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">{toolsBusy ? 'Deleting…' : 'Delete this scene'}</button>
-                  <button type="button" onClick={() => setConfirming(null)} disabled={toolsBusy} className="min-h-[44px] rounded-full border border-chimera-gold/40 px-5 text-sm font-bold">Keep it</button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => setConfirming('restart')} className="min-h-[44px] rounded-full border border-chimera-gold/40 px-5 text-sm font-bold hover:bg-chimera-gold/10">Start over</button>
-                <button type="button" onClick={() => setConfirming('delete')} className="min-h-[44px] rounded-full border border-chimera-rose/50 px-5 text-sm font-bold text-chimera-rose hover:bg-chimera-rose/10">Delete scene</button>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {memoryOpen && (
-        <section id="scene-memory" className="mb-3 rounded-2xl border border-chimera-gold/25 bg-chimera-panel p-4">
-          <h2 className="font-serif text-xl font-semibold text-chimera-gold">What this scene remembers</h2>
-          <p className="mt-1 text-sm text-chimera-mute">
-            {scene.botName} reads the most recent part of the conversation each time; older messages fall out of view. Write here what must never be forgotten: names, places, promises, tone. Edit or clear it at any time.
-          </p>
-          <label htmlFor="canon" className="sr-only">Scene memory</label>
-          <textarea
-            id="canon"
-            value={canonDraft}
-            onChange={(e) => setCanonDraft(e.target.value)}
-            maxLength={6000}
-            rows={6}
-            className="mt-3 w-full rounded-xl border border-chimera-gold/25 bg-chimera-bg p-3 text-base text-chimera-ink outline-none focus:border-chimera-gold"
-          />
-          <div className="mt-3 flex items-center justify-between gap-3">
-            <span className="text-xs text-chimera-mute">{canonDraft.length} / 6000</span>
-            <button type="button" onClick={() => void saveCanon()} disabled={savingCanon || canonDraft.trim() === scene.canon.trim()} className="min-h-[44px] rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">
-              {savingCanon ? 'Saving…' : 'Save memory'}
-            </button>
-          </div>
-
-          <div className="mt-6 border-t border-chimera-gold/15 pt-4">
-            <h3 className="font-serif text-lg font-semibold text-chimera-gold">Remembered from the story</h3>
-            <p className="mt-1 text-sm text-chimera-mute">
-              Every few messages the story can suggest things worth remembering. {scene.botName} only uses a suggestion after you keep it. You can reword or remove any of them.
-            </p>
-            {memoriesFailed && <p role="note" className="mt-3 text-sm text-amber-200">We could not load your memories right now.</p>}
-
-            {proposedMemories.length > 0 && (
-              <ul className="mt-3 space-y-3" aria-label="Suggested memories">
-                {proposedMemories.map((memory) => (
-                  <li key={memory.id} className="rounded-xl border border-chimera-gold/35 bg-chimera-bg p-3">
-                    {editingMemory?.id === memory.id ? (
-                      <div>
-                        <label htmlFor={`edit-${memory.id}`} className="sr-only">Memory text</label>
-                        <textarea id={`edit-${memory.id}`} value={editingMemory.text} onChange={(e) => setEditingMemory({ id: memory.id, text: e.target.value })} maxLength={MEMORY_LIMITS.content} rows={3} className="w-full rounded-lg border border-chimera-gold/25 bg-chimera-panel p-2 text-base text-chimera-ink outline-none focus:border-chimera-gold" />
-                        <div className="mt-2 flex gap-2">
-                          <button type="button" onClick={() => void saveMemoryEdit()} disabled={memoryBusy === memory.id} className="min-h-[44px] rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">Save wording</button>
-                          <button type="button" onClick={() => setEditingMemory(null)} className="min-h-[44px] rounded-full border border-chimera-gold/40 px-5 text-sm font-bold">Cancel</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-base text-chimera-ink">{memory.content}</p>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <button type="button" onClick={() => void approveSuggestion(memory, false)} disabled={memoryBusy !== null} className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-chimera-gold px-4 text-sm font-bold text-[#1a1208] disabled:opacity-50"><Check size={16} aria-hidden="true" /> Keep for this scene</button>
-                          <button type="button" onClick={() => void approveSuggestion(memory, true)} disabled={memoryBusy !== null} className="min-h-[44px] rounded-full border border-chimera-gold/50 px-4 text-sm font-bold hover:bg-chimera-gold/10 disabled:opacity-50">Keep for every scene with {scene.botName}</button>
-                          <button type="button" onClick={() => setEditingMemory({ id: memory.id, text: memory.content })} className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-chimera-gold/30 px-4 text-sm font-bold hover:bg-chimera-gold/10"><Pencil size={15} aria-hidden="true" /> Reword</button>
-                          <button type="button" onClick={() => void forgetMemory(memory)} disabled={memoryBusy !== null} className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-chimera-rose/40 px-4 text-sm font-bold text-chimera-rose hover:bg-chimera-rose/10 disabled:opacity-50"><Trash2 size={15} aria-hidden="true" /> Not worth keeping</button>
-                        </div>
-                      </>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {approvedMemories.length > 0 ? (
-              <ul className="mt-4 space-y-2" aria-label="Kept memories">
-                {approvedMemories.map((memory) => (
-                  <li key={memory.id} className="rounded-xl border border-chimera-gold/15 p-3">
-                    {editingMemory?.id === memory.id ? (
-                      <div>
-                        <label htmlFor={`edit-${memory.id}`} className="sr-only">Memory text</label>
-                        <textarea id={`edit-${memory.id}`} value={editingMemory.text} onChange={(e) => setEditingMemory({ id: memory.id, text: e.target.value })} maxLength={MEMORY_LIMITS.content} rows={3} className="w-full rounded-lg border border-chimera-gold/25 bg-chimera-bg p-2 text-base text-chimera-ink outline-none focus:border-chimera-gold" />
-                        <div className="mt-2 flex gap-2">
-                          <button type="button" onClick={() => void saveMemoryEdit()} disabled={memoryBusy === memory.id} className="min-h-[44px] rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">Save wording</button>
-                          <button type="button" onClick={() => setEditingMemory(null)} className="min-h-[44px] rounded-full border border-chimera-gold/40 px-5 text-sm font-bold">Cancel</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-start gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-base text-chimera-ink">{memory.content}</p>
-                          <p className="mt-1 text-xs text-chimera-mute">{memory.conversationId ? 'This scene only' : `Every scene with ${scene.botName}`}</p>
-                        </div>
-                        <button type="button" onClick={() => setEditingMemory({ id: memory.id, text: memory.content })} aria-label="Reword this memory" className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-chimera-mute hover:text-chimera-gold"><Pencil size={16} aria-hidden="true" /></button>
-                        <button type="button" onClick={() => void forgetMemory(memory)} disabled={memoryBusy !== null} aria-label="Forget this memory" className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-chimera-mute hover:text-chimera-rose disabled:opacity-50"><Trash2 size={16} aria-hidden="true" /></button>
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              proposedMemories.length === 0 && !memoriesFailed && <p className="mt-3 text-sm text-chimera-mute">Nothing yet. After a few more messages the story may suggest something.</p>
-            )}
-          </div>
-        </section>
       )}
 
       {adultLocked && (
@@ -1226,6 +1309,12 @@ export default function ConversationPage() {
         </form>
       </div>
       <div ref={endRef} />
+    </div>
+    {panelOpen && (
+      <ManagementPanel desktop={desktop} title={scene.title ?? scene.botName} subtitle={scene.title ? `with ${scene.botName}` : undefined} tabs={panelTabs} active={panelTab} onTab={(id) => setPanelTab(id as PanelTabId)} onClose={closePanel} focusOnOpen={focusPanel}>
+        {panelContent}
+      </ManagementPanel>
+    )}
     </div>
   );
 }

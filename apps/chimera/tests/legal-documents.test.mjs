@@ -144,12 +144,14 @@ test('the documents match what the code does today (so a change in the code fail
     };
     await walk('src/');
     const using = (needle) => { const hits = []; return Promise.all(files.map(async (f) => { if ((await read(f)).includes(needle)) hits.push(f); })).then(() => hits.sort()); };
-    assert.deepEqual(await using('localStorage'), ['src/contexts/ModeContext.tsx', 'src/lib/draftJournal.ts'], 'new use of localStorage: update the Privacy Policy');
+    assert.deepEqual(await using('localStorage'), ['src/contexts/ModeContext.tsx', 'src/lib/draftJournal.ts', 'src/lib/panelPrefs.ts'], 'new use of localStorage: update the Privacy Policy');
     assert.deepEqual(await using('sessionStorage'), ['src/pages/ShardsPage.tsx'], 'new use of sessionStorage: update the Privacy Policy');
     assert.deepEqual(await using('document.cookie'), [], 'cookies are now set by the code: update the Privacy Policy');
     assert.deepEqual(await using('indexedDB'), []);
     assert.match(await read('src/contexts/ModeContext.tsx'), /'chimera-mode'/);
     assert.match(privacy, /chimera-mode/);
+    assert.match(await read('src/lib/panelPrefs.ts'), /'chimera\.chat\.panel\.open'/);
+    assert.match(privacy, /chimera\.chat\.panel\.open/);
 
     // No analytics or advertising libraries, no third-party scripts or styles in the page.
     const pkg = JSON.parse(await read('package.json'));

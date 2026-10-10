@@ -157,6 +157,21 @@ screen a small menu by the pointer; both close with Escape or a tap outside, loo
 
 Like / Dislike and Report are built but off until their database part is reviewed and applied (next section); voice playback is out of scope for now.
 
+## Chat management panel (phase 1: character, chat, history, memory, persona)
+
+One **Manage** button in the chat header opens a panel with five tabs. It replaces the two old "Scene" and "Memory" sections; what they did is unchanged (same functions, same database calls).
+
+- **Phone and tablet (under 1024 px):** a bottom sheet over the chat (focus kept inside, Escape and a tap outside close it, always starts closed). **Computer (1024 px and up):** a column next to the chat that never covers it; Escape or the close button folds it away and the choice is remembered in this browser (`chimera.chat.panel.open`, listed in the Privacy Policy).
+- **Character:** name, rating, creator, visibility (shown to the creator only), the public descriptions, a link to the character's page. It reads only the fields the character page already shows (never the instructions or private notes). If the character is no longer readable (for example made private), it says so calmly and the chat keeps working.
+- **Chat:** name, reply length, words to avoid, memory suggestions switch, pinned messages, **Start new chat**, **Chat history**, **Refresh** (only re-reads from the database: nothing stored can be erased by it) and **Delete chat** (asks first).
+- **History:** the player's chats with this character, newest first, the open one marked, a chat made with "Start new chat from here" marked as a branch of its source. Rename, delete (asks first; uses `delete_chimera_scene`, which only deletes a chat the player started; chats branched from a deleted one are kept) and start a new one. The chat list page marks branches too.
+- **Memory:** the scene memory and the remembered items, as before (memories stay per character, persona and scene: nothing is mixed between unrelated chats).
+- **Persona:** choose, create or edit the persona. It is free until the first message and then fixed (so the character always knows who it talks to and earlier messages never change); to play as someone else, start a new chat.
+
+No migration. Not in this phase (see the plan): lorebook in the panel, layout and chat style settings, wallpapers. Voice playback, text-to-speech, AI image generation and away messages are on the roadmap and deliberately not built.
+
+Checks: `tests/management-panel.test.mjs` (lists, branches, character details, remembered choice, wiring, accessibility) and browser checks on a stand-in backend (desktop, phone with touch, tablet and wide screens). Not tested on a real iPhone Safari, Android Chrome or Desktop Safari.
+
 ## Like / Dislike, reports and moderation (FOR REVIEW: needs two migrations, off until applied)
 
 Nothing in this section is live. The code is in, but **off**, and the two migrations are **not applied** to any database. They are written for review.
