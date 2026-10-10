@@ -53,7 +53,7 @@ export const FAQ = {
     '',
     '**Can I choose which AI writes my replies?** Yes, in the Model House on the site. More choices will appear over time.',
     '',
-    '**Is there adult (Mature) content?** Not yet. It will only ever be for members whose age has been verified, and age verification is not open yet (the Guardian\'s Library page shows "coming soon"). Until then CHIMERA shows General content only, and this server stays free of explicit content either way.',
+    '**Is there adult (Mature) content?** Not yet. It will only ever be for members whose age has been verified, and age verification is not open yet (the Adult Content Settings page shows "coming soon"). Until then CHIMERA shows General content only, and this server stays free of explicit content either way.',
     '',
     '**Does the AI remember our scene?** CHIMERA can suggest memories from your scene, and you approve what is kept. You can also pin messages and set reply length and banned words per scene.',
     '',

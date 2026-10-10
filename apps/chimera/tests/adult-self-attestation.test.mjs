@@ -178,7 +178,7 @@ test('the screens never claim a verification that did not happen, and never writ
   assert.match(flags, /AGE_VERIFICATION_LIVE: boolean = false/, 'no age-check provider is connected');
   assert.match(flags, /ADULT_CONFIRMATION_LIVE: boolean = true/);
 
-  const guardian = await readFile(new URL('../src/pages/GuardianPage.tsx', import.meta.url), 'utf8');
+  const guardian = await readFile(new URL('../src/pages/AdultContentSettingsPage.tsx', import.meta.url), 'utf8');
   assert.match(guardian, /18\+ confirmed by you/, 'a declaration is labelled as one');
   assert.match(guardian, /does not check it yet/);
   assert.doesNotMatch(guardian, /upsert\(\s*\{[^}]*(age_|adult_attest)/s, 'the page never writes the age columns itself');

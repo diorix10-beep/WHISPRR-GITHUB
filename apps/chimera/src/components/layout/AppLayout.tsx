@@ -4,7 +4,7 @@ import { Menu, Sparkles, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMode, type CreativeMode } from '../../contexts/ModeContext';
 import { ShardsHubModal } from '../common/ShardsHubModal';
-import { GUARDIAN_OPEN } from '../../lib/ageVerification';
+import { ADULT_SETTINGS_OPEN } from '../../lib/ageVerification';
 import { useUnreadReports } from '../../hooks/useUnreadReports';
 
 const formatNumber = (value: number) => new Intl.NumberFormat().format(value);
@@ -23,12 +23,12 @@ const NAV: Record<CreativeMode, NavLinkItem[]> = {
     { to: '/personas', label: 'Personas' },
     { to: '/lorebooks', label: 'Lorebooks' },
     { to: '/models', label: 'Model House' },
-    { to: '/guardian', label: "Guardian's Library", soon: !GUARDIAN_OPEN },
+    { to: '/adult-content-settings', label: 'Adult Content Settings', soon: !ADULT_SETTINGS_OPEN },
   ],
   storytelling: [
     { to: '/library', label: 'Library' },
     { to: '/workspace', label: "Writer's Desk" },
-    { to: '/guardian', label: "Guardian's Library", soon: !GUARDIAN_OPEN },
+    { to: '/adult-content-settings', label: 'Adult Content Settings', soon: !ADULT_SETTINGS_OPEN },
   ],
 };
 
@@ -164,7 +164,7 @@ export default function AppLayout() {
         <div className="mx-auto flex max-w-7xl flex-wrap gap-x-8 gap-y-2">
           <Link to="/terms" className="hover:text-chimera-gold">Terms</Link>
           <Link to="/privacy" className="hover:text-chimera-gold">Privacy</Link>
-          <Link to="/guardian" className="hover:text-chimera-gold">Guardian&apos;s Library{!GUARDIAN_OPEN && <span className="text-xs"> (soon)</span>}</Link>
+          <Link to="/adult-content-settings" className="hover:text-chimera-gold">Adult Content Settings{!ADULT_SETTINGS_OPEN && <span className="text-xs"> (soon)</span>}</Link>
           <span className="sm:ml-auto">CHIMERA is in early development.</span>
         </div>
       </footer>

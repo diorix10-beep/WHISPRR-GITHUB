@@ -4,7 +4,7 @@ import { ShieldCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { ADULT_CONFIRMATION_LIVE, ADULT_CONFIRMATION_VERSION, AGE_VERIFICATION_LIVE, GUARDIAN_OPEN } from '../lib/ageVerification';
+import { ADULT_CONFIRMATION_LIVE, ADULT_CONFIRMATION_VERSION, AGE_VERIFICATION_LIVE, ADULT_SETTINGS_OPEN } from '../lib/ageVerification';
 
 type AgeStatus = 'unverified' | 'self_attested_adult' | 'verified_adult';
 
@@ -13,10 +13,10 @@ interface Preferences {
   adult_content_enabled: boolean | null;
 }
 
-export default function GuardianPage() {
+export default function AdultContentSettingsPage() {
   const { user } = useAuth();
   const { showToast } = useToast();
-  const [loading, setLoading] = useState(Boolean(user) && GUARDIAN_OPEN);
+  const [loading, setLoading] = useState(Boolean(user) && ADULT_SETTINGS_OPEN);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<AgeStatus>('unverified');
   const [adultEnabled, setAdultEnabled] = useState(false);
@@ -28,7 +28,7 @@ export default function GuardianPage() {
   const eligible = verified || confirmed;
 
   useEffect(() => {
-    if (!user || !GUARDIAN_OPEN) {
+    if (!user || !ADULT_SETTINGS_OPEN) {
       setLoading(false);
       return;
     }
@@ -100,10 +100,10 @@ export default function GuardianPage() {
     showToast('Your confirmation is withdrawn. Mature and Adult stories are hidden.', 'success');
   };
 
-  if (!GUARDIAN_OPEN) {
+  if (!ADULT_SETTINGS_OPEN) {
     return (
       <div className="mx-auto max-w-3xl px-5 pb-10 pt-10 sm:px-8">
-        <p className="mb-3 text-center text-sm font-bold tracking-[0.26em] text-chimera-gold">THE GUARDIAN&apos;S LIBRARY</p>
+        <p className="mb-3 text-center text-sm font-bold tracking-[0.26em] text-chimera-gold">ADULT CONTENT SETTINGS</p>
         <h1 className="text-center font-serif text-5xl font-semibold leading-[1.05] sm:text-6xl">Coming soon.</h1>
         <section className="mt-9 rounded-[22px] border border-chimera-gold/20 bg-chimera-panel px-7 py-8 text-center">
           <ShieldCheck className="mx-auto text-chimera-gold" size={34} aria-hidden="true" />
@@ -121,7 +121,7 @@ export default function GuardianPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-5 pb-10 pt-10 sm:px-8">
-      <p className="mb-3 text-center text-sm font-bold tracking-[0.26em] text-chimera-gold">THE GUARDIAN&apos;S LIBRARY</p>
+      <p className="mb-3 text-center text-sm font-bold tracking-[0.26em] text-chimera-gold">ADULT CONTENT SETTINGS</p>
       <h1 className="text-center font-serif text-5xl font-semibold leading-[1.05] sm:text-6xl">Your boundaries lead the way.</h1>
 
       <section className="mt-9 rounded-[22px] border border-chimera-gold/20 bg-chimera-panel px-7 py-3">
@@ -143,7 +143,7 @@ export default function GuardianPage() {
 
         {!user ? (
           <p className="py-6 text-violet-100/85">
-            <Link to="/auth" state={{ from: '/guardian' }} className="font-bold text-chimera-gold underline">Sign in</Link> to see and change your content settings.
+            <Link to="/auth" state={{ from: '/adult-content-settings' }} className="font-bold text-chimera-gold underline">Sign in</Link> to see and change your content settings.
           </p>
         ) : loading ? (
           <p className="py-6 text-chimera-mute">Opening your settings…</p>

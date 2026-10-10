@@ -15,8 +15,8 @@
 export const AGE_VERIFICATION_LIVE: boolean = false;
 export const ADULT_CONFIRMATION_LIVE: boolean = true;
 
-/** The Guardian's Library has something to offer: a real check, or the temporary confirmation. */
-export const GUARDIAN_OPEN: boolean = AGE_VERIFICATION_LIVE || ADULT_CONFIRMATION_LIVE;
+/** Adult Content Settings has something to offer: a real check, or the temporary confirmation. */
+export const ADULT_SETTINGS_OPEN: boolean = AGE_VERIFICATION_LIVE || ADULT_CONFIRMATION_LIVE;
 
 /** Shown next to the confirmation, wherever it is offered. */
 export const ADULT_CONFIRMATION_VERSION = 'adult-attestation-1';

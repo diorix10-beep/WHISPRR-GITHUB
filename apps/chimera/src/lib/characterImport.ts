@@ -204,7 +204,7 @@ export function cardToForm(raw: unknown, { allowAdult = false }: ImportOptions =
   // shared with. It is refused, unless the member may use Mature, and then it arrives rated Mature.
   const adult = isMarkedAdult(tags, notes);
   if (adult && !allowAdult) {
-    throw new CardImportError('This card is marked as adult content (NSFW). To import it, confirm in the Guardian\'s Library that you are 18 or older and turn on adult content.');
+    throw new CardImportError('This card is marked as adult content (NSFW). To import it, confirm in the Adult Content Settings that you are 18 or older and turn on adult content.');
   }
 
   const leftOut: string[] = [];

@@ -168,7 +168,7 @@ test('a member who may use Mature gets an adult card as Mature; everyone else st
     for (const data of [{ tags: ['NSFW'] }, { tags: ['18+'] }, { creator_notes: 'This bot is NSFW.' }]) {
       assert.equal(cardToForm(card(data), { allowAdult: true }).form.mature, true, JSON.stringify(data));
       assert.throws(() => cardToForm(card(data)), CardImportError);
-      assert.throws(() => cardToForm(card(data), { allowAdult: false }), (error) => /Guardian/.test(error.message));
+      assert.throws(() => cardToForm(card(data), { allowAdult: false }), (error) => /Adult Content Settings/.test(error.message));
     }
     for (const data of [{ tags: ['romance'] }, { creator_notes: 'SFW only, no NSFW content.' }, {}]) {
       assert.equal(cardToForm(card(data), { allowAdult: true }).form.mature, false, 'an ordinary card is not made Mature');
