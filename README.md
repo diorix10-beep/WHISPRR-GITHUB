@@ -31,6 +31,96 @@ honest about that:
 - production data, secrets, and official service credentials are not included in
   this repository.
 
+## Join CHIMERA and contribute
+
+We welcome contributors from all backgrounds. CHIMERA is built around creativity,
+collaboration, and human-led storytelling. We are especially interested in people
+who enjoy building creative technology, improving user experiences, and exploring
+responsible AI-assisted development.
+
+You do not need a computer science degree, years of professional experience, or
+expert knowledge of every framework. Beginners, students, self-taught developers,
+designers, testers, AI enthusiasts, writers, and creative technologists are all
+welcome.
+
+### Ways to contribute
+
+- front-end development and UI polishing
+- bug fixes and reliability improvements
+- accessibility work and usability improvements
+- QA testing and issue reporting
+- documentation and contributor onboarding
+- AI feature exploration and prompt design
+- storytelling, worldbuilding, and roleplay experience improvements
+- developer experience and project tooling improvements
+
+### Beginner-friendly contributions
+
+We especially encourage contributions such as:
+
+- documentation updates
+- simple UI fixes
+- accessibility improvements
+- basic tests
+- small bug fixes
+- onboarding and setup improvements
+- issue triage and community feedback
+
+### Current collaboration model
+
+CHIMERA is currently in an early community development phase. Collaboration is:
+
+- international
+- remote
+- voluntary
+- flexible in availability
+- primarily conducted in English
+
+This project is source-available and contributor-friendly, but it is not
+currently licensed as OSI-approved open source. Brand, official assets, and
+official product identity remain protected.
+
+### AI-assisted development
+
+CHIMERA welcomes responsible AI-assisted development. Contributors may use tools
+such as Copilot, ChatGPT, Cursor, Claude, and similar assistants for learning,
+exploration, scaffolding, debugging, and documentation.
+
+However, contributors remain responsible for:
+
+- understanding the code they submit
+- reviewing AI-generated output
+- testing changes before submission
+- protecting secrets and credentials
+- avoiding unsafe or unverified code
+
+### How to start
+
+1. Review the project and current issues.
+2. Choose a task that matches your skill level.
+3. Fork the repository and create a focused branch.
+4. Keep changes small and easy to review.
+5. Test your work where possible.
+6. Open a pull request with a clear summary.
+7. Participate respectfully in code review and feedback.
+
+### Community values
+
+We value:
+
+- creativity
+- collaboration
+- respect
+- transparency
+- accessibility
+- learning
+- responsible AI use
+- human-centered design
+
+If you're interested in helping build CHIMERA, we would be happy to hear from you.
+Please start by checking the repository issues, proposing a small improvement, or
+asking a clear question in the project communication channels.
+
 ## Run CHIMERA locally
 
 Prerequisites:
