@@ -1,5 +1,8 @@
 import { RotateCcw } from 'lucide-react';
 import { RichMessage } from '../RichMessage';
+import { WallpaperLayer } from '../WallpaperLayer';
+import { WallpaperSection } from './WallpaperSection';
+import type { WallpaperState } from '../../../hooks/useWallpaper';
 import { radioGroupKeys } from '../../../lib/radioKeys';
 import { LOOK_OPTIONS, isDefaultLook, lookAttributes, type ChatLook, type LookKey } from '../../../lib/chatLook';
 
@@ -20,8 +23,10 @@ const SAMPLE_THEM = '*Isolde turns from the window, the rain behind her.* "The t
  * The way messages are drawn: size, spacing, alignment, bubbles, typeface, narration and dialogue. It changes only the
  * look: what a message says and what is stored never change. The choices are kept in this browser.
  */
-export function LookSection({ look, saved, characterName, onChange, onReset }: {
+export function LookSection({ look, saved, wallpaper, characterName, onChange, onReset }: {
   look: ChatLook;
+  /** The chat background (see WallpaperSection). */
+  wallpaper: WallpaperState;
   /** False when the browser would not keep the choices. */
   saved: boolean;
   characterName: string;
@@ -32,7 +37,8 @@ export function LookSection({ look, saved, characterName, onChange, onReset }: {
     <div className="space-y-5">
       <p className="text-sm text-chimera-mute">Make the chat easier or nicer to read. It changes how messages look on this device only; what they say, and what is saved, never change.</p>
 
-      <div className="chat-look rounded-xl border border-chimera-gold/20 bg-chimera-bg p-3" aria-label="Preview" role="group" {...lookAttributes(look)}>
+      <div className="chat-look relative isolate overflow-hidden rounded-xl border border-chimera-gold/20 bg-chimera-bg p-3" aria-label="Preview" role="group" {...lookAttributes(look)}>
+        <WallpaperLayer setting={wallpaper.setting} imageUrl={wallpaper.imageUrl} />
         <p className="mb-2 text-xs font-bold tracking-[0.12em] text-chimera-gold">PREVIEW</p>
         <div className="msg-list">
           <div className="msg-row flex items-start gap-1">
@@ -75,6 +81,8 @@ export function LookSection({ look, saved, characterName, onChange, onReset }: {
           <p className="mt-1 text-xs text-chimera-mute">{LOOK_OPTIONS[group.key].find((o) => o.id === look[group.key])?.hint}</p>
         </fieldset>
       ))}
+
+      <WallpaperSection wallpaper={wallpaper} />
 
       {!saved && <p role="note" className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">This browser would not keep your choices, so they last only until you close this page.</p>}
       <button type="button" onClick={onReset} disabled={isDefaultLook(look)} className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-chimera-gold/40 px-5 text-sm font-bold hover:bg-chimera-gold/10 disabled:opacity-50">
