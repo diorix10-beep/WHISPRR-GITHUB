@@ -51,3 +51,13 @@ body {
   outline: 3px solid #e8c27a;
   outline-offset: 2px;
 }
+
+/* A long press on a message opens its menu. On touch screens that must not also start selecting text or open the
+   browser's own callout; the menu has Copy. Not applied while a message is being edited. */
+@media (pointer: coarse) {
+  .msg-bubble {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}

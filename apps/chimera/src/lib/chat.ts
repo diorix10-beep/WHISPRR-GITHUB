@@ -11,6 +11,9 @@ export interface ChatMessageRow {
   response_versions?: Array<{ content: string }> | null;
 }
 
+/** The longest message that can be saved when editing: the composer's own limit for the player, the reply limit for a character. */
+export const MESSAGE_EDIT_LIMITS = { player: 4_000, character: 32_000 } as const;
+
 export type ComposerMode = 'say' | 'act' | 'ooc';
 
 /** How a line typed in each composer mode is stored and sent to the character. */

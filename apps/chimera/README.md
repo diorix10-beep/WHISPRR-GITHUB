@@ -132,6 +132,31 @@ Settings live in `chimera_scene_settings` (migration `20261009020000_chimera_sce
 readable and writable by that player while they are a member. `api/ai-chat.ts` reads it with the player's own session and, if it cannot
 be read (for example before the migration is applied), answers with the defaults. Apply the migration before or after the deploy; both work.
 
+## Message actions and text formatting (chat)
+
+**Formatting** (`src/lib/richText.ts`, `src/components/chat/RichMessage.tsx`). Messages show `*actions*` and `_thoughts_` in italics,
+`**bold**`, `***both***`, with line breaks kept. It only changes how a message is **drawn**: the text in the database is untouched. The parser returns plain
+spans (text plus flags) that React draws as `<em>` / `<strong>`, never HTML, so a message can never inject markup. A marker only counts when it touches
+text ("2 * 3 * 4" and "* item" stay as they are), never crosses a blank line, and an unmatched one is shown as it is; `\*` shows a star. Its work per
+message is bounded (a message of 30,000 stray stars takes a few milliseconds), and it uses no regular-expression look-behind, which Safari before 16.4 cannot compile.
+
+**Menu** (`src/components/chat/MessageMenu.tsx`, `MessageRow.tsx`, `src/hooks/useLongPress.ts`). Every message has a three-dot button (labelled for screen readers),
+a right click opens the same menu on a computer, and a long press does on a phone (a timer on touch, because Safari on iPhone sends no `contextmenu` event;
+scrolling or lifting early cancels it; text is not selectable under the finger on touch screens, the menu has Copy). On a phone it is a bottom sheet, on a wide
+screen a small menu by the pointer; both close with Escape or a tap outside, loop the keyboard focus, and give the focus back.
+
+- **Copy**: the stored text, line breaks included.
+- **Edit**: the author's own messages, and the character's messages in a scene you created. It updates `messages.content` of that one message; the database
+  refuses anyone else (`chimera_guard_message_identity`) and swipe history cannot be touched from the browser. The next reply reads the message from the
+  database, so it uses the edited text. Messages after an edited one are not rewritten: the editor says so and points to *Start new chat from here*.
+- **Pin / Unpin**: the existing scene pins (`chimera_scene_settings.pinned_message_ids`); *Scene* lists the pinned messages, with jump and unpin.
+- **Start new chat from here**: the existing `branch_chimera_conversation` function (idempotent, copies the scene up to that message for its creator and the
+  characters, keeps the original). A branch that ends on your message offers *Ask {character} to reply*.
+- **Delete**: asks first, then sets `deleted_at` (a *soft* delete: the row stays in the database, hidden from the scene, from what the character is sent and
+  from branches). A scene always keeps at least one message. Whether such rows should be purged after some time is a decision still to be made.
+
+Not built yet: Like / Dislike (needs a table) and Report (needs the moderation workflow); voice playback is out of scope for now.
+
 ## Automatic memory (suggested by the story, approved by you)
 
 Beyond the notes you write yourself in **Memory**, the story can suggest long-term memories.
