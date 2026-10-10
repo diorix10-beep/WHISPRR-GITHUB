@@ -49,6 +49,8 @@ export function LorebookSection({ characterId, characterName, viewerId, isCreato
           setMineFailed(false);
         } catch {
           setMineFailed(true);
+          // A choice made before the failure may no longer be valid.
+          setChoice('');
         }
       }
     } catch {
@@ -64,7 +66,8 @@ export function LorebookSection({ characterId, characterName, viewerId, isCreato
   const available = mine.filter((b) => !linkedIds.has(b.id));
 
   const link = async () => {
-    if (!choice || busy) return;
+    // Not while the library could not be read: the choice on screen may be out of date.
+    if (!choice || busy || mineFailed) return;
     setBusy(true);
     try {
       await linkLorebookToCharacter(choice, characterId);
@@ -175,7 +178,7 @@ export function LorebookSection({ characterId, characterName, viewerId, isCreato
                 <option value="">{mineFailed ? 'Unavailable right now' : available.length === 0 ? 'No other lorebook to link' : 'Choose a lorebook'}</option>
                 {available.map((b) => <option key={b.id} value={b.id}>{b.title || 'Untitled lorebook'}</option>)}
               </select>
-              <button type="button" onClick={() => void link()} disabled={!choice || busy} className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">
+              <button type="button" onClick={() => void link()} disabled={!choice || busy || mineFailed} className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-chimera-gold px-5 text-sm font-bold text-[#1a1208] disabled:opacity-50">
                 <Link2 size={16} aria-hidden="true" /> Link
               </button>
             </div>

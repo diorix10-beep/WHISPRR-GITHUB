@@ -27,7 +27,7 @@ function fakeDatabase(answer) {
     const call = { table: url.pathname.split('/').pop(), search: decodeURIComponent(url.search), method: (init.method ?? 'GET').toUpperCase(), body: init.body ? JSON.parse(init.body) : null };
     calls.push(call);
     const result = answer(call);
-    return new Response(result.body === undefined ? '' : JSON.stringify(result.body), { status: result.status ?? 200, headers: { 'content-type': 'application/json', 'content-range': '0-0/*' } });
+    return new Response(call.method === 'HEAD' || result.body === undefined ? null : JSON.stringify(result.body), { status: result.status ?? 200, headers: { 'content-type': 'application/json', 'content-range': result.range ?? '0-0/*' } });
   };
   return { calls, restore: () => { globalThis.fetch = realFetch; } };
 }
@@ -193,8 +193,8 @@ test('the Lorebook and Memory tabs are wired: creator only controls, no migratio
   // A slow save must not overwrite what was typed meanwhile (the box is emptied only if it still holds what was saved).
   assert.match(page, /setNewMemory\(\(current\) => \(current\.text === submitted\.text \? \{ \.\.\.current, text: '' \} : current\)\)/);
   assert.doesNotMatch(page, /setNewMemory\(\{ \.\.\.newMemory, text: '' \}\)/);
-  // Moving a memory to "every chat" cannot overflow the list every chat shows.
-  assert.match(page, /filter\(\(m\) => !m\.conversationId\)\.length >= MAX_MEMORIES/);
+  // Moving a memory to "every chat" cannot overflow the list every chat shows (counted in the database, see the test below).
+  assert.match(page, /countEveryChatMemories\(/);
   assert.match(page, /never mixed in unless you chose/);
   const section = await read('src/components/chat/panel/LorebookSection.tsx');
   assert.match(section, /\{isCreator && \(/, 'linking, creating and checking are for the creator');
@@ -208,4 +208,34 @@ test('the Lorebook and Memory tabs are wired: creator only controls, no migratio
   const lib = await read('src/lib/sceneLore.ts');
   assert.doesNotMatch(lib, /\.(update|insert|upsert)\(/, 'this file never writes lore');
   assert.match(lib, /api\/_lib\/lorebook\.ts/, 'one selection, shared with the server');
+});
+
+test('"every chat" memories are counted in the database, not on the screen\'s cut list', async () => {
+  const vite = await server();
+  let db = fakeDatabase(() => ({ range: '*/100' }));
+  try {
+    const { countEveryChatMemories } = await vite.ssrLoadModule('/src/lib/memories.ts');
+    assert.equal(await countEveryChatMemories(CHAR, PERSONA), 100);
+    const call = db.calls[0];
+    assert.equal(call.method, 'HEAD', 'a count only, no rows');
+    assert.match(call.search, /character_id=eq\./);
+    assert.match(call.search, /conversation_id=is\.null/, 'only the ones for every chat');
+    assert.match(call.search, /session_id=is\.null/);
+    assert.match(call.search, new RegExp(`persona_id=eq\\.${PERSONA}`));
+    await countEveryChatMemories(CHAR, null);
+    assert.match(db.calls[1].search, /persona_id=is\.null/, 'no persona is its own set');
+    db.restore();
+    db = fakeDatabase(() => ({ status: 500, body: { message: 'down' } }));
+    await assert.rejects(countEveryChatMemories(CHAR, PERSONA), 'a failed count is an error, never zero');
+  } finally { db.restore(); await vite.close(); }
+});
+
+test('both ways into "every chat" check the real count, and Link is off while the creator\'s library is unreadable', async () => {
+  const page = await read('src/pages/ConversationPage.tsx');
+  assert.equal((page.match(/countEveryChatMemories\(/g) ?? []).length, 2, 'adding and moving');
+  assert.doesNotMatch(page, /memories\.filter\(\(m\) => !m\.conversationId\)\.length >= MAX_MEMORIES/, 'no count from the cut list');
+  const section = await read('src/components/chat/panel/LorebookSection.tsx');
+  assert.match(section, /if \(!choice \|\| busy \|\| mineFailed\) return;/, 'the handler is guarded too');
+  assert.match(section, /disabled=\{!choice \|\| busy \|\| mineFailed\}/, 'and the button');
+  assert.match(section, /setMineFailed\(true\);\s*\/\/ A choice made before the failure may no longer be valid\.\s*setChoice\(''\);/, 'and a stale choice is dropped');
 });
