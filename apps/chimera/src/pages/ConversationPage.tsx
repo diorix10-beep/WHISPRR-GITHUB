@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Brain, Check, Loader2, Pencil, Pin, RefreshCw, Send, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { ArrowLeft, Brain, Check, Copy, GitBranch, Loader2, Pencil, Pin, RefreshCw, Send, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { isAdultRating, useAdultContentAccess } from '../hooks/useAdultContentAccess';
+import { ConfirmDialog, MessageMenu, type Anchor, type MenuItem } from '../components/chat/MessageMenu';
+import { MessageRow } from '../components/chat/MessageRow';
+import { copyText } from '../lib/clipboard';
+import { plainText } from '../lib/richText';
 import {
+  MESSAGE_EDIT_LIMITS,
   formatPlayerLine,
   persistPlayerMessage,
   requestCharacterReply,
@@ -48,6 +53,8 @@ interface SceneInfo {
   /** The player's own title for this scene, if they set one. */
   title: string | null;
   greeting: string | null;
+  /** The scene is the player's own, so they may also edit and delete the character's messages in it. */
+  createdByMe: boolean;
   /** Every way this character can open a scene: its main opening first. More than one means the player picks. */
   openings: string[];
   rating: string | null;
@@ -67,6 +74,12 @@ const TURNING_POINT_MIN_MESSAGES = 8;
 export default function ConversationPage() {
   const openingBusyRef = useRef(false);
   const [openingBusy, setOpeningBusy] = useState(false);
+  const [menu, setMenu] = useState<{ messageId: string; anchor: Anchor } | null>(null);
+  const [editing, setEditing] = useState<{ id: string; text: string; saving: boolean; problem: string | null } | null>(null);
+  const [deleting, setDeleting] = useState<{ id: string; busy: boolean } | null>(null);
+  const [branchingId, setBranchingId] = useState<string | null>(null);
+  // True from the moment a message is being sent until the character's answer has been asked for.
+  const [replyPending, setReplyPending] = useState(false);
   const { id: conversationId } = useParams<{ id: string }>();
   const { user } = useAuth();
   const userId = user?.id;
@@ -185,11 +198,14 @@ export default function ConversationPage() {
     let active = true;
     setLoading(true);
     setLoadError(null);
+    setMenu(null);
+    setEditing(null);
+    setDeleting(null);
     (async () => {
       try {
         const { data: conversation, error: conversationError } = await supabase
           .from('conversations')
-          .select('id, type, name, memory_summary, canon_revision, conversation_participants(user_id, persona_id, persona_selected)')
+          .select('id, type, name, created_by, memory_summary, canon_revision, conversation_participants(user_id, persona_id, persona_selected)')
           .eq('id', conversationId)
           .maybeSingle();
         if (conversationError) throw conversationError;
@@ -215,6 +231,7 @@ export default function ConversationPage() {
           botName: character.name || profile?.display_name || 'Character',
           title: conversation.name?.trim() || null,
           greeting: character.greeting?.trim() || null,
+          createdByMe: (conversation as { created_by?: string | null }).created_by === user.id,
           openings: cleanOpenings(character.greeting, (character as { alternate_greetings?: unknown }).alternate_greetings),
           rating: character.content_rating ?? null,
           canon: conversation.memory_summary ?? '',
@@ -327,6 +344,124 @@ export default function ConversationPage() {
   const canRegenerate = !!last && last.sender_id === scene.botUserId && messages.length > 1 && !busy;
   const hasPlayerMessages = messages.some((m) => m.sender_id === user.id);
   const personaName = personas.find((p) => p.id === personaId)?.name ?? null;
+
+  // Who may change a message: its author, and the owner of the scene for the character's messages in it.
+  // The database enforces the same rule; this only decides what the menu offers.
+  const isMine = (message: ChatMessageRow) => message.sender_id === user.id;
+  const mayChange = (message: ChatMessageRow) => isMine(message) || (message.sender_id === scene.botUserId && scene.createdByMe);
+
+  const copyMessage = async (message: ChatMessageRow) => {
+    const done = await copyText(message.content);
+    showToast(done ? 'Message copied.' : 'We could not copy that. Select the text and copy it instead.', done ? 'success' : 'error');
+  };
+
+  const startEdit = (message: ChatMessageRow) => setEditing({ id: message.id, text: message.content, saving: false, problem: null });
+
+  const saveEdit = async () => {
+    if (!editing || editing.saving) return;
+    const original = messages.find((m) => m.id === editing.id);
+    if (!original) {
+      setEditing(null);
+      return;
+    }
+    const text = editing.text.replace(/\r\n/g, '\n').trim();
+    if (!text) {
+      setEditing({ ...editing, problem: 'A message cannot be empty. Delete it instead.' });
+      return;
+    }
+    if (text === original.content.trim()) {
+      setEditing(null);
+      return;
+    }
+    setEditing({ ...editing, saving: true, problem: null });
+    // The database refuses anyone but the author (or the scene owner, for the character's messages).
+    const { data, error } = await supabase.from('messages').update({ content: text }).eq('id', original.id).eq('conversation_id', conversationId!).is('deleted_at', null).select('id');
+    if (error || !data?.length) {
+      setEditing({ ...editing, saving: false, problem: 'We could not save your change. Please try again.' });
+      return;
+    }
+    setMessages((rows) => rows.map((row) => (row.id === original.id ? { ...row, content: text } : row)));
+    if (messages[messages.length - 1]?.id === original.id) {
+      void supabase.from('conversations').update({ last_message: text }).eq('id', conversationId!).then(() => undefined, () => undefined);
+    }
+    setEditing(null);
+    showToast('Message updated.', 'success');
+  };
+
+  const confirmDelete = async () => {
+    if (!deleting || deleting.busy) return;
+    const target = messages.find((m) => m.id === deleting.id);
+    setDeleting({ ...deleting, busy: true });
+    // Deleting hides the message everywhere (it is no longer shown, sent to the character or copied into a new chat).
+    const { data, error } = await supabase.from('messages').update({ deleted_at: new Date().toISOString() }).eq('id', deleting.id).eq('conversation_id', conversationId!).is('deleted_at', null).select('id');
+    if (error || !data?.length) {
+      setDeleting(null);
+      showToast('We could not delete that message. Please try again.', 'error');
+      return;
+    }
+    const remaining = messages.filter((m) => m.id !== deleting.id);
+    setMessages(remaining);
+    if (settingsRef.current.pinnedMessageIds.includes(deleting.id)) {
+      void updateSettings({ pinnedMessageIds: settingsRef.current.pinnedMessageIds.filter((id) => id !== deleting.id) }, 'We could not update your pins.');
+    }
+    const newest = remaining[remaining.length - 1];
+    if (target && newest && messages[messages.length - 1]?.id === target.id) {
+      void supabase.from('conversations').update({ last_message: newest.content, last_message_at: newest.created_at }).eq('id', conversationId!).then(() => undefined, () => undefined);
+    }
+    setDeleting(null);
+    showToast('Message deleted.', 'success');
+  };
+
+  const branchFrom = async (message: ChatMessageRow) => {
+    if (branchingId || busyRef.current) return;
+    setBranchingId(message.id);
+    try {
+      const { data, error } = await supabase.rpc('branch_chimera_conversation', {
+        p_conversation_id: conversationId,
+        p_message_id: message.id,
+        p_request_id: crypto.randomUUID(),
+      });
+      const created = (Array.isArray(data) ? data[0] : data) as { conversation_id?: string } | null;
+      if (error || !created?.conversation_id) throw error ?? new Error('Branch not created');
+      showToast('A new chat was started from that message. This one is unchanged.', 'success');
+      navigate(`/chats/${created.conversation_id}`);
+    } catch {
+      showToast('We could not start a new chat from here. Please try again.', 'error');
+    } finally {
+      setBranchingId(null);
+    }
+  };
+
+  const jumpTo = (messageId: string) => document.getElementById(`msg-${messageId}`)?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+
+  const menuItems = (message: ChatMessageRow): MenuItem[] => {
+    const pinned = pinnedIds.includes(message.id);
+    const allowed = mayChange(message);
+    return [
+      { id: 'copy', label: 'Copy message', icon: <Copy size={18} />, onSelect: () => void copyMessage(message) },
+      {
+        id: 'edit',
+        label: 'Edit message',
+        icon: <Pencil size={18} />,
+        disabled: !allowed || busy,
+        hint: busy ? `Wait for ${scene.botName} to finish` : undefined,
+        onSelect: () => startEdit(message),
+      },
+      { id: 'pin', label: pinned ? 'Unpin message' : 'Pin message', icon: <Pin size={18} className={pinned ? 'fill-current' : ''} />, disabled: !settingsReady, onSelect: () => void togglePinned(message.id) },
+      { id: 'branch', label: 'Start new chat from here', icon: <GitBranch size={18} />, disabled: busy || !!branchingId, onSelect: () => void branchFrom(message) },
+      {
+        id: 'delete',
+        label: 'Delete message',
+        icon: <Trash2 size={18} />,
+        danger: true,
+        disabled: !allowed || busy || messages.length <= 1,
+        hint: messages.length <= 1 ? 'A scene keeps at least one message' : undefined,
+        onSelect: () => setDeleting({ id: message.id, busy: false }),
+      },
+    ];
+  };
+  const menuMessage = menu ? messages.find((m) => m.id === menu.messageId) ?? null : null;
+  const laterThanEdited = editing ? messages.findIndex((m) => m.id === editing.id) < messages.length - 1 : false;
 
   const changePersona = async (value: string) => {
     const next = value === 'none' ? null : value;
@@ -462,6 +597,7 @@ export default function ConversationPage() {
     const line = formatPlayerLine(mode, text);
     busyRef.current = true;
     setBusy(true);
+    setReplyPending(true);
     setReplyError(null);
     try {
       const message = pendingSendsRef.current!.prepare({
@@ -476,13 +612,18 @@ export default function ConversationPage() {
       showToast(error instanceof PendingPlayerSendError ? error.message : 'Your message could not be sent. Your draft is still here.', 'error');
       busyRef.current = false;
       setBusy(false);
+      setReplyPending(false);
       return;
     }
     busyRef.current = false;
     setBusy(false);
     // The reply request reloads the conversation, and shows a retry if it fails.
     await loadMessages().catch(() => undefined);
-    await askForReply(scene.botUserId);
+    try {
+      await askForReply(scene.botUserId);
+    } finally {
+      setReplyPending(false);
+    }
   };
 
   const regenerate = async () => {
@@ -753,7 +894,20 @@ export default function ConversationPage() {
 
           <div>
             <p className="text-sm font-bold">Pinned messages: {pinnedIds.length} of {SCENE_LIMITS.pins}</p>
-            <p className="mt-1 text-xs text-chimera-mute">Tap the pin under a message to keep it in {scene.botName}&apos;s mind, even when the conversation grows long.</p>
+            <p className="mt-1 text-xs text-chimera-mute">Open a message&apos;s menu (the three dots, or a long press) and choose Pin to keep it in {scene.botName}&apos;s mind, even when the conversation grows long.</p>
+            {pinnedIds.length > 0 && (
+              <ul className="mt-2 space-y-2" aria-label="Pinned messages">
+                {messages.filter((m) => pinnedIds.includes(m.id)).map((m) => (
+                  <li key={m.id} className="flex items-start gap-2 rounded-xl border border-chimera-gold/20 bg-chimera-bg p-2">
+                    <button type="button" onClick={() => jumpTo(m.id)} className="min-h-[44px] min-w-0 flex-1 text-left text-sm">
+                      <span className="block text-xs font-bold tracking-[0.1em] text-chimera-gold">{isMine(m) ? 'YOU' : scene.botName.toUpperCase()}</span>
+                      <span className="block truncate">{plainText(m.content)}</span>
+                    </button>
+                    <button type="button" onClick={() => void togglePinned(m.id)} disabled={!settingsReady} aria-label={`Unpin: ${plainText(m.content).slice(0, 40)}`} className="min-h-[44px] rounded-full border border-chimera-gold/40 px-3 text-xs font-bold hover:bg-chimera-gold/10 disabled:opacity-50">Unpin</button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="border-t border-chimera-gold/15 pt-4">
@@ -908,26 +1062,30 @@ export default function ConversationPage() {
           </section>
         )}
         {messages.map((message) => {
-          const mine = message.sender_id === user.id;
-          const pinned = pinnedIds.includes(message.id);
+          const mine = isMine(message);
+          const editState = editing?.id === message.id
+            ? {
+                text: editing.text,
+                saving: editing.saving,
+                problem: editing.problem,
+                maxLength: mine ? MESSAGE_EDIT_LIMITS.player : MESSAGE_EDIT_LIMITS.character,
+                note: laterThanEdited ? 'The messages after this one are not rewritten. To continue from your change, start a new chat from here.' : undefined,
+              }
+            : null;
           return (
-            <div key={message.id} className={`group flex items-start gap-1 ${mine ? 'flex-row-reverse' : ''}`}>
-              <div className={`max-w-[calc(100%-2.75rem)] whitespace-pre-wrap rounded-2xl px-4 py-3 text-[17px] leading-relaxed ${mine ? 'bg-chimera-gold/15 text-chimera-ink' : 'border border-chimera-gold/20 bg-chimera-panel text-violet-50'} ${pinned ? 'ring-1 ring-chimera-gold/70' : ''}`}>
-                {!mine && <span className="mb-1 block text-xs font-bold tracking-[0.12em] text-chimera-gold">{scene.botName.toUpperCase()}</span>}
-                {message.content}
-              </div>
-              <button
-                type="button"
-                onClick={() => void togglePinned(message.id)}
-                aria-pressed={pinned}
-                disabled={!settingsReady}
-                aria-label={pinned ? 'Unpin this message' : 'Pin this message'}
-                title={pinned ? 'Unpin' : `Pin so ${scene.botName} never forgets it`}
-                className={`grid h-11 w-11 shrink-0 place-items-center rounded-full ${pinned ? 'text-chimera-gold' : 'text-chimera-mute/60 hover:text-chimera-gold'}`}
-              >
-                <Pin size={16} aria-hidden="true" className={pinned ? 'fill-current' : ''} />
-              </button>
-            </div>
+            <MessageRow
+              key={message.id}
+              id={message.id}
+              mine={mine}
+              speaker={mine ? null : scene.botName}
+              content={message.content}
+              pinned={pinnedIds.includes(message.id)}
+              edit={editState}
+              onOpenMenu={(point) => setMenu({ messageId: message.id, anchor: point })}
+              onEditChange={(text) => setEditing((current) => (current ? { ...current, text, problem: null } : current))}
+              onEditSave={() => void saveEdit()}
+              onEditCancel={() => setEditing(null)}
+            />
           );
         })}
         {busy && (
@@ -943,7 +1101,25 @@ export default function ConversationPage() {
             )}
           </div>
         )}
+        {awaitingReply && !busy && !replyPending && !replyError && !adultLocked && !choosingOpening && (
+          <button type="button" onClick={() => void askForReply(scene.botUserId, false)} className="min-h-[44px] rounded-full border border-chimera-gold/50 px-5 font-bold hover:bg-chimera-gold/10">
+            Ask {scene.botName} to reply
+          </button>
+        )}
       </div>
+
+      {menu && menuMessage && <MessageMenu items={menuItems(menuMessage)} anchor={menu.anchor} onClose={() => setMenu(null)} />}
+      {deleting && (
+        <ConfirmDialog
+          title="Delete this message?"
+          body={`It disappears from this scene, and ${scene.botName} will no longer remember it. This cannot be undone.`}
+          confirmLabel="Delete"
+          busyLabel="Deleting…"
+          busy={deleting.busy}
+          onConfirm={() => void confirmDelete()}
+          onCancel={() => setDeleting(null)}
+        />
+      )}
 
       {messages.length >= TURNING_POINT_MIN_MESSAGES && !adultLocked && (
         <GuidedTurningPointCard point={turningPoint} loading={turningPointLoading} onOpen={() => void openTurningPoint()} onChoose={(choice) => void chooseTurningPoint(choice)} />
