@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useMode, type CreativeMode } from '../../contexts/ModeContext';
 import { ShardsHubModal } from '../common/ShardsHubModal';
 import { GUARDIAN_OPEN } from '../../lib/ageVerification';
+import { useUnreadReports } from '../../hooks/useUnreadReports';
 
 const formatNumber = (value: number) => new Intl.NumberFormat().format(value);
 
@@ -32,7 +33,7 @@ const NAV: Record<CreativeMode, NavLinkItem[]> = {
 };
 
 // Routes that belong to one mode switch the toggle automatically, as before.
-const ROLEPLAY_ROUTES = /^(\/discover|\/shards|\/characters|\/chats|\/create|\/my-characters|\/personas|\/lorebooks|\/models)/;
+const ROLEPLAY_ROUTES = /^(\/admin|\/discover|\/shards|\/characters|\/chats|\/create|\/my-characters|\/personas|\/lorebooks|\/models)/;
 const STORYTELLING_ROUTES = /^(\/workspace|\/vellum|\/worlds|\/stories|\/write|\/library)/;
 
 export default function AppLayout() {
@@ -60,7 +61,13 @@ export default function AppLayout() {
     ? vellumBalance === null ? (profile ? 'Loading…' : 'VELLUM') : `${formatNumber(vellumBalance)} VELLUM`
     : shardsBalance === null ? (profile ? 'Loading…' : 'SHARDS') : `${formatNumber(shardsBalance)} SHARDS`;
 
-  const links = NAV[mode];
+  // Administrators only (the database decides who is one): a link to the reports, with how many nobody has opened yet.
+  const { isModerator, unread } = useUnreadReports();
+  const links: NavLinkItem[] = isModerator ? [...NAV[mode], { to: '/admin/moderation/reports', label: 'Admin' }] : NAV[mode];
+  const unreadBadge = (link: NavLinkItem) =>
+    link.to === '/admin/moderation/reports' && unread > 0 ? (
+      <span className="ml-2 rounded-full bg-chimera-rose px-2 py-0.5 align-middle text-[11px] font-bold text-[#1a0c0c]" aria-label={`${unread} unread ${unread === 1 ? 'report' : 'reports'}`}>{unread > 99 ? '99+' : unread}</span>
+    ) : null;
 
   return (
     <div className="min-h-screen bg-chimera-bg text-chimera-ink font-sans">
@@ -83,6 +90,7 @@ export default function AppLayout() {
               >
                 {link.label}
                 {link.soon && <SoonTag />}
+                {unreadBadge(link)}
               </NavLink>
             ))}
           </nav>
@@ -139,7 +147,7 @@ export default function AppLayout() {
           <nav id="mobile-menu" aria-label="Mobile" className="border-t border-chimera-gold/15 px-5 py-4 md:hidden">
             <ul className="flex flex-col gap-1">
               {links.map((link) => (
-                <li key={link.to}><NavLink to={link.to} className="block rounded-xl px-3 py-3 text-base font-medium hover:bg-white/5">{link.label}{link.soon && <SoonTag />}</NavLink></li>
+                <li key={link.to}><NavLink to={link.to} className="block rounded-xl px-3 py-3 text-base font-medium hover:bg-white/5">{link.label}{link.soon && <SoonTag />}{unreadBadge(link)}</NavLink></li>
               ))}
               <li><NavLink to={isStory ? '/vellum' : '/shards'} className="block rounded-xl px-3 py-3 text-base font-medium hover:bg-white/5">{reserveLabel}</NavLink></li>
               <li>{user ? <button type="button" onClick={() => void signOut()} className="block w-full rounded-xl px-3 py-3 text-left text-base font-medium hover:bg-white/5">Sign out</button> : <NavLink to="/auth" className="block rounded-xl px-3 py-3 text-base font-medium hover:bg-white/5">Sign in</NavLink>}</li>

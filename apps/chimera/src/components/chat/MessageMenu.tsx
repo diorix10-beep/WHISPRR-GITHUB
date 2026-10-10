@@ -27,9 +27,9 @@ const reducedMotion = () => typeof window !== 'undefined' && !!window.matchMedia
  * and the focus loop come from useDialogFocus, which also hands the focus back when the panel goes away. `children`
  * receives `close`, which plays the closing animation and then runs the optional callback.
  */
-function Overlay({ label, role, anchor, onClose, children }: {
+export function Overlay({ label, role, anchor, onClose, children }: {
   label: string;
-  role: 'menu' | 'alertdialog';
+  role: 'menu' | 'alertdialog' | 'dialog';
   anchor: Anchor | null;
   onClose: () => void;
   children: (close: (after?: () => void) => void) => ReactNode;
@@ -54,13 +54,13 @@ function Overlay({ label, role, anchor, onClose, children }: {
 
   // Wide screens: next to the pointer, kept inside the window.
   useLayoutEffect(() => {
-    if (mobile || !anchor || !panel.current) return;
+    if (mobile || role !== 'menu' || !anchor || !panel.current) return;
     const box = panel.current.getBoundingClientRect();
     setPlace({
       left: Math.max(8, Math.min(anchor.x, window.innerWidth - box.width - 8)),
       top: Math.max(8, Math.min(anchor.y, window.innerHeight - box.height - 8)),
     });
-  }, [anchor, mobile, panel]);
+  }, [anchor, mobile, role, panel]);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => setShown(true));
@@ -84,22 +84,25 @@ function Overlay({ label, role, anchor, onClose, children }: {
   };
 
   const fade = shown ? 'opacity-100' : 'opacity-0';
+  // A menu sits by the pointer on a wide screen; a dialog is centred and scrolls if it is tall; on a phone both are sheets.
+  const popover = role === 'menu' && !mobile;
+  const panelClass = mobile
+    ? `absolute inset-x-0 bottom-0 max-h-[90vh] overflow-y-auto rounded-t-3xl border border-b-0 border-chimera-gold/30 bg-chimera-panel px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl outline-none transition-transform duration-200 ease-out motion-reduce:transition-none ${shown ? 'translate-y-0' : 'translate-y-full'}`
+    : popover
+      ? `absolute w-72 rounded-2xl border border-chimera-gold/30 bg-chimera-panel p-1.5 shadow-2xl outline-none transition-opacity duration-150 motion-reduce:transition-none ${fade}`
+      : `absolute left-1/2 top-1/2 max-h-[90vh] w-[min(32rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-chimera-gold/30 bg-chimera-panel p-5 shadow-2xl outline-none transition-opacity duration-150 motion-reduce:transition-none ${fade}`;
   return createPortal(
     <div className="fixed inset-0 z-[90]">
-      <div aria-hidden="true" onPointerDown={() => close()} className={`absolute inset-0 transition-opacity duration-200 motion-reduce:transition-none ${mobile ? `bg-black/50 ${fade}` : ''}`} />
+      <div aria-hidden="true" onPointerDown={() => close()} className={`absolute inset-0 transition-opacity duration-200 motion-reduce:transition-none ${popover ? '' : `bg-black/50 ${fade}`}`} />
       <div
         ref={panel}
         role={role}
         aria-label={label}
-        aria-modal={role === 'alertdialog' ? true : undefined}
+        aria-modal={role === 'menu' ? undefined : true}
         tabIndex={-1}
         onKeyDown={onKeyDown}
-        style={mobile ? undefined : { left: place?.left ?? anchor?.x ?? 8, top: place?.top ?? anchor?.y ?? 8 }}
-        className={
-          mobile
-            ? `absolute inset-x-0 bottom-0 rounded-t-3xl border border-b-0 border-chimera-gold/30 bg-chimera-panel px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl outline-none transition-transform duration-200 ease-out motion-reduce:transition-none ${shown ? 'translate-y-0' : 'translate-y-full'}`
-            : `absolute w-72 rounded-2xl border border-chimera-gold/30 bg-chimera-panel p-1.5 shadow-2xl outline-none transition-opacity duration-150 motion-reduce:transition-none ${fade}`
-        }
+        style={popover ? { left: place?.left ?? anchor?.x ?? 8, top: place?.top ?? anchor?.y ?? 8 } : undefined}
+        className={panelClass}
       >
         {mobile && <div aria-hidden="true" className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-chimera-mute/40" />}
         {children(close)}
@@ -139,9 +142,11 @@ export function MessageMenu({ items, anchor, onClose }: { items: MenuItem[]; anc
 }
 
 /** Asks before something that cannot be undone. */
-export function ConfirmDialog({ title, body, confirmLabel, busyLabel, busy, onConfirm, onCancel }: {
+export function ConfirmDialog({ title, body, confirmLabel, busyLabel, busy, onConfirm, onCancel, extra }: {
   title: string;
   body: string;
+  /** Something to fill in before confirming, shown under the text. */
+  extra?: ReactNode;
   confirmLabel: string;
   busyLabel: string;
   busy?: boolean;
@@ -154,6 +159,7 @@ export function ConfirmDialog({ title, body, confirmLabel, busyLabel, busy, onCo
         <div className="px-2 pb-1 pt-1">
           <h2 className="font-serif text-xl font-semibold">{title}</h2>
           <p className="mt-1 text-sm text-chimera-mute">{body}</p>
+          {extra}
           <div className="mt-4 flex flex-wrap justify-end gap-2">
             <button type="button" onClick={() => close()} disabled={busy} className="min-h-[44px] rounded-full border border-chimera-gold/40 px-5 font-bold hover:bg-chimera-gold/10 disabled:opacity-50">Cancel</button>
             <button type="button" onClick={onConfirm} disabled={busy} className="min-h-[44px] rounded-full bg-chimera-rose px-5 font-bold text-white hover:brightness-110 disabled:opacity-50">{busy ? busyLabel : confirmLabel}</button>

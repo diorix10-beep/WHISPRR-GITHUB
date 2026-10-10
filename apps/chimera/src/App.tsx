@@ -30,6 +30,9 @@ import PrivacyPage from './pages/PrivacyPage';
 // SHARDS and VELLUM keep the screens they had before.
 const ShardsPage = lazy(() => import('./pages/ShardsPage'));
 const VellumPage = lazy(() => import('./pages/VellumPage'));
+// The administrators' pages are only downloaded by people who open them.
+const ModerationReportsPage = lazy(() => import('./pages/admin/ModerationReportsPage'));
+const ModerationReportPage = lazy(() => import('./pages/admin/ModerationReportPage'));
 
 function NotFoundPage() {
   return (
@@ -75,6 +78,8 @@ export default function App() {
             <Route path="/lorebooks" element={<LorebooksPage />} />
             <Route path="/lorebooks/new" element={<LorebookCreatePage />} />
             <Route path="/lorebooks/:id" element={<LorebookEditorPage />} />
+            <Route path="/admin/moderation/reports" element={<ModerationReportsPage />} />
+            <Route path="/admin/moderation/reports/:id" element={<ModerationReportPage />} />
             {/* Reading stories needs a sign-in for now: the database only lets signed-in members read them. */}
             <Route path="/library" element={<LibraryPage />} />
             <Route path="/stories/:id" element={<StoryPage />} />

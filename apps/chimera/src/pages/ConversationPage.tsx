@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Brain, Check, Copy, GitBranch, Loader2, Pencil, Pin, RefreshCw, Send, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { ArrowLeft, Brain, Check, Copy, Flag, GitBranch, Loader2, Pencil, Pin, RefreshCw, Send, SlidersHorizontal, ThumbsDown, ThumbsUp, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { isAdultRating, useAdultContentAccess } from '../hooks/useAdultContentAccess';
 import { ConfirmDialog, MessageMenu, type Anchor, type MenuItem } from '../components/chat/MessageMenu';
 import { MessageRow } from '../components/chat/MessageRow';
+import { ReportDialog } from '../components/chat/ReportDialog';
+import { FEEDBACK_LIVE, MODERATION_LIVE, submitMessageReport } from '../lib/moderation';
+import { loadMyFeedback, setMessageFeedback, type Rating } from '../lib/messageFeedback';
 import { copyText } from '../lib/clipboard';
 import { plainText } from '../lib/richText';
 import {
@@ -78,6 +81,9 @@ export default function ConversationPage() {
   const [editing, setEditing] = useState<{ id: string; text: string; saving: boolean; problem: string | null } | null>(null);
   const [deleting, setDeleting] = useState<{ id: string; busy: boolean } | null>(null);
   const [branchingId, setBranchingId] = useState<string | null>(null);
+  const [reporting, setReporting] = useState<{ id: string; speaker: string } | null>(null);
+  const [feedback, setFeedback] = useState<Record<string, Rating>>({});
+  const feedbackLoadedRef = useRef<Set<string>>(new Set());
   // True from the moment a message is being sent until the character's answer has been asked for.
   const [replyPending, setReplyPending] = useState(false);
   const { id: conversationId } = useParams<{ id: string }>();
@@ -201,6 +207,9 @@ export default function ConversationPage() {
     setMenu(null);
     setEditing(null);
     setDeleting(null);
+    setReporting(null);
+    setFeedback({});
+    feedbackLoadedRef.current = new Set();
     (async () => {
       try {
         const { data: conversation, error: conversationError } = await supabase
@@ -302,6 +311,18 @@ export default function ConversationPage() {
     // adultAccess only decides whether to auto-open an empty scene on first load.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, conversationId, loadMessages, askForReply, refreshMemories]);
+
+  // The member's own likes and dislikes of the character's messages, read once for each message.
+  useEffect(() => {
+    if (!FEEDBACK_LIVE || !scene) return;
+    const ids = messages.filter((m) => m.sender_id === scene.botUserId && !feedbackLoadedRef.current.has(m.id)).map((m) => m.id);
+    if (ids.length === 0) return;
+    ids.forEach((id) => feedbackLoadedRef.current.add(id));
+    loadMyFeedback(ids).then(
+      (found) => setFeedback((current) => ({ ...found, ...current })),
+      () => ids.forEach((id) => feedbackLoadedRef.current.delete(id)),
+    );
+  }, [messages, scene]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView?.({ block: 'end' });
@@ -432,6 +453,25 @@ export default function ConversationPage() {
     }
   };
 
+  const rateMessage = async (message: ChatMessageRow, rating: Rating) => {
+    const before = feedback[message.id];
+    const next = before === rating ? null : rating;
+    const apply = (value: Rating | null | undefined) =>
+      setFeedback((current) => {
+        const copy = { ...current };
+        if (value) copy[message.id] = value;
+        else delete copy[message.id];
+        return copy;
+      });
+    apply(next);
+    try {
+      await setMessageFeedback(message.id, next);
+    } catch {
+      apply(before);
+      showToast('We could not save your feedback. Please try again.', 'error');
+    }
+  };
+
   const jumpTo = (messageId: string) => document.getElementById(`msg-${messageId}`)?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
 
   const menuItems = (message: ChatMessageRow): MenuItem[] => {
@@ -449,6 +489,12 @@ export default function ConversationPage() {
       },
       { id: 'pin', label: pinned ? 'Unpin message' : 'Pin message', icon: <Pin size={18} className={pinned ? 'fill-current' : ''} />, disabled: !settingsReady, onSelect: () => void togglePinned(message.id) },
       { id: 'branch', label: 'Start new chat from here', icon: <GitBranch size={18} />, disabled: busy || !!branchingId, onSelect: () => void branchFrom(message) },
+      ...(FEEDBACK_LIVE && message.sender_id === scene.botUserId
+        ? [
+            { id: 'like', label: feedback[message.id] === 1 ? 'Remove like' : 'Like response', icon: <ThumbsUp size={18} className={feedback[message.id] === 1 ? 'fill-current' : ''} />, onSelect: () => void rateMessage(message, 1) },
+            { id: 'dislike', label: feedback[message.id] === -1 ? 'Remove dislike' : 'Dislike response', icon: <ThumbsDown size={18} className={feedback[message.id] === -1 ? 'fill-current' : ''} />, onSelect: () => void rateMessage(message, -1) },
+          ]
+        : []),
       {
         id: 'delete',
         label: 'Delete message',
@@ -458,6 +504,9 @@ export default function ConversationPage() {
         hint: messages.length <= 1 ? 'A scene keeps at least one message' : undefined,
         onSelect: () => setDeleting({ id: message.id, busy: false }),
       },
+      ...(MODERATION_LIVE && !isMine(message)
+        ? [{ id: 'report', label: 'Report message', icon: <Flag size={18} />, onSelect: () => setReporting({ id: message.id, speaker: scene.botName }) }]
+        : []),
     ];
   };
   const menuMessage = menu ? messages.find((m) => m.id === menu.messageId) ?? null : null;
@@ -1080,6 +1129,7 @@ export default function ConversationPage() {
               speaker={mine ? null : scene.botName}
               content={message.content}
               pinned={pinnedIds.includes(message.id)}
+              feedback={feedback[message.id] ?? null}
               edit={editState}
               onOpenMenu={(point) => setMenu({ messageId: message.id, anchor: point })}
               onEditChange={(text) => setEditing((current) => (current ? { ...current, text, problem: null } : current))}
@@ -1109,6 +1159,7 @@ export default function ConversationPage() {
       </div>
 
       {menu && menuMessage && <MessageMenu items={menuItems(menuMessage)} anchor={menu.anchor} onClose={() => setMenu(null)} />}
+      {reporting && <ReportDialog speaker={reporting.speaker} onSubmit={(reason, details) => submitMessageReport(reporting.id, reason, details)} onClose={() => setReporting(null)} />}
       {deleting && (
         <ConfirmDialog
           title="Delete this message?"

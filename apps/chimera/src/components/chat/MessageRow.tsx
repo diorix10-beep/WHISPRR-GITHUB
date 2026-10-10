@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { MoreHorizontal, Pin } from 'lucide-react';
+import { MoreHorizontal, Pin, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { useLongPress, type PressPoint } from '../../hooks/useLongPress';
 import { RichMessage } from './RichMessage';
 
@@ -13,13 +13,15 @@ interface EditState {
 }
 
 /** One message of a scene: its bubble, the button that opens its menu, and the editor when it is being edited. */
-export function MessageRow({ id, mine, speaker, content, pinned, edit, onOpenMenu, onEditChange, onEditSave, onEditCancel }: {
+export function MessageRow({ id, mine, speaker, content, pinned, feedback, edit, onOpenMenu, onEditChange, onEditSave, onEditCancel }: {
   id: string;
   mine: boolean;
   /** The character's name, shown above their messages. */
   speaker: string | null;
   content: string;
   pinned: boolean;
+  /** The member's own like (1) or dislike (-1) of a character's message. */
+  feedback?: 1 | -1 | null;
   edit: EditState | null;
   onOpenMenu: (point: PressPoint, trigger: HTMLElement | null) => void;
   onEditChange: (text: string) => void;
@@ -81,6 +83,8 @@ export function MessageRow({ id, mine, speaker, content, pinned, edit, onOpenMen
           <span className="mb-1 flex items-center gap-1 text-xs font-bold tracking-[0.12em] text-chimera-gold">
             {(speaker ?? '').toUpperCase()}
             {pinned && <Pin size={12} aria-label="Pinned" className="fill-current" />}
+            {feedback === 1 && <ThumbsUp size={12} aria-label="You liked this response" className="fill-current" />}
+            {feedback === -1 && <ThumbsDown size={12} aria-label="You disliked this response" className="fill-current" />}
           </span>
         )}
         {mine && pinned && <Pin size={12} aria-label="Pinned" className="mb-1 ml-auto fill-current text-chimera-gold" />}

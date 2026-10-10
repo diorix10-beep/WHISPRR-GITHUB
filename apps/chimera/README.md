@@ -155,7 +155,31 @@ screen a small menu by the pointer; both close with Escape or a tap outside, loo
 - **Delete**: asks first, then sets `deleted_at` (a *soft* delete: the row stays in the database, hidden from the scene, from what the character is sent and
   from branches). A scene always keeps at least one message. Whether such rows should be purged after some time is a decision still to be made.
 
-Not built yet: Like / Dislike (needs a table) and Report (needs the moderation workflow); voice playback is out of scope for now.
+Like / Dislike and Report are built but off until their database part is reviewed and applied (next section); voice playback is out of scope for now.
+
+## Like / Dislike, reports and moderation (FOR REVIEW: needs two migrations, off until applied)
+
+Nothing in this section is live. The code is in, but **off**, and the two migrations are **not applied** to any database. They are written for review.
+
+**What was already there.** `reports` (WHISPRR's table) existed with 0 rows: members could file and read their own, and **nothing and nobody could read them**, and CHIMERA had no report button. This work extends that table instead of adding a second one. It also found that the table's two CHECK lists were WHISPRR's (content type `whisper|comment|user`, status `pending|reviewed|resolved`), so both are widened (nothing removed, so existing rows stay valid).
+
+**Migrations** (apply in this order; each can be applied twice):
+1. `supabase/migrations/20261010090000_chimera_message_feedback.sql`: the table `chimera_message_feedback` (one row per member per message, +1 or -1) and `set_chimera_message_feedback`. Members can read only their own rows; the function checks the message is a character's reply in a scene the member belongs to. Never sent to the AI.
+2. `supabase/migrations/20261010100000_chimera_moderation_reports.sql`: the reports workflow:
+   - `submit_chimera_message_report`: the **database** reads the message and copies it, with up to 6 messages before and 2 after, into the report (a snapshot that survives later edits and deletions). The member must be in a scene that has an AI character, cannot report their own message, must pick one of 10 reasons, and may add up to 1,000 characters. One report per member per message, 10 an hour and 30 a day. A member cannot write a message report straight into the table (a trigger refuses), so a snapshot cannot be forged, and cannot change or delete any report.
+   - `list_chimera_reports`, `get_chimera_report`, `update_chimera_report`, `count_unread_chimera_reports`, `moderator_make_chimera_character_private`: for moderators only (`profiles.role = 'founder'`, checked **inside the database**; everyone else gets "Moderator access required", and the unread counter says 0). A moderator sees the snapshot only, never the whole scene, and never needs direct access to messages.
+   - `chimera_report_audit`: who did what and when (submitted, viewed, status changes with from/to/note, notes, character made private, alert e-mail sent). Nobody can edit or delete it from the app, moderators included. Moderators' notes live only here, so a reporter, who can read their own report row, never sees them.
+   - Statuses: Pending, Under review, Resolved, Dismissed, Escalated. **A report never punishes anyone.** The only action on content is *Make this character private*, a separate explicit moderator action that needs a written reason and is logged.
+
+**The app.** The message menu gets *Like response*, *Dislike response* and *Report message* (a dialog: reason, optional explanation, sent, "already reported", "try again later" and failure states; it only says "sent" once the database saved it). Admin: `/admin/moderation/reports` (list with status filters, unread badge on the *Admin* link) and `/admin/moderation/reports/:id` (the reported message, the reason, the reporter's words, the surrounding messages, status and note, the character action, the log). Hidden from everyone who is not a moderator, and refused by the database anyway.
+
+**Switching on** (after the migrations are applied and checked): set `VITE_CHIMERA_FEEDBACK_LIVE=true` and `VITE_CHIMERA_MODERATION_LIVE=true` in Vercel and redeploy.
+
+**E-mail to administrators (optional).** After a report is saved, the app asks `api/report-alert.ts` to send a short alert through Resend. It does nothing unless `CHIMERA_REPORT_ALERT_EMAILS` (the administrators' addresses, comma separated), `RESEND_API_KEY` and `CHIMERA_REPORT_ALERT_FROM` are set; `CHIMERA_PUBLIC_URL` is optional (the link otherwise uses the address of the site serving the request). Only the member who filed the report can trigger it, once per report, at most 5 e-mails in 10 minutes. The e-mail has the category, the time and a link, **never the message, the conversation or any name** (tested). The Privacy Policy draft lists Resend. This part has only been tested against a stand-in, not against Resend itself.
+
+**More moderators.** Today only `role = 'founder'` counts. To add people, change `chimera_private.is_moderator()` (one function) to accept another role value.
+
+**Not covered.** Reporting a human's message in WHISPRR conversations or in human roleplay rooms (those are other tables). Notifying a character's creator when their character is hidden. Closing the loop with the reporter. A retention period for reports (the Privacy Policy draft has a TODO for it).
 
 ## Automatic memory (suggested by the story, approved by you)
 
